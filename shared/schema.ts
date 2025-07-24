@@ -1,4 +1,5 @@
 import { pgTable, text, serial, integer, boolean, json } from "drizzle-orm/pg-core";
+import { relations } from "drizzle-orm";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
@@ -62,3 +63,31 @@ export type TrailerModel = typeof trailerModels.$inferSelect;
 export type TrailerOption = typeof trailerOptions.$inferSelect;
 export type UserConfiguration = typeof userConfigurations.$inferSelect;
 export type InsertUserConfiguration = z.infer<typeof insertUserConfigurationSchema>;
+
+// Relations
+export const trailerCategoriesRelations = relations(trailerCategories, ({ many }) => ({
+  models: many(trailerModels),
+}));
+
+export const trailerModelsRelations = relations(trailerModels, ({ one, many }) => ({
+  category: one(trailerCategories, {
+    fields: [trailerModels.categoryId],
+    references: [trailerCategories.id],
+  }),
+  options: many(trailerOptions),
+  configurations: many(userConfigurations),
+}));
+
+export const trailerOptionsRelations = relations(trailerOptions, ({ one }) => ({
+  model: one(trailerModels, {
+    fields: [trailerOptions.modelId],
+    references: [trailerModels.modelId],
+  }),
+}));
+
+export const userConfigurationsRelations = relations(userConfigurations, ({ one }) => ({
+  model: one(trailerModels, {
+    fields: [userConfigurations.modelId],
+    references: [trailerModels.modelId],
+  }),
+}));

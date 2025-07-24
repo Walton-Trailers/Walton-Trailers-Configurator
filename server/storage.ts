@@ -9,6 +9,8 @@ import {
   type UserConfiguration,
   type InsertUserConfiguration 
 } from "@shared/schema";
+import { db } from "./db";
+import { eq } from "drizzle-orm";
 
 export interface IStorage {
   getTrailerCategories(): Promise<TrailerCategory[]>;
@@ -213,4 +215,37 @@ export class MemStorage implements IStorage {
   }
 }
 
-export const storage = new MemStorage();
+export class DatabaseStorage implements IStorage {
+  async getTrailerCategories(): Promise<TrailerCategory[]> {
+    return await db.select().from(trailerCategories);
+  }
+
+  async getTrailerModelsByCategory(categorySlug: string): Promise<TrailerModel[]> {
+    const category = await db.select().from(trailerCategories).where(eq(trailerCategories.slug, categorySlug));
+    if (category.length === 0) return [];
+    
+    return await db.select().from(trailerModels).where(eq(trailerModels.categoryId, category[0].id));
+  }
+
+  async getTrailerModel(modelId: string): Promise<TrailerModel | undefined> {
+    const models = await db.select().from(trailerModels).where(eq(trailerModels.modelId, modelId));
+    return models[0];
+  }
+
+  async getTrailerOptions(modelId: string): Promise<TrailerOption[]> {
+    return await db.select().from(trailerOptions).where(eq(trailerOptions.modelId, modelId));
+  }
+
+  async saveUserConfiguration(config: InsertUserConfiguration): Promise<UserConfiguration> {
+    const result = await db.insert(userConfigurations).values(config).returning();
+    return result[0];
+  }
+
+  async getUserConfiguration(sessionId: string): Promise<UserConfiguration | undefined> {
+    const configs = await db.select().from(userConfigurations).where(eq(userConfigurations.sessionId, sessionId));
+    return configs[0];
+  }
+}
+
+// Use database storage in production, fallback to memory for development
+export const storage = process.env.DATABASE_URL ? new DatabaseStorage() : new MemStorage();
