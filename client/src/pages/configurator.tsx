@@ -183,11 +183,10 @@ Configuration Date: ${new Date().toLocaleDateString()}
           </div>
         </div>
       </header>
-
       {/* Tesla-style Main Layout */}
       <div className="pt-20 min-h-screen">
         {/* Left Panel - Image (Fixed) */}
-        <div className="fixed left-0 top-20 w-1/2 h-[calc(100vh-5rem)] bg-gray-50 flex items-center justify-center overflow-hidden z-10">
+        <div className="fixed left-0 top-20 w-1/2 h-[calc(100vh-5rem)] flex items-center justify-center overflow-hidden z-10 bg-[#ffffff]">
           <div className="relative w-full h-full max-w-3xl max-h-[70vh] mx-auto my-auto p-8">
             <img 
               src={currentTrailerImage}
