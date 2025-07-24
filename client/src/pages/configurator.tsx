@@ -18,6 +18,8 @@ export default function Configurator() {
   const [selectedModel, setSelectedModel] = useState<TrailerModel | null>(null);
   const [selectedOptions, setSelectedOptions] = useState<Record<string, any>>({});
   const [totalPrice, setTotalPrice] = useState(0);
+  const [hoveredCategory, setHoveredCategory] = useState<TrailerCategory | null>(null);
+  const [hoveredModel, setHoveredModel] = useState<TrailerModel | null>(null);
 
   const { data: categories, isLoading } = useQuery<TrailerCategory[]>({
     queryKey: ['/api/categories'],
@@ -143,7 +145,10 @@ Configuration Date: ${new Date().toLocaleDateString()}
     });
   };
 
-  const currentTrailerImage = selectedModel?.imageUrl || selectedCategory?.imageUrl || 
+  const currentTrailerImage = selectedModel?.imageUrl || 
+    hoveredModel?.imageUrl ||
+    hoveredCategory?.imageUrl || 
+    selectedCategory?.imageUrl || 
     "https://images.unsplash.com/photo-1581094794329-c8112a89af12?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&h=600";
 
   return (
@@ -221,6 +226,8 @@ Configuration Date: ${new Date().toLocaleDateString()}
                           : 'border-gray-200 hover:border-gray-300 bg-white'
                       }`}
                       onClick={() => handleCategorySelect(category)}
+                      onMouseEnter={() => setHoveredCategory(category)}
+                      onMouseLeave={() => setHoveredCategory(null)}
                     >
                       <div className="flex justify-between items-center">
                         <div className="flex-1">
@@ -275,6 +282,8 @@ Configuration Date: ${new Date().toLocaleDateString()}
                           : 'border-gray-200 hover:border-gray-300 bg-white'
                       }`}
                       onClick={() => handleModelSelect(model)}
+                      onMouseEnter={() => setHoveredModel(model)}
+                      onMouseLeave={() => setHoveredModel(null)}
                     >
                       <div className="flex justify-between items-start">
                         <div className="flex-1">
