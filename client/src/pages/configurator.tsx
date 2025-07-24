@@ -7,9 +7,132 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
-import { ArrowLeft, ArrowRight, Download, Mail, MapPin, RotateCcw } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { ArrowLeft, ArrowRight, Download, Mail, MapPin, RotateCcw, Info, X } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import type { TrailerCategory, TrailerModel, TrailerOption } from "@shared/schema";
+import { getOptionInfo } from "@/lib/trailer-option-info";
+// Import the response types that match our API
+interface TrailerCategory {
+  id: number;
+  slug: string;
+  name: string;
+  description: string;
+  imageUrl: string;
+  startingPrice: number;
+  orderIndex: number;
+}
+
+interface TrailerModel {
+  id: number;
+  categoryId: number;
+  modelId: string;
+  name: string;
+  gvwr: string;
+  payload: string;
+  deckSize: string;
+  axles: string;
+  basePrice: number;
+  imageUrl: string;
+  features: string[];
+}
+
+interface TrailerOption {
+  id: number;
+  modelId: string;
+  category: string;
+  name: string;
+  price: number;
+  isMultiSelect: boolean;
+}
+
+// Option Info Modal Component
+function OptionInfoModal({ optionName, children }: { optionName: string; children: React.ReactNode }) {
+  const [open, setOpen] = useState(false);
+  const optionInfo = getOptionInfo(optionName);
+
+  if (!optionInfo) {
+    return <>{children}</>;
+  }
+
+  return (
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger asChild>
+        <button 
+          className="ml-2 p-1 rounded-full hover:bg-gray-100 transition-colors"
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            setOpen(true);
+          }}
+        >
+          <Info className="w-4 h-4 text-gray-400 hover:text-blue-500" />
+        </button>
+      </DialogTrigger>
+      <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+        <DialogHeader className="pb-4">
+          <DialogTitle className="text-2xl font-semibold text-gray-900">
+            {optionInfo.title}
+          </DialogTitle>
+        </DialogHeader>
+        
+        <div className="space-y-6">
+          {optionInfo.imageUrl && (
+            <div className="w-full h-48 bg-gray-100 rounded-lg flex items-center justify-center">
+              <img 
+                src={optionInfo.imageUrl} 
+                alt={optionInfo.title}
+                className="max-w-full max-h-full object-contain rounded-lg"
+              />
+            </div>
+          )}
+          
+          <div>
+            <p className="text-gray-700 text-base leading-relaxed mb-4">
+              {optionInfo.description}
+            </p>
+          </div>
+
+          <div>
+            <h4 className="text-lg font-semibold text-gray-900 mb-3">Benefits</h4>
+            <ul className="space-y-2">
+              {optionInfo.benefits.map((benefit, index) => (
+                <li key={index} className="flex items-start">
+                  <div className="w-1.5 h-1.5 bg-blue-500 rounded-full mt-2 mr-3 flex-shrink-0"></div>
+                  <span className="text-gray-700">{benefit}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          {optionInfo.specifications && (
+            <div>
+              <h4 className="text-lg font-semibold text-gray-900 mb-3">Specifications</h4>
+              <div className="bg-gray-50 rounded-lg p-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  {Object.entries(optionInfo.specifications).map(([key, value]) => (
+                    <div key={key} className="flex justify-between">
+                      <span className="text-gray-600 font-medium">{key}:</span>
+                      <span className="text-gray-900">{value}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+
+          <div className="pt-4">
+            <Button 
+              onClick={() => setOpen(false)}
+              className="w-full bg-blue-500 hover:bg-blue-600 text-white"
+            >
+              Got it
+            </Button>
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
 
 export default function Configurator() {
   const { toast } = useToast();
@@ -380,9 +503,14 @@ Configuration Date: ${new Date().toLocaleDateString()}
                                   handleOptionChange(category, option.id, true, checked as boolean)
                                 }
                               />
-                              <Label htmlFor={`option-${option.id}`} className="font-medium cursor-pointer">
-                                {option.name}
-                              </Label>
+                              <div className="flex items-center">
+                                <Label htmlFor={`option-${option.id}`} className="font-medium cursor-pointer">
+                                  {option.name}
+                                </Label>
+                                <OptionInfoModal optionName={option.name}>
+                                  <div />
+                                </OptionInfoModal>
+                              </div>
                             </div>
                             <span className="font-medium">
                               {option.price === 0 ? 'Included' : 
@@ -407,9 +535,14 @@ Configuration Date: ${new Date().toLocaleDateString()}
                                   value={option.id.toString()}
                                   id={`option-${option.id}`}
                                 />
-                                <Label htmlFor={`option-${option.id}`} className="font-medium cursor-pointer">
-                                  {option.name}
-                                </Label>
+                                <div className="flex items-center">
+                                  <Label htmlFor={`option-${option.id}`} className="font-medium cursor-pointer">
+                                    {option.name}
+                                  </Label>
+                                  <OptionInfoModal optionName={option.name}>
+                                    <div />
+                                  </OptionInfoModal>
+                                </div>
                               </div>
                               <span className="font-medium">
                                 {option.price === 0 ? 'Included' : 

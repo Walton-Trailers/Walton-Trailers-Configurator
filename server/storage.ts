@@ -14,20 +14,53 @@ import {
 import { db } from "./db";
 import { eq, and, inArray, sql } from "drizzle-orm";
 
+// Custom interfaces that match our actual database structure
+export interface TrailerCategoryResponse {
+  id: number;
+  slug: string;
+  name: string;
+  description: string;
+  imageUrl: string;
+  startingPrice: number;
+  orderIndex: number;
+}
+
+export interface TrailerModelResponse {
+  id: number;
+  categoryId: number;
+  modelId: string;
+  name: string;
+  gvwr: string;
+  payload: string;
+  deckSize: string;
+  axles: string;
+  basePrice: number;
+  imageUrl: string;
+  features: string[];
+}
+
+export interface TrailerOptionResponse {
+  id: number;
+  modelId: string;
+  category: string;
+  name: string;
+  price: number;
+  isMultiSelect: boolean;
+}
+
 export interface IStorage {
-  getCategories(): Promise<TrailerCategory[]>;
-  getCategoryBySlug(slug: string): Promise<TrailerCategory | undefined>;
-  getModels(categoryId: number): Promise<TrailerModel[]>;
-  getModelById(id: string): Promise<TrailerModel | undefined>;
-  getOptions(modelId: string): Promise<TrailerOption[]>;
-  saveConfiguration(config: Partial<UserConfiguration>): Promise<UserConfiguration>;
+  getTrailerCategories(): Promise<TrailerCategoryResponse[]>;
+  getTrailerModelsByCategory(categorySlug: string): Promise<TrailerModelResponse[]>;
+  getTrailerModel(modelId: string): Promise<TrailerModelResponse | undefined>;
+  getTrailerOptions(modelId: string): Promise<TrailerOptionResponse[]>;
+  saveUserConfiguration(config: InsertUserConfiguration): Promise<UserConfiguration>;
   getUserConfiguration(sessionId: string): Promise<UserConfiguration | undefined>;
 }
 
 export class MemStorage implements IStorage {
-  private categories: Map<number, TrailerCategory>;
-  private models: Map<string, TrailerModel>;
-  private options: Map<string, TrailerOption[]>;
+  private categories: Map<number, TrailerCategoryResponse>;
+  private models: Map<string, TrailerModelResponse>;
+  private options: Map<string, TrailerOptionResponse[]>;
   private configurations: Map<string, UserConfiguration>;
   private currentId: number;
 
@@ -42,7 +75,7 @@ export class MemStorage implements IStorage {
 
   private initializeData() {
     // Initialize categories
-    const categoriesData: TrailerCategory[] = [
+    const categoriesData: TrailerCategoryResponse[] = [
       {
         id: 1,
         slug: "gooseneck",
