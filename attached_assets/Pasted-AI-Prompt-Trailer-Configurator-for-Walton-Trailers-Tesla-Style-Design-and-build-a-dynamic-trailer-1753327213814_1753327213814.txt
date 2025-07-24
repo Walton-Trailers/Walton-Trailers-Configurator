@@ -1,0 +1,115 @@
+AI Prompt: Trailer Configurator for Walton Trailers (Tesla-Style)
+Design and build a dynamic trailer configurator for https://waltontrailers.com. The experience should be inspired by the clean, modern, and user-centric design seen on Tesla’s Model 3 configurator, but tailored for commercial trailer buyers. The configurator must be responsive, fast, and intuitive, with a minimalist yet bold aesthetic. Prioritize legibility, hierarchy, and ease of use. Base all trailer data, options, models, and pricing on the official 2025 Walton Price Book (fully parsed, detailed, and categorized). Use Tailwind CSS and component-based React with modern practices. Here's what to include:
+
+✨ 1. UI/UX Design Philosophy
+Apple/Tesla-level design sensibility: smooth transitions, ultra-clean layout, and whitespace-rich composition.
+
+Use a vertical step-by-step wizard format (e.g., model → configuration → options → summary).
+
+Each step should feel immersive, with subtle animations and intelligent state memory.
+
+Implement dark mode as default, inspired by industrial/trade tool branding.
+
+🧱 2. Configurator Architecture
+Step 1: Choose Trailer Category
+
+Show high-res thumbnail tiles for each major category:
+
+Gooseneck Trailers
+
+Tilt Equipment Trailers
+
+Dump Trailers
+
+Car/Equipment Haulers
+
+Landscape Trailers
+
+Step 2: Choose Trailer Model
+
+Dynamically show models within the selected category.
+
+Show card-style previews with specs:
+
+Model name (e.g., FBX210-28G)
+
+GVWR
+
+Deck length & size
+
+MSRP
+
+Category & pull type (bumper/gooseneck)
+
+Image preview
+
+Step 3: Customize Trailer
+
+Pull all standard features from the price book automatically.
+
+Add checkboxes or selectors for upgrade options:
+
+Tire upgrades (e.g., ST235/85R16 "G" 14-ply, +$600)
+
+Deck length options (e.g., 24', 26', 28', etc.)
+
+Jack types, ramps, D-rings, frame upgrades, toolboxes, etc.
+
+Color selections: standard, alternative, and premium (with pricing like $1,200)
+
+Include real-time price updates as options are toggled.
+
+Step 4: Summary
+
+Build a final spec sheet:
+
+Selected model name and image
+
+All selected options
+
+Subtotal, upgrades, and final MSRP
+
+Include “Request Quote” or “Download PDF Spec” call-to-action
+
+📊 3. Data Integration Requirements
+Use trailer specs and models exactly as outlined in the Walton Price Book Q3 2025 (e.g., FBH207, TSX208, DHO215, etc.)
+.
+
+Each model includes GVWR, GAWR, payload, deck dimensions, and standard/optional features.
+
+Accurately implement:
+
+Axle configurations
+
+Tarp systems, lighting, tire types
+
+Hydraulic/pintle/gooseneck options
+
+Wall height upgrades (especially for dump trailers)
+
+Provide model-specific option compatibility (e.g., some options are only for 20K+ trailers).
+
+🎨 4. Visual & Interactive Features
+Animated pricing updates with each config choice
+
+Mobile-first layout with swipe gestures where applicable
+
+Optionally include 3D rotation or image zoom using WebGL or libraries like Three.js
+
+Hover states and focus indicators for accessibility
+
+🧠 5. Developer Notes
+Use React + Tailwind CSS + Next.js if available.
+
+Keep all configuration data in a structured JSON or database format (simulate with a JS object).
+
+Include comment sections for future integration with CMS or ERP system.
+
+📂 6. Bonus Features
+Save My Configuration (localStorage or account-based if backend is added later)
+
+"Compare Models" feature across categories
+
+PDF export (nicely designed) of selected configuration
+
+Dealer locator map integration using Google Maps API
