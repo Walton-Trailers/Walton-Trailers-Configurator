@@ -147,83 +147,93 @@ Configuration Date: ${new Date().toLocaleDateString()}
     "https://images.unsplash.com/photo-1581094794329-c8112a89af12?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&h=600";
 
   return (
-    <div className="min-h-screen bg-white dark:bg-zinc-900 text-zinc-900 dark:text-white">
+    <div className="min-h-screen bg-white text-gray-900 font-medium">
       {/* Tesla-style Header */}
-      <header className="fixed top-0 left-0 right-0 bg-white/80 dark:bg-zinc-900/80 backdrop-blur-md z-50 border-b border-zinc-200 dark:border-zinc-800">
-        <div className="max-w-7xl mx-auto px-6">
-          <div className="flex items-center justify-between h-16">
-            <div className="flex items-center space-x-6">
-              <div className="text-2xl font-bold tracking-wide">WALTON</div>
-            </div>
+      <header className="fixed top-0 left-0 right-0 bg-white/95 backdrop-blur-xl z-50 border-b border-gray-200">
+        <div className="max-w-7xl mx-auto px-8">
+          <div className="flex items-center justify-between h-20">
+            <div className="text-2xl font-semibold tracking-tight">WALTON</div>
             
-            <div className="hidden md:flex items-center space-x-8 text-sm">
-              <div className={`px-3 py-1 rounded-full transition-colors ${currentStep >= 1 ? 'bg-blue-500 text-white' : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-500'}`}>
+            <div className="hidden md:flex items-center space-x-6 text-sm">
+              <div className={`px-4 py-2 rounded-full transition-all duration-300 ${currentStep >= 1 ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-600'}`}>
                 Category
               </div>
-              <div className={`px-3 py-1 rounded-full transition-colors ${currentStep >= 2 ? 'bg-blue-500 text-white' : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-500'}`}>
+              <div className={`px-4 py-2 rounded-full transition-all duration-300 ${currentStep >= 2 ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-600'}`}>
                 Model
               </div>
-              <div className={`px-3 py-1 rounded-full transition-colors ${currentStep >= 3 ? 'bg-blue-500 text-white' : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-500'}`}>
-                Configure
+              <div className={`px-4 py-2 rounded-full transition-all duration-300 ${currentStep >= 3 ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-600'}`}>
+                Options
               </div>
-              <div className={`px-3 py-1 rounded-full transition-colors ${currentStep >= 4 ? 'bg-blue-500 text-white' : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-500'}`}>
+              <div className={`px-4 py-2 rounded-full transition-all duration-300 ${currentStep >= 4 ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-600'}`}>
                 Order
               </div>
             </div>
             
             <div className="text-right">
-              <div className="text-sm text-zinc-500">Starting at</div>
-              <div className="text-xl font-semibold">${totalPrice.toLocaleString()}</div>
+              <div className="text-sm text-gray-500 font-normal">Est. Price</div>
+              <div className="text-2xl font-semibold text-blue-600 transition-all duration-500">
+                ${totalPrice.toLocaleString()}
+              </div>
             </div>
           </div>
         </div>
       </header>
 
       {/* Tesla-style Main Layout */}
-      <div className="pt-16 min-h-screen flex">
+      <div className="pt-20 min-h-screen flex">
         {/* Left Panel - Image */}
-        <div className="w-1/2 h-screen sticky top-16 bg-zinc-50 dark:bg-zinc-800 flex items-center justify-center overflow-hidden">
-          <img 
-            src={currentTrailerImage}
-            alt="Trailer"
-            className="w-full h-full object-cover transition-all duration-500"
-          />
+        <div className="w-1/2 h-screen sticky top-20 bg-gray-50 flex items-center justify-center overflow-hidden">
+          <div className="relative w-full h-full max-w-3xl max-h-[70vh] mx-auto my-auto p-8">
+            <img 
+              src={currentTrailerImage}
+              alt="Trailer"
+              className="w-full h-full object-contain transition-all duration-500 ease-out drop-shadow-xl"
+            />
+          </div>
         </div>
 
         {/* Right Panel - Configuration */}
-        <div className="w-1/2 p-8 overflow-y-auto">
+        <div className="w-1/2 bg-white overflow-y-auto">
+          <div className="max-w-xl mx-auto py-12 px-8">
           {/* Step 1: Category Selection */}
           {currentStep === 1 && (
-            <div className="space-y-8">
+            <div className="space-y-12 animate-in fade-in duration-500">
               <div>
-                <h1 className="text-4xl font-bold mb-4">Choose Your Trailer</h1>
-                <p className="text-zinc-600 dark:text-zinc-400 text-lg">
-                  Select from our premium line of commercial trailers
+                <h1 className="text-5xl font-bold text-gray-900 mb-6 tracking-tight leading-tight">
+                  Choose Your Trailer
+                </h1>
+                <p className="text-gray-600 text-xl leading-relaxed">
+                  Select from our premium line of commercial trailers designed for professionals
                 </p>
               </div>
 
-              <div className="space-y-4">
-                {categories?.map((category) => (
-                  <Card 
+              <div className="space-y-3">
+                {categories?.map((category, index) => (
+                  <div
                     key={category.id}
-                    className={`cursor-pointer transition-all hover:shadow-lg border-2 ${
-                      selectedCategory?.id === category.id 
-                        ? 'border-blue-500 bg-blue-50 dark:bg-blue-950' 
-                        : 'border-zinc-200 dark:border-zinc-700 hover:border-zinc-300 dark:hover:border-zinc-600'
-                    }`}
-                    onClick={() => handleCategorySelect(category)}
+                    className="animate-in slide-in-from-right duration-500"
+                    style={{ animationDelay: `${index * 100}ms` }}
                   >
-                    <CardContent className="p-6">
+                    <button
+                      className={`w-full text-left p-6 rounded-2xl border-2 transition-all duration-300 hover:shadow-lg hover:scale-[1.02] active:scale-[0.98] ${
+                        selectedCategory?.id === category.id 
+                          ? 'border-blue-500 bg-blue-50 shadow-lg' 
+                          : 'border-gray-200 hover:border-gray-300 bg-white'
+                      }`}
+                      onClick={() => handleCategorySelect(category)}
+                    >
                       <div className="flex justify-between items-center">
-                        <div>
-                          <h3 className="text-xl font-semibold mb-2">{category.name}</h3>
-                          <p className="text-zinc-600 dark:text-zinc-400 mb-4">{category.description}</p>
-                          <div className="text-lg font-medium">Starting at ${category.startingPrice.toLocaleString()}</div>
+                        <div className="flex-1">
+                          <h3 className="text-2xl font-semibold mb-3 text-gray-900">{category.name}</h3>
+                          <p className="text-gray-600 mb-4 leading-relaxed">{category.description}</p>
+                          <div className="text-lg font-semibold text-blue-600">
+                            Starting at ${category.startingPrice.toLocaleString()}
+                          </div>
                         </div>
-                        <ArrowRight className="w-6 h-6 text-zinc-400" />
+                        <ArrowRight className="w-6 h-6 text-gray-400 transition-transform duration-300 group-hover:translate-x-1" />
                       </div>
-                    </CardContent>
-                  </Card>
+                    </button>
+                  </div>
                 ))}
               </div>
             </div>
@@ -231,65 +241,68 @@ Configuration Date: ${new Date().toLocaleDateString()}
 
           {/* Step 2: Model Selection */}
           {currentStep === 2 && selectedCategory && (
-            <div className="space-y-8">
-              <div className="flex items-center space-x-4 mb-6">
-                <Button 
-                  variant="ghost" 
-                  size="sm"
+            <div className="space-y-12 animate-in fade-in duration-500">
+              <div className="flex items-center justify-between">
+                <button 
                   onClick={() => setCurrentStep(1)}
-                  className="text-blue-500 hover:text-blue-600"
+                  className="flex items-center text-blue-600 hover:text-blue-700 transition-colors duration-300 font-medium"
                 >
-                  <ArrowLeft className="w-4 h-4 mr-2" />
-                  Back
-                </Button>
+                  <ArrowLeft className="w-5 h-5 mr-2" />
+                  Back to Categories
+                </button>
               </div>
               
               <div>
-                <h1 className="text-4xl font-bold mb-4">{selectedCategory.name}</h1>
-                <p className="text-zinc-600 dark:text-zinc-400 text-lg">
-                  Choose the perfect model for your needs
+                <h1 className="text-5xl font-bold text-gray-900 mb-6 tracking-tight leading-tight">
+                  {selectedCategory.name}
+                </h1>
+                <p className="text-gray-600 text-xl leading-relaxed">
+                  Choose the perfect model for your specific requirements
                 </p>
               </div>
 
               <div className="space-y-4">
-                {models?.map((model) => (
-                  <Card 
+                {models?.map((model, index) => (
+                  <div
                     key={model.id}
-                    className={`cursor-pointer transition-all hover:shadow-lg border-2 ${
-                      selectedModel?.id === model.id 
-                        ? 'border-blue-500 bg-blue-50 dark:bg-blue-950' 
-                        : 'border-zinc-200 dark:border-zinc-700 hover:border-zinc-300 dark:hover:border-zinc-600'
-                    }`}
-                    onClick={() => handleModelSelect(model)}
+                    className="animate-in slide-in-from-right duration-500"
+                    style={{ animationDelay: `${index * 150}ms` }}
                   >
-                    <CardContent className="p-6">
+                    <button
+                      className={`w-full text-left p-6 rounded-2xl border-2 transition-all duration-300 hover:shadow-lg hover:scale-[1.02] active:scale-[0.98] ${
+                        selectedModel?.id === model.id 
+                          ? 'border-blue-500 bg-blue-50 shadow-lg' 
+                          : 'border-gray-200 hover:border-gray-300 bg-white'
+                      }`}
+                      onClick={() => handleModelSelect(model)}
+                    >
                       <div className="flex justify-between items-start">
                         <div className="flex-1">
-                          <h3 className="text-xl font-semibold mb-3">{model.name}</h3>
-                          <div className="grid grid-cols-2 gap-4 text-sm mb-4">
-                            <div>
-                              <span className="text-zinc-500">GVWR: </span>
-                              <span className="font-medium">{model.gvwr}</span>
+                          <h3 className="text-2xl font-semibold mb-4 text-gray-900">{model.name}</h3>
+                          <div className="grid grid-cols-2 gap-6 text-base mb-6">
+                            <div className="space-y-2">
+                              <div className="text-gray-500 text-sm font-medium uppercase tracking-wide">GVWR</div>
+                              <div className="font-semibold text-gray-900">{model.gvwr}</div>
                             </div>
-                            <div>
-                              <span className="text-zinc-500">Payload: </span>
-                              <span className="font-medium">{model.payload}</span>
+                            <div className="space-y-2">
+                              <div className="text-gray-500 text-sm font-medium uppercase tracking-wide">Payload</div>
+                              <div className="font-semibold text-gray-900">{model.payload}</div>
                             </div>
-                            <div>
-                              <span className="text-zinc-500">Deck: </span>
-                              <span className="font-medium">{model.deckSize}</span>
+                            <div className="space-y-2">
+                              <div className="text-gray-500 text-sm font-medium uppercase tracking-wide">Deck Size</div>
+                              <div className="font-semibold text-gray-900">{model.deckSize}</div>
                             </div>
-                            <div>
-                              <span className="text-zinc-500">Axles: </span>
-                              <span className="font-medium">{model.axles}</span>
+                            <div className="space-y-2">
+                              <div className="text-gray-500 text-sm font-medium uppercase tracking-wide">Axles</div>
+                              <div className="font-semibold text-gray-900">{model.axles}</div>
                             </div>
                           </div>
-                          <div className="text-lg font-semibold">${model.basePrice.toLocaleString()}</div>
+                          <div className="text-2xl font-bold text-blue-600">${model.basePrice.toLocaleString()}</div>
                         </div>
-                        <ArrowRight className="w-6 h-6 text-zinc-400 ml-4" />
+                        <ArrowRight className="w-6 h-6 text-gray-400 ml-6 transition-transform duration-300 group-hover:translate-x-1" />
                       </div>
-                    </CardContent>
-                  </Card>
+                    </button>
+                  </div>
                 ))}
               </div>
             </div>
@@ -493,6 +506,7 @@ Configuration Date: ${new Date().toLocaleDateString()}
               </div>
             </div>
           )}
+          </div>
         </div>
       </div>
     </div>
