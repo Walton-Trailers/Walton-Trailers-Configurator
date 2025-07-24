@@ -2,7 +2,7 @@
 
 ## Overview
 
-This is a Tesla-style trailer configurator application for Walton Trailers, designed to provide a premium user experience for configuring and purchasing commercial trailers. The application features a modern, dark-themed UI with smooth animations and a step-by-step configuration process.
+This is a Tesla-style trailer configurator application for Walton Trailers, designed to provide a premium user experience for configuring and purchasing commercial trailers. The application features a modern, clean UI that directly mirrors Tesla's Model 3 configurator layout with a left image panel and right configuration panel. The design uses Tesla's signature minimalist aesthetic with clean typography, subtle borders, and precise spacing.
 
 ## User Preferences
 
@@ -92,3 +92,16 @@ The application uses TanStack Query for efficient data fetching and caching, wit
 4. Database schema pushed via `npm run db:push`
 
 The application is designed to be deployed on platforms like Replit, with specific configurations for development tooling and runtime error handling in the Replit environment.
+
+## Recent Changes
+
+### July 24, 2025 - Tesla-Style Layout Redesign
+- **Complete UI Overhaul**: Redesigned the entire configurator to match Tesla's Model 3 configurator layout exactly
+- **Split-Screen Layout**: Implemented left image panel (50% width) with right configuration panel (50% width) 
+- **Tesla Design Language**: Updated colors, typography, and spacing to match Tesla's clean aesthetic
+- **Single Page Flow**: Consolidated all configurator steps into one page with step-by-step content switching
+- **Modern Header**: Implemented Tesla-style fixed header with progress indicators and pricing display
+- **Clean Cards**: Redesigned all selection cards with Tesla's signature minimal border and hover effects
+- **Light Mode Default**: Changed from dark industrial theme to Tesla's clean white aesthetic
+- **Streamlined Code**: Simplified the configurator to use a single component instead of multiple separate components
+- **Real-time Updates**: Enhanced image switching and price calculations with smooth transitions
