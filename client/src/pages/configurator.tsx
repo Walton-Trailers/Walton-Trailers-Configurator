@@ -186,8 +186,8 @@ Configuration Date: ${new Date().toLocaleDateString()}
       {/* Tesla-style Main Layout */}
       <div className="pt-20 min-h-screen">
         {/* Left Panel - Image (Fixed) */}
-        <div className="fixed left-0 top-20 w-1/2 h-[calc(100vh-5rem)] flex items-center justify-center overflow-hidden z-10 bg-[#ffffff]">
-          <div className="relative w-full h-full max-w-3xl max-h-[70vh] mx-auto my-auto p-8">
+        <div className="fixed left-0 top-20 w-[65%] h-[calc(100vh-5rem)] flex items-center justify-center overflow-hidden z-10 bg-gray-50">
+          <div className="relative w-full h-full max-w-5xl max-h-[80vh] mx-auto my-auto p-8">
             <img 
               src={currentTrailerImage}
               alt="Trailer"
@@ -197,8 +197,8 @@ Configuration Date: ${new Date().toLocaleDateString()}
         </div>
 
         {/* Right Panel - Configuration (Scrollable) */}
-        <div className="ml-[50%] w-1/2 bg-white min-h-screen">
-          <div className="max-w-xl mx-auto py-12 px-8">
+        <div className="ml-[65%] w-[35%] bg-white min-h-screen">
+          <div className="max-w-lg mx-auto py-12 px-6">
           {/* Step 1: Category Selection */}
           {currentStep === 1 && (
             <div className="space-y-12 animate-in fade-in duration-500">
