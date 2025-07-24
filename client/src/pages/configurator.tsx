@@ -185,9 +185,9 @@ Configuration Date: ${new Date().toLocaleDateString()}
       </header>
 
       {/* Tesla-style Main Layout */}
-      <div className="pt-20 min-h-screen flex">
-        {/* Left Panel - Image */}
-        <div className="w-1/2 h-screen sticky top-20 bg-gray-50 flex items-center justify-center overflow-hidden">
+      <div className="pt-20 min-h-screen">
+        {/* Left Panel - Image (Fixed) */}
+        <div className="fixed left-0 top-20 w-1/2 h-[calc(100vh-5rem)] bg-gray-50 flex items-center justify-center overflow-hidden z-10">
           <div className="relative w-full h-full max-w-3xl max-h-[70vh] mx-auto my-auto p-8">
             <img 
               src={currentTrailerImage}
@@ -197,8 +197,8 @@ Configuration Date: ${new Date().toLocaleDateString()}
           </div>
         </div>
 
-        {/* Right Panel - Configuration */}
-        <div className="w-1/2 bg-white overflow-y-auto">
+        {/* Right Panel - Configuration (Scrollable) */}
+        <div className="ml-[50%] w-1/2 bg-white min-h-screen">
           <div className="max-w-xl mx-auto py-12 px-8">
           {/* Step 1: Category Selection */}
           {currentStep === 1 && (
