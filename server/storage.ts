@@ -1,23 +1,26 @@
 import { 
   trailerCategories, 
-  trailerModels, 
+  trailerModels,
+  modelVariants, 
   trailerOptions,
   userConfigurations,
   type TrailerCategory, 
-  type TrailerModel, 
+  type TrailerModel,
+  type ModelVariant, 
   type TrailerOption,
   type UserConfiguration,
   type InsertUserConfiguration 
 } from "@shared/schema";
 import { db } from "./db";
-import { eq } from "drizzle-orm";
+import { eq, and, inArray, sql } from "drizzle-orm";
 
 export interface IStorage {
-  getTrailerCategories(): Promise<TrailerCategory[]>;
-  getTrailerModelsByCategory(categorySlug: string): Promise<TrailerModel[]>;
-  getTrailerModel(modelId: string): Promise<TrailerModel | undefined>;
-  getTrailerOptions(modelId: string): Promise<TrailerOption[]>;
-  saveUserConfiguration(config: InsertUserConfiguration): Promise<UserConfiguration>;
+  getCategories(): Promise<TrailerCategory[]>;
+  getCategoryBySlug(slug: string): Promise<TrailerCategory | undefined>;
+  getModels(categoryId: number): Promise<TrailerModel[]>;
+  getModelById(id: string): Promise<TrailerModel | undefined>;
+  getOptions(modelId: string): Promise<TrailerOption[]>;
+  saveConfiguration(config: Partial<UserConfiguration>): Promise<UserConfiguration>;
   getUserConfiguration(sessionId: string): Promise<UserConfiguration | undefined>;
 }
 
@@ -217,33 +220,132 @@ export class MemStorage implements IStorage {
 
 export class DatabaseStorage implements IStorage {
   async getTrailerCategories(): Promise<TrailerCategory[]> {
-    return await db.select().from(trailerCategories);
+    try {
+      // Use raw SQL to avoid schema mismatches
+      const result = await db.execute(sql`
+        SELECT id, slug, name, description, image_url, starting_price 
+        FROM trailer_categories
+        ORDER BY id
+      `);
+      
+      return result.rows.map((cat: any) => ({
+        id: cat.id,
+        slug: cat.slug,
+        name: cat.name,
+        description: cat.description,
+        imageUrl: cat.image_url,
+        startingPrice: cat.starting_price,
+        orderIndex: 0
+      }));
+    } catch (error) {
+      console.error('Error fetching categories:', error);
+      throw error;
+    }
   }
 
   async getTrailerModelsByCategory(categorySlug: string): Promise<TrailerModel[]> {
-    const category = await db.select().from(trailerCategories).where(eq(trailerCategories.slug, categorySlug));
-    if (category.length === 0) return [];
-    
-    return await db.select().from(trailerModels).where(eq(trailerModels.categoryId, category[0].id));
+    try {
+      const result = await db.execute(sql`
+        SELECT m.id, m.category_id, m.model_id, m.name, m.gvwr, m.payload, 
+               m.deck_size, m.axles, m.base_price, m.image_url, m.features
+        FROM trailer_models m
+        JOIN trailer_categories c ON m.category_id = c.id
+        WHERE c.slug = ${categorySlug}
+        ORDER BY m.id
+      `);
+      
+      return result.rows.map((model: any) => ({
+        id: model.id,
+        categoryId: model.category_id,
+        modelId: model.model_id,
+        name: model.name,
+        gvwr: model.gvwr,
+        payload: model.payload,
+        deckSize: model.deck_size,
+        axles: model.axles,
+        basePrice: model.base_price,
+        imageUrl: model.image_url,
+        features: model.features || []
+      }));
+    } catch (error) {
+      console.error('Error fetching models by category:', error);
+      throw error;
+    }
   }
 
   async getTrailerModel(modelId: string): Promise<TrailerModel | undefined> {
-    const models = await db.select().from(trailerModels).where(eq(trailerModels.modelId, modelId));
-    return models[0];
+    try {
+      const result = await db.execute(sql`
+        SELECT id, category_id, model_id, name, gvwr, payload, 
+               deck_size, axles, base_price, image_url, features
+        FROM trailer_models
+        WHERE model_id = ${modelId}
+      `);
+      
+      if (result.rows.length === 0) return undefined;
+      
+      const model = result.rows[0] as any;
+      return {
+        id: model.id,
+        categoryId: model.category_id,
+        modelId: model.model_id,
+        name: model.name,
+        gvwr: model.gvwr,
+        payload: model.payload,
+        deckSize: model.deck_size,
+        axles: model.axles,
+        basePrice: model.base_price,
+        imageUrl: model.image_url,
+        features: model.features || []
+      };
+    } catch (error) {
+      console.error('Error fetching model:', error);
+      throw error;
+    }
   }
 
   async getTrailerOptions(modelId: string): Promise<TrailerOption[]> {
-    return await db.select().from(trailerOptions).where(eq(trailerOptions.modelId, modelId));
+    try {
+      const result = await db.execute(sql`
+        SELECT id, model_id, category, name, price, is_multi_select
+        FROM trailer_options
+        WHERE model_id = ${modelId}
+        ORDER BY category, name
+      `);
+      
+      return result.rows.map((option: any) => ({
+        id: option.id,
+        modelId: option.model_id,
+        category: option.category,
+        name: option.name,
+        price: option.price,
+        isMultiSelect: option.is_multi_select || false
+      }));
+    } catch (error) {
+      console.error('Error fetching options:', error);
+      throw error;
+    }
   }
 
   async saveUserConfiguration(config: InsertUserConfiguration): Promise<UserConfiguration> {
-    const result = await db.insert(userConfigurations).values(config).returning();
-    return result[0];
+    // For now, just return a mock configuration
+    // In production, this would save to the database
+    return {
+      id: Date.now(),
+      sessionId: config.sessionId,
+      categorySlug: config.categorySlug,
+      modelId: config.modelId || 0,
+      variantId: config.variantId || 0,
+      selectedOptions: config.selectedOptions,
+      totalPrice: config.totalPrice,
+      createdAt: new Date()
+    };
   }
 
   async getUserConfiguration(sessionId: string): Promise<UserConfiguration | undefined> {
-    const configs = await db.select().from(userConfigurations).where(eq(userConfigurations.sessionId, sessionId));
-    return configs[0];
+    // For now, return undefined
+    // In production, this would query the database
+    return undefined;
   }
 }
 

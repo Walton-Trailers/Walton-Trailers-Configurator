@@ -9,7 +9,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const categories = await storage.getTrailerCategories();
       res.json(categories);
     } catch (error) {
-      res.status(500).json({ message: "Failed to fetch categories" });
+      console.error("Error in /api/categories:", error);
+      res.status(500).json({ message: "Failed to fetch categories", error: error instanceof Error ? error.message : String(error) });
     }
   });
 

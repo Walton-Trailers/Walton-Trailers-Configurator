@@ -1,4 +1,4 @@
-import { pgTable, text, serial, integer, boolean, json } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, integer, boolean, json, numeric, timestamp } from "drizzle-orm/pg-core";
 import { relations } from "drizzle-orm";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
@@ -11,31 +11,58 @@ export const trailerCategories = pgTable("trailer_categories", {
   description: text("description").notNull(),
   imageUrl: text("image_url").notNull(),
   startingPrice: integer("starting_price").notNull(),
+  orderIndex: integer("order_index").default(0),
 });
 
-// Trailer Models
+// Trailer Models - represents model series (e.g., DHV207, FBH208)
 export const trailerModels = pgTable("trailer_models", {
   id: serial("id").primaryKey(),
   categoryId: integer("category_id").notNull(),
-  modelId: text("model_id").notNull().unique(),
+  modelSeries: text("model_series").notNull(), // e.g., DHV207, FBH208
   name: text("name").notNull(),
-  gvwr: text("gvwr").notNull(),
-  payload: text("payload").notNull(),
-  deckSize: text("deck_size").notNull(),
-  axles: text("axles").notNull(),
-  basePrice: integer("base_price").notNull(),
+  pullType: text("pull_type"), // 'bumper', 'gooseneck', 'both'
+  gvwrRange: text("gvwr_range"), // e.g., "14,000 - 15,500"
+  deckHeight: text("deck_height"),
+  overallWidth: text("overall_width"),
+  lengthRange: text("length_range"), // e.g., "14 - 16'"
   imageUrl: text("image_url").notNull(),
-  features: json("features").$type<string[]>().notNull(),
+  standardFeatures: json("standard_features").$type<string[]>().notNull(),
+  orderIndex: integer("order_index").default(0),
 });
 
-// Trailer Options
+// Model Variants - specific configurations (e.g., DHV207-14B)
+export const modelVariants = pgTable("model_variants", {
+  id: serial("id").primaryKey(),
+  modelId: integer("model_id").notNull(),
+  variantCode: text("variant_code").notNull().unique(), // e.g., DHV207-14B
+  tracCode: text("trac_code").notNull(),
+  length: text("length").notNull(),
+  pullType: text("pull_type").notNull(), // 'B' for bumper, 'G' for gooseneck, 'P' for pintle
+  msrp: integer("msrp").notNull(),
+  gvwr: integer("gvwr").notNull(),
+  gawr: text("gawr"), // e.g., "7,000 (2)"
+  emptyWeight: integer("empty_weight"),
+  payload: integer("payload"),
+  bedSize: text("bed_size"),
+  overallSize: text("overall_size"),
+  capacity: text("capacity"), // cubic yards for dump trailers
+  orderIndex: integer("order_index").default(0),
+});
+
+// Trailer Options - now includes TRAC codes and categories
 export const trailerOptions = pgTable("trailer_options", {
   id: serial("id").primaryKey(),
-  modelId: text("model_id").notNull(),
-  category: text("category").notNull(), // tires, ramps, color, extras, etc.
+  optionCategory: text("option_category").notNull(), // e.g., 'Tire Options', 'Jack Options', 'Wall Height Options'
+  optionType: text("option_type").notNull(), // e.g., 'tire_standard', 'tire_upgrade', 'jack_hydraulic'
   name: text("name").notNull(),
+  description: text("description"),
+  tracCode: text("trac_code"),
   price: integer("price").notNull(),
-  isMultiSelect: boolean("is_multi_select").default(false),
+  priceUnit: text("price_unit"), // null for fixed price, 'ft' for per foot pricing
+  imageUrl: text("image_url"),
+  isDefault: boolean("is_default").default(false),
+  applicableModels: json("applicable_models").$type<string[]>(), // which model series this applies to
+  orderIndex: integer("order_index").default(0),
 });
 
 // User Configurations (for saving)
@@ -43,25 +70,36 @@ export const userConfigurations = pgTable("user_configurations", {
   id: serial("id").primaryKey(),
   sessionId: text("session_id").notNull(),
   categorySlug: text("category_slug").notNull(),
-  modelId: text("model_id").notNull(),
+  modelId: integer("model_id").notNull(),
+  variantId: integer("variant_id").notNull(),
   selectedOptions: json("selected_options").$type<Record<string, any>>().notNull(),
   totalPrice: integer("total_price").notNull(),
-  createdAt: text("created_at").notNull(),
+  notes: text("notes"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
 });
 
 // Insert schemas
-export const insertTrailerCategorySchema = createInsertSchema(trailerCategories);
-export const insertTrailerModelSchema = createInsertSchema(trailerModels);
-export const insertTrailerOptionSchema = createInsertSchema(trailerOptions);
+export const insertTrailerCategorySchema = createInsertSchema(trailerCategories).omit({ id: true });
+export const insertTrailerModelSchema = createInsertSchema(trailerModels).omit({ id: true });
+export const insertModelVariantSchema = createInsertSchema(modelVariants).omit({ id: true });
+export const insertTrailerOptionSchema = createInsertSchema(trailerOptions).omit({ id: true });
 export const insertUserConfigurationSchema = createInsertSchema(userConfigurations).omit({
   id: true,
+  createdAt: true,
+  updatedAt: true,
 });
 
 // Types
 export type TrailerCategory = typeof trailerCategories.$inferSelect;
 export type TrailerModel = typeof trailerModels.$inferSelect;
+export type ModelVariant = typeof modelVariants.$inferSelect;
 export type TrailerOption = typeof trailerOptions.$inferSelect;
 export type UserConfiguration = typeof userConfigurations.$inferSelect;
+export type InsertTrailerCategory = z.infer<typeof insertTrailerCategorySchema>;
+export type InsertTrailerModel = z.infer<typeof insertTrailerModelSchema>;
+export type InsertModelVariant = z.infer<typeof insertModelVariantSchema>;
+export type InsertTrailerOption = z.infer<typeof insertTrailerOptionSchema>;
 export type InsertUserConfiguration = z.infer<typeof insertUserConfigurationSchema>;
 
 // Relations
@@ -74,20 +112,24 @@ export const trailerModelsRelations = relations(trailerModels, ({ one, many }) =
     fields: [trailerModels.categoryId],
     references: [trailerCategories.id],
   }),
-  options: many(trailerOptions),
+  variants: many(modelVariants),
   configurations: many(userConfigurations),
 }));
 
-export const trailerOptionsRelations = relations(trailerOptions, ({ one }) => ({
+export const modelVariantsRelations = relations(modelVariants, ({ one }) => ({
   model: one(trailerModels, {
-    fields: [trailerOptions.modelId],
-    references: [trailerModels.modelId],
+    fields: [modelVariants.modelId],
+    references: [trailerModels.id],
   }),
 }));
 
 export const userConfigurationsRelations = relations(userConfigurations, ({ one }) => ({
   model: one(trailerModels, {
     fields: [userConfigurations.modelId],
-    references: [trailerModels.modelId],
+    references: [trailerModels.id],
+  }),
+  variant: one(modelVariants, {
+    fields: [userConfigurations.variantId],
+    references: [modelVariants.id],
   }),
 }));
