@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { ArrowLeft, Edit, Save, X, DollarSign } from "lucide-react";
+import { useState, useMemo } from "react";
+import { ArrowLeft, Edit, Save, X, DollarSign, Search } from "lucide-react";
 import { Link } from "wouter";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
@@ -40,6 +40,7 @@ export default function PricingManagement() {
   const [editingModel, setEditingModel] = useState<TrailerModel | null>(null);
   const [editingOption, setEditingOption] = useState<TrailerOption | null>(null);
   const [editData, setEditData] = useState<{ [key: number]: any }>({});
+  const [searchQuery, setSearchQuery] = useState("");
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -145,6 +146,32 @@ export default function PricingManagement() {
     });
   };
 
+  // Filter options based on search query
+  const filteredOptions = useMemo(() => {
+    if (!options || !searchQuery.trim()) return options;
+    
+    const query = searchQuery.toLowerCase();
+    return options.filter((option: TrailerOption) => 
+      option.category.toLowerCase().includes(query) ||
+      option.name.toLowerCase().includes(query) ||
+      option.modelId.toLowerCase().includes(query) ||
+      option.price.toString().includes(query)
+    );
+  }, [options, searchQuery]);
+
+  // Filter models based on search query
+  const filteredModels = useMemo(() => {
+    if (!models || !searchQuery.trim()) return models;
+    
+    const query = searchQuery.toLowerCase();
+    return models.filter((model: TrailerModel) => 
+      model.name.toLowerCase().includes(query) ||
+      model.modelId.toLowerCase().includes(query) ||
+      model.basePrice.toString().includes(query) ||
+      model.gvwr.toString().includes(query)
+    );
+  }, [models, searchQuery]);
+
   if (authLoading) {
     return <div>Loading...</div>;
   }
@@ -176,16 +203,27 @@ export default function PricingManagement() {
         </div>
 
         <Tabs defaultValue="models" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="models" className="flex items-center gap-2">
-              <DollarSign className="w-4 h-4" />
-              Trailer Model Pricing
-            </TabsTrigger>
-            <TabsTrigger value="options" className="flex items-center gap-2">
-              <Edit className="w-4 h-4" />
-              Options & Add-ons
-            </TabsTrigger>
-          </TabsList>
+          <div className="flex items-center justify-between mb-6">
+            <TabsList className="grid w-full max-w-[400px] grid-cols-2">
+              <TabsTrigger value="models" className="flex items-center gap-2">
+                <DollarSign className="w-4 h-4" />
+                Trailer Model Pricing
+              </TabsTrigger>
+              <TabsTrigger value="options" className="flex items-center gap-2">
+                <Edit className="w-4 h-4" />
+                Options & Add-ons
+              </TabsTrigger>
+            </TabsList>
+            <div className="relative w-64">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+              <Input
+                placeholder="Search..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-10"
+              />
+            </div>
+          </div>
 
           <TabsContent value="models">
             <Card>
@@ -198,7 +236,7 @@ export default function PricingManagement() {
               <CardContent>
                 {modelsLoading ? (
                   <div className="text-center py-8">Loading models...</div>
-                ) : models && models.length > 0 ? (
+                ) : filteredModels && filteredModels.length > 0 ? (
                   <Table>
                     <TableHeader>
                       <TableRow>
@@ -212,7 +250,7 @@ export default function PricingManagement() {
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {models.map((model: TrailerModel) => (
+                      {filteredModels.map((model: TrailerModel) => (
                         <TableRow key={model.id}>
                           <TableCell className="font-medium">
                             {model.modelId}
@@ -299,7 +337,7 @@ export default function PricingManagement() {
               <CardContent>
                 {optionsLoading ? (
                   <div className="text-center py-8">Loading options...</div>
-                ) : options && options.length > 0 ? (
+                ) : filteredOptions && filteredOptions.length > 0 ? (
                   <Table>
                     <TableHeader>
                       <TableRow>
@@ -311,7 +349,7 @@ export default function PricingManagement() {
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {options.map((option: TrailerOption) => (
+                      {filteredOptions.map((option: TrailerOption) => (
                         <TableRow key={option.id}>
                           <TableCell className="font-medium">
                             {editingOption?.id === option.id ? (
