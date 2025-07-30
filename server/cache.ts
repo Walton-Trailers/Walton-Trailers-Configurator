@@ -21,6 +21,7 @@ class FastCache {
 
   clear(): void {
     this.cache.clear();
+    console.log('🗑️ Cache cleared - dynamic pricing updated');
   }
 
   // Auto-cleanup expired entries every 5 minutes

@@ -29,7 +29,7 @@ export class FastStorage {
       startingPrice: cat.starting_price
     }));
     
-    cache.set('categories', categories, 300000); // 5 min cache for dynamic pricing
+    cache.set('categories', categories, 60000); // 1 min cache for faster dynamic pricing updates
     return categories;
   }
 
