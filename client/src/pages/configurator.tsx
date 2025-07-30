@@ -673,8 +673,8 @@ Configuration Date: ${new Date().toLocaleDateString()}
         )}
       </div>
       
-      {/* Fixed Employee Portal Button - Bottom Right */}
-      <div className="fixed bottom-4 right-4 z-40">
+      {/* Fixed Employee Portal Button - Left Side */}
+      <div className="fixed left-4 bottom-4 z-40">
         <Link href="/admin/login">
           <Button
             variant="ghost"
