@@ -651,7 +651,7 @@ export class DatabaseStorage implements IStorage {
       }));
     } catch (error) {
       console.error('Error fetching all models:', error);
-      throw new Error(`Failed to fetch models: ${error.message}`);
+      throw new Error(`Failed to fetch models: ${(error as Error).message}`);
     }
   }
 
@@ -681,31 +681,56 @@ export class DatabaseStorage implements IStorage {
 
   async updateModel(id: number, updates: any): Promise<TrailerModelResponse> {
     try {
-      let result;
-      
+      // Use individual SQL statements for each field to avoid parameter issues
       if (updates.basePrice !== undefined) {
-        result = await db.execute(sql`
+        await db.execute(sql`
           UPDATE trailer_models 
           SET base_price = ${updates.basePrice}
           WHERE id = ${id}
-          RETURNING id, category_id, model_id, name, gvwr, payload,
-                    deck_size, axles, base_price, image_url, features
         `);
-      } else if (updates.name !== undefined) {
-        result = await db.execute(sql`
+      }
+      if (updates.name !== undefined) {
+        await db.execute(sql`
           UPDATE trailer_models 
           SET name = ${updates.name}
           WHERE id = ${id}
-          RETURNING id, category_id, model_id, name, gvwr, payload,
-                    deck_size, axles, base_price, image_url, features
-        `);
-      } else {
-        result = await db.execute(sql`
-          SELECT id, category_id, model_id, name, gvwr, payload,
-                 deck_size, axles, base_price, image_url, features
-          FROM trailer_models WHERE id = ${id}
         `);
       }
+      if (updates.modelId !== undefined) {
+        await db.execute(sql`
+          UPDATE trailer_models 
+          SET model_id = ${updates.modelId}
+          WHERE id = ${id}
+        `);
+      }
+      if (updates.gvwr !== undefined) {
+        await db.execute(sql`
+          UPDATE trailer_models 
+          SET gvwr = ${updates.gvwr}
+          WHERE id = ${id}
+        `);
+      }
+      if (updates.payload !== undefined) {
+        await db.execute(sql`
+          UPDATE trailer_models 
+          SET payload = ${updates.payload}
+          WHERE id = ${id}
+        `);
+      }
+      if (updates.deckSize !== undefined) {
+        await db.execute(sql`
+          UPDATE trailer_models 
+          SET deck_size = ${updates.deckSize}
+          WHERE id = ${id}
+        `);
+      }
+      
+      // Get the updated record
+      const result = await db.execute(sql`
+        SELECT id, category_id, model_id, name, gvwr, payload,
+               deck_size, axles, base_price, image_url, features
+        FROM trailer_models WHERE id = ${id}
+      `);
       
       const model = result.rows[0] as any;
       return {
@@ -720,6 +745,21 @@ export class DatabaseStorage implements IStorage {
         basePrice: model.base_price,
         imageUrl: model.image_url,
         features: model.features || [],
+      };
+      
+      const updatedModel = result.rows[0] as any;
+      return {
+        id: updatedModel.id,
+        categoryId: updatedModel.category_id,
+        modelId: updatedModel.model_id,
+        name: updatedModel.name,
+        gvwr: updatedModel.gvwr,
+        payload: updatedModel.payload,
+        deckSize: updatedModel.deck_size,
+        axles: updatedModel.axles,
+        basePrice: updatedModel.base_price,
+        imageUrl: updatedModel.image_url,
+        features: updatedModel.features || [],
       };
     } catch (error) {
       console.error('Error updating model:', error);
@@ -776,16 +816,15 @@ export class DatabaseStorage implements IStorage {
         FROM trailer_options WHERE id = ${id}
       `);
       
-      const option = result.rows[0] as any;
+      const updatedOption = result.rows[0] as any;
       return {
-        id: option.id,
-        modelId: option.model_id,
-        name: option.name,
-        description: option.name,
-        category: option.category,
-        price: option.price,
+        id: updatedOption.id,
+        modelId: updatedOption.model_id,
+        name: updatedOption.name,
+        category: updatedOption.category,
+        price: updatedOption.price,
         isRequired: false,
-        isMultiSelect: option.is_multi_select || false,
+        isMultiSelect: updatedOption.is_multi_select || false,
         options: [],
       };
     } catch (error) {

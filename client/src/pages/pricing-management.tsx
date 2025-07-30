@@ -75,10 +75,17 @@ export default function PricingManagement() {
 
   // Update model mutation
   const updateModelMutation = useMutation({
-    mutationFn: (data: { id: number; basePrice: number; name: string }) =>
+    mutationFn: (data: { id: number; basePrice?: number; name?: string; modelId?: string; gvwr?: string; payload?: string; deckSize?: string }) =>
       apiRequest(`/api/models/${data.id}`, {
         method: "PATCH",
-        body: { basePrice: data.basePrice, name: data.name },
+        body: { 
+          basePrice: data.basePrice, 
+          name: data.name, 
+          modelId: data.modelId, 
+          gvwr: data.gvwr, 
+          payload: data.payload, 
+          deckSize: data.deckSize 
+        },
         headers: sessionId ? { Authorization: `Bearer ${sessionId}` } : {},
       }),
     onSuccess: () => {
@@ -131,8 +138,16 @@ export default function PricingManagement() {
   });
 
   const handleModelPriceUpdate = (model: TrailerModel) => {
-    const newPrice = editData[model.id]?.basePrice || model.basePrice;
-    updateModelMutation.mutate({ id: model.id, basePrice: newPrice, name: model.name });
+    const data = editData[model.id] || {};
+    updateModelMutation.mutate({
+      id: model.id,
+      basePrice: data.basePrice !== undefined ? data.basePrice : model.basePrice,
+      name: data.name !== undefined ? data.name : model.name,
+      modelId: data.modelId !== undefined ? data.modelId : model.modelId,
+      gvwr: data.gvwr !== undefined ? data.gvwr : model.gvwr,
+      payload: data.payload !== undefined ? data.payload : model.payload,
+      deckSize: data.deckSize !== undefined ? data.deckSize : model.deckSize,
+    });
   };
 
   const handleOptionUpdate = (option: TrailerOption) => {
@@ -253,12 +268,75 @@ export default function PricingManagement() {
                       {filteredModels.map((model: TrailerModel) => (
                         <TableRow key={model.id}>
                           <TableCell className="font-medium">
-                            {model.modelId}
+                            {editingModel?.id === model.id ? (
+                              <Input
+                                value={editData[model.id]?.modelId ?? model.modelId}
+                                onChange={(e) => setEditData(prev => ({
+                                  ...prev,
+                                  [model.id]: { ...prev[model.id], modelId: e.target.value }
+                                }))}
+                                className="w-24"
+                              />
+                            ) : (
+                              model.modelId
+                            )}
                           </TableCell>
-                          <TableCell>{model.name}</TableCell>
-                          <TableCell>{model.gvwr}</TableCell>
-                          <TableCell>{model.payload}</TableCell>
-                          <TableCell>{model.deckSize}</TableCell>
+                          <TableCell>
+                            {editingModel?.id === model.id ? (
+                              <Input
+                                value={editData[model.id]?.name ?? model.name}
+                                onChange={(e) => setEditData(prev => ({
+                                  ...prev,
+                                  [model.id]: { ...prev[model.id], name: e.target.value }
+                                }))}
+                                className="w-48"
+                              />
+                            ) : (
+                              model.name
+                            )}
+                          </TableCell>
+                          <TableCell>
+                            {editingModel?.id === model.id ? (
+                              <Input
+                                value={editData[model.id]?.gvwr ?? model.gvwr}
+                                onChange={(e) => setEditData(prev => ({
+                                  ...prev,
+                                  [model.id]: { ...prev[model.id], gvwr: e.target.value }
+                                }))}
+                                className="w-32"
+                              />
+                            ) : (
+                              model.gvwr
+                            )}
+                          </TableCell>
+                          <TableCell>
+                            {editingModel?.id === model.id ? (
+                              <Input
+                                value={editData[model.id]?.payload ?? model.payload}
+                                onChange={(e) => setEditData(prev => ({
+                                  ...prev,
+                                  [model.id]: { ...prev[model.id], payload: e.target.value }
+                                }))}
+                                className="w-32"
+                              />
+                            ) : (
+                              model.payload
+                            )}
+                          </TableCell>
+                          <TableCell>
+                            {editingModel?.id === model.id ? (
+                              <Input
+                                value={editData[model.id]?.deckSize ?? model.deckSize}
+                                onChange={(e) => setEditData(prev => ({
+                                  ...prev,
+                                  [model.id]: { ...prev[model.id], deckSize: e.target.value }
+                                }))}
+                                className="w-32"
+                              />
+                            ) : (
+                              model.deckSize
+                            )}
+                          </TableCell>
                           <TableCell>
                             {editingModel?.id === model.id ? (
                               <Input
@@ -306,7 +384,14 @@ export default function PricingManagement() {
                                 variant="outline"
                                 onClick={() => {
                                   setEditingModel(model);
-                                  setEditData({ [model.id]: { basePrice: model.basePrice } });
+                                  setEditData({ [model.id]: { 
+                                    basePrice: model.basePrice,
+                                    name: model.name,
+                                    modelId: model.modelId,
+                                    gvwr: model.gvwr,
+                                    payload: model.payload,
+                                    deckSize: model.deckSize
+                                  } });
                                 }}
                               >
                                 <Edit className="w-4 h-4" />
