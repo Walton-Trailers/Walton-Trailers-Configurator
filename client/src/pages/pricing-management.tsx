@@ -24,6 +24,7 @@ interface TrailerModel {
   basePrice: number;
   imageUrl: string;
   features: string[];
+  categoryName: string;
 }
 
 interface TrailerOption {
@@ -183,7 +184,8 @@ export default function PricingManagement() {
       model.name.toLowerCase().includes(query) ||
       model.modelId.toLowerCase().includes(query) ||
       model.basePrice.toString().includes(query) ||
-      model.gvwr.toString().includes(query)
+      model.gvwr.toString().includes(query) ||
+      model.categoryName.toLowerCase().includes(query)
     );
   }, [models, searchQuery]);
 
@@ -257,6 +259,7 @@ export default function PricingManagement() {
                       <TableRow>
                         <TableHead>Model ID</TableHead>
                         <TableHead>Model Name</TableHead>
+                        <TableHead>Category</TableHead>
                         <TableHead>GVWR</TableHead>
                         <TableHead>Payload</TableHead>
                         <TableHead>Deck Size</TableHead>
@@ -294,6 +297,9 @@ export default function PricingManagement() {
                             ) : (
                               model.name
                             )}
+                          </TableCell>
+                          <TableCell>
+                            <span className="text-sm text-gray-600">{model.categoryName}</span>
                           </TableCell>
                           <TableCell>
                             {editingModel?.id === model.id ? (

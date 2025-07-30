@@ -32,6 +32,7 @@ export interface TrailerModelResponse {
   basePrice: number;
   imageUrl: string;
   features: string[];
+  categoryName?: string;
 }
 
 export interface TrailerOptionResponse {
@@ -628,10 +629,12 @@ export class DatabaseStorage implements IStorage {
   async getAllModels(): Promise<TrailerModelResponse[]> {
     try {
       const result = await db.execute(sql`
-        SELECT id, category_id, model_id, name, gvwr, payload,
-               deck_size, axles, base_price, image_url, features
-        FROM trailer_models
-        ORDER BY id
+        SELECT m.id, m.category_id, m.model_id, m.name, m.gvwr, m.payload,
+               m.deck_size, m.axles, m.base_price, m.image_url, m.features,
+               c.name as category_name
+        FROM trailer_models m
+        JOIN trailer_categories c ON m.category_id = c.id
+        ORDER BY c.name, m.id
       `);
       
       console.log('Raw models result:', result.rows.length);
@@ -648,6 +651,7 @@ export class DatabaseStorage implements IStorage {
         basePrice: model.base_price,
         imageUrl: model.image_url,
         features: model.features || [],
+        categoryName: model.category_name,
       }));
     } catch (error) {
       console.error('Error fetching all models:', error);
