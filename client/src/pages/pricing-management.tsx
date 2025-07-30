@@ -38,6 +38,7 @@ interface TrailerOption {
   price: number;
   category: string;
   description?: string;
+  isArchived?: boolean;
 }
 
 export default function PricingManagement() {
@@ -47,6 +48,7 @@ export default function PricingManagement() {
   const [editData, setEditData] = useState<{ [key: number]: any }>({});
   const [searchQuery, setSearchQuery] = useState("");
   const [showAddOption, setShowAddOption] = useState(false);
+  const [showArchivedOptions, setShowArchivedOptions] = useState(false);
   const [newOptionData, setNewOptionData] = useState({
     name: "",
     price: 0,
@@ -132,14 +134,15 @@ export default function PricingManagement() {
 
   // Update option mutation
   const updateOptionMutation = useMutation({
-    mutationFn: (data: { id: number; price?: number; name?: string; category?: string; modelId?: string }) =>
+    mutationFn: (data: { id: number; price?: number; name?: string; category?: string; modelId?: string; isArchived?: boolean }) =>
       apiRequest(`/api/options/${data.id}`, {
         method: "PATCH",
         body: { 
           price: data.price, 
           name: data.name, 
           category: data.category, 
-          modelId: data.modelId 
+          modelId: data.modelId,
+          isArchived: data.isArchived
         },
         headers: sessionId ? { Authorization: `Bearer ${sessionId}` } : {},
       }),
@@ -265,16 +268,25 @@ export default function PricingManagement() {
 
   // Filter options based on search query
   const filteredOptions = useMemo(() => {
-    if (!options || !searchQuery.trim()) return options;
+    if (!options || !searchQuery.trim()) {
+      return options?.filter((option: TrailerOption) => !option.isArchived) || [];
+    }
     
     const query = searchQuery.toLowerCase();
     return options.filter((option: TrailerOption) => 
-      option.category.toLowerCase().includes(query) ||
-      option.name.toLowerCase().includes(query) ||
-      option.modelId.toLowerCase().includes(query) ||
-      option.price.toString().includes(query)
+      !option.isArchived && (
+        option.category.toLowerCase().includes(query) ||
+        option.name.toLowerCase().includes(query) ||
+        option.modelId.toLowerCase().includes(query) ||
+        option.price.toString().includes(query)
+      )
     );
   }, [options, searchQuery]);
+
+  // Filter archived options
+  const archivedOptions = useMemo(() => {
+    return options?.filter((option: TrailerOption) => option.isArchived) || [];
+  }, [options]);
 
   // Filter models based on search query
   const filteredModels = useMemo(() => {
@@ -810,6 +822,88 @@ export default function PricingManagement() {
                   </div>
                 )}
               </CardContent>
+            </Card>
+
+            {/* Archived Options Table */}
+            <Card className="mt-6">
+              <CardHeader 
+                className="cursor-pointer" 
+                onClick={() => setShowArchivedOptions(!showArchivedOptions)}
+              >
+                <div className="flex items-center justify-between">
+                  <div>
+                    <CardTitle className="text-lg">Archived Options ({archivedOptions.length})</CardTitle>
+                    <CardDescription>
+                      View and restore archived trailer options
+                    </CardDescription>
+                  </div>
+                  <ChevronDown className={`h-5 w-5 transition-transform ${showArchivedOptions ? 'rotate-180' : ''}`} />
+                </div>
+              </CardHeader>
+              {showArchivedOptions && (
+                <CardContent>
+                  {archivedOptions.length > 0 ? (
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Category</TableHead>
+                          <TableHead>Option Name</TableHead>
+                          <TableHead>Model</TableHead>
+                          <TableHead>Price</TableHead>
+                          <TableHead>Actions</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {archivedOptions.map((option: TrailerOption) => (
+                          <TableRow key={option.id} className="opacity-60">
+                            <TableCell className="font-medium">{option.category}</TableCell>
+                            <TableCell>{option.name}</TableCell>
+                            <TableCell>{option.modelId}</TableCell>
+                            <TableCell>${option.price?.toLocaleString()}</TableCell>
+                            <TableCell>
+                              <div className="flex gap-2">
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => {
+                                    // Restore option - remove archive status
+                                    updateOptionMutation.mutate({ 
+                                      id: option.id, 
+                                      isArchived: false 
+                                    });
+                                  }}
+                                  title="Restore option"
+                                  className="text-green-600 hover:text-green-700"
+                                >
+                                  Restore
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => {
+                                    if (confirm('Are you sure you want to permanently delete this archived option? This action cannot be undone.')) {
+                                      deleteOptionMutation.mutate(option.id);
+                                    }
+                                  }}
+                                  disabled={deleteOptionMutation.isPending}
+                                  title="Delete option permanently"
+                                  className="text-red-600 hover:text-red-700"
+                                >
+                                  <Trash2 className="w-4 h-4" />
+                                </Button>
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  ) : (
+                    <div className="text-center py-8 text-gray-500">
+                      No archived options found
+                    </div>
+                  )}
+                </CardContent>
+              )}
             </Card>
           </TabsContent>
         </Tabs>
