@@ -36,6 +36,13 @@ export default function AdminLogin() {
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
+  // Check if already logged in
+  const sessionId = localStorage.getItem("admin_session");
+  if (sessionId) {
+    setLocation("/admin");
+    return null;
+  }
+
   const form = useForm<LoginForm>({
     resolver: zodResolver(loginSchema),
     defaultValues: {
