@@ -565,27 +565,6 @@ export default function PricingManagement() {
                                 >
                                   <X className="w-4 h-4" />
                                 </Button>
-                              </div>
-                            ) : (
-                              <div className="flex gap-2">
-                                <Button
-                                  size="sm"
-                                  variant="outline"
-                                  onClick={() => {
-                                    setEditingModel(model);
-                                    setEditData({ [model.id]: { 
-                                      basePrice: model.basePrice,
-                                      name: model.name,
-                                      modelId: model.modelId,
-                                      gvwr: model.gvwr,
-                                      payload: model.payload,
-                                      deckSize: model.deckSize,
-                                      categoryId: model.categoryId
-                                    } });
-                                  }}
-                                >
-                                  <Edit className="w-4 h-4" />
-                                </Button>
                                 <Button
                                   size="sm"
                                   variant="outline"
@@ -596,6 +575,25 @@ export default function PricingManagement() {
                                   <Archive className="w-4 h-4" />
                                 </Button>
                               </div>
+                            ) : (
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => {
+                                  setEditingModel(model);
+                                  setEditData({ [model.id]: { 
+                                    basePrice: model.basePrice,
+                                    name: model.name,
+                                    modelId: model.modelId,
+                                    gvwr: model.gvwr,
+                                    payload: model.payload,
+                                    deckSize: model.deckSize,
+                                    categoryId: model.categoryId
+                                  } });
+                                }}
+                              >
+                                <Edit className="w-4 h-4" />
+                              </Button>
                             )}
                           </TableCell>
                         </TableRow>
