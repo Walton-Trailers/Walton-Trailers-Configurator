@@ -674,14 +674,14 @@ Configuration Date: ${new Date().toLocaleDateString()}
       </div>
       
       {/* Fixed Employee Portal Button - Bottom Right */}
-      <div className="fixed bottom-6 right-6 z-40">
+      <div className="fixed bottom-4 right-4 z-40">
         <Link href="/admin/login">
           <Button
             variant="ghost"
             size="sm"
-            className="bg-white/80 backdrop-blur-sm hover:bg-white border border-gray-200 hover:border-gray-300 shadow-lg text-gray-600 hover:text-gray-900 transition-all duration-300"
+            className="bg-white/20 backdrop-blur-sm hover:bg-white/40 border-0 hover:border-gray-200 text-gray-400 hover:text-gray-600 transition-all duration-500 text-xs px-3 py-1.5 opacity-60 hover:opacity-100"
           >
-            <Users className="w-4 h-4 mr-2" />
+            <Users className="w-3 h-3 mr-1.5" />
             Employees
           </Button>
         </Link>
