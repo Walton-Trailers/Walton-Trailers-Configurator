@@ -193,7 +193,7 @@ export default function AdminDashboard() {
 
         <Tabs defaultValue="overview" className="space-y-6">
           <TabsList>
-            <TabsTrigger value="overview">Overview</TabsTrigger>
+            <TabsTrigger value="overview">Account</TabsTrigger>
             {isAdmin && <TabsTrigger value="users">Users</TabsTrigger>}
             <TabsTrigger value="trailers">Trailers</TabsTrigger>
           </TabsList>
