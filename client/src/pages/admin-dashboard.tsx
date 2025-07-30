@@ -58,7 +58,7 @@ export default function AdminDashboard() {
           Authorization: `Bearer ${sessionId}`,
         },
       }),
-    enabled: isAdmin && !!sessionId,
+    enabled: !!user && user.role === "admin" && !!sessionId,
   });
 
   const createUserMutation = useMutation({

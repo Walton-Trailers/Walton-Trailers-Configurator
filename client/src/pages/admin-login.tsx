@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -37,11 +37,12 @@ export default function AdminLogin() {
   const [isLoading, setIsLoading] = useState(false);
 
   // Check if already logged in
-  const sessionId = localStorage.getItem("admin_session");
-  if (sessionId) {
-    setLocation("/admin");
-    return null;
-  }
+  useEffect(() => {
+    const sessionId = localStorage.getItem("admin_session");
+    if (sessionId) {
+      setLocation("/admin");
+    }
+  }, [setLocation]);
 
   const form = useForm<LoginForm>({
     resolver: zodResolver(loginSchema),
