@@ -90,10 +90,8 @@ export interface IStorage {
   // Pricing management operations
   getAllModels(): Promise<TrailerModelResponse[]>;
   getAllOptions(): Promise<TrailerOptionResponse[]>;
-  getAllVariants(): Promise<any[]>;
   updateModel(id: number, updates: any): Promise<TrailerModelResponse>;
   updateOption(id: number, updates: any): Promise<TrailerOptionResponse>;
-  updateVariant(id: number, updates: any): Promise<any>;
 }
 
 export class MemStorage implements IStorage {
@@ -354,10 +352,7 @@ export class MemStorage implements IStorage {
     return Array.from(this.options.values()).flat();
   }
 
-  async getAllVariants(): Promise<any[]> {
-    // Memory storage doesn't have variants
-    return [];
-  }
+
 
   async updateModel(id: number, updates: any): Promise<TrailerModelResponse> {
     const model = Array.from(this.models.values()).find(m => m.id === id);
@@ -383,9 +378,7 @@ export class MemStorage implements IStorage {
     throw new Error('Option not found');
   }
 
-  async updateVariant(id: number, updates: any): Promise<any> {
-    throw new Error('Variant operations not supported in memory storage');
-  }
+
 }
 
 export class DatabaseStorage implements IStorage {
@@ -635,9 +628,8 @@ export class DatabaseStorage implements IStorage {
   async getAllModels(): Promise<TrailerModelResponse[]> {
     try {
       const result = await db.execute(sql`
-        SELECT id, category_id, model_series, name, 
-               pull_type, gvwr_range, deck_height, overall_width,
-               length_range, image_url, standard_features, order_index
+        SELECT id, category_id, model_id, name, gvwr, payload,
+               deck_size, axles, base_price, image_url, features
         FROM trailer_models
         ORDER BY id
       `);
@@ -645,15 +637,15 @@ export class DatabaseStorage implements IStorage {
       return result.rows.map((model: any) => ({
         id: model.id,
         categoryId: model.category_id,
-        modelId: model.model_series,
+        modelId: model.model_id,
         name: model.name,
-        gvwr: model.gvwr_range,
-        payload: null,
-        deckSize: model.deck_height,
-        axles: null,
-        basePrice: 0, // Base price not in this table, will need variants
+        gvwr: model.gvwr,
+        payload: model.payload,
+        deckSize: model.deck_size,
+        axles: model.axles,
+        basePrice: model.base_price,
         imageUrl: model.image_url,
-        features: model.standard_features || [],
+        features: model.features || [],
         description: model.name,
       }));
     } catch (error) {
@@ -665,22 +657,20 @@ export class DatabaseStorage implements IStorage {
   async getAllOptions(): Promise<TrailerOptionResponse[]> {
     try {
       const result = await db.execute(sql`
-        SELECT id, option_category, option_type, name, description, 
-               trac_code, price, price_unit, image_url, is_default,
-               applicable_models, order_index
+        SELECT id, model_id, category, name, price, is_multi_select
         FROM trailer_options
-        ORDER BY option_category, name
+        ORDER BY category, name
       `);
       
       return result.rows.map((option: any) => ({
         id: option.id,
-        modelId: option.applicable_models?.[0] || '',
+        modelId: option.model_id,
         name: option.name,
-        description: option.description || '',
-        category: option.option_category,
+        description: option.name,
+        category: option.category,
         price: option.price,
         isRequired: false,
-        options: option.applicable_models || [],
+        options: [],
       }));
     } catch (error) {
       console.error('Error fetching all options:', error);
@@ -688,14 +678,19 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
-  async updateModel(id: number, updates: Partial<Pick<TrailerModelResponse, 'basePrice' | 'description'>>): Promise<TrailerModelResponse> {
+  async updateModel(id: number, updates: any): Promise<TrailerModelResponse> {
     try {
       const updateFields: string[] = [];
       const values: any[] = [];
       
-      if (updates.description !== undefined) {
+      if (updates.basePrice !== undefined) {
+        updateFields.push('base_price = $' + (values.length + 1));
+        values.push(updates.basePrice);
+      }
+      
+      if (updates.name !== undefined) {
         updateFields.push('name = $' + (values.length + 1));
-        values.push(updates.description);
+        values.push(updates.name);
       }
       
       values.push(id);
@@ -704,23 +699,23 @@ export class DatabaseStorage implements IStorage {
         UPDATE trailer_models 
         SET ${updateFields.join(', ')}
         WHERE id = $${values.length}
-        RETURNING id, category_id, model_series, name,
-                  image_url, standard_features
+        RETURNING id, category_id, model_id, name, gvwr, payload,
+                  deck_size, axles, base_price, image_url, features
       `, values));
       
       const model = result.rows[0] as any;
       return {
         id: model.id,
         categoryId: model.category_id,
-        modelId: model.model_series,
+        modelId: model.model_id,
         name: model.name,
-        gvwr: null,
-        payload: null,
-        deckSize: null,
-        axles: null,
-        basePrice: 0,
+        gvwr: model.gvwr,
+        payload: model.payload,
+        deckSize: model.deck_size,
+        axles: model.axles,
+        basePrice: model.base_price,
         imageUrl: model.image_url,
-        features: model.standard_features || [],
+        features: model.features || [],
         description: model.name,
       };
     } catch (error) {
@@ -729,7 +724,7 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
-  async updateOption(id: number, updates: Partial<Pick<TrailerOptionResponse, 'price' | 'description'>>): Promise<TrailerOptionResponse> {
+  async updateOption(id: number, updates: any): Promise<TrailerOptionResponse> {
     try {
       const updateFields: string[] = [];
       const values: any[] = [];
@@ -739,9 +734,9 @@ export class DatabaseStorage implements IStorage {
         values.push(updates.price);
       }
       
-      if (updates.description !== undefined) {
-        updateFields.push('description = $' + (values.length + 1));
-        values.push(updates.description);
+      if (updates.name !== undefined) {
+        updateFields.push('name = $' + (values.length + 1));
+        values.push(updates.name);
       }
       
       values.push(id);
@@ -750,19 +745,19 @@ export class DatabaseStorage implements IStorage {
         UPDATE trailer_options 
         SET ${updateFields.join(', ')}
         WHERE id = $${values.length}
-        RETURNING id, option_category, name, description, price, applicable_models
+        RETURNING id, model_id, category, name, price, is_multi_select
       `, values));
       
       const option = result.rows[0] as any;
       return {
         id: option.id,
-        modelId: option.applicable_models?.[0] || '',
+        modelId: option.model_id,
         name: option.name,
-        description: option.description || '',
-        category: option.option_category,
+        description: option.name,
+        category: option.category,
         price: option.price,
         isRequired: false,
-        options: option.applicable_models || [],
+        options: [],
       };
     } catch (error) {
       console.error('Error updating option:', error);
@@ -770,72 +765,7 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
-  async getAllVariants(): Promise<any[]> {
-    try {
-      const result = await db.execute(sql`
-        SELECT v.id, v.model_id, v.variant_code, v.trac_code, v.length,
-               v.pull_type, v.msrp, v.gvwr, v.gawr, v.empty_weight,
-               v.payload, v.bed_size, v.overall_size, v.capacity,
-               m.model_series, m.name as model_name
-        FROM model_variants v
-        JOIN trailer_models m ON v.model_id = m.id
-        ORDER BY m.model_series, v.variant_code
-      `);
-      
-      return result.rows.map((variant: any) => ({
-        id: variant.id,
-        modelId: variant.model_id,
-        variantCode: variant.variant_code,
-        tracCode: variant.trac_code,
-        length: variant.length,
-        pullType: variant.pull_type,
-        msrp: variant.msrp,
-        gvwr: variant.gvwr,
-        gawr: variant.gawr,
-        emptyWeight: variant.empty_weight,
-        payload: variant.payload,
-        bedSize: variant.bed_size,
-        overallSize: variant.overall_size,
-        capacity: variant.capacity,
-        modelSeries: variant.model_series,
-        modelName: variant.model_name,
-      }));
-    } catch (error) {
-      console.error('Error fetching all variants:', error);
-      throw error;
-    }
-  }
 
-  async updateVariant(id: number, updates: any): Promise<any> {
-    try {
-      const updateFields: string[] = [];
-      const values: any[] = [];
-      
-      if (updates.msrp !== undefined) {
-        updateFields.push('msrp = $' + (values.length + 1));
-        values.push(updates.msrp);
-      }
-      
-      if (updates.length !== undefined) {
-        updateFields.push('length = $' + (values.length + 1));
-        values.push(updates.length);
-      }
-      
-      values.push(id);
-      
-      const result = await db.execute(sql.raw(`
-        UPDATE model_variants 
-        SET ${updateFields.join(', ')}
-        WHERE id = $${values.length}
-        RETURNING id, variant_code, msrp, length
-      `, values));
-      
-      return result.rows[0];
-    } catch (error) {
-      console.error('Error updating variant:', error);
-      throw error;
-    }
-  }
 }
 
 // Use database storage in production, fallback to memory for development

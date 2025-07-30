@@ -11,15 +11,18 @@ import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { useAdminAuth } from "@/hooks/useAdminAuth";
 
-interface TrailerVariant {
+interface TrailerModel {
   id: number;
-  variantCode: string;
-  modelSeries: string;
-  modelName: string;
-  msrp: number;
-  length: string;
-  pullType: string;
-  gvwr: number;
+  categoryId: number;
+  modelId: string;
+  name: string;
+  gvwr: string;
+  payload: string;
+  deckSize: string;
+  axles: string;
+  basePrice: number;
+  imageUrl: string;
+  features: string[];
 }
 
 interface TrailerOption {
@@ -32,7 +35,7 @@ interface TrailerOption {
 
 export default function PricingManagement() {
   const { user, isLoading: authLoading } = useAdminAuth();
-  const [editingVariant, setEditingVariant] = useState<TrailerVariant | null>(null);
+  const [editingModel, setEditingModel] = useState<TrailerModel | null>(null);
   const [editingOption, setEditingOption] = useState<TrailerOption | null>(null);
   const [editPrices, setEditPrices] = useState<{ [key: number]: number }>({});
   const { toast } = useToast();
@@ -40,11 +43,11 @@ export default function PricingManagement() {
 
   const sessionId = localStorage.getItem("admin_session");
 
-  // Fetch all variants (these have the pricing data)
-  const { data: variants, isLoading: variantsLoading } = useQuery({
-    queryKey: ["/api/variants/all"],
+  // Fetch all models
+  const { data: models, isLoading: modelsLoading } = useQuery({
+    queryKey: ["/api/models/all"],
     queryFn: () =>
-      apiRequest("/api/variants/all", {
+      apiRequest("/api/models/all", {
         headers: sessionId ? { Authorization: `Bearer ${sessionId}` } : {},
       }),
   });
@@ -58,27 +61,27 @@ export default function PricingManagement() {
       }),
   });
 
-  // Update variant mutation
-  const updateVariantMutation = useMutation({
-    mutationFn: (data: { id: number; msrp: number }) =>
-      apiRequest(`/api/variants/${data.id}`, {
+  // Update model mutation
+  const updateModelMutation = useMutation({
+    mutationFn: (data: { id: number; basePrice: number; name: string }) =>
+      apiRequest(`/api/models/${data.id}`, {
         method: "PATCH",
-        body: { msrp: data.msrp },
+        body: { basePrice: data.basePrice, name: data.name },
         headers: sessionId ? { Authorization: `Bearer ${sessionId}` } : {},
       }),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/variants/all"] });
-      setEditingVariant(null);
+      queryClient.invalidateQueries({ queryKey: ["/api/models/all"] });
+      setEditingModel(null);
       setEditPrices({});
       toast({
         title: "Success",
-        description: "Variant pricing updated successfully",
+        description: "Model pricing updated successfully",
       });
     },
     onError: (error: any) => {
       toast({
         title: "Error",
-        description: error.message || "Failed to update variant",
+        description: error.message || "Failed to update model",
         variant: "destructive",
       });
     },
@@ -86,10 +89,10 @@ export default function PricingManagement() {
 
   // Update option mutation
   const updateOptionMutation = useMutation({
-    mutationFn: (data: { id: number; price: number; description?: string }) =>
+    mutationFn: (data: { id: number; price: number; name: string }) =>
       apiRequest(`/api/options/${data.id}`, {
         method: "PATCH",
-        body: { price: data.price, description: data.description },
+        body: { price: data.price, name: data.name },
         headers: sessionId ? { Authorization: `Bearer ${sessionId}` } : {},
       }),
     onSuccess: () => {
@@ -110,9 +113,9 @@ export default function PricingManagement() {
     },
   });
 
-  const handleVariantPriceUpdate = (variant: TrailerVariant) => {
-    const newPrice = editPrices[variant.id] || variant.msrp;
-    updateVariantMutation.mutate({ id: variant.id, msrp: newPrice });
+  const handleModelPriceUpdate = (model: TrailerModel) => {
+    const newPrice = editPrices[model.id] || model.basePrice;
+    updateModelMutation.mutate({ id: model.id, basePrice: newPrice, name: model.name });
   };
 
   const handleOptionPriceUpdate = (option: TrailerOption) => {
@@ -120,7 +123,7 @@ export default function PricingManagement() {
     updateOptionMutation.mutate({ 
       id: option.id, 
       price: newPrice, 
-      description: option.description 
+      name: option.name
     });
   };
 
@@ -154,9 +157,9 @@ export default function PricingManagement() {
           </div>
         </div>
 
-        <Tabs defaultValue="variants" className="space-y-6">
+        <Tabs defaultValue="models" className="space-y-6">
           <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="variants" className="flex items-center gap-2">
+            <TabsTrigger value="models" className="flex items-center gap-2">
               <DollarSign className="w-4 h-4" />
               Trailer Model Pricing
             </TabsTrigger>
@@ -166,64 +169,64 @@ export default function PricingManagement() {
             </TabsTrigger>
           </TabsList>
 
-          <TabsContent value="variants">
+          <TabsContent value="models">
             <Card>
               <CardHeader>
                 <CardTitle>Trailer Model Pricing</CardTitle>
                 <CardDescription>
-                  Update base pricing for all trailer model variants
+                  Update base pricing for all trailer models
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                {variantsLoading ? (
-                  <div className="text-center py-8">Loading variants...</div>
-                ) : variants && variants.length > 0 ? (
+                {modelsLoading ? (
+                  <div className="text-center py-8">Loading models...</div>
+                ) : models && models.length > 0 ? (
                   <Table>
                     <TableHeader>
                       <TableRow>
-                        <TableHead>Model Series</TableHead>
-                        <TableHead>Variant Code</TableHead>
-                        <TableHead>Length</TableHead>
-                        <TableHead>Pull Type</TableHead>
+                        <TableHead>Model ID</TableHead>
+                        <TableHead>Model Name</TableHead>
                         <TableHead>GVWR</TableHead>
-                        <TableHead>Current MSRP</TableHead>
+                        <TableHead>Payload</TableHead>
+                        <TableHead>Deck Size</TableHead>
+                        <TableHead>Current Base Price</TableHead>
                         <TableHead>Actions</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {variants.map((variant: TrailerVariant) => (
-                        <TableRow key={variant.id}>
+                      {models.map((model: TrailerModel) => (
+                        <TableRow key={model.id}>
                           <TableCell className="font-medium">
-                            {variant.modelSeries}
+                            {model.modelId}
                           </TableCell>
-                          <TableCell>{variant.variantCode}</TableCell>
-                          <TableCell>{variant.length}</TableCell>
-                          <TableCell>{variant.pullType}</TableCell>
-                          <TableCell>{variant.gvwr?.toLocaleString()}</TableCell>
+                          <TableCell>{model.name}</TableCell>
+                          <TableCell>{model.gvwr}</TableCell>
+                          <TableCell>{model.payload}</TableCell>
+                          <TableCell>{model.deckSize}</TableCell>
                           <TableCell>
-                            {editingVariant?.id === variant.id ? (
+                            {editingModel?.id === model.id ? (
                               <Input
                                 type="number"
-                                value={editPrices[variant.id] || variant.msrp}
+                                value={editPrices[model.id] || model.basePrice}
                                 onChange={(e) =>
                                   setEditPrices({
                                     ...editPrices,
-                                    [variant.id]: parseInt(e.target.value) || 0,
+                                    [model.id]: parseInt(e.target.value) || 0,
                                   })
                                 }
-                                className="w-24"
+                                className="w-32"
                               />
                             ) : (
-                              `$${variant.msrp?.toLocaleString()}`
+                              `$${model.basePrice?.toLocaleString()}`
                             )}
                           </TableCell>
                           <TableCell>
-                            {editingVariant?.id === variant.id ? (
+                            {editingModel?.id === model.id ? (
                               <div className="flex gap-2">
                                 <Button
                                   size="sm"
-                                  onClick={() => handleVariantPriceUpdate(variant)}
-                                  disabled={updateVariantMutation.isPending}
+                                  onClick={() => handleModelPriceUpdate(model)}
+                                  disabled={updateModelMutation.isPending}
                                 >
                                   <Save className="w-4 h-4" />
                                 </Button>
@@ -231,7 +234,7 @@ export default function PricingManagement() {
                                   size="sm"
                                   variant="outline"
                                   onClick={() => {
-                                    setEditingVariant(null);
+                                    setEditingModel(null);
                                     setEditPrices({});
                                   }}
                                 >
@@ -243,8 +246,8 @@ export default function PricingManagement() {
                                 size="sm"
                                 variant="outline"
                                 onClick={() => {
-                                  setEditingVariant(variant);
-                                  setEditPrices({ [variant.id]: variant.msrp });
+                                  setEditingModel(model);
+                                  setEditPrices({ [model.id]: model.basePrice });
                                 }}
                               >
                                 <Edit className="w-4 h-4" />
@@ -257,7 +260,7 @@ export default function PricingManagement() {
                   </Table>
                 ) : (
                   <div className="text-center py-8 text-gray-500">
-                    No trailer variants found
+                    No trailer models found
                   </div>
                 )}
               </CardContent>
@@ -294,7 +297,7 @@ export default function PricingManagement() {
                           </TableCell>
                           <TableCell>{option.name}</TableCell>
                           <TableCell className="max-w-xs truncate">
-                            {option.description || "No description"}
+                            Model: {option.modelId}
                           </TableCell>
                           <TableCell>
                             {editingOption?.id === option.id ? (
@@ -307,7 +310,7 @@ export default function PricingManagement() {
                                     [option.id]: parseInt(e.target.value) || 0,
                                   })
                                 }
-                                className="w-24"
+                                className="w-32"
                               />
                             ) : (
                               `$${option.price?.toLocaleString()}`
