@@ -90,8 +90,10 @@ export interface IStorage {
   // Pricing management operations
   getAllModels(): Promise<TrailerModelResponse[]>;
   getAllOptions(): Promise<TrailerOptionResponse[]>;
-  updateModel(id: number, updates: Partial<Pick<TrailerModelResponse, 'basePrice' | 'description'>>): Promise<TrailerModelResponse>;
-  updateOption(id: number, updates: Partial<Pick<TrailerOptionResponse, 'price' | 'description'>>): Promise<TrailerOptionResponse>;
+  getAllVariants(): Promise<any[]>;
+  updateModel(id: number, updates: any): Promise<TrailerModelResponse>;
+  updateOption(id: number, updates: any): Promise<TrailerOptionResponse>;
+  updateVariant(id: number, updates: any): Promise<any>;
 }
 
 export class MemStorage implements IStorage {
@@ -352,7 +354,12 @@ export class MemStorage implements IStorage {
     return Array.from(this.options.values()).flat();
   }
 
-  async updateModel(id: number, updates: Partial<Pick<TrailerModelResponse, 'basePrice' | 'description'>>): Promise<TrailerModelResponse> {
+  async getAllVariants(): Promise<any[]> {
+    // Memory storage doesn't have variants
+    return [];
+  }
+
+  async updateModel(id: number, updates: any): Promise<TrailerModelResponse> {
     const model = Array.from(this.models.values()).find(m => m.id === id);
     if (!model) {
       throw new Error('Model not found');
@@ -363,8 +370,8 @@ export class MemStorage implements IStorage {
     return updatedModel;
   }
 
-  async updateOption(id: number, updates: Partial<Pick<TrailerOptionResponse, 'price' | 'description'>>): Promise<TrailerOptionResponse> {
-    for (const [modelId, options] of this.options.entries()) {
+  async updateOption(id: number, updates: any): Promise<TrailerOptionResponse> {
+    for (const [modelId, options] of Array.from(this.options.entries())) {
       const optionIndex = options.findIndex(o => o.id === id);
       if (optionIndex !== -1) {
         const updatedOption = { ...options[optionIndex], ...updates };
@@ -374,6 +381,10 @@ export class MemStorage implements IStorage {
       }
     }
     throw new Error('Option not found');
+  }
+
+  async updateVariant(id: number, updates: any): Promise<any> {
+    throw new Error('Variant operations not supported in memory storage');
   }
 }
 
@@ -622,47 +633,208 @@ export class DatabaseStorage implements IStorage {
 
   // Pricing management operations
   async getAllModels(): Promise<TrailerModelResponse[]> {
-    const models = await db.select().from(trailerModels);
-    return models.map(model => ({
-      ...model,
-      specifications: model.specifications || {},
-      features: model.features || [],
-    }));
+    try {
+      const result = await db.execute(sql`
+        SELECT id, category_id, model_series, name, 
+               pull_type, gvwr_range, deck_height, overall_width,
+               length_range, image_url, standard_features, order_index
+        FROM trailer_models
+        ORDER BY id
+      `);
+      
+      return result.rows.map((model: any) => ({
+        id: model.id,
+        categoryId: model.category_id,
+        modelId: model.model_series,
+        name: model.name,
+        gvwr: model.gvwr_range,
+        payload: null,
+        deckSize: model.deck_height,
+        axles: null,
+        basePrice: 0, // Base price not in this table, will need variants
+        imageUrl: model.image_url,
+        features: model.standard_features || [],
+        description: model.name,
+      }));
+    } catch (error) {
+      console.error('Error fetching all models:', error);
+      throw error;
+    }
   }
 
   async getAllOptions(): Promise<TrailerOptionResponse[]> {
-    const options = await db.select().from(trailerOptions);
-    return options.map(option => ({
-      ...option,
-      options: option.options || [],
-    }));
+    try {
+      const result = await db.execute(sql`
+        SELECT id, option_category, option_type, name, description, 
+               trac_code, price, price_unit, image_url, is_default,
+               applicable_models, order_index
+        FROM trailer_options
+        ORDER BY option_category, name
+      `);
+      
+      return result.rows.map((option: any) => ({
+        id: option.id,
+        modelId: option.applicable_models?.[0] || '',
+        name: option.name,
+        description: option.description || '',
+        category: option.option_category,
+        price: option.price,
+        isRequired: false,
+        options: option.applicable_models || [],
+      }));
+    } catch (error) {
+      console.error('Error fetching all options:', error);
+      throw error;
+    }
   }
 
   async updateModel(id: number, updates: Partial<Pick<TrailerModelResponse, 'basePrice' | 'description'>>): Promise<TrailerModelResponse> {
-    const [updatedModel] = await db
-      .update(trailerModels)
-      .set(updates)
-      .where(eq(trailerModels.id, id))
-      .returning();
-    
-    return {
-      ...updatedModel,
-      specifications: updatedModel.specifications || {},
-      features: updatedModel.features || [],
-    };
+    try {
+      const updateFields: string[] = [];
+      const values: any[] = [];
+      
+      if (updates.description !== undefined) {
+        updateFields.push('name = $' + (values.length + 1));
+        values.push(updates.description);
+      }
+      
+      values.push(id);
+      
+      const result = await db.execute(sql.raw(`
+        UPDATE trailer_models 
+        SET ${updateFields.join(', ')}
+        WHERE id = $${values.length}
+        RETURNING id, category_id, model_series, name,
+                  image_url, standard_features
+      `, values));
+      
+      const model = result.rows[0] as any;
+      return {
+        id: model.id,
+        categoryId: model.category_id,
+        modelId: model.model_series,
+        name: model.name,
+        gvwr: null,
+        payload: null,
+        deckSize: null,
+        axles: null,
+        basePrice: 0,
+        imageUrl: model.image_url,
+        features: model.standard_features || [],
+        description: model.name,
+      };
+    } catch (error) {
+      console.error('Error updating model:', error);
+      throw error;
+    }
   }
 
   async updateOption(id: number, updates: Partial<Pick<TrailerOptionResponse, 'price' | 'description'>>): Promise<TrailerOptionResponse> {
-    const [updatedOption] = await db
-      .update(trailerOptions)
-      .set(updates)
-      .where(eq(trailerOptions.id, id))
-      .returning();
-    
-    return {
-      ...updatedOption,
-      options: updatedOption.options || [],
-    };
+    try {
+      const updateFields: string[] = [];
+      const values: any[] = [];
+      
+      if (updates.price !== undefined) {
+        updateFields.push('price = $' + (values.length + 1));
+        values.push(updates.price);
+      }
+      
+      if (updates.description !== undefined) {
+        updateFields.push('description = $' + (values.length + 1));
+        values.push(updates.description);
+      }
+      
+      values.push(id);
+      
+      const result = await db.execute(sql.raw(`
+        UPDATE trailer_options 
+        SET ${updateFields.join(', ')}
+        WHERE id = $${values.length}
+        RETURNING id, option_category, name, description, price, applicable_models
+      `, values));
+      
+      const option = result.rows[0] as any;
+      return {
+        id: option.id,
+        modelId: option.applicable_models?.[0] || '',
+        name: option.name,
+        description: option.description || '',
+        category: option.option_category,
+        price: option.price,
+        isRequired: false,
+        options: option.applicable_models || [],
+      };
+    } catch (error) {
+      console.error('Error updating option:', error);
+      throw error;
+    }
+  }
+
+  async getAllVariants(): Promise<any[]> {
+    try {
+      const result = await db.execute(sql`
+        SELECT v.id, v.model_id, v.variant_code, v.trac_code, v.length,
+               v.pull_type, v.msrp, v.gvwr, v.gawr, v.empty_weight,
+               v.payload, v.bed_size, v.overall_size, v.capacity,
+               m.model_series, m.name as model_name
+        FROM model_variants v
+        JOIN trailer_models m ON v.model_id = m.id
+        ORDER BY m.model_series, v.variant_code
+      `);
+      
+      return result.rows.map((variant: any) => ({
+        id: variant.id,
+        modelId: variant.model_id,
+        variantCode: variant.variant_code,
+        tracCode: variant.trac_code,
+        length: variant.length,
+        pullType: variant.pull_type,
+        msrp: variant.msrp,
+        gvwr: variant.gvwr,
+        gawr: variant.gawr,
+        emptyWeight: variant.empty_weight,
+        payload: variant.payload,
+        bedSize: variant.bed_size,
+        overallSize: variant.overall_size,
+        capacity: variant.capacity,
+        modelSeries: variant.model_series,
+        modelName: variant.model_name,
+      }));
+    } catch (error) {
+      console.error('Error fetching all variants:', error);
+      throw error;
+    }
+  }
+
+  async updateVariant(id: number, updates: any): Promise<any> {
+    try {
+      const updateFields: string[] = [];
+      const values: any[] = [];
+      
+      if (updates.msrp !== undefined) {
+        updateFields.push('msrp = $' + (values.length + 1));
+        values.push(updates.msrp);
+      }
+      
+      if (updates.length !== undefined) {
+        updateFields.push('length = $' + (values.length + 1));
+        values.push(updates.length);
+      }
+      
+      values.push(id);
+      
+      const result = await db.execute(sql.raw(`
+        UPDATE model_variants 
+        SET ${updateFields.join(', ')}
+        WHERE id = $${values.length}
+        RETURNING id, variant_code, msrp, length
+      `, values));
+      
+      return result.rows[0];
+    } catch (error) {
+      console.error('Error updating variant:', error);
+      throw error;
+    }
   }
 }
 

@@ -1,69 +1,50 @@
 import { useState } from "react";
+import { ArrowLeft, Edit, Save, X, DollarSign } from "lucide-react";
+import { Link } from "wouter";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { apiRequest } from "@/lib/queryClient";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Badge } from "@/components/ui/badge";
-import { useAdminAuth } from "@/hooks/useAdminAuth";
-import { useLocation } from "wouter";
-import { apiRequest } from "@/lib/queryClient";
-import { ArrowLeft, Save, DollarSign, Edit, Package } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-// import { Textarea } from "@/components/ui/textarea";
+import { useAdminAuth } from "@/hooks/useAdminAuth";
 
-interface TrailerCategory {
+interface TrailerVariant {
   id: number;
-  slug: string;
-  name: string;
-  description: string;
-  image: string;
-}
-
-interface TrailerModel {
-  id: number;
-  categoryId: number;
+  variantCode: string;
   modelSeries: string;
-  description: string;
-  basePrice: number;
-  features: string[];
-  specifications: Record<string, any>;
-  image: string;
+  modelName: string;
+  msrp: number;
+  length: string;
+  pullType: string;
+  gvwr: number;
 }
 
 interface TrailerOption {
   id: number;
-  modelId: number;
   name: string;
-  description: string;
-  category: string;
   price: number;
-  isRequired: boolean;
-  options: string[];
+  category: string;
+  description?: string;
 }
 
 export default function PricingManagement() {
   const { user, isLoading: authLoading } = useAdminAuth();
-  const [, setLocation] = useLocation();
-  const [editingModel, setEditingModel] = useState<TrailerModel | null>(null);
+  const [editingVariant, setEditingVariant] = useState<TrailerVariant | null>(null);
   const [editingOption, setEditingOption] = useState<TrailerOption | null>(null);
+  const [editPrices, setEditPrices] = useState<{ [key: number]: number }>({});
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
   const sessionId = localStorage.getItem("admin_session");
 
-  // Fetch categories
-  const { data: categories, isLoading: categoriesLoading } = useQuery({
-    queryKey: ["/api/categories"],
-  });
-
-  // Fetch all models
-  const { data: models, isLoading: modelsLoading } = useQuery({
-    queryKey: ["/api/models/all"],
+  // Fetch all variants (these have the pricing data)
+  const { data: variants, isLoading: variantsLoading } = useQuery({
+    queryKey: ["/api/variants/all"],
     queryFn: () =>
-      apiRequest("/api/models/all", {
+      apiRequest("/api/variants/all", {
         headers: sessionId ? { Authorization: `Bearer ${sessionId}` } : {},
       }),
   });
@@ -77,26 +58,27 @@ export default function PricingManagement() {
       }),
   });
 
-  // Update model mutation
-  const updateModelMutation = useMutation({
-    mutationFn: (data: { id: number; basePrice: number; description: string }) =>
-      apiRequest(`/api/models/${data.id}`, {
+  // Update variant mutation
+  const updateVariantMutation = useMutation({
+    mutationFn: (data: { id: number; msrp: number }) =>
+      apiRequest(`/api/variants/${data.id}`, {
         method: "PATCH",
-        body: { basePrice: data.basePrice, description: data.description },
+        body: { msrp: data.msrp },
         headers: sessionId ? { Authorization: `Bearer ${sessionId}` } : {},
       }),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/models/all"] });
-      setEditingModel(null);
+      queryClient.invalidateQueries({ queryKey: ["/api/variants/all"] });
+      setEditingVariant(null);
+      setEditPrices({});
       toast({
         title: "Success",
-        description: "Model pricing updated successfully",
+        description: "Variant pricing updated successfully",
       });
     },
     onError: (error: any) => {
       toast({
         title: "Error",
-        description: error.message || "Failed to update model",
+        description: error.message || "Failed to update variant",
         variant: "destructive",
       });
     },
@@ -104,7 +86,7 @@ export default function PricingManagement() {
 
   // Update option mutation
   const updateOptionMutation = useMutation({
-    mutationFn: (data: { id: number; price: number; description: string }) =>
+    mutationFn: (data: { id: number; price: number; description?: string }) =>
       apiRequest(`/api/options/${data.id}`, {
         method: "PATCH",
         body: { price: data.price, description: data.description },
@@ -113,6 +95,7 @@ export default function PricingManagement() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/options/all"] });
       setEditingOption(null);
+      setEditPrices({});
       toast({
         title: "Success",
         description: "Option pricing updated successfully",
@@ -127,323 +110,257 @@ export default function PricingManagement() {
     },
   });
 
-  const handleUpdateModel = (data: { basePrice: number; description: string }) => {
-    if (editingModel) {
-      updateModelMutation.mutate({
-        id: editingModel.id,
-        basePrice: data.basePrice,
-        description: data.description,
-      });
-    }
+  const handleVariantPriceUpdate = (variant: TrailerVariant) => {
+    const newPrice = editPrices[variant.id] || variant.msrp;
+    updateVariantMutation.mutate({ id: variant.id, msrp: newPrice });
   };
 
-  const handleUpdateOption = (data: { price: number; description: string }) => {
-    if (editingOption) {
-      updateOptionMutation.mutate({
-        id: editingOption.id,
-        price: data.price,
-        description: data.description,
-      });
-    }
+  const handleOptionPriceUpdate = (option: TrailerOption) => {
+    const newPrice = editPrices[option.id] || option.price;
+    updateOptionMutation.mutate({ 
+      id: option.id, 
+      price: newPrice, 
+      description: option.description 
+    });
   };
 
-  // Show loading state while checking auth
   if (authLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 mx-auto"></div>
-          <p className="mt-2 text-gray-600">Loading...</p>
-        </div>
-      </div>
-    );
+    return <div>Loading...</div>;
   }
 
-  // Redirect to login if not authenticated
   if (!user) {
-    setLocation("/admin/login");
-    return null;
+    return <div>Please log in to access pricing management.</div>;
   }
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <header className="bg-white shadow-sm border-b">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
-            <div className="flex items-center space-x-4">
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => setLocation("/admin")}
-              >
+      <div className="container mx-auto px-4 py-6">
+        <div className="flex items-center justify-between mb-6">
+          <div className="flex items-center gap-3">
+            <Link href="/admin">
+              <Button variant="ghost" size="sm">
                 <ArrowLeft className="w-4 h-4 mr-2" />
                 Back to Dashboard
               </Button>
-              <div>
-                <h1 className="text-xl font-semibold text-gray-900">
-                  Pricing Management
-                </h1>
-                <p className="text-sm text-gray-600">
-                  Update trailer and option pricing
-                </p>
-              </div>
-            </div>
-            <div className="flex items-center space-x-2">
-              <Badge variant={user.role === "admin" ? "default" : "secondary"}>
-                {user.role}
-              </Badge>
-              <span className="text-sm text-gray-600">
-                {user.firstName || user.username}
-              </span>
+            </Link>
+            <div>
+              <h1 className="text-2xl font-bold text-gray-900">Pricing Management</h1>
+              <p className="text-gray-600">Update trailer and option pricing</p>
             </div>
           </div>
+          <div className="flex items-center gap-2 text-sm text-gray-600">
+            <span className="font-medium">{user.role}</span>
+            <span>{user.username}</span>
+          </div>
         </div>
-      </header>
 
-      {/* Main Content */}
-      <main className="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
-        <Tabs defaultValue="models" className="space-y-6">
-          <TabsList>
-            <TabsTrigger value="models">
-              <Package className="w-4 h-4 mr-2" />
-              Trailer Models
+        <Tabs defaultValue="variants" className="space-y-6">
+          <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="variants" className="flex items-center gap-2">
+              <DollarSign className="w-4 h-4" />
+              Trailer Model Pricing
             </TabsTrigger>
-            <TabsTrigger value="options">
-              <DollarSign className="w-4 h-4 mr-2" />
+            <TabsTrigger value="options" className="flex items-center gap-2">
+              <Edit className="w-4 h-4" />
               Options & Add-ons
             </TabsTrigger>
           </TabsList>
 
-          <TabsContent value="models" className="space-y-6">
+          <TabsContent value="variants">
             <Card>
               <CardHeader>
                 <CardTitle>Trailer Model Pricing</CardTitle>
                 <CardDescription>
-                  Update base pricing for all trailer models
+                  Update base pricing for all trailer model variants
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                {modelsLoading ? (
-                  <div className="text-center py-8">Loading models...</div>
+                {variantsLoading ? (
+                  <div className="text-center py-8">Loading variants...</div>
+                ) : variants && variants.length > 0 ? (
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Model Series</TableHead>
+                        <TableHead>Variant Code</TableHead>
+                        <TableHead>Length</TableHead>
+                        <TableHead>Pull Type</TableHead>
+                        <TableHead>GVWR</TableHead>
+                        <TableHead>Current MSRP</TableHead>
+                        <TableHead>Actions</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {variants.map((variant: TrailerVariant) => (
+                        <TableRow key={variant.id}>
+                          <TableCell className="font-medium">
+                            {variant.modelSeries}
+                          </TableCell>
+                          <TableCell>{variant.variantCode}</TableCell>
+                          <TableCell>{variant.length}</TableCell>
+                          <TableCell>{variant.pullType}</TableCell>
+                          <TableCell>{variant.gvwr?.toLocaleString()}</TableCell>
+                          <TableCell>
+                            {editingVariant?.id === variant.id ? (
+                              <Input
+                                type="number"
+                                value={editPrices[variant.id] || variant.msrp}
+                                onChange={(e) =>
+                                  setEditPrices({
+                                    ...editPrices,
+                                    [variant.id]: parseInt(e.target.value) || 0,
+                                  })
+                                }
+                                className="w-24"
+                              />
+                            ) : (
+                              `$${variant.msrp?.toLocaleString()}`
+                            )}
+                          </TableCell>
+                          <TableCell>
+                            {editingVariant?.id === variant.id ? (
+                              <div className="flex gap-2">
+                                <Button
+                                  size="sm"
+                                  onClick={() => handleVariantPriceUpdate(variant)}
+                                  disabled={updateVariantMutation.isPending}
+                                >
+                                  <Save className="w-4 h-4" />
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => {
+                                    setEditingVariant(null);
+                                    setEditPrices({});
+                                  }}
+                                >
+                                  <X className="w-4 h-4" />
+                                </Button>
+                              </div>
+                            ) : (
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => {
+                                  setEditingVariant(variant);
+                                  setEditPrices({ [variant.id]: variant.msrp });
+                                }}
+                              >
+                                <Edit className="w-4 h-4" />
+                              </Button>
+                            )}
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
                 ) : (
-                  <div className="space-y-4">
-                    {(models as TrailerModel[])?.map((model) => {
-                      const category = (categories as TrailerCategory[])?.find(
-                        (c) => c.id === model.categoryId
-                      );
-                      return (
-                        <div
-                          key={model.id}
-                          className="flex items-center justify-between p-4 border rounded-lg"
-                        >
-                          <div className="flex-1">
-                            <div className="flex items-center space-x-2">
-                              <h3 className="font-medium">{model.modelSeries}</h3>
-                              <Badge variant="outline">
-                                {category?.name || "Unknown"}
-                              </Badge>
-                            </div>
-                            <p className="text-sm text-gray-600 mt-1">
-                              {model.description}
-                            </p>
-                            <p className="text-lg font-semibold text-green-600 mt-2">
-                              ${model.basePrice?.toLocaleString() || "0"}
-                            </p>
-                          </div>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => setEditingModel(model)}
-                          >
-                            <Edit className="w-4 h-4 mr-2" />
-                            Edit Price
-                          </Button>
-                        </div>
-                      );
-                    })}
+                  <div className="text-center py-8 text-gray-500">
+                    No trailer variants found
                   </div>
                 )}
               </CardContent>
             </Card>
           </TabsContent>
 
-          <TabsContent value="options" className="space-y-6">
+          <TabsContent value="options">
             <Card>
               <CardHeader>
-                <CardTitle>Option Pricing</CardTitle>
+                <CardTitle>Options & Add-ons Pricing</CardTitle>
                 <CardDescription>
-                  Update pricing for trailer options and add-ons
+                  Update pricing for trailer options and accessories
                 </CardDescription>
               </CardHeader>
               <CardContent>
                 {optionsLoading ? (
                   <div className="text-center py-8">Loading options...</div>
-                ) : (
-                  <div className="space-y-4">
-                    {(options as TrailerOption[])?.map((option) => (
-                      <div
-                        key={option.id}
-                        className="flex items-center justify-between p-4 border rounded-lg"
-                      >
-                        <div className="flex-1">
-                          <div className="flex items-center space-x-2">
-                            <h3 className="font-medium">{option.name}</h3>
-                            <Badge variant="outline">{option.category}</Badge>
-                            {option.isRequired && (
-                              <Badge variant="destructive">Required</Badge>
+                ) : options && options.length > 0 ? (
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Category</TableHead>
+                        <TableHead>Option Name</TableHead>
+                        <TableHead>Description</TableHead>
+                        <TableHead>Current Price</TableHead>
+                        <TableHead>Actions</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {options.map((option: TrailerOption) => (
+                        <TableRow key={option.id}>
+                          <TableCell className="font-medium">
+                            {option.category}
+                          </TableCell>
+                          <TableCell>{option.name}</TableCell>
+                          <TableCell className="max-w-xs truncate">
+                            {option.description || "No description"}
+                          </TableCell>
+                          <TableCell>
+                            {editingOption?.id === option.id ? (
+                              <Input
+                                type="number"
+                                value={editPrices[option.id] || option.price}
+                                onChange={(e) =>
+                                  setEditPrices({
+                                    ...editPrices,
+                                    [option.id]: parseInt(e.target.value) || 0,
+                                  })
+                                }
+                                className="w-24"
+                              />
+                            ) : (
+                              `$${option.price?.toLocaleString()}`
                             )}
-                          </div>
-                          <p className="text-sm text-gray-600 mt-1">
-                            {option.description}
-                          </p>
-                          <p className="text-lg font-semibold text-green-600 mt-2">
-                            ${option.price?.toLocaleString() || "0"}
-                          </p>
-                        </div>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => setEditingOption(option)}
-                        >
-                          <Edit className="w-4 h-4 mr-2" />
-                          Edit Price
-                        </Button>
-                      </div>
-                    ))}
+                          </TableCell>
+                          <TableCell>
+                            {editingOption?.id === option.id ? (
+                              <div className="flex gap-2">
+                                <Button
+                                  size="sm"
+                                  onClick={() => handleOptionPriceUpdate(option)}
+                                  disabled={updateOptionMutation.isPending}
+                                >
+                                  <Save className="w-4 h-4" />
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => {
+                                    setEditingOption(null);
+                                    setEditPrices({});
+                                  }}
+                                >
+                                  <X className="w-4 h-4" />
+                                </Button>
+                              </div>
+                            ) : (
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => {
+                                  setEditingOption(option);
+                                  setEditPrices({ [option.id]: option.price });
+                                }}
+                              >
+                                <Edit className="w-4 h-4" />
+                              </Button>
+                            )}
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                ) : (
+                  <div className="text-center py-8 text-gray-500">
+                    No options found
                   </div>
                 )}
               </CardContent>
             </Card>
           </TabsContent>
         </Tabs>
-
-        {/* Edit Model Dialog */}
-        <Dialog open={!!editingModel} onOpenChange={() => setEditingModel(null)}>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Edit Model Pricing</DialogTitle>
-              <DialogDescription>
-                Update pricing and description for {editingModel?.modelSeries}
-              </DialogDescription>
-            </DialogHeader>
-
-            <form
-              onSubmit={(e) => {
-                e.preventDefault();
-                const formData = new FormData(e.currentTarget);
-                handleUpdateModel({
-                  basePrice: Number(formData.get("basePrice")),
-                  description: formData.get("description") as string,
-                });
-              }}
-              className="space-y-4"
-            >
-              <div className="space-y-2">
-                <Label htmlFor="basePrice">Base Price ($)</Label>
-                <Input
-                  id="basePrice"
-                  name="basePrice"
-                  type="number"
-                  min="0"
-                  step="0.01"
-                  defaultValue={editingModel?.basePrice || 0}
-                  required
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="description">Description</Label>
-                <textarea
-                  id="description"
-                  name="description"
-                  defaultValue={editingModel?.description || ""}
-                  placeholder="Enter model description"
-                  rows={3}
-                  className="flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                />
-              </div>
-
-              <div className="flex justify-end space-x-2">
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => setEditingModel(null)}
-                >
-                  Cancel
-                </Button>
-                <Button type="submit" disabled={updateModelMutation.isPending}>
-                  <Save className="w-4 h-4 mr-2" />
-                  {updateModelMutation.isPending ? "Saving..." : "Save Changes"}
-                </Button>
-              </div>
-            </form>
-          </DialogContent>
-        </Dialog>
-
-        {/* Edit Option Dialog */}
-        <Dialog open={!!editingOption} onOpenChange={() => setEditingOption(null)}>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Edit Option Pricing</DialogTitle>
-              <DialogDescription>
-                Update pricing and description for {editingOption?.name}
-              </DialogDescription>
-            </DialogHeader>
-
-            <form
-              onSubmit={(e) => {
-                e.preventDefault();
-                const formData = new FormData(e.currentTarget);
-                handleUpdateOption({
-                  price: Number(formData.get("price")),
-                  description: formData.get("description") as string,
-                });
-              }}
-              className="space-y-4"
-            >
-              <div className="space-y-2">
-                <Label htmlFor="price">Price ($)</Label>
-                <Input
-                  id="price"
-                  name="price"
-                  type="number"
-                  min="0"
-                  step="0.01"
-                  defaultValue={editingOption?.price || 0}
-                  required
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="description">Description</Label>
-                <textarea
-                  id="description"
-                  name="description"
-                  defaultValue={editingOption?.description || ""}
-                  placeholder="Enter option description"
-                  rows={3}
-                  className="flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                />
-              </div>
-
-              <div className="flex justify-end space-x-2">
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => setEditingOption(null)}
-                >
-                  Cancel
-                </Button>
-                <Button type="submit" disabled={updateOptionMutation.isPending}>
-                  <Save className="w-4 h-4 mr-2" />
-                  {updateOptionMutation.isPending ? "Saving..." : "Save Changes"}
-                </Button>
-              </div>
-            </form>
-          </DialogContent>
-        </Dialog>
-      </main>
+      </div>
     </div>
   );
 }

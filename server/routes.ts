@@ -319,6 +319,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.get("/api/variants/all", requireAuth, async (req, res) => {
+    try {
+      const variants = await storage.getAllVariants();
+      res.json(variants);
+    } catch (error) {
+      console.error("Error fetching all variants:", error);
+      res.status(500).json({ message: "Failed to fetch variants" });
+    }
+  });
+
   app.get("/api/options/all", requireAuth, async (req, res) => {
     try {
       const options = await storage.getAllOptions();
@@ -343,6 +353,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error updating model:", error);
       res.status(500).json({ message: "Failed to update model" });
+    }
+  });
+
+  app.patch("/api/variants/:id", requireAuth, async (req, res) => {
+    try {
+      const variantId = parseInt(req.params.id);
+      const { msrp, length } = req.body;
+      
+      const updatedVariant = await storage.updateVariant(variantId, {
+        msrp,
+        length,
+      });
+      
+      res.json(updatedVariant);
+    } catch (error) {
+      console.error("Error updating variant:", error);
+      res.status(500).json({ message: "Failed to update variant" });
     }
   });
 
