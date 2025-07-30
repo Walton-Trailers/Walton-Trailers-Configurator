@@ -192,7 +192,7 @@ export default function PricingManagement() {
   }
 
   if (!user) {
-    return <div>Please log in to access pricing management.</div>;
+    return <div>Please log in to access product management.</div>;
   }
 
   return (
@@ -207,8 +207,8 @@ export default function PricingManagement() {
               </Button>
             </Link>
             <div>
-              <h1 className="text-2xl font-bold text-gray-900">Pricing Management</h1>
-              <p className="text-gray-600">Update trailer and option pricing</p>
+              <h1 className="text-2xl font-bold text-gray-900">Product Management</h1>
+              <p className="text-gray-600">Update trailer and option pricing & details</p>
             </div>
           </div>
           <div className="flex items-center gap-2 text-sm text-gray-600">
@@ -222,7 +222,7 @@ export default function PricingManagement() {
             <TabsList className="grid w-full max-w-[400px] grid-cols-2">
               <TabsTrigger value="models" className="flex items-center gap-2">
                 <DollarSign className="w-4 h-4" />
-                Trailer Model Pricing
+                Trailer Models
               </TabsTrigger>
               <TabsTrigger value="options" className="flex items-center gap-2">
                 <Edit className="w-4 h-4" />
@@ -243,9 +243,9 @@ export default function PricingManagement() {
           <TabsContent value="models">
             <Card>
               <CardHeader>
-                <CardTitle>Trailer Model Pricing</CardTitle>
+                <CardTitle>Trailer Models</CardTitle>
                 <CardDescription>
-                  Update base pricing for all trailer models
+                  Update specifications and pricing for all trailer models
                 </CardDescription>
               </CardHeader>
               <CardContent>
@@ -414,9 +414,9 @@ export default function PricingManagement() {
           <TabsContent value="options">
             <Card>
               <CardHeader>
-                <CardTitle>Options & Add-ons Pricing</CardTitle>
+                <CardTitle>Options & Add-ons</CardTitle>
                 <CardDescription>
-                  Update pricing for trailer options and accessories
+                  Update pricing and details for trailer options and accessories
                 </CardDescription>
               </CardHeader>
               <CardContent>

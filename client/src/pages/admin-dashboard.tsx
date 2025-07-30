@@ -428,18 +428,20 @@ export default function AdminDashboard() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <Card>
                 <CardHeader>
-                  <CardTitle>Pricing Management</CardTitle>
+                  <CardTitle>Product Management</CardTitle>
                   <CardDescription>
-                    Update trailer and option pricing
+                    Update trailer and option pricing & details
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <p className="text-gray-600 mb-4">
-                    Manage pricing for all trailer models and customization options.
-                  </p>
+                  <div className="space-y-2 text-gray-600 mb-4">
+                    <p>• Edit trailer categories and descriptions</p>
+                    <p>• Manage trailer models and specifications</p>
+                    <p>• Upload and manage trailer images</p>
+                  </div>
                   <Button onClick={() => setLocation("/admin/pricing")}>
                     <DollarSign className="w-4 h-4 mr-2" />
-                    Update Pricing
+                    Update Products Catalog
                   </Button>
                 </CardContent>
               </Card>
