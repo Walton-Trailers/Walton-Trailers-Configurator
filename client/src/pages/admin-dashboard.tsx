@@ -425,7 +425,7 @@ export default function AdminDashboard() {
           )}
 
           <TabsContent value="trailers" className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 gap-6">
               <Card>
                 <CardHeader>
                   <CardTitle>Product Management</CardTitle>
@@ -446,24 +446,7 @@ export default function AdminDashboard() {
                 </CardContent>
               </Card>
 
-              <Card>
-                <CardHeader>
-                  <CardTitle>Trailer Catalog</CardTitle>
-                  <CardDescription>
-                    Manage trailer categories and models (Coming soon)
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-gray-600">
-                    Additional management features coming soon:
-                  </p>
-                  <ul className="mt-2 list-disc list-inside text-sm text-gray-600 space-y-1">
-                    <li>Edit trailer categories and descriptions</li>
-                    <li>Manage trailer models and specifications</li>
-                    <li>Upload and manage trailer images</li>
-                  </ul>
-                </CardContent>
-              </Card>
+
             </div>
           </TabsContent>
         </Tabs>
