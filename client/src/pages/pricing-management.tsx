@@ -47,6 +47,8 @@ export default function PricingManagement() {
 
   const sessionId = localStorage.getItem("admin_session");
 
+
+
   // Fetch all models
   const { data: models, isLoading: modelsLoading } = useQuery({
     queryKey: ["/api/models/all"],
@@ -79,6 +81,8 @@ export default function PricingManagement() {
     queryKey: ["/api/categories"],
     queryFn: () => apiRequest("/api/categories"),
   });
+
+
 
   // Update model mutation
   const updateModelMutation = useMutation({
@@ -464,6 +468,7 @@ export default function PricingManagement() {
                         <TableHead>Category</TableHead>
                         <TableHead>Option Name</TableHead>
                         <TableHead>Model</TableHead>
+                        <TableHead>Related Models</TableHead>
                         <TableHead>Current Price</TableHead>
                         <TableHead>Actions</TableHead>
                       </TableRow>
@@ -537,6 +542,20 @@ export default function PricingManagement() {
                             ) : (
                               option.modelId
                             )}
+                          </TableCell>
+                          <TableCell>
+                            <span className="text-sm text-gray-600">
+                              {models ? 
+                                models
+                                  .filter((model: TrailerModel) => 
+                                    model.modelId === option.modelId || 
+                                    model.modelId.startsWith(option.modelId.substring(0, 3))
+                                  )
+                                  .map((model: TrailerModel) => model.modelId)
+                                  .join(", ") || option.modelId
+                                : "Loading..."
+                              }
+                            </span>
                           </TableCell>
                           <TableCell>
                             {editingOption?.id === option.id ? (
