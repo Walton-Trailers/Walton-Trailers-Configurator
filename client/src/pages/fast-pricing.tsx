@@ -55,7 +55,9 @@ const fastMutate = async (url: string, options: RequestInit) => {
 };
 
 export default function FastPricing() {
+  const [activeTab, setActiveTab] = useState("models");
   const [editingModel, setEditingModel] = useState<any>(null);
+  const [editingOption, setEditingOption] = useState<any>(null);
   const [editData, setEditData] = useState<any>({});
   const [searchQuery, setSearchQuery] = useState("");
   const [showArchived, setShowArchived] = useState(false);
@@ -139,10 +141,38 @@ export default function FastPricing() {
           <h1 className="text-2xl font-bold">Product Management</h1>
         </div>
 
-        {/* Fast search */}
+        {/* Tabs Navigation */}
+        <div className="mb-6">
+          <div className="border-b border-gray-200">
+            <nav className="-mb-px flex space-x-8">
+              <button
+                onClick={() => setActiveTab("models")}
+                className={`py-2 px-1 border-b-2 font-medium text-sm ${
+                  activeTab === "models"
+                    ? "border-blue-500 text-blue-600"
+                    : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+                }`}
+              >
+                Models
+              </button>
+              <button
+                onClick={() => setActiveTab("options")}
+                className={`py-2 px-1 border-b-2 font-medium text-sm ${
+                  activeTab === "options"
+                    ? "border-blue-500 text-blue-600"
+                    : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+                }`}
+              >
+                Options & Extras
+              </button>
+            </nav>
+          </div>
+        </div>
+
+        {/* Search bar */}
         <div className="mb-6">
           <Input
-            placeholder="Search models..."
+            placeholder={activeTab === "models" ? "Search models..." : "Search options..."}
             value={searchQuery}
             onChange={(e: any) => setSearchQuery(e.target.value)}
             className="max-w-md"
@@ -150,9 +180,11 @@ export default function FastPricing() {
         </div>
 
         {/* Models table */}
-        <Card>
-          <div className="p-6">
-            <h2 className="text-lg font-semibold mb-4">Models ({activeModels.length})</h2>
+        {activeTab === "models" && (
+          <>
+            <Card>
+              <div className="p-6">
+                <h2 className="text-lg font-semibold mb-4">Models ({activeModels.length})</h2>
             <Table>
               <TableHeader>
                 <TableRow>
@@ -237,58 +269,156 @@ export default function FastPricing() {
                   </TableRow>
                 ))}
               </TableBody>
-            </Table>
-          </div>
-        </Card>
+                </Table>
+              </div>
+            </Card>
 
-        {/* Archived section */}
-        {archivedModels.length > 0 && (
-          <Card className="mt-6">
+            {/* Archived section */}
+            {archivedModels.length > 0 && (
+              <Card className="mt-6">
+                <div className="p-6">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setShowArchived(!showArchived)}
+                    className="mb-4"
+                  >
+                    <Archive className="w-4 h-4 mr-2" />
+                    {showArchived ? 'Hide' : 'Show'} Archived ({archivedModels.length})
+                  </Button>
+                  
+                  {showArchived && (
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Model ID</TableHead>
+                          <TableHead>Name</TableHead>
+                          <TableHead>Category</TableHead>
+                          <TableHead>Price</TableHead>
+                          <TableHead>Actions</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {archivedModels.map((model: any) => (
+                          <TableRow key={model.id} className="opacity-60">
+                            <TableCell>{model.modelId}</TableCell>
+                            <TableCell>{model.name}</TableCell>
+                            <TableCell>{model.categoryName}</TableCell>
+                            <TableCell>${model.basePrice?.toLocaleString()}</TableCell>
+                            <TableCell>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => restoreMutation.mutate(model.id)}
+                                disabled={restoreMutation.isPending}
+                                title="Restore to active"
+                              >
+                                <RotateCcw className="w-4 h-4" />
+                              </Button>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  )}
+                </div>
+              </Card>
+            )}
+          </>
+        )}
+
+        {/* Options & Extras Tab */}
+        {activeTab === "options" && (
+          <Card>
             <div className="p-6">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setShowArchived(!showArchived)}
-                className="mb-4"
-              >
-                <Archive className="w-4 h-4 mr-2" />
-                {showArchived ? 'Hide' : 'Show'} Archived ({archivedModels.length})
-              </Button>
-              
-              {showArchived && (
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Model ID</TableHead>
-                      <TableHead>Name</TableHead>
-                      <TableHead>Category</TableHead>
-                      <TableHead>Price</TableHead>
-                      <TableHead>Actions</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {archivedModels.map((model: any) => (
-                      <TableRow key={model.id} className="opacity-60">
-                        <TableCell>{model.modelId}</TableCell>
-                        <TableCell>{model.name}</TableCell>
-                        <TableCell>{model.categoryName}</TableCell>
-                        <TableCell>${model.basePrice?.toLocaleString()}</TableCell>
-                        <TableCell>
+              <h2 className="text-lg font-semibold mb-4">Options & Extras ({options.length})</h2>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Name</TableHead>
+                    <TableHead>Model</TableHead>
+                    <TableHead>Category</TableHead>
+                    <TableHead>Price</TableHead>
+                    <TableHead>Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {options
+                    .filter((option: any) => 
+                      !searchQuery || 
+                      option.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                      option.modelId.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                      option.category.toLowerCase().includes(searchQuery.toLowerCase())
+                    )
+                    .map((option: any) => (
+                    <TableRow key={option.id}>
+                      <TableCell>
+                        {editingOption?.id === option.id ? (
+                          <Input
+                            value={editData[option.id]?.name ?? option.name}
+                            onChange={(e: any) => setEditData({
+                              ...editData,
+                              [option.id]: { ...editData[option.id], name: e.target.value }
+                            })}
+                          />
+                        ) : (
+                          option.name
+                        )}
+                      </TableCell>
+                      <TableCell>{option.modelId}</TableCell>
+                      <TableCell>{option.category}</TableCell>
+                      <TableCell>
+                        {editingOption?.id === option.id ? (
+                          <Input
+                            type="number"
+                            value={editData[option.id]?.price ?? option.price}
+                            onChange={(e: any) => setEditData({
+                              ...editData,
+                              [option.id]: { ...editData[option.id], price: parseInt(e.target.value) }
+                            })}
+                          />
+                        ) : (
+                          `$${option.price?.toLocaleString()}`
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        {editingOption?.id === option.id ? (
+                          <div className="flex gap-2">
+                            <Button
+                              size="sm"
+                              onClick={() => {
+                                // Handle option update logic here
+                                setEditingOption(null);
+                                setEditData({});
+                              }}
+                            >
+                              <Save className="w-4 h-4" />
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => {
+                                setEditingOption(null);
+                                setEditData({});
+                              }}
+                            >
+                              <X className="w-4 h-4" />
+                            </Button>
+                          </div>
+                        ) : (
                           <Button
                             size="sm"
                             variant="outline"
-                            onClick={() => restoreMutation.mutate(model.id)}
-                            disabled={restoreMutation.isPending}
-                            title="Restore to active"
+                            onClick={() => setEditingOption(option)}
                           >
-                            <RotateCcw className="w-4 h-4" />
+                            <Edit className="w-4 h-4" />
                           </Button>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              )}
+                        )}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
             </div>
           </Card>
         )}
