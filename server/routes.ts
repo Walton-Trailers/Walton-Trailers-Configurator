@@ -353,13 +353,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.patch("/api/models/:id", requireAuth, async (req, res) => {
     try {
       const modelId = parseInt(req.params.id);
-      const { basePrice, name } = req.body;
+      const { basePrice, name, modelId: modelIdField, gvwr, payload, deckSize } = req.body;
+      
+      console.log(`Updating model ${modelId} with:`, req.body);
       
       const updatedModel = await storage.updateModel(modelId, {
         basePrice,
         name,
+        modelId: modelIdField,
+        gvwr,
+        payload,
+        deckSize,
       });
       
+      console.log("Updated model result:", updatedModel);
       res.json(updatedModel);
     } catch (error) {
       console.error("Error updating model:", error);
