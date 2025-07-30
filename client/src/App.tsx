@@ -7,6 +7,7 @@ import NotFound from "@/pages/not-found";
 import Configurator from "@/pages/configurator";
 import AdminLogin from "@/pages/admin-login";
 import AdminDashboard from "@/pages/admin-dashboard";
+import PricingManagement from "@/pages/pricing-management";
 
 function Router() {
   return (
@@ -14,6 +15,7 @@ function Router() {
       <Route path="/" component={Configurator} />
       <Route path="/admin/login" component={AdminLogin} />
       <Route path="/admin" component={AdminDashboard} />
+      <Route path="/admin/pricing" component={PricingManagement} />
       <Route component={NotFound} />
     </Switch>
   );

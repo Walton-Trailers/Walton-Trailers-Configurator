@@ -7,7 +7,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAdminAuth } from "@/hooks/useAdminAuth";
 import { useLocation } from "wouter";
 import { apiRequest } from "@/lib/queryClient";
-import { LogOut, Users, Settings, Plus } from "lucide-react";
+import { LogOut, Users, Settings, Plus, DollarSign } from "lucide-react";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -425,26 +425,44 @@ export default function AdminDashboard() {
           )}
 
           <TabsContent value="trailers" className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>Trailer Management</CardTitle>
-                <CardDescription>
-                  Manage trailer categories, models, and pricing (Coming soon)
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <p className="text-gray-600">
-                  Trailer management features will be added in a future update. 
-                  This will include:
-                </p>
-                <ul className="mt-2 list-disc list-inside text-sm text-gray-600 space-y-1">
-                  <li>Edit trailer categories and descriptions</li>
-                  <li>Manage trailer models and specifications</li>
-                  <li>Update pricing and options</li>
-                  <li>Upload and manage trailer images</li>
-                </ul>
-              </CardContent>
-            </Card>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Pricing Management</CardTitle>
+                  <CardDescription>
+                    Update trailer and option pricing
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-gray-600 mb-4">
+                    Manage pricing for all trailer models and customization options.
+                  </p>
+                  <Button onClick={() => setLocation("/admin/pricing")}>
+                    <DollarSign className="w-4 h-4 mr-2" />
+                    Update Pricing
+                  </Button>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle>Trailer Catalog</CardTitle>
+                  <CardDescription>
+                    Manage trailer categories and models (Coming soon)
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-gray-600">
+                    Additional management features coming soon:
+                  </p>
+                  <ul className="mt-2 list-disc list-inside text-sm text-gray-600 space-y-1">
+                    <li>Edit trailer categories and descriptions</li>
+                    <li>Manage trailer models and specifications</li>
+                    <li>Upload and manage trailer images</li>
+                  </ul>
+                </CardContent>
+              </Card>
+            </div>
           </TabsContent>
         </Tabs>
       </main>

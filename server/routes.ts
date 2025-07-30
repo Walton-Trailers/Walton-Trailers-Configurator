@@ -308,6 +308,61 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Pricing management routes
+  app.get("/api/models/all", requireAuth, async (req, res) => {
+    try {
+      const models = await storage.getAllModels();
+      res.json(models);
+    } catch (error) {
+      console.error("Error fetching all models:", error);
+      res.status(500).json({ message: "Failed to fetch models" });
+    }
+  });
+
+  app.get("/api/options/all", requireAuth, async (req, res) => {
+    try {
+      const options = await storage.getAllOptions();
+      res.json(options);
+    } catch (error) {
+      console.error("Error fetching all options:", error);
+      res.status(500).json({ message: "Failed to fetch options" });
+    }
+  });
+
+  app.patch("/api/models/:id", requireAuth, async (req, res) => {
+    try {
+      const modelId = parseInt(req.params.id);
+      const { basePrice, description } = req.body;
+      
+      const updatedModel = await storage.updateModel(modelId, {
+        basePrice,
+        description,
+      });
+      
+      res.json(updatedModel);
+    } catch (error) {
+      console.error("Error updating model:", error);
+      res.status(500).json({ message: "Failed to update model" });
+    }
+  });
+
+  app.patch("/api/options/:id", requireAuth, async (req, res) => {
+    try {
+      const optionId = parseInt(req.params.id);
+      const { price, description } = req.body;
+      
+      const updatedOption = await storage.updateOption(optionId, {
+        price,
+        description,
+      });
+      
+      res.json(updatedOption);
+    } catch (error) {
+      console.error("Error updating option:", error);
+      res.status(500).json({ message: "Failed to update option" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }

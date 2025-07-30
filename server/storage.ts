@@ -86,6 +86,12 @@ export interface IStorage {
   getAdminSession(sessionId: string): Promise<AdminSession | undefined>;
   deleteAdminSession(sessionId: string): Promise<void>;
   deleteExpiredSessions(): Promise<void>;
+  
+  // Pricing management operations
+  getAllModels(): Promise<TrailerModelResponse[]>;
+  getAllOptions(): Promise<TrailerOptionResponse[]>;
+  updateModel(id: number, updates: Partial<Pick<TrailerModelResponse, 'basePrice' | 'description'>>): Promise<TrailerModelResponse>;
+  updateOption(id: number, updates: Partial<Pick<TrailerOptionResponse, 'price' | 'description'>>): Promise<TrailerOptionResponse>;
 }
 
 export class MemStorage implements IStorage {
@@ -336,6 +342,39 @@ export class MemStorage implements IStorage {
   async deleteExpiredSessions(): Promise<void> {
     throw new Error("Admin operations not supported in memory storage");
   }
+
+  // Pricing management operations
+  async getAllModels(): Promise<TrailerModelResponse[]> {
+    return Array.from(this.models.values());
+  }
+
+  async getAllOptions(): Promise<TrailerOptionResponse[]> {
+    return Array.from(this.options.values()).flat();
+  }
+
+  async updateModel(id: number, updates: Partial<Pick<TrailerModelResponse, 'basePrice' | 'description'>>): Promise<TrailerModelResponse> {
+    const model = Array.from(this.models.values()).find(m => m.id === id);
+    if (!model) {
+      throw new Error('Model not found');
+    }
+    
+    const updatedModel = { ...model, ...updates };
+    this.models.set(model.id.toString(), updatedModel);
+    return updatedModel;
+  }
+
+  async updateOption(id: number, updates: Partial<Pick<TrailerOptionResponse, 'price' | 'description'>>): Promise<TrailerOptionResponse> {
+    for (const [modelId, options] of this.options.entries()) {
+      const optionIndex = options.findIndex(o => o.id === id);
+      if (optionIndex !== -1) {
+        const updatedOption = { ...options[optionIndex], ...updates };
+        options[optionIndex] = updatedOption;
+        this.options.set(modelId, options);
+        return updatedOption;
+      }
+    }
+    throw new Error('Option not found');
+  }
 }
 
 export class DatabaseStorage implements IStorage {
@@ -579,6 +618,51 @@ export class DatabaseStorage implements IStorage {
       console.error('Error deleting expired sessions:', error);
       throw error;
     }
+  }
+
+  // Pricing management operations
+  async getAllModels(): Promise<TrailerModelResponse[]> {
+    const models = await db.select().from(trailerModels);
+    return models.map(model => ({
+      ...model,
+      specifications: model.specifications || {},
+      features: model.features || [],
+    }));
+  }
+
+  async getAllOptions(): Promise<TrailerOptionResponse[]> {
+    const options = await db.select().from(trailerOptions);
+    return options.map(option => ({
+      ...option,
+      options: option.options || [],
+    }));
+  }
+
+  async updateModel(id: number, updates: Partial<Pick<TrailerModelResponse, 'basePrice' | 'description'>>): Promise<TrailerModelResponse> {
+    const [updatedModel] = await db
+      .update(trailerModels)
+      .set(updates)
+      .where(eq(trailerModels.id, id))
+      .returning();
+    
+    return {
+      ...updatedModel,
+      specifications: updatedModel.specifications || {},
+      features: updatedModel.features || [],
+    };
+  }
+
+  async updateOption(id: number, updates: Partial<Pick<TrailerOptionResponse, 'price' | 'description'>>): Promise<TrailerOptionResponse> {
+    const [updatedOption] = await db
+      .update(trailerOptions)
+      .set(updates)
+      .where(eq(trailerOptions.id, id))
+      .returning();
+    
+    return {
+      ...updatedOption,
+      options: updatedOption.options || [],
+    };
   }
 }
 
