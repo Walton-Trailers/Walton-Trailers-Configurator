@@ -398,15 +398,15 @@ export default function AdminDashboard() {
                 <CardHeader>
                   <CardTitle className="flex items-center">
                     <DollarSign className="w-5 h-5 mr-2" />
-                    Pricing Management
+                    Product Management
                   </CardTitle>
                   <CardDescription>
-                    Update trailer and option pricing
+                    Update trailer and option details
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
                   <Link href="/admin/pricing">
-                    <Button>Manage Pricing</Button>
+                    <Button>Manage Products</Button>
                   </Link>
                 </CardContent>
               </Card>
