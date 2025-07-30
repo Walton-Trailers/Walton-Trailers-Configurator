@@ -417,6 +417,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Delete option
+  app.delete("/api/options/:id", requireAuth, async (req, res) => {
+    try {
+      const optionId = parseInt(req.params.id);
+      await storage.deleteOption(optionId);
+      res.json({ success: true });
+    } catch (error) {
+      console.error('Error deleting option:', error);
+      res.status(500).json({ error: "Failed to delete option" });
+    }
+  });
+
+  // Archive option
+  app.patch("/api/options/:id/archive", requireAuth, async (req, res) => {
+    try {
+      const optionId = parseInt(req.params.id);
+      await storage.archiveOption(optionId);
+      res.json({ success: true });
+    } catch (error) {
+      console.error('Error archiving option:', error);
+      res.status(500).json({ error: "Failed to archive option" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }

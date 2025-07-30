@@ -1,5 +1,5 @@
 import { useState, useMemo } from "react";
-import { ArrowLeft, Edit, Save, X, DollarSign, Search, ChevronDown, Plus } from "lucide-react";
+import { ArrowLeft, Edit, Save, X, DollarSign, Search, ChevronDown, Plus, Trash2, Archive } from "lucide-react";
 import { Link } from "wouter";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
@@ -188,6 +188,52 @@ export default function PricingManagement() {
       toast({
         title: "Error",
         description: error.message || "Failed to create option",
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Delete option mutation
+  const deleteOptionMutation = useMutation({
+    mutationFn: (optionId: number) =>
+      apiRequest(`/api/options/${optionId}`, {
+        method: "DELETE",
+        headers: sessionId ? { Authorization: `Bearer ${sessionId}` } : {},
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/options/all"] });
+      toast({
+        title: "Success",
+        description: "Option deleted successfully",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to delete option",
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Archive option mutation
+  const archiveOptionMutation = useMutation({
+    mutationFn: (optionId: number) =>
+      apiRequest(`/api/options/${optionId}/archive`, {
+        method: "PATCH",
+        headers: sessionId ? { Authorization: `Bearer ${sessionId}` } : {},
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/options/all"] });
+      toast({
+        title: "Success",
+        description: "Option archived successfully",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to archive option",
         variant: "destructive",
       });
     },
@@ -704,29 +750,54 @@ export default function PricingManagement() {
                                 </Button>
                               </div>
                             ) : (
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                onClick={() => {
-                                  setEditingOption(option);
-                                  setEditData({ 
-                                    [option.id]: { 
-                                      price: option.price,
-                                      name: option.name,
-                                      category: option.category,
-                                      modelId: option.modelId,
-                                      relatedModels: models
-                                        ?.filter((model: TrailerModel) => 
-                                          model.modelId === option.modelId || 
-                                          model.modelId.startsWith(option.modelId.substring(0, 3))
-                                        )
-                                        .map((model: TrailerModel) => model.modelId) || [option.modelId]
-                                    } 
-                                  });
-                                }}
-                              >
-                                <Edit className="w-4 h-4" />
-                              </Button>
+                              <div className="flex gap-2">
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => {
+                                    setEditingOption(option);
+                                    setEditData({ 
+                                      [option.id]: { 
+                                        price: option.price,
+                                        name: option.name,
+                                        category: option.category,
+                                        modelId: option.modelId,
+                                        relatedModels: models
+                                          ?.filter((model: TrailerModel) => 
+                                            model.modelId === option.modelId || 
+                                            model.modelId.startsWith(option.modelId.substring(0, 3))
+                                          )
+                                          .map((model: TrailerModel) => model.modelId) || [option.modelId]
+                                      } 
+                                    });
+                                  }}
+                                >
+                                  <Edit className="w-4 h-4" />
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => archiveOptionMutation.mutate(option.id)}
+                                  disabled={archiveOptionMutation.isPending}
+                                  title="Archive option"
+                                >
+                                  <Archive className="w-4 h-4" />
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => {
+                                    if (confirm('Are you sure you want to delete this option? This action cannot be undone.')) {
+                                      deleteOptionMutation.mutate(option.id);
+                                    }
+                                  }}
+                                  disabled={deleteOptionMutation.isPending}
+                                  title="Delete option"
+                                  className="text-red-600 hover:text-red-700"
+                                >
+                                  <Trash2 className="w-4 h-4" />
+                                </Button>
+                              </div>
                             )}
                           </TableCell>
                         </TableRow>

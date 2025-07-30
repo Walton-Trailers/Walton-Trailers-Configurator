@@ -96,6 +96,8 @@ export interface IStorage {
   updateModel(id: number, updates: any): Promise<TrailerModelResponse>;
   updateOption(id: number, updates: any): Promise<TrailerOptionResponse>;
   createOption(data: { name: string; price: number; category: string; modelId: string }): Promise<TrailerOptionResponse>;
+  deleteOption(id: number): Promise<void>;
+  archiveOption(id: number): Promise<void>;
 }
 
 export class MemStorage implements IStorage {
@@ -397,6 +399,21 @@ export class MemStorage implements IStorage {
     this.options.set(data.modelId, existingOptions);
     
     return newOption;
+  }
+
+  async deleteOption(id: number): Promise<void> {
+    for (const [modelId, options] of Array.from(this.options.entries())) {
+      const filteredOptions = options.filter(option => option.id !== id);
+      if (filteredOptions.length !== options.length) {
+        this.options.set(modelId, filteredOptions);
+        return;
+      }
+    }
+    throw new Error('Option not found');
+  }
+
+  async archiveOption(id: number): Promise<void> {
+    throw new Error("MemStorage archiveOption not implemented for pricing management");
   }
 
 
@@ -868,6 +885,30 @@ export class DatabaseStorage implements IStorage {
       };
     } catch (error) {
       console.error('Error creating option:', error);
+      throw error;
+    }
+  }
+
+  async deleteOption(id: number): Promise<void> {
+    try {
+      await db.execute(sql`
+        DELETE FROM trailer_options WHERE id = ${id}
+      `);
+    } catch (error) {
+      console.error('Error deleting option:', error);
+      throw error;
+    }
+  }
+
+  async archiveOption(id: number): Promise<void> {
+    try {
+      await db.execute(sql`
+        UPDATE trailer_options 
+        SET is_archived = true
+        WHERE id = ${id}
+      `);
+    } catch (error) {
+      console.error('Error archiving option:', error);
       throw error;
     }
   }
