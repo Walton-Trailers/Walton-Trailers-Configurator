@@ -8,6 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { useAdminAuth } from "@/hooks/useAdminAuth";
 
@@ -38,7 +39,7 @@ export default function PricingManagement() {
   const { user, isLoading: authLoading } = useAdminAuth();
   const [editingModel, setEditingModel] = useState<TrailerModel | null>(null);
   const [editingOption, setEditingOption] = useState<TrailerOption | null>(null);
-  const [editPrices, setEditPrices] = useState<{ [key: number]: number }>({});
+  const [editData, setEditData] = useState<{ [key: number]: any }>({});
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -58,6 +59,15 @@ export default function PricingManagement() {
     queryKey: ["/api/options/all"],
     queryFn: () =>
       apiRequest("/api/options/all", {
+        headers: sessionId ? { Authorization: `Bearer ${sessionId}` } : {},
+      }),
+  });
+
+  // Fetch option categories for dropdown
+  const { data: optionCategories } = useQuery({
+    queryKey: ["/api/categories/options"],
+    queryFn: () =>
+      apiRequest("/api/categories/options", {
         headers: sessionId ? { Authorization: `Bearer ${sessionId}` } : {},
       }),
   });
@@ -90,19 +100,24 @@ export default function PricingManagement() {
 
   // Update option mutation
   const updateOptionMutation = useMutation({
-    mutationFn: (data: { id: number; price: number; name: string }) =>
+    mutationFn: (data: { id: number; price?: number; name?: string; category?: string; modelId?: string }) =>
       apiRequest(`/api/options/${data.id}`, {
         method: "PATCH",
-        body: { price: data.price, name: data.name },
+        body: { 
+          price: data.price, 
+          name: data.name, 
+          category: data.category, 
+          modelId: data.modelId 
+        },
         headers: sessionId ? { Authorization: `Bearer ${sessionId}` } : {},
       }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/options/all"] });
       setEditingOption(null);
-      setEditPrices({});
+      setEditData({});
       toast({
         title: "Success",
-        description: "Option pricing updated successfully",
+        description: "Option updated successfully",
       });
     },
     onError: (error: any) => {
@@ -115,16 +130,18 @@ export default function PricingManagement() {
   });
 
   const handleModelPriceUpdate = (model: TrailerModel) => {
-    const newPrice = editPrices[model.id] || model.basePrice;
+    const newPrice = editData[model.id]?.basePrice || model.basePrice;
     updateModelMutation.mutate({ id: model.id, basePrice: newPrice, name: model.name });
   };
 
-  const handleOptionPriceUpdate = (option: TrailerOption) => {
-    const newPrice = editPrices[option.id] || option.price;
+  const handleOptionUpdate = (option: TrailerOption) => {
+    const data = editData[option.id] || {};
     updateOptionMutation.mutate({ 
       id: option.id, 
-      price: newPrice, 
-      name: option.name
+      price: data.price !== undefined ? data.price : option.price,
+      name: data.name !== undefined ? data.name : option.name,
+      category: data.category !== undefined ? data.category : option.category,
+      modelId: data.modelId !== undefined ? data.modelId : option.modelId,
     });
   };
 
@@ -208,11 +225,14 @@ export default function PricingManagement() {
                             {editingModel?.id === model.id ? (
                               <Input
                                 type="number"
-                                value={editPrices[model.id] || model.basePrice}
+                                value={editData[model.id]?.basePrice || model.basePrice}
                                 onChange={(e) =>
-                                  setEditPrices({
-                                    ...editPrices,
-                                    [model.id]: parseInt(e.target.value) || 0,
+                                  setEditData({
+                                    ...editData,
+                                    [model.id]: {
+                                      ...editData[model.id],
+                                      basePrice: parseInt(e.target.value) || 0,
+                                    }
                                   })
                                 }
                                 className="w-32"
@@ -236,7 +256,7 @@ export default function PricingManagement() {
                                   variant="outline"
                                   onClick={() => {
                                     setEditingModel(null);
-                                    setEditPrices({});
+                                    setEditData({});
                                   }}
                                 >
                                   <X className="w-4 h-4" />
@@ -248,7 +268,7 @@ export default function PricingManagement() {
                                 variant="outline"
                                 onClick={() => {
                                   setEditingModel(model);
-                                  setEditPrices({ [model.id]: model.basePrice });
+                                  setEditData({ [model.id]: { basePrice: model.basePrice } });
                                 }}
                               >
                                 <Edit className="w-4 h-4" />
@@ -285,7 +305,7 @@ export default function PricingManagement() {
                       <TableRow>
                         <TableHead>Category</TableHead>
                         <TableHead>Option Name</TableHead>
-                        <TableHead>Description</TableHead>
+                        <TableHead>Model</TableHead>
                         <TableHead>Current Price</TableHead>
                         <TableHead>Actions</TableHead>
                       </TableRow>
@@ -294,21 +314,84 @@ export default function PricingManagement() {
                       {options.map((option: TrailerOption) => (
                         <TableRow key={option.id}>
                           <TableCell className="font-medium">
-                            {option.category}
+                            {editingOption?.id === option.id ? (
+                              <Select
+                                value={editData[option.id]?.category || option.category}
+                                onValueChange={(value) =>
+                                  setEditData({
+                                    ...editData,
+                                    [option.id]: {
+                                      ...editData[option.id],
+                                      category: value,
+                                    }
+                                  })
+                                }
+                              >
+                                <SelectTrigger className="w-32">
+                                  <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  {optionCategories?.map((category: string) => (
+                                    <SelectItem key={category} value={category}>
+                                      {category}
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                            ) : (
+                              option.category
+                            )}
                           </TableCell>
-                          <TableCell>{option.name}</TableCell>
-                          <TableCell className="max-w-xs truncate">
-                            Model: {option.modelId}
+                          <TableCell>
+                            {editingOption?.id === option.id ? (
+                              <Input
+                                value={editData[option.id]?.name || option.name}
+                                onChange={(e) =>
+                                  setEditData({
+                                    ...editData,
+                                    [option.id]: {
+                                      ...editData[option.id],
+                                      name: e.target.value,
+                                    }
+                                  })
+                                }
+                                className="w-48"
+                              />
+                            ) : (
+                              option.name
+                            )}
+                          </TableCell>
+                          <TableCell>
+                            {editingOption?.id === option.id ? (
+                              <Input
+                                value={editData[option.id]?.modelId || option.modelId}
+                                onChange={(e) =>
+                                  setEditData({
+                                    ...editData,
+                                    [option.id]: {
+                                      ...editData[option.id],
+                                      modelId: e.target.value,
+                                    }
+                                  })
+                                }
+                                className="w-24"
+                              />
+                            ) : (
+                              option.modelId
+                            )}
                           </TableCell>
                           <TableCell>
                             {editingOption?.id === option.id ? (
                               <Input
                                 type="number"
-                                value={editPrices[option.id] || option.price}
+                                value={editData[option.id]?.price || option.price}
                                 onChange={(e) =>
-                                  setEditPrices({
-                                    ...editPrices,
-                                    [option.id]: parseInt(e.target.value) || 0,
+                                  setEditData({
+                                    ...editData,
+                                    [option.id]: {
+                                      ...editData[option.id],
+                                      price: parseInt(e.target.value) || 0,
+                                    }
                                   })
                                 }
                                 className="w-32"
@@ -322,7 +405,7 @@ export default function PricingManagement() {
                               <div className="flex gap-2">
                                 <Button
                                   size="sm"
-                                  onClick={() => handleOptionPriceUpdate(option)}
+                                  onClick={() => handleOptionUpdate(option)}
                                   disabled={updateOptionMutation.isPending}
                                 >
                                   <Save className="w-4 h-4" />
@@ -332,7 +415,7 @@ export default function PricingManagement() {
                                   variant="outline"
                                   onClick={() => {
                                     setEditingOption(null);
-                                    setEditPrices({});
+                                    setEditData({});
                                   }}
                                 >
                                   <X className="w-4 h-4" />
@@ -344,7 +427,14 @@ export default function PricingManagement() {
                                 variant="outline"
                                 onClick={() => {
                                   setEditingOption(option);
-                                  setEditPrices({ [option.id]: option.price });
+                                  setEditData({ 
+                                    [option.id]: { 
+                                      price: option.price,
+                                      name: option.name,
+                                      category: option.category,
+                                      modelId: option.modelId
+                                    } 
+                                  });
                                 }}
                               >
                                 <Edit className="w-4 h-4" />

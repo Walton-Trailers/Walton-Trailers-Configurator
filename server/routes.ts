@@ -319,6 +319,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get all categories for dropdown
+  app.get("/api/categories/options", requireAuth, async (req, res) => {
+    try {
+      const result = await db.execute(sql`
+        SELECT DISTINCT category FROM trailer_options ORDER BY category
+      `);
+      const categories = result.rows.map((row: any) => row.category);
+      res.json(categories);
+    } catch (error) {
+      console.error("Error fetching option categories:", error);
+      res.status(500).json({ message: "Failed to fetch categories" });
+    }
+  });
+
 
 
   app.get("/api/options/all", requireAuth, async (req, res) => {
@@ -353,11 +367,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.patch("/api/options/:id", requireAuth, async (req, res) => {
     try {
       const optionId = parseInt(req.params.id);
-      const { price, name } = req.body;
+      const { price, name, category, modelId } = req.body;
       
       const updatedOption = await storage.updateOption(optionId, {
         price,
         name,
+        category,
+        modelId,
       });
       
       res.json(updatedOption);

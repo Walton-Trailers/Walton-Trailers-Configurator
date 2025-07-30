@@ -729,22 +729,36 @@ export class DatabaseStorage implements IStorage {
 
   async updateOption(id: number, updates: any): Promise<TrailerOptionResponse> {
     try {
-      let result;
+      const updateFields: string[] = [];
+      const params: any[] = [];
       
       if (updates.price !== undefined) {
-        result = await db.execute(sql`
+        updateFields.push(`price = $${params.length + 1}`);
+        params.push(updates.price);
+      }
+      if (updates.name !== undefined) {
+        updateFields.push(`name = $${params.length + 1}`);
+        params.push(updates.name);
+      }
+      if (updates.category !== undefined) {
+        updateFields.push(`category = $${params.length + 1}`);
+        params.push(updates.category);
+      }
+      if (updates.modelId !== undefined) {
+        updateFields.push(`model_id = $${params.length + 1}`);
+        params.push(updates.modelId);
+      }
+      
+      let result;
+      if (updateFields.length > 0) {
+        params.push(id);
+        const query = `
           UPDATE trailer_options 
-          SET price = ${updates.price}
-          WHERE id = ${id}
+          SET ${updateFields.join(', ')}
+          WHERE id = $${params.length}
           RETURNING id, model_id, category, name, price, is_multi_select
-        `);
-      } else if (updates.name !== undefined) {
-        result = await db.execute(sql`
-          UPDATE trailer_options 
-          SET name = ${updates.name}
-          WHERE id = ${id}
-          RETURNING id, model_id, category, name, price, is_multi_select
-        `);
+        `;
+        result = await db.execute(sql.raw(query, params));
       } else {
         result = await db.execute(sql`
           SELECT id, model_id, category, name, price, is_multi_select
