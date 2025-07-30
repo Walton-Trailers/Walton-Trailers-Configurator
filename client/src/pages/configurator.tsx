@@ -306,67 +306,86 @@ Configuration Date: ${new Date().toLocaleDateString()}
           </div>
         </div>
       </header>
-      {/* Tesla-style Main Layout */}
+      {/* Main Content */}
       <div className="pt-20 min-h-screen">
-        {/* Left Panel - Image (Fixed) */}
-        <div className="fixed left-0 top-20 w-[65%] h-[calc(100vh-5rem)] flex items-center justify-center overflow-hidden z-10 bg-gray-50">
-          <div className="relative w-full h-full max-w-5xl max-h-[80vh] mx-auto my-auto p-8">
-            <img 
-              src={currentTrailerImage}
-              alt="Trailer"
-              className="w-full h-full object-contain transition-all duration-500 ease-out drop-shadow-xl"
-            />
-          </div>
-        </div>
+        {/* Step 1: Category Selection - Full Width Layout */}
+        {currentStep === 1 && (
+          <div className="max-w-7xl mx-auto px-8 py-16">
+            <div className="text-center mb-16">
+              <h1 className="text-6xl font-bold text-gray-900 mb-6 tracking-tight">
+                Choose Your Trailer
+              </h1>
+              <p className="text-xl text-gray-600 max-w-2xl mx-auto leading-relaxed">
+                Select from our premium line of commercial trailers designed for professionals
+              </p>
+            </div>
 
-        {/* Right Panel - Configuration (Scrollable) */}
-        <div className="ml-[65%] w-[35%] bg-white min-h-screen">
-          <div className="max-w-lg mx-auto py-12 px-6">
-          {/* Step 1: Category Selection */}
-          {currentStep === 1 && (
-            <div className="space-y-12 animate-in fade-in duration-500">
-              <div>
-                <h1 className="text-5xl font-bold text-gray-900 mb-6 tracking-tight leading-tight">
-                  Choose Your Trailer
-                </h1>
-                <p className="text-gray-600 text-xl leading-relaxed">
-                  Select from our premium line of commercial trailers designed for professionals
-                </p>
-              </div>
-
-              <div className="space-y-3">
-                {categories?.map((category, index) => (
-                  <div
-                    key={category.id}
-                    className="animate-in slide-in-from-right duration-500"
-                    style={{ animationDelay: `${index * 100}ms` }}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 max-w-5xl mx-auto">
+              {categories?.map((category, index) => (
+                <div
+                  key={category.id}
+                  className="animate-in slide-in-from-bottom duration-700"
+                  style={{ animationDelay: `${index * 150}ms` }}
+                >
+                  <button
+                    className="w-full text-left group relative overflow-hidden rounded-3xl border border-gray-200 bg-white hover:border-gray-300 hover:shadow-xl transition-all duration-500 hover:scale-[1.02]"
+                    onClick={() => handleCategorySelect(category)}
+                    onMouseEnter={() => setHoveredCategory(category)}
+                    onMouseLeave={() => setHoveredCategory(null)}
                   >
-                    <button
-                      className={`w-full text-left p-6 rounded-2xl border-2 transition-all duration-300 hover:shadow-lg hover:scale-[1.02] active:scale-[0.98] ${
-                        selectedCategory?.id === category.id 
-                          ? 'border-blue-500 bg-blue-50 shadow-lg' 
-                          : 'border-gray-200 hover:border-gray-300 bg-white'
-                      }`}
-                      onClick={() => handleCategorySelect(category)}
-                      onMouseEnter={() => setHoveredCategory(category)}
-                      onMouseLeave={() => setHoveredCategory(null)}
-                    >
-                      <div className="flex justify-between items-center">
-                        <div className="flex-1">
-                          <h3 className="text-2xl font-semibold mb-3 text-gray-900">{category.name}</h3>
-                          <p className="text-gray-600 mb-4 leading-relaxed">{category.description}</p>
-                          <div className="text-lg font-semibold text-blue-600">
-                            Starting at ${category.startingPrice.toLocaleString()}
-                          </div>
-                        </div>
-                        <ArrowRight className="w-6 h-6 text-gray-400 transition-transform duration-300 group-hover:translate-x-1" />
+                    <div className="flex">
+                      {/* Left side - Image */}
+                      <div className="w-2/5 h-48 relative overflow-hidden">
+                        <img 
+                          src={category.imageUrl}
+                          alt={category.name}
+                          className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+                        />
+                        <div className="absolute inset-0 bg-gradient-to-r from-transparent via-transparent to-white/20"></div>
                       </div>
-                    </button>
-                  </div>
-                ))}
+                      
+                      {/* Right side - Content */}
+                      <div className="w-3/5 p-8 flex flex-col justify-center">
+                        <div className="flex items-center justify-between mb-4">
+                          <h3 className="text-2xl font-semibold text-gray-900 group-hover:text-blue-600 transition-colors duration-300">
+                            {category.name}
+                          </h3>
+                          <ArrowRight className="w-5 h-5 text-gray-400 group-hover:text-blue-500 group-hover:translate-x-1 transition-all duration-300" />
+                        </div>
+                        
+                        <p className="text-gray-600 mb-6 leading-relaxed text-sm">
+                          {category.description}
+                        </p>
+                        
+                        <div className="text-lg font-semibold text-blue-600">
+                          Starting at ${category.startingPrice.toLocaleString()}
+                        </div>
+                      </div>
+                    </div>
+                  </button>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Steps 2+ - Split Screen Layout */}
+        {currentStep > 1 && (
+          <>
+            {/* Left Panel - Image (Fixed) */}
+            <div className="fixed left-0 top-20 w-[65%] h-[calc(100vh-5rem)] flex items-center justify-center overflow-hidden z-10 bg-gray-50">
+              <div className="relative w-full h-full max-w-5xl max-h-[80vh] mx-auto my-auto p-8">
+                <img 
+                  src={currentTrailerImage}
+                  alt="Trailer"
+                  className="w-full h-full object-contain transition-all duration-500 ease-out drop-shadow-xl"
+                />
               </div>
             </div>
-          )}
+
+            {/* Right Panel - Configuration (Scrollable) */}
+            <div className="ml-[65%] w-[35%] bg-white min-h-screen">
+              <div className="max-w-lg mx-auto py-12 px-6">
 
           {/* Step 2: Model Selection */}
           {currentStep === 2 && selectedCategory && (
@@ -646,9 +665,11 @@ Configuration Date: ${new Date().toLocaleDateString()}
                 </Button>
               </div>
             </div>
-          )}
-          </div>
-        </div>
+              )}
+              </div>
+            </div>
+          </>
+        )}
       </div>
     </div>
   );
