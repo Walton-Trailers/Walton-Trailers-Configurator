@@ -41,7 +41,9 @@ export interface TrailerOptionResponse {
   category: string;
   name: string;
   price: number;
+  isRequired?: boolean;
   isMultiSelect: boolean;
+  options?: any[];
 }
 
 interface UserConfiguration {
@@ -378,6 +380,23 @@ export class MemStorage implements IStorage {
       }
     }
     throw new Error('Option not found');
+  }
+
+  async createOption(data: { name: string; price: number; category: string; modelId: string }): Promise<TrailerOptionResponse> {
+    const newOption: TrailerOptionResponse = {
+      id: this.currentId++,
+      modelId: data.modelId,
+      name: data.name,
+      category: data.category,
+      price: data.price,
+      isMultiSelect: false,
+    };
+    
+    const existingOptions = this.options.get(data.modelId) || [];
+    existingOptions.push(newOption);
+    this.options.set(data.modelId, existingOptions);
+    
+    return newOption;
   }
 
 

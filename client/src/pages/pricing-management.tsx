@@ -799,6 +799,36 @@ export default function PricingManagement() {
                   onChange={(e) => setNewOptionData({ ...newOptionData, price: parseInt(e.target.value) || 0 })}
                 />
               </div>
+              <div className="grid gap-2">
+                <Label>Related Models</Label>
+                <div className="border rounded-md p-3 max-h-40 overflow-y-auto">
+                  <div className="space-y-2">
+                    {models?.map((model: TrailerModel) => (
+                      <div key={model.id} className="flex items-center space-x-2">
+                        <Checkbox
+                          id={`new-model-${model.id}`}
+                          checked={newOptionData.relatedModels.includes(model.modelId)}
+                          onCheckedChange={(checked: boolean) => {
+                            const updatedRelated = checked
+                              ? [...newOptionData.relatedModels, model.modelId]
+                              : newOptionData.relatedModels.filter(id => id !== model.modelId);
+                            setNewOptionData({ ...newOptionData, relatedModels: updatedRelated });
+                          }}
+                        />
+                        <label 
+                          htmlFor={`new-model-${model.id}`}
+                          className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                        >
+                          {model.modelId} - {model.name}
+                        </label>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+                <p className="text-xs text-gray-500">
+                  Select which trailer models this option applies to
+                </p>
+              </div>
             </div>
             <DialogFooter>
               <Button
