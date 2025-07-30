@@ -393,7 +393,7 @@ export default function AdminDashboard() {
           )}
 
           <TabsContent value="trailers" className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-1 gap-6">
               <Card>
                 <CardHeader>
                   <CardTitle className="flex items-center">
@@ -408,23 +408,6 @@ export default function AdminDashboard() {
                   <Link href="/admin/pricing">
                     <Button>Manage Pricing</Button>
                   </Link>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center">
-                    <Settings className="w-5 h-5 mr-2" />
-                    Inventory
-                  </CardTitle>
-                  <CardDescription>
-                    Manage trailer inventory and availability
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <Button variant="outline" disabled>
-                    Coming Soon
-                  </Button>
                 </CardContent>
               </Card>
             </div>
