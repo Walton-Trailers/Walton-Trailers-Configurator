@@ -7,7 +7,7 @@ import NotFound from "@/pages/not-found";
 import Configurator from "@/pages/configurator";
 import AdminLogin from "@/pages/admin-login";
 import AdminDashboard from "@/pages/admin-dashboard-fixed";
-import PricingManagement from "@/pages/pricing-management";
+import FastPricing from "@/pages/fast-pricing";
 import AccountManagement from "@/pages/account-management";
 
 function Router() {
@@ -16,7 +16,7 @@ function Router() {
       <Route path="/" component={Configurator} />
       <Route path="/admin/login" component={AdminLogin} />
       <Route path="/admin" component={AdminDashboard} />
-      <Route path="/admin/pricing" component={PricingManagement} />
+      <Route path="/admin/pricing" component={FastPricing} />
       <Route path="/admin/account" component={AccountManagement} />
       <Route component={NotFound} />
     </Switch>
