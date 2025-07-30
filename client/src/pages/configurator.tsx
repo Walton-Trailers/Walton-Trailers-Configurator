@@ -367,6 +367,14 @@ Configuration Date: ${new Date().toLocaleDateString()}
                 </div>
               ))}
             </div>
+
+            {/* Subtle CTA for custom quotes */}
+            <div className="text-center mt-12 mb-8">
+              <div className="inline-flex items-center justify-center px-6 py-3 bg-gray-50 border border-gray-200 rounded-full text-sm text-gray-600 hover:bg-gray-100 hover:border-gray-300 transition-all duration-300 cursor-pointer group">
+                <span className="mr-2">Don't see your desired trailer type?</span>
+                <span className="font-medium text-blue-600 group-hover:text-blue-700">Contact Walton Trailers for a custom quote</span>
+              </div>
+            </div>
           </div>
         )}
 
