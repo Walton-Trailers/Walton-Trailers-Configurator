@@ -33,6 +33,7 @@ export interface TrailerModelResponse {
   imageUrl: string;
   features: string[];
   categoryName?: string;
+  isArchived?: boolean;
 }
 
 export interface TrailerOptionResponse {
@@ -99,6 +100,8 @@ export interface IStorage {
   createOption(data: { name: string; price: number; category: string; modelId: string }): Promise<TrailerOptionResponse>;
   deleteOption(id: number): Promise<void>;
   archiveOption(id: number): Promise<void>;
+  archiveModel(id: number): Promise<void>;
+  getOptionCategories(): Promise<string[]>;
 }
 
 export class MemStorage implements IStorage {
@@ -417,6 +420,10 @@ export class MemStorage implements IStorage {
     throw new Error("MemStorage archiveOption not implemented for pricing management");
   }
 
+  async archiveModel(id: number): Promise<void> {
+    throw new Error("MemStorage archiveModel not implemented for pricing management");
+  }
+
 
 }
 
@@ -669,7 +676,7 @@ export class DatabaseStorage implements IStorage {
       const result = await db.execute(sql`
         SELECT m.id, m.category_id, m.model_id, m.name, m.gvwr, m.payload,
                m.deck_size, m.axles, m.base_price, m.image_url, m.features,
-               c.name as category_name
+               m.is_archived, c.name as category_name
         FROM trailer_models m
         JOIN trailer_categories c ON m.category_id = c.id
         ORDER BY c.name, m.id
@@ -690,6 +697,7 @@ export class DatabaseStorage implements IStorage {
         imageUrl: model.image_url,
         features: model.features || [],
         categoryName: model.category_name,
+        isArchived: model.is_archived || false,
       }));
     } catch (error) {
       console.error('Error fetching all models:', error);
@@ -774,11 +782,18 @@ export class DatabaseStorage implements IStorage {
           WHERE id = ${id}
         `);
       }
+      if (updates.isArchived !== undefined) {
+        await db.execute(sql`
+          UPDATE trailer_models 
+          SET is_archived = ${updates.isArchived}
+          WHERE id = ${id}
+        `);
+      }
       
       // Get the updated record
       const result = await db.execute(sql`
         SELECT id, category_id, model_id, name, gvwr, payload,
-               deck_size, axles, base_price, image_url, features
+               deck_size, axles, base_price, image_url, features, is_archived
         FROM trailer_models WHERE id = ${id}
       `);
       
@@ -795,6 +810,7 @@ export class DatabaseStorage implements IStorage {
         basePrice: updatedModel.base_price,
         imageUrl: updatedModel.image_url,
         features: updatedModel.features || [],
+        isArchived: updatedModel.is_archived || false,
       };
     } catch (error) {
       console.error('Error updating model:', error);
@@ -920,6 +936,19 @@ export class DatabaseStorage implements IStorage {
       `);
     } catch (error) {
       console.error('Error archiving option:', error);
+      throw error;
+    }
+  }
+
+  async archiveModel(id: number): Promise<void> {
+    try {
+      await db.execute(sql`
+        UPDATE trailer_models 
+        SET is_archived = true
+        WHERE id = ${id}
+      `);
+    } catch (error) {
+      console.error('Error archiving model:', error);
       throw error;
     }
   }

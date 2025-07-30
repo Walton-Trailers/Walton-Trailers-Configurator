@@ -1,5 +1,5 @@
 import { useState, useMemo } from "react";
-import { ArrowLeft, Edit, Save, X, DollarSign, Search, ChevronDown, Plus, Trash2, Archive } from "lucide-react";
+import { ArrowLeft, Edit, Save, X, DollarSign, Search, ChevronDown, Plus, Trash2, Archive, RotateCcw } from "lucide-react";
 import { Link } from "wouter";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
@@ -29,6 +29,7 @@ interface TrailerModel {
   imageUrl: string;
   features: string[];
   categoryName: string;
+  isArchived?: boolean;
 }
 
 interface TrailerOption {
@@ -49,6 +50,7 @@ export default function PricingManagement() {
   const [searchQuery, setSearchQuery] = useState("");
   const [showAddOption, setShowAddOption] = useState(false);
   const [showArchivedOptions, setShowArchivedOptions] = useState(false);
+  const [showArchivedModels, setShowArchivedModels] = useState(false);
   const [newOptionData, setNewOptionData] = useState({
     name: "",
     price: 0,
@@ -100,7 +102,7 @@ export default function PricingManagement() {
 
   // Update model mutation
   const updateModelMutation = useMutation({
-    mutationFn: (data: { id: number; basePrice?: number; name?: string; modelId?: string; gvwr?: string; payload?: string; deckSize?: string; categoryId?: number }) =>
+    mutationFn: (data: { id: number; basePrice?: number; name?: string; modelId?: string; gvwr?: string; payload?: string; deckSize?: string; categoryId?: number; isArchived?: boolean }) =>
       apiRequest(`/api/models/${data.id}`, {
         method: "PATCH",
         body: { 
@@ -110,7 +112,8 @@ export default function PricingManagement() {
           gvwr: data.gvwr, 
           payload: data.payload, 
           deckSize: data.deckSize,
-          categoryId: data.categoryId
+          categoryId: data.categoryId,
+          isArchived: data.isArchived
         },
         headers: sessionId ? { Authorization: `Bearer ${sessionId}` } : {},
       }),
@@ -242,6 +245,29 @@ export default function PricingManagement() {
     },
   });
 
+  // Archive model mutation
+  const archiveModelMutation = useMutation({
+    mutationFn: (modelId: number) =>
+      apiRequest(`/api/models/${modelId}/archive`, {
+        method: "PATCH",
+        headers: sessionId ? { Authorization: `Bearer ${sessionId}` } : {},
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/models/all"] });
+      toast({
+        title: "Success",
+        description: "Model archived successfully",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to archive model",
+        variant: "destructive",
+      });
+    },
+  });
+
   const handleModelPriceUpdate = (model: TrailerModel) => {
     const data = editData[model.id] || {};
     updateModelMutation.mutate({
@@ -290,16 +316,38 @@ export default function PricingManagement() {
 
   // Filter models based on search query
   const filteredModels = useMemo(() => {
-    if (!models || !searchQuery.trim()) return models;
+    if (!models) return [];
     
     const query = searchQuery.toLowerCase();
-    return models.filter((model: TrailerModel) => 
-      model.name.toLowerCase().includes(query) ||
-      model.modelId.toLowerCase().includes(query) ||
-      model.basePrice.toString().includes(query) ||
-      model.gvwr.toString().includes(query) ||
-      model.categoryName.toLowerCase().includes(query)
-    );
+    const filteredList = searchQuery.trim() 
+      ? models.filter((model: TrailerModel) => 
+          model.name.toLowerCase().includes(query) ||
+          model.modelId.toLowerCase().includes(query) ||
+          model.basePrice.toString().includes(query) ||
+          model.gvwr.toString().includes(query) ||
+          model.categoryName.toLowerCase().includes(query)
+        )
+      : models;
+    
+    return filteredList.filter((model: TrailerModel) => !model.isArchived);
+  }, [models, searchQuery]);
+
+  // Filter archived models
+  const archivedModels = useMemo(() => {
+    if (!models) return [];
+    
+    const query = searchQuery.toLowerCase();
+    const filteredList = searchQuery.trim() 
+      ? models.filter((model: TrailerModel) => 
+          model.name.toLowerCase().includes(query) ||
+          model.modelId.toLowerCase().includes(query) ||
+          model.basePrice.toString().includes(query) ||
+          model.gvwr.toString().includes(query) ||
+          model.categoryName.toLowerCase().includes(query)
+        )
+      : models;
+    
+    return filteredList.filter((model: TrailerModel) => model.isArchived);
   }, [models, searchQuery]);
 
   if (authLoading) {
@@ -519,24 +567,35 @@ export default function PricingManagement() {
                                 </Button>
                               </div>
                             ) : (
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                onClick={() => {
-                                  setEditingModel(model);
-                                  setEditData({ [model.id]: { 
-                                    basePrice: model.basePrice,
-                                    name: model.name,
-                                    modelId: model.modelId,
-                                    gvwr: model.gvwr,
-                                    payload: model.payload,
-                                    deckSize: model.deckSize,
-                                    categoryId: model.categoryId
-                                  } });
-                                }}
-                              >
-                                <Edit className="w-4 h-4" />
-                              </Button>
+                              <div className="flex gap-2">
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => {
+                                    setEditingModel(model);
+                                    setEditData({ [model.id]: { 
+                                      basePrice: model.basePrice,
+                                      name: model.name,
+                                      modelId: model.modelId,
+                                      gvwr: model.gvwr,
+                                      payload: model.payload,
+                                      deckSize: model.deckSize,
+                                      categoryId: model.categoryId
+                                    } });
+                                  }}
+                                >
+                                  <Edit className="w-4 h-4" />
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => archiveModelMutation.mutate(model.id)}
+                                  disabled={archiveModelMutation.isPending}
+                                  title="Archive model"
+                                >
+                                  <Archive className="w-4 h-4" />
+                                </Button>
+                              </div>
                             )}
                           </TableCell>
                         </TableRow>
@@ -546,6 +605,70 @@ export default function PricingManagement() {
                 ) : (
                   <div className="text-center py-8 text-gray-500">
                     No trailer models found
+                  </div>
+                )}
+
+                {/* Archived Models Section */}
+                {archivedModels.length > 0 && (
+                  <div className="mt-8">
+                    <div className="flex items-center gap-2 mb-4">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => setShowArchivedModels(!showArchivedModels)}
+                        className="text-gray-600 hover:text-gray-800"
+                      >
+                        <Archive className="w-4 h-4 mr-2" />
+                        {showArchivedModels ? 'Hide' : 'Show'} Archived Models ({archivedModels.length})
+                      </Button>
+                    </div>
+                    
+                    {showArchivedModels && (
+                      <div className="border rounded-lg p-4 bg-gray-50">
+                        <h4 className="text-sm font-medium text-gray-700 mb-3">Archived Models</h4>
+                        <Table>
+                          <TableHeader>
+                            <TableRow>
+                              <TableHead>Model ID</TableHead>
+                              <TableHead>Model Name</TableHead>
+                              <TableHead>Category</TableHead>
+                              <TableHead>GVWR</TableHead>
+                              <TableHead>Payload</TableHead>
+                              <TableHead>Deck Size</TableHead>
+                              <TableHead>Base Price</TableHead>
+                              <TableHead>Actions</TableHead>
+                            </TableRow>
+                          </TableHeader>
+                          <TableBody>
+                            {archivedModels.map((model: TrailerModel) => (
+                              <TableRow key={model.id} className="opacity-60">
+                                <TableCell className="font-medium">{model.modelId}</TableCell>
+                                <TableCell>{model.name}</TableCell>
+                                <TableCell>{model.categoryName}</TableCell>
+                                <TableCell>{model.gvwr}</TableCell>
+                                <TableCell>{model.payload}</TableCell>
+                                <TableCell>{model.deckSize}</TableCell>
+                                <TableCell>${model.basePrice?.toLocaleString()}</TableCell>
+                                <TableCell>
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    onClick={() => updateModelMutation.mutate({ 
+                                      id: model.id, 
+                                      isArchived: false 
+                                    })}
+                                    disabled={updateModelMutation.isPending}
+                                    title="Restore model"
+                                  >
+                                    <RotateCcw className="w-4 h-4" />
+                                  </Button>
+                                </TableCell>
+                              </TableRow>
+                            ))}
+                          </TableBody>
+                        </Table>
+                      </div>
+                    )}
                   </div>
                 )}
               </CardContent>

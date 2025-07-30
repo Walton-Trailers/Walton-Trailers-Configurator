@@ -442,6 +442,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Archive model
+  app.patch("/api/models/:id/archive", requireAuth, async (req, res) => {
+    try {
+      const modelId = parseInt(req.params.id);
+      await storage.archiveModel(modelId);
+      res.json({ success: true });
+    } catch (error) {
+      console.error('Error archiving model:', error);
+      res.status(500).json({ error: "Failed to archive model" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }
