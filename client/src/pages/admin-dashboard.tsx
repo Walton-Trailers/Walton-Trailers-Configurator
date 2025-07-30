@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -152,8 +152,13 @@ export default function AdminDashboard() {
   }
 
   // Redirect to login if not authenticated
+  useEffect(() => {
+    if (!isLoading && !user) {
+      setLocation("/admin/login");
+    }
+  }, [isLoading, user, setLocation]);
+
   if (!user) {
-    setLocation("/admin/login");
     return null;
   }
 

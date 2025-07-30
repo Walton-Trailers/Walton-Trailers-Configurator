@@ -808,9 +808,7 @@ export class DatabaseStorage implements IStorage {
         name: updatedOption.name,
         category: updatedOption.category,
         price: updatedOption.price,
-        isRequired: false,
         isMultiSelect: updatedOption.is_multi_select || false,
-        options: [],
       };
     } catch (error) {
       console.error('Error updating option:', error);
