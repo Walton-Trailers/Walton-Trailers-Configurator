@@ -1,5 +1,5 @@
 import { useState, useMemo } from "react";
-import { ArrowLeft, Edit, Save, X, DollarSign, Search } from "lucide-react";
+import { ArrowLeft, Edit, Save, X, DollarSign, Search, ChevronDown } from "lucide-react";
 import { Link } from "wouter";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
@@ -9,6 +9,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
 import { useAdminAuth } from "@/hooks/useAdminAuth";
 
@@ -544,18 +546,74 @@ export default function PricingManagement() {
                             )}
                           </TableCell>
                           <TableCell>
-                            <span className="text-sm text-gray-600">
-                              {models ? 
-                                models
-                                  .filter((model: TrailerModel) => 
-                                    model.modelId === option.modelId || 
-                                    model.modelId.startsWith(option.modelId.substring(0, 3))
-                                  )
-                                  .map((model: TrailerModel) => model.modelId)
-                                  .join(", ") || option.modelId
-                                : "Loading..."
-                              }
-                            </span>
+                            {editingOption?.id === option.id ? (
+                              <div className="w-48">
+                                <Popover>
+                                  <PopoverTrigger asChild>
+                                    <Button variant="outline" className="w-full justify-between">
+                                      Select Models
+                                      <ChevronDown className="h-4 w-4" />
+                                    </Button>
+                                  </PopoverTrigger>
+                                  <PopoverContent className="w-64 p-0">
+                                    <div className="max-h-64 overflow-y-auto p-4 space-y-2">
+                                      {models?.map((model: TrailerModel) => (
+                                        <div key={model.id} className="flex items-center space-x-2">
+                                          <Checkbox
+                                            id={`model-${model.id}-${option.id}`}
+                                            checked={editData[option.id]?.relatedModels?.includes(model.modelId) || 
+                                                    model.modelId === option.modelId || 
+                                                    model.modelId.startsWith(option.modelId.substring(0, 3))}
+                                            onCheckedChange={(checked: boolean) => {
+                                              const currentRelated = editData[option.id]?.relatedModels || 
+                                                models
+                                                  .filter((m: TrailerModel) => 
+                                                    m.modelId === option.modelId || 
+                                                    m.modelId.startsWith(option.modelId.substring(0, 3))
+                                                  )
+                                                  .map((m: TrailerModel) => m.modelId);
+                                              
+                                              const updatedRelated = checked
+                                                ? Array.from(new Set([...currentRelated, model.modelId]))
+                                                : currentRelated.filter((id: string) => id !== model.modelId);
+                                              
+                                              setEditData(prev => ({
+                                                ...prev,
+                                                [option.id]: {
+                                                  ...prev[option.id],
+                                                  relatedModels: updatedRelated
+                                                }
+                                              }));
+                                            }}
+                                          />
+                                          <label 
+                                            htmlFor={`model-${model.id}-${option.id}`}
+                                            className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                                          >
+                                            {model.modelId}
+                                          </label>
+                                        </div>
+                                      ))}
+                                    </div>
+                                  </PopoverContent>
+                                </Popover>
+                              </div>
+                            ) : (
+                              <div className="max-w-48">
+                                <span className="text-sm text-gray-600">
+                                  {models ? 
+                                    models
+                                      .filter((model: TrailerModel) => 
+                                        model.modelId === option.modelId || 
+                                        model.modelId.startsWith(option.modelId.substring(0, 3))
+                                      )
+                                      .map((model: TrailerModel) => model.modelId)
+                                      .join(", ") || option.modelId
+                                    : "Loading..."
+                                  }
+                                </span>
+                              </div>
+                            )}
                           </TableCell>
                           <TableCell>
                             {editingOption?.id === option.id ? (
@@ -609,7 +667,13 @@ export default function PricingManagement() {
                                       price: option.price,
                                       name: option.name,
                                       category: option.category,
-                                      modelId: option.modelId
+                                      modelId: option.modelId,
+                                      relatedModels: models
+                                        ?.filter((model: TrailerModel) => 
+                                          model.modelId === option.modelId || 
+                                          model.modelId.startsWith(option.modelId.substring(0, 3))
+                                        )
+                                        .map((model: TrailerModel) => model.modelId) || [option.modelId]
                                     } 
                                   });
                                 }}
