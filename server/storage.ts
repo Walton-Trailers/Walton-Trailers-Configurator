@@ -430,11 +430,16 @@ export class MemStorage implements IStorage {
 export class DatabaseStorage implements IStorage {
   async getTrailerCategories(): Promise<TrailerCategoryResponse[]> {
     try {
-      // Use raw SQL to avoid schema mismatches
+      // Dynamic pricing based on lowest model price in each category
       const result = await db.execute(sql`
-        SELECT id, slug, name, description, image_url, starting_price 
-        FROM trailer_categories
-        ORDER BY id
+        SELECT 
+          c.id, c.slug, c.name, c.description, c.image_url,
+          COALESCE(MIN(m.base_price), c.starting_price) as starting_price
+        FROM trailer_categories c
+        LEFT JOIN trailer_models m ON c.id = m.category_id 
+          AND (m.is_archived IS NULL OR m.is_archived = false)
+        GROUP BY c.id, c.slug, c.name, c.description, c.image_url, c.starting_price
+        ORDER BY c.id
       `);
       
       return result.rows.map((cat: any) => ({

@@ -4,14 +4,20 @@ import { cache } from "./cache";
 
 // Optimized storage with aggressive caching and batch operations
 export class FastStorage {
-  // Cached categories - rarely change
+  // Cached categories with dynamic pricing from models
   async getCategories() {
     const cached = cache.get('categories');
     if (cached) return cached;
 
     const result = await db.execute(sql`
-      SELECT id, slug, name, description, image_url, starting_price 
-      FROM trailer_categories ORDER BY id
+      SELECT 
+        c.id, c.slug, c.name, c.description, c.image_url,
+        COALESCE(MIN(m.base_price), c.starting_price) as starting_price
+      FROM trailer_categories c
+      LEFT JOIN trailer_models m ON c.id = m.category_id 
+        AND (m.is_archived IS NULL OR m.is_archived = false)
+      GROUP BY c.id, c.slug, c.name, c.description, c.image_url, c.starting_price
+      ORDER BY c.id
     `);
     
     const categories = result.rows.map((cat: any) => ({
@@ -23,7 +29,7 @@ export class FastStorage {
       startingPrice: cat.starting_price
     }));
     
-    cache.set('categories', categories, 600000); // 10 min cache
+    cache.set('categories', categories, 300000); // 5 min cache for dynamic pricing
     return categories;
   }
 
@@ -133,7 +139,7 @@ export class FastStorage {
     
     await Promise.all(queries);
     
-    // Clear related caches
+    // Clear ALL caches since pricing affects categories too
     cache.clear();
     
     return this.getModelById(id);
@@ -141,6 +147,7 @@ export class FastStorage {
 
   async archiveModel(id: number) {
     await db.execute(sql`UPDATE trailer_models SET is_archived = true WHERE id = ${id}`);
+    // Clear ALL caches since archiving affects category pricing
     cache.clear();
   }
 
