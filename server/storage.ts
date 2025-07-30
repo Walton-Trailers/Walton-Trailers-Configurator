@@ -634,6 +634,8 @@ export class DatabaseStorage implements IStorage {
         ORDER BY id
       `);
       
+      console.log('Raw models result:', result.rows.length);
+      
       return result.rows.map((model: any) => ({
         id: model.id,
         categoryId: model.category_id,
@@ -649,7 +651,7 @@ export class DatabaseStorage implements IStorage {
       }));
     } catch (error) {
       console.error('Error fetching all models:', error);
-      throw error;
+      throw new Error(`Failed to fetch models: ${error.message}`);
     }
   }
 
@@ -665,7 +667,6 @@ export class DatabaseStorage implements IStorage {
         id: option.id,
         modelId: option.model_id,
         name: option.name,
-        description: option.name,
         category: option.category,
         price: option.price,
         isRequired: false,
