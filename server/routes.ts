@@ -353,7 +353,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.patch("/api/models/:id", requireAuth, async (req, res) => {
     try {
       const modelId = parseInt(req.params.id);
-      const { basePrice, name, modelId: modelIdField, gvwr, payload, deckSize } = req.body;
+      const { basePrice, name, modelId: modelIdField, gvwr, payload, deckSize, categoryId } = req.body;
       
       console.log(`Updating model ${modelId} with:`, req.body);
       
@@ -364,6 +364,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         gvwr,
         payload,
         deckSize,
+        categoryId,
       });
       
       console.log("Updated model result:", updatedModel);

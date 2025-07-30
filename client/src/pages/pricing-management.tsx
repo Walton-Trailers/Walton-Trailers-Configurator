@@ -74,9 +74,15 @@ export default function PricingManagement() {
       }),
   });
 
+  // Fetch all trailer categories for the dropdown
+  const { data: trailerCategories } = useQuery({
+    queryKey: ["/api/categories"],
+    queryFn: () => apiRequest("/api/categories"),
+  });
+
   // Update model mutation
   const updateModelMutation = useMutation({
-    mutationFn: (data: { id: number; basePrice?: number; name?: string; modelId?: string; gvwr?: string; payload?: string; deckSize?: string }) =>
+    mutationFn: (data: { id: number; basePrice?: number; name?: string; modelId?: string; gvwr?: string; payload?: string; deckSize?: string; categoryId?: number }) =>
       apiRequest(`/api/models/${data.id}`, {
         method: "PATCH",
         body: { 
@@ -85,7 +91,8 @@ export default function PricingManagement() {
           modelId: data.modelId, 
           gvwr: data.gvwr, 
           payload: data.payload, 
-          deckSize: data.deckSize 
+          deckSize: data.deckSize,
+          categoryId: data.categoryId
         },
         headers: sessionId ? { Authorization: `Bearer ${sessionId}` } : {},
       }),
@@ -299,7 +306,28 @@ export default function PricingManagement() {
                             )}
                           </TableCell>
                           <TableCell>
-                            <span className="text-sm text-gray-600">{model.categoryName}</span>
+                            {editingModel?.id === model.id ? (
+                              <Select 
+                                value={editData[model.id]?.categoryId?.toString() ?? model.categoryId.toString()}
+                                onValueChange={(value) => setEditData(prev => ({
+                                  ...prev,
+                                  [model.id]: { ...prev[model.id], categoryId: parseInt(value) }
+                                }))}
+                              >
+                                <SelectTrigger className="w-40">
+                                  <SelectValue placeholder="Select category" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  {trailerCategories?.map((category: any) => (
+                                    <SelectItem key={category.id} value={category.id.toString()}>
+                                      {category.name}
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                            ) : (
+                              <span className="text-sm text-gray-600">{model.categoryName}</span>
+                            )}
                           </TableCell>
                           <TableCell>
                             {editingModel?.id === model.id ? (
@@ -396,7 +424,8 @@ export default function PricingManagement() {
                                     modelId: model.modelId,
                                     gvwr: model.gvwr,
                                     payload: model.payload,
-                                    deckSize: model.deckSize
+                                    deckSize: model.deckSize,
+                                    categoryId: model.categoryId
                                   } });
                                 }}
                               >
