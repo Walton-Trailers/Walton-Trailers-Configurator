@@ -1,6 +1,60 @@
-import type { Express } from "express";
+import type { Express, Request, Response, NextFunction } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
+import { 
+  authenticateUser, 
+  createSession, 
+  validateSession, 
+  logout, 
+  hashPassword,
+  isAdmin
+} from "./auth";
+import { insertAdminUserSchema, type AdminUser } from "@shared/schema";
+import { z } from "zod";
+
+// Extend Express Request interface
+interface AuthenticatedRequest extends Request {
+  user?: AdminUser;
+  sessionId?: string;
+}
+
+// Admin authentication middleware
+const requireAuth = async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
+  const sessionId = req.get('authorization')?.replace('Bearer ', '');
+  
+  if (!sessionId) {
+    return res.status(401).json({ error: 'Authentication required' });
+  }
+
+  const authResult = await validateSession(sessionId);
+  
+  if (!authResult.success) {
+    return res.status(401).json({ error: authResult.error });
+  }
+
+  req.user = authResult.user;
+  req.sessionId = sessionId;
+  next();
+};
+
+// Admin role middleware
+const requireAdmin = (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
+  if (!req.user || !isAdmin(req.user)) {
+    return res.status(403).json({ error: 'Admin privileges required' });
+  }
+  next();
+};
+
+// Login validation schema
+const loginSchema = z.object({
+  username: z.string().min(1, 'Username is required'),
+  password: z.string().min(1, 'Password is required'),
+});
+
+// User creation schema for admin
+const createUserSchema = insertAdminUserSchema.extend({
+  password: z.string().min(8, 'Password must be at least 8 characters'),
+}).omit({ passwordHash: true });
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Get all trailer categories
@@ -72,6 +126,185 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(config);
     } catch (error) {
       res.status(500).json({ message: "Failed to fetch configuration" });
+    }
+  });
+
+  // ========================
+  // ADMIN API ROUTES
+  // ========================
+
+  // Admin login
+  app.post("/api/admin/login", async (req, res) => {
+    try {
+      const { username, password } = loginSchema.parse(req.body);
+      
+      const authResult = await authenticateUser(username, password);
+      
+      if (!authResult.success) {
+        return res.status(401).json({ error: authResult.error });
+      }
+
+      const sessionResult = await createSession(authResult.user!.id);
+      
+      if (!sessionResult.success) {
+        return res.status(500).json({ error: sessionResult.error });
+      }
+
+      res.json({
+        user: {
+          id: authResult.user!.id,
+          username: authResult.user!.username,
+          email: authResult.user!.email,
+          firstName: authResult.user!.firstName,
+          lastName: authResult.user!.lastName,
+          role: authResult.user!.role,
+        },
+        sessionId: sessionResult.sessionId,
+        expiresAt: sessionResult.expiresAt,
+      });
+    } catch (error) {
+      console.error("Login error:", error);
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ error: error.errors[0].message });
+      }
+      res.status(500).json({ error: "Login failed" });
+    }
+  });
+
+  // Admin logout
+  app.post("/api/admin/logout", requireAuth, async (req: any, res) => {
+    try {
+      await logout(req.sessionId!);
+      res.json({ message: "Logged out successfully" });
+    } catch (error) {
+      console.error("Logout error:", error);
+      res.status(500).json({ error: "Logout failed" });
+    }
+  });
+
+  // Get current user profile
+  app.get("/api/admin/profile", requireAuth, async (req: any, res) => {
+    const user = req.user!;
+    res.json({
+      id: user.id,
+      username: user.username,
+      email: user.email,
+      firstName: user.firstName,
+      lastName: user.lastName,
+      role: user.role,
+      lastLogin: user.lastLogin,
+      createdAt: user.createdAt,
+    });
+  });
+
+  // Get all users (admin only)
+  app.get("/api/admin/users", requireAuth, requireAdmin, async (req, res) => {
+    try {
+      const users = await storage.getAllAdminUsers();
+      const sanitizedUsers = users.map(user => ({
+        id: user.id,
+        username: user.username,
+        email: user.email,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        role: user.role,
+        isActive: user.isActive,
+        lastLogin: user.lastLogin,
+        createdAt: user.createdAt,
+      }));
+      res.json(sanitizedUsers);
+    } catch (error) {
+      console.error("Error fetching users:", error);
+      res.status(500).json({ error: "Failed to fetch users" });
+    }
+  });
+
+  // Create new user (admin only)
+  app.post("/api/admin/users", requireAuth, requireAdmin, async (req: any, res) => {
+    try {
+      const userData = createUserSchema.parse(req.body);
+      
+      // Check if username or email already exists
+      const existingByUsername = await storage.getAdminUserByUsername(userData.username);
+      if (existingByUsername) {
+        return res.status(400).json({ error: "Username already exists" });
+      }
+
+      const existingByEmail = await storage.getAdminUserByEmail(userData.email);
+      if (existingByEmail) {
+        return res.status(400).json({ error: "Email already exists" });
+      }
+
+      // Hash the password
+      const passwordHash = await hashPassword(userData.password);
+      
+      const newUser = await storage.createAdminUser({
+        ...userData,
+        passwordHash,
+      });
+
+      res.status(201).json({
+        id: newUser.id,
+        username: newUser.username,
+        email: newUser.email,
+        firstName: newUser.firstName,
+        lastName: newUser.lastName,
+        role: newUser.role,
+        isActive: newUser.isActive,
+        createdAt: newUser.createdAt,
+      });
+    } catch (error) {
+      console.error("Error creating user:", error);
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ error: error.errors[0].message });
+      }
+      res.status(500).json({ error: "Failed to create user" });
+    }
+  });
+
+  // Update user (admin only)
+  app.patch("/api/admin/users/:id", requireAuth, requireAdmin, async (req: any, res) => {
+    try {
+      const userId = parseInt(req.params.id);
+      const updates = req.body;
+      
+      // Don't allow password updates through this endpoint
+      delete updates.passwordHash;
+      delete updates.password;
+      
+      const updatedUser = await storage.updateAdminUser(userId, updates);
+      
+      res.json({
+        id: updatedUser.id,
+        username: updatedUser.username,
+        email: updatedUser.email,
+        firstName: updatedUser.firstName,
+        lastName: updatedUser.lastName,
+        role: updatedUser.role,
+        isActive: updatedUser.isActive,
+        updatedAt: updatedUser.updatedAt,
+      });
+    } catch (error) {
+      console.error("Error updating user:", error);
+      res.status(500).json({ error: "Failed to update user" });
+    }
+  });
+
+  // Deactivate user (admin only)
+  app.delete("/api/admin/users/:id", requireAuth, requireAdmin, async (req: any, res) => {
+    try {
+      const userId = parseInt(req.params.id);
+      
+      // Don't allow admin to deactivate themselves
+      if (userId === req.user!.id) {
+        return res.status(400).json({ error: "Cannot deactivate your own account" });
+      }
+      
+      await storage.deactivateAdminUser(userId);
+      res.json({ message: "User deactivated successfully" });
+    } catch (error) {
+      console.error("Error deactivating user:", error);
+      res.status(500).json({ error: "Failed to deactivate user" });
     }
   });
 

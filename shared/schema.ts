@@ -1,4 +1,4 @@
-import { pgTable, text, serial, integer, boolean, json, numeric, timestamp } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, integer, boolean, json, numeric, timestamp, varchar } from "drizzle-orm/pg-core";
 import { relations } from "drizzle-orm";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
@@ -79,6 +79,29 @@ export const userConfigurations = pgTable("user_configurations", {
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
+// Admin Users
+export const adminUsers = pgTable("admin_users", {
+  id: serial("id").primaryKey(),
+  username: varchar("username", { length: 50 }).notNull().unique(),
+  email: varchar("email", { length: 100 }).notNull().unique(),
+  passwordHash: text("password_hash").notNull(),
+  firstName: varchar("first_name", { length: 50 }),
+  lastName: varchar("last_name", { length: 50 }),
+  role: varchar("role", { length: 20 }).notNull().default("standard"), // 'admin' or 'standard'
+  isActive: boolean("is_active").notNull().default(true),
+  lastLogin: timestamp("last_login"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Admin Sessions for authentication
+export const adminSessions = pgTable("admin_sessions", {
+  id: varchar("id", { length: 255 }).primaryKey(),
+  userId: integer("user_id").notNull(),
+  expiresAt: timestamp("expires_at").notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
 // Insert schemas
 export const insertTrailerCategorySchema = createInsertSchema(trailerCategories).omit({ id: true });
 export const insertTrailerModelSchema = createInsertSchema(trailerModels).omit({ id: true });
@@ -89,6 +112,15 @@ export const insertUserConfigurationSchema = createInsertSchema(userConfiguratio
   createdAt: true,
   updatedAt: true,
 });
+export const insertAdminUserSchema = createInsertSchema(adminUsers).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+  lastLogin: true,
+});
+export const insertAdminSessionSchema = createInsertSchema(adminSessions).omit({
+  createdAt: true,
+});
 
 // Types
 export type TrailerCategory = typeof trailerCategories.$inferSelect;
@@ -96,11 +128,15 @@ export type TrailerModel = typeof trailerModels.$inferSelect;
 export type ModelVariant = typeof modelVariants.$inferSelect;
 export type TrailerOption = typeof trailerOptions.$inferSelect;
 export type UserConfiguration = typeof userConfigurations.$inferSelect;
+export type AdminUser = typeof adminUsers.$inferSelect;
+export type AdminSession = typeof adminSessions.$inferSelect;
 export type InsertTrailerCategory = z.infer<typeof insertTrailerCategorySchema>;
 export type InsertTrailerModel = z.infer<typeof insertTrailerModelSchema>;
 export type InsertModelVariant = z.infer<typeof insertModelVariantSchema>;
 export type InsertTrailerOption = z.infer<typeof insertTrailerOptionSchema>;
 export type InsertUserConfiguration = z.infer<typeof insertUserConfigurationSchema>;
+export type InsertAdminUser = z.infer<typeof insertAdminUserSchema>;
+export type InsertAdminSession = z.infer<typeof insertAdminSessionSchema>;
 
 // Relations
 export const trailerCategoriesRelations = relations(trailerCategories, ({ many }) => ({
@@ -131,5 +167,16 @@ export const userConfigurationsRelations = relations(userConfigurations, ({ one 
   variant: one(modelVariants, {
     fields: [userConfigurations.variantId],
     references: [modelVariants.id],
+  }),
+}));
+
+export const adminUsersRelations = relations(adminUsers, ({ many }) => ({
+  sessions: many(adminSessions),
+}));
+
+export const adminSessionsRelations = relations(adminSessions, ({ one }) => ({
+  user: one(adminUsers, {
+    fields: [adminSessions.userId],
+    references: [adminUsers.id],
   }),
 }));

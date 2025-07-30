@@ -1,5 +1,13 @@
 import { db } from "./db";
-import { sql } from "drizzle-orm";
+import { sql, eq } from "drizzle-orm";
+import { 
+  adminUsers, 
+  adminSessions, 
+  type AdminUser, 
+  type AdminSession, 
+  type InsertAdminUser, 
+  type InsertAdminSession 
+} from "@shared/schema";
 
 // Simple interfaces that match the frontend expectations
 export interface TrailerCategoryResponse {
@@ -56,12 +64,28 @@ interface InsertUserConfiguration {
 }
 
 export interface IStorage {
+  // Trailer operations
   getTrailerCategories(): Promise<TrailerCategoryResponse[]>;
   getTrailerModelsByCategory(categorySlug: string): Promise<TrailerModelResponse[]>;
   getTrailerModel(modelId: string): Promise<TrailerModelResponse | undefined>;
   getTrailerOptions(modelId: string): Promise<TrailerOptionResponse[]>;
   saveUserConfiguration(config: InsertUserConfiguration): Promise<UserConfiguration>;
   getUserConfiguration(sessionId: string): Promise<UserConfiguration | undefined>;
+  
+  // Admin operations
+  createAdminUser(user: InsertAdminUser): Promise<AdminUser>;
+  getAdminUserByUsername(username: string): Promise<AdminUser | undefined>;
+  getAdminUserByEmail(email: string): Promise<AdminUser | undefined>;
+  getAdminUserById(id: number): Promise<AdminUser | undefined>;
+  updateAdminUser(id: number, updates: Partial<AdminUser>): Promise<AdminUser>;
+  getAllAdminUsers(): Promise<AdminUser[]>;
+  deactivateAdminUser(id: number): Promise<void>;
+  
+  // Session operations
+  createAdminSession(session: InsertAdminSession): Promise<AdminSession>;
+  getAdminSession(sessionId: string): Promise<AdminSession | undefined>;
+  deleteAdminSession(sessionId: string): Promise<void>;
+  deleteExpiredSessions(): Promise<void>;
 }
 
 export class MemStorage implements IStorage {
@@ -267,6 +291,51 @@ export class MemStorage implements IStorage {
   async getUserConfiguration(sessionId: string): Promise<UserConfiguration | undefined> {
     return this.configurations.get(sessionId);
   }
+
+  // Admin operations (not implemented in memory storage)
+  async createAdminUser(user: InsertAdminUser): Promise<AdminUser> {
+    throw new Error("Admin operations not supported in memory storage");
+  }
+
+  async getAdminUserByUsername(username: string): Promise<AdminUser | undefined> {
+    throw new Error("Admin operations not supported in memory storage");
+  }
+
+  async getAdminUserByEmail(email: string): Promise<AdminUser | undefined> {
+    throw new Error("Admin operations not supported in memory storage");
+  }
+
+  async getAdminUserById(id: number): Promise<AdminUser | undefined> {
+    throw new Error("Admin operations not supported in memory storage");
+  }
+
+  async updateAdminUser(id: number, updates: Partial<AdminUser>): Promise<AdminUser> {
+    throw new Error("Admin operations not supported in memory storage");
+  }
+
+  async getAllAdminUsers(): Promise<AdminUser[]> {
+    throw new Error("Admin operations not supported in memory storage");
+  }
+
+  async deactivateAdminUser(id: number): Promise<void> {
+    throw new Error("Admin operations not supported in memory storage");
+  }
+
+  async createAdminSession(session: InsertAdminSession): Promise<AdminSession> {
+    throw new Error("Admin operations not supported in memory storage");
+  }
+
+  async getAdminSession(sessionId: string): Promise<AdminSession | undefined> {
+    throw new Error("Admin operations not supported in memory storage");
+  }
+
+  async deleteAdminSession(sessionId: string): Promise<void> {
+    throw new Error("Admin operations not supported in memory storage");
+  }
+
+  async deleteExpiredSessions(): Promise<void> {
+    throw new Error("Admin operations not supported in memory storage");
+  }
 }
 
 export class DatabaseStorage implements IStorage {
@@ -397,6 +466,119 @@ export class DatabaseStorage implements IStorage {
     // For now, return undefined
     // In production, this would query the database
     return undefined;
+  }
+
+  // Admin User Operations
+  async createAdminUser(user: InsertAdminUser): Promise<AdminUser> {
+    try {
+      const [newUser] = await db.insert(adminUsers).values(user).returning();
+      return newUser;
+    } catch (error) {
+      console.error('Error creating admin user:', error);
+      throw error;
+    }
+  }
+
+  async getAdminUserByUsername(username: string): Promise<AdminUser | undefined> {
+    try {
+      const [user] = await db.select().from(adminUsers).where(eq(adminUsers.username, username));
+      return user;
+    } catch (error) {
+      console.error('Error fetching admin user by username:', error);
+      throw error;
+    }
+  }
+
+  async getAdminUserByEmail(email: string): Promise<AdminUser | undefined> {
+    try {
+      const [user] = await db.select().from(adminUsers).where(eq(adminUsers.email, email));
+      return user;
+    } catch (error) {
+      console.error('Error fetching admin user by email:', error);
+      throw error;
+    }
+  }
+
+  async getAdminUserById(id: number): Promise<AdminUser | undefined> {
+    try {
+      const [user] = await db.select().from(adminUsers).where(eq(adminUsers.id, id));
+      return user;
+    } catch (error) {
+      console.error('Error fetching admin user by id:', error);
+      throw error;
+    }
+  }
+
+  async updateAdminUser(id: number, updates: Partial<AdminUser>): Promise<AdminUser> {
+    try {
+      const [updatedUser] = await db.update(adminUsers)
+        .set({ ...updates, updatedAt: new Date() })
+        .where(eq(adminUsers.id, id))
+        .returning();
+      return updatedUser;
+    } catch (error) {
+      console.error('Error updating admin user:', error);
+      throw error;
+    }
+  }
+
+  async getAllAdminUsers(): Promise<AdminUser[]> {
+    try {
+      return await db.select().from(adminUsers).orderBy(adminUsers.createdAt);
+    } catch (error) {
+      console.error('Error fetching all admin users:', error);
+      throw error;
+    }
+  }
+
+  async deactivateAdminUser(id: number): Promise<void> {
+    try {
+      await db.update(adminUsers)
+        .set({ isActive: false, updatedAt: new Date() })
+        .where(eq(adminUsers.id, id));
+    } catch (error) {
+      console.error('Error deactivating admin user:', error);
+      throw error;
+    }
+  }
+
+  // Session Operations
+  async createAdminSession(session: InsertAdminSession): Promise<AdminSession> {
+    try {
+      const [newSession] = await db.insert(adminSessions).values(session).returning();
+      return newSession;
+    } catch (error) {
+      console.error('Error creating admin session:', error);
+      throw error;
+    }
+  }
+
+  async getAdminSession(sessionId: string): Promise<AdminSession | undefined> {
+    try {
+      const [session] = await db.select().from(adminSessions).where(eq(adminSessions.id, sessionId));
+      return session;
+    } catch (error) {
+      console.error('Error fetching admin session:', error);
+      throw error;
+    }
+  }
+
+  async deleteAdminSession(sessionId: string): Promise<void> {
+    try {
+      await db.delete(adminSessions).where(eq(adminSessions.id, sessionId));
+    } catch (error) {
+      console.error('Error deleting admin session:', error);
+      throw error;
+    }
+  }
+
+  async deleteExpiredSessions(): Promise<void> {
+    try {
+      await db.delete(adminSessions).where(sql`expires_at < NOW()`);
+    } catch (error) {
+      console.error('Error deleting expired sessions:', error);
+      throw error;
+    }
   }
 }
 
