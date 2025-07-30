@@ -333,19 +333,19 @@ Configuration Date: ${new Date().toLocaleDateString()}
                     onMouseEnter={() => setHoveredCategory(category)}
                     onMouseLeave={() => setHoveredCategory(null)}
                   >
-                    <div className="flex">
-                      {/* Left side - Image */}
-                      <div className="w-2/5 h-48 relative overflow-hidden">
+                    <div className="flex flex-col">
+                      {/* Top - Image */}
+                      <div className="w-full h-48 relative overflow-hidden rounded-t-3xl">
                         <img 
                           src={category.imageUrl}
                           alt={category.name}
                           className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
                         />
-                        <div className="absolute inset-0 bg-gradient-to-r from-transparent via-transparent to-white/20"></div>
+                        <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-black/10"></div>
                       </div>
                       
-                      {/* Right side - Content */}
-                      <div className="w-3/5 p-8 flex flex-col justify-center">
+                      {/* Bottom - Content */}
+                      <div className="w-full p-8">
                         <div className="flex items-center justify-between mb-4">
                           <h3 className="text-2xl font-semibold text-gray-900 group-hover:text-blue-600 transition-colors duration-300">
                             {category.name}
