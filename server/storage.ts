@@ -1,20 +1,7 @@
-import { 
-  trailerCategories, 
-  trailerModels,
-  modelVariants, 
-  trailerOptions,
-  userConfigurations,
-  type TrailerCategory, 
-  type TrailerModel,
-  type ModelVariant, 
-  type TrailerOption,
-  type UserConfiguration,
-  type InsertUserConfiguration 
-} from "@shared/schema";
 import { db } from "./db";
-import { eq, and, inArray, sql } from "drizzle-orm";
+import { sql } from "drizzle-orm";
 
-// Custom interfaces that match our actual database structure
+// Simple interfaces that match the frontend expectations
 export interface TrailerCategoryResponse {
   id: number;
   slug: string;
@@ -46,6 +33,26 @@ export interface TrailerOptionResponse {
   name: string;
   price: number;
   isMultiSelect: boolean;
+}
+
+interface UserConfiguration {
+  id: number;
+  sessionId: string;
+  categorySlug: string;
+  modelId: number;
+  variantId: number;
+  selectedOptions: Record<string, any>;
+  totalPrice: number;
+  createdAt: Date;
+}
+
+interface InsertUserConfiguration {
+  sessionId: string;
+  categorySlug: string;
+  modelId?: number;
+  variantId?: number;
+  selectedOptions: Record<string, any>;
+  totalPrice: number;
 }
 
 export interface IStorage {
@@ -82,7 +89,8 @@ export class MemStorage implements IStorage {
         name: "Gooseneck Trailers",
         description: "Heavy-duty trailers with superior stability and higher payload capacity. Perfect for construction and industrial applications.",
         imageUrl: "https://images.unsplash.com/photo-1581094794329-c8112a89af12?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&h=250",
-        startingPrice: 18500
+        startingPrice: 18500,
+        orderIndex: 1
       },
       {
         id: 2,
@@ -90,7 +98,8 @@ export class MemStorage implements IStorage {
         name: "Tilt Equipment Trailers",
         description: "Hydraulic tilt design for easy loading of heavy machinery and equipment. Built for maximum durability.",
         imageUrl: "https://images.unsplash.com/photo-1504307651254-35680f356dfd?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&h=250",
-        startingPrice: 15200
+        startingPrice: 15200,
+        orderIndex: 2
       },
       {
         id: 3,
@@ -98,7 +107,8 @@ export class MemStorage implements IStorage {
         name: "Dump Trailers",
         description: "Hydraulic dump systems with reinforced beds. Ideal for landscaping, construction, and material hauling.",
         imageUrl: "https://images.unsplash.com/photo-1558618047-3c8c76ca7d13?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&h=250",
-        startingPrice: 12500
+        startingPrice: 12500,
+        orderIndex: 3
       },
       {
         id: 4,
@@ -106,7 +116,8 @@ export class MemStorage implements IStorage {
         name: "Car/Equipment Haulers",
         description: "Low-profile design with drive-over fenders. Perfect for transporting vehicles and low-clearance equipment.",
         imageUrl: "https://images.unsplash.com/photo-1544636331-e26879cd4d9b?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&h=250",
-        startingPrice: 14800
+        startingPrice: 14800,
+        orderIndex: 4
       },
       {
         id: 5,
@@ -114,14 +125,15 @@ export class MemStorage implements IStorage {
         name: "Landscape Trailers",
         description: "Side gates and removable ramps for easy loading. Designed specifically for landscaping professionals.",
         imageUrl: "https://images.unsplash.com/photo-1416879595882-3373a0480b5b?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&h=250",
-        startingPrice: 8900
+        startingPrice: 8900,
+        orderIndex: 5
       }
     ];
 
     categoriesData.forEach(cat => this.categories.set(cat.id, cat));
 
     // Initialize models
-    const modelsData: TrailerModel[] = [
+    const modelsData: TrailerModelResponse[] = [
       // Dump Trailers
       {
         id: 1,
@@ -182,7 +194,7 @@ export class MemStorage implements IStorage {
     modelsData.forEach(model => this.models.set(model.modelId, model));
 
     // Initialize options
-    const optionsData: Record<string, TrailerOption[]> = {
+    const optionsData: Record<string, TrailerOptionResponse[]> = {
       "DHO215": [
         { id: 1, modelId: "DHO215", category: "tires", name: "Standard ST235/85R16", price: 0, isMultiSelect: false },
         { id: 2, modelId: "DHO215", category: "tires", name: "ST235/85R16 \"G\" 14-ply", price: 600, isMultiSelect: false },
@@ -220,28 +232,34 @@ export class MemStorage implements IStorage {
     });
   }
 
-  async getTrailerCategories(): Promise<TrailerCategory[]> {
+  async getTrailerCategories(): Promise<TrailerCategoryResponse[]> {
     return Array.from(this.categories.values());
   }
 
-  async getTrailerModelsByCategory(categorySlug: string): Promise<TrailerModel[]> {
+  async getTrailerModelsByCategory(categorySlug: string): Promise<TrailerModelResponse[]> {
     const category = Array.from(this.categories.values()).find(cat => cat.slug === categorySlug);
     if (!category) return [];
     
     return Array.from(this.models.values()).filter(model => model.categoryId === category.id);
   }
 
-  async getTrailerModel(modelId: string): Promise<TrailerModel | undefined> {
+  async getTrailerModel(modelId: string): Promise<TrailerModelResponse | undefined> {
     return this.models.get(modelId);
   }
 
-  async getTrailerOptions(modelId: string): Promise<TrailerOption[]> {
+  async getTrailerOptions(modelId: string): Promise<TrailerOptionResponse[]> {
     return this.options.get(modelId) || [];
   }
 
   async saveUserConfiguration(config: InsertUserConfiguration): Promise<UserConfiguration> {
     const id = this.currentId++;
-    const userConfig: UserConfiguration = { ...config, id };
+    const userConfig: UserConfiguration = { 
+      ...config, 
+      id,
+      createdAt: new Date(),
+      modelId: config.modelId || 0,
+      variantId: config.variantId || 0
+    };
     this.configurations.set(config.sessionId, userConfig);
     return userConfig;
   }
@@ -252,7 +270,7 @@ export class MemStorage implements IStorage {
 }
 
 export class DatabaseStorage implements IStorage {
-  async getTrailerCategories(): Promise<TrailerCategory[]> {
+  async getTrailerCategories(): Promise<TrailerCategoryResponse[]> {
     try {
       // Use raw SQL to avoid schema mismatches
       const result = await db.execute(sql`
@@ -276,7 +294,7 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
-  async getTrailerModelsByCategory(categorySlug: string): Promise<TrailerModel[]> {
+  async getTrailerModelsByCategory(categorySlug: string): Promise<TrailerModelResponse[]> {
     try {
       const result = await db.execute(sql`
         SELECT m.id, m.category_id, m.model_id, m.name, m.gvwr, m.payload, 
@@ -306,7 +324,7 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
-  async getTrailerModel(modelId: string): Promise<TrailerModel | undefined> {
+  async getTrailerModel(modelId: string): Promise<TrailerModelResponse | undefined> {
     try {
       const result = await db.execute(sql`
         SELECT id, category_id, model_id, name, gvwr, payload, 
@@ -337,7 +355,7 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
-  async getTrailerOptions(modelId: string): Promise<TrailerOption[]> {
+  async getTrailerOptions(modelId: string): Promise<TrailerOptionResponse[]> {
     try {
       const result = await db.execute(sql`
         SELECT id, model_id, category, name, price, is_multi_select
