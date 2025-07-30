@@ -101,6 +101,7 @@ export interface IStorage {
   deleteOption(id: number): Promise<void>;
   archiveOption(id: number): Promise<void>;
   archiveModel(id: number): Promise<void>;
+  restoreModel(id: number): Promise<TrailerModelResponse>;
   getOptionCategories(): Promise<string[]>;
 }
 
@@ -422,6 +423,10 @@ export class MemStorage implements IStorage {
 
   async archiveModel(id: number): Promise<void> {
     throw new Error("MemStorage archiveModel not implemented for pricing management");
+  }
+
+  async restoreModel(id: number): Promise<TrailerModelResponse> {
+    throw new Error("MemStorage restoreModel not implemented for pricing management");
   }
 
 
@@ -954,6 +959,44 @@ export class DatabaseStorage implements IStorage {
       `);
     } catch (error) {
       console.error('Error archiving model:', error);
+      throw error;
+    }
+  }
+
+  async restoreModel(modelId: number): Promise<TrailerModelResponse> {
+    try {
+      await db.execute(sql`
+        UPDATE trailer_models 
+        SET is_archived = false 
+        WHERE id = ${modelId}
+      `);
+      
+      // Return the restored model
+      const result = await db.execute(sql`
+        SELECT m.*, c.name as category_name
+        FROM trailer_models m
+        JOIN trailer_categories c ON m.category_id = c.id
+        WHERE m.id = ${modelId}
+      `);
+      
+      const model = result.rows[0] as any;
+      return {
+        id: model.id,
+        categoryId: model.category_id,
+        modelId: model.model_id,
+        name: model.name,
+        gvwr: model.gvwr,
+        payload: model.payload,
+        deckSize: model.deck_size,
+        axles: model.axles,
+        basePrice: model.base_price,
+        imageUrl: model.image_url,
+        features: model.features || [],
+        categoryName: model.category_name,
+        isArchived: false
+      };
+    } catch (error) {
+      console.error('Error restoring model:', error);
       throw error;
     }
   }

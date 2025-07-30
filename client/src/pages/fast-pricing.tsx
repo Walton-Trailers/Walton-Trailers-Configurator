@@ -107,6 +107,14 @@ export default function FastPricing() {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['admin', 'models'] }),
   });
 
+  const restoreMutation = useMutation({
+    mutationFn: (id: number) => fastMutate(`/api/models/${id}/restore`, {
+      method: 'PATCH',
+      headers: { Authorization: `Bearer ${sessionId}` },
+    }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['admin', 'models'] }),
+  });
+
   const handleUpdate = (model: any) => {
     const data = editData[model.id] || {};
     updateMutation.mutate({
@@ -269,10 +277,9 @@ export default function FastPricing() {
                           <Button
                             size="sm"
                             variant="outline"
-                            onClick={() => updateMutation.mutate({ 
-                              id: model.id, 
-                              isArchived: false 
-                            })}
+                            onClick={() => restoreMutation.mutate(model.id)}
+                            disabled={restoreMutation.isPending}
+                            title="Restore to active"
                           >
                             <RotateCcw className="w-4 h-4" />
                           </Button>

@@ -108,4 +108,20 @@ export function registerFastRoutes(app: Express) {
       res.status(500).json({ error: "Failed to archive option" });
     }
   });
+
+  // Restore model endpoint
+  app.patch("/api/models/:id/restore", (req, res, next) => {
+    if (!req.headers.authorization) {
+      return res.status(401).json({ error: "Unauthorized" });
+    }
+    next();
+  }, async (req, res) => {
+    try {
+      const modelId = parseInt(req.params.id);
+      const restoredModel = await fastStorage.restoreModel(modelId);
+      res.json(restoredModel);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to restore model" });
+    }
+  });
 }

@@ -455,6 +455,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Restore model
+  app.patch("/api/models/:id/restore", requireAuth, async (req, res) => {
+    try {
+      const modelId = parseInt(req.params.id);
+      const restoredModel = await storage.restoreModel(modelId);
+      res.json(restoredModel);
+    } catch (error) {
+      console.error('Error restoring model:', error);
+      res.status(500).json({ error: "Failed to restore model" });
+    }
+  });
+
   const httpServer = createServer(app);
   // Register optimized fast routes
   registerFastRoutes(app);

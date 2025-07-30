@@ -151,6 +151,13 @@ export class FastStorage {
     cache.clear();
   }
 
+  async restoreModel(id: number) {
+    await db.execute(sql`UPDATE trailer_models SET is_archived = false WHERE id = ${id}`);
+    // Clear ALL caches since restoring affects category pricing
+    cache.clear();
+    return this.getModelById(id);
+  }
+
   async archiveOption(id: number) {
     await db.execute(sql`UPDATE trailer_options SET is_archived = true WHERE id = ${id}`);
     cache.clear();
