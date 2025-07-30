@@ -401,13 +401,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.patch("/api/options/:id", requireAuth, async (req, res) => {
     try {
       const optionId = parseInt(req.params.id);
-      const { price, name, category, modelId } = req.body;
+      const { price, name, category, modelId, isArchived } = req.body;
       
       const updatedOption = await storage.updateOption(optionId, {
         price,
         name,
         category,
         modelId,
+        isArchived,
       });
       
       res.json(updatedOption);
