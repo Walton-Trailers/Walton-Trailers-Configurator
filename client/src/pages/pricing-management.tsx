@@ -27,6 +27,7 @@ interface TrailerModel {
 
 interface TrailerOption {
   id: number;
+  modelId: string;
   name: string;
   price: number;
   category: string;

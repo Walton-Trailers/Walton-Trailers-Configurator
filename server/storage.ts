@@ -680,28 +680,31 @@ export class DatabaseStorage implements IStorage {
 
   async updateModel(id: number, updates: any): Promise<TrailerModelResponse> {
     try {
-      const updateFields: string[] = [];
-      const values: any[] = [];
+      let result;
       
       if (updates.basePrice !== undefined) {
-        updateFields.push('base_price = $' + (values.length + 1));
-        values.push(updates.basePrice);
+        result = await db.execute(sql`
+          UPDATE trailer_models 
+          SET base_price = ${updates.basePrice}
+          WHERE id = ${id}
+          RETURNING id, category_id, model_id, name, gvwr, payload,
+                    deck_size, axles, base_price, image_url, features
+        `);
+      } else if (updates.name !== undefined) {
+        result = await db.execute(sql`
+          UPDATE trailer_models 
+          SET name = ${updates.name}
+          WHERE id = ${id}
+          RETURNING id, category_id, model_id, name, gvwr, payload,
+                    deck_size, axles, base_price, image_url, features
+        `);
+      } else {
+        result = await db.execute(sql`
+          SELECT id, category_id, model_id, name, gvwr, payload,
+                 deck_size, axles, base_price, image_url, features
+          FROM trailer_models WHERE id = ${id}
+        `);
       }
-      
-      if (updates.name !== undefined) {
-        updateFields.push('name = $' + (values.length + 1));
-        values.push(updates.name);
-      }
-      
-      values.push(id);
-      
-      const result = await db.execute(sql.raw(`
-        UPDATE trailer_models 
-        SET ${updateFields.join(', ')}
-        WHERE id = $${values.length}
-        RETURNING id, category_id, model_id, name, gvwr, payload,
-                  deck_size, axles, base_price, image_url, features
-      `, values));
       
       const model = result.rows[0] as any;
       return {
@@ -726,27 +729,28 @@ export class DatabaseStorage implements IStorage {
 
   async updateOption(id: number, updates: any): Promise<TrailerOptionResponse> {
     try {
-      const updateFields: string[] = [];
-      const values: any[] = [];
+      let result;
       
       if (updates.price !== undefined) {
-        updateFields.push('price = $' + (values.length + 1));
-        values.push(updates.price);
+        result = await db.execute(sql`
+          UPDATE trailer_options 
+          SET price = ${updates.price}
+          WHERE id = ${id}
+          RETURNING id, model_id, category, name, price, is_multi_select
+        `);
+      } else if (updates.name !== undefined) {
+        result = await db.execute(sql`
+          UPDATE trailer_options 
+          SET name = ${updates.name}
+          WHERE id = ${id}
+          RETURNING id, model_id, category, name, price, is_multi_select
+        `);
+      } else {
+        result = await db.execute(sql`
+          SELECT id, model_id, category, name, price, is_multi_select
+          FROM trailer_options WHERE id = ${id}
+        `);
       }
-      
-      if (updates.name !== undefined) {
-        updateFields.push('name = $' + (values.length + 1));
-        values.push(updates.name);
-      }
-      
-      values.push(id);
-      
-      const result = await db.execute(sql.raw(`
-        UPDATE trailer_options 
-        SET ${updateFields.join(', ')}
-        WHERE id = $${values.length}
-        RETURNING id, model_id, category, name, price, is_multi_select
-      `, values));
       
       const option = result.rows[0] as any;
       return {
