@@ -310,17 +310,17 @@ Configuration Date: ${new Date().toLocaleDateString()}
       <div className="pt-20 min-h-screen">
         {/* Step 1: Category Selection - Full Width Layout */}
         {currentStep === 1 && (
-          <div className="max-w-7xl mx-auto px-8 py-16">
-            <div className="text-center mb-16">
-              <h1 className="text-6xl font-bold text-gray-900 mb-6 tracking-tight">
+          <div className="max-w-7xl mx-auto px-8 py-8">
+            <div className="text-center mb-8">
+              <h1 className="text-4xl font-bold text-gray-900 mb-4 tracking-tight">
                 Choose Your Trailer
               </h1>
-              <p className="text-xl text-gray-600 max-w-2xl mx-auto leading-relaxed">
+              <p className="text-lg text-gray-600 max-w-2xl mx-auto leading-relaxed">
                 Select from our premium line of commercial trailers designed for professionals
               </p>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-full mx-auto px-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 max-w-full mx-auto px-4">
               {categories?.map((category, index) => (
                 <div
                   key={category.id}
@@ -335,7 +335,7 @@ Configuration Date: ${new Date().toLocaleDateString()}
                   >
                     <div className="flex flex-col">
                       {/* Top - Image */}
-                      <div className="w-full h-48 relative overflow-hidden rounded-t-3xl">
+                      <div className="w-full h-36 relative overflow-hidden rounded-t-3xl">
                         <img 
                           src={category.imageUrl}
                           alt={category.name}
@@ -345,19 +345,19 @@ Configuration Date: ${new Date().toLocaleDateString()}
                       </div>
                       
                       {/* Bottom - Content */}
-                      <div className="w-full p-8">
-                        <div className="flex items-center justify-between mb-4">
-                          <h3 className="text-2xl font-semibold text-gray-900 group-hover:text-blue-600 transition-colors duration-300">
+                      <div className="w-full p-5">
+                        <div className="flex items-center justify-between mb-3">
+                          <h3 className="text-xl font-semibold text-gray-900 group-hover:text-blue-600 transition-colors duration-300">
                             {category.name}
                           </h3>
-                          <ArrowRight className="w-5 h-5 text-gray-400 group-hover:text-blue-500 group-hover:translate-x-1 transition-all duration-300" />
+                          <ArrowRight className="w-4 h-4 text-gray-400 group-hover:text-blue-500 group-hover:translate-x-1 transition-all duration-300" />
                         </div>
                         
-                        <p className="text-gray-600 mb-6 leading-relaxed text-sm">
+                        <p className="text-gray-600 mb-4 leading-relaxed text-sm">
                           {category.description}
                         </p>
                         
-                        <div className="text-lg font-semibold text-blue-600">
+                        <div className="text-base font-semibold text-blue-600">
                           Starting at ${category.startingPrice.toLocaleString()}
                         </div>
                       </div>
