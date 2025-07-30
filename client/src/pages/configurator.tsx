@@ -8,7 +8,8 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { ArrowLeft, ArrowRight, Download, Mail, MapPin, RotateCcw, Info, X } from "lucide-react";
+import { ArrowLeft, ArrowRight, Download, Mail, MapPin, RotateCcw, Info, X, Users } from "lucide-react";
+import { Link } from "wouter";
 import { useToast } from "@/hooks/use-toast";
 import { getOptionInfo } from "@/lib/trailer-option-info";
 // Import the response types that match our API
@@ -670,6 +671,20 @@ Configuration Date: ${new Date().toLocaleDateString()}
             </div>
           </>
         )}
+      </div>
+      
+      {/* Fixed Employee Portal Button - Bottom Right */}
+      <div className="fixed bottom-6 right-6 z-40">
+        <Link href="/admin/login">
+          <Button
+            variant="ghost"
+            size="sm"
+            className="bg-white/80 backdrop-blur-sm hover:bg-white border border-gray-200 hover:border-gray-300 shadow-lg text-gray-600 hover:text-gray-900 transition-all duration-300"
+          >
+            <Users className="w-4 h-4 mr-2" />
+            Employees
+          </Button>
+        </Link>
       </div>
     </div>
   );
