@@ -3,7 +3,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+
 import { useAdminAuth } from "@/hooks/useAdminAuth";
 import { useLocation, Link } from "wouter";
 import { apiRequest } from "@/lib/queryClient";
@@ -209,14 +209,9 @@ export default function AdminDashboard() {
           <p className="text-gray-600">Manage Walton Trailers administration</p>
         </div>
 
-        <Tabs defaultValue={isAdmin ? "users" : "trailers"} className="space-y-6">
-          <TabsList>
-            {isAdmin && <TabsTrigger value="users">Users</TabsTrigger>}
-            <TabsTrigger value="trailers">Trailers</TabsTrigger>
-          </TabsList>
-
+        <div className="space-y-6">
           {isAdmin && (
-            <TabsContent value="users" className="space-y-6">
+            <div className="space-y-6">
               <div className="flex justify-between items-center">
                 <div>
                   <h3 className="text-lg font-medium">User Management</h3>
@@ -389,10 +384,10 @@ export default function AdminDashboard() {
                   )}
                 </CardContent>
               </Card>
-            </TabsContent>
+            </div>
           )}
 
-          <TabsContent value="trailers" className="space-y-6">
+          <div className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-1 gap-6">
               <Card>
                 <CardHeader>
@@ -411,8 +406,8 @@ export default function AdminDashboard() {
                 </CardContent>
               </Card>
             </div>
-          </TabsContent>
-        </Tabs>
+          </div>
+        </div>
       </main>
     </div>
   );
