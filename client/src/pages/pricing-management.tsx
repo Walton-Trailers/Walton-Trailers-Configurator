@@ -83,7 +83,7 @@ export default function PricingManagement() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/models/all"] });
       setEditingModel(null);
-      setEditPrices({});
+      setEditData({});
       toast({
         title: "Success",
         description: "Model pricing updated successfully",

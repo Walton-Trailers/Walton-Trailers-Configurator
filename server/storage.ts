@@ -646,7 +646,6 @@ export class DatabaseStorage implements IStorage {
         basePrice: model.base_price,
         imageUrl: model.image_url,
         features: model.features || [],
-        description: model.name,
       }));
     } catch (error) {
       console.error('Error fetching all models:', error);
@@ -670,6 +669,7 @@ export class DatabaseStorage implements IStorage {
         category: option.category,
         price: option.price,
         isRequired: false,
+        isMultiSelect: option.is_multi_select || false,
         options: [],
       }));
     } catch (error) {
@@ -719,7 +719,6 @@ export class DatabaseStorage implements IStorage {
         basePrice: model.base_price,
         imageUrl: model.image_url,
         features: model.features || [],
-        description: model.name,
       };
     } catch (error) {
       console.error('Error updating model:', error);
@@ -758,7 +757,7 @@ export class DatabaseStorage implements IStorage {
           WHERE id = $${params.length}
           RETURNING id, model_id, category, name, price, is_multi_select
         `;
-        result = await db.execute(sql.raw(query, params));
+        result = await db.execute(sql.raw(query, ...params));
       } else {
         result = await db.execute(sql`
           SELECT id, model_id, category, name, price, is_multi_select
@@ -775,6 +774,7 @@ export class DatabaseStorage implements IStorage {
         category: option.category,
         price: option.price,
         isRequired: false,
+        isMultiSelect: option.is_multi_select || false,
         options: [],
       };
     } catch (error) {
