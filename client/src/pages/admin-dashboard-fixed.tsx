@@ -188,6 +188,11 @@ export default function AdminDashboard() {
                   {user.role}
                 </Badge>
               </div>
+              <Link href="/admin/account">
+                <Button variant="ghost" size="sm" title="Account Settings">
+                  <Users className="w-4 h-4" />
+                </Button>
+              </Link>
               <Button onClick={handleLogout} variant="outline" size="sm">
                 <LogOut className="w-4 h-4 mr-2" />
                 Logout
@@ -204,61 +209,11 @@ export default function AdminDashboard() {
           <p className="text-gray-600">Manage Walton Trailers administration</p>
         </div>
 
-        <Tabs defaultValue="overview" className="space-y-6">
+        <Tabs defaultValue={isAdmin ? "users" : "trailers"} className="space-y-6">
           <TabsList>
-            <TabsTrigger value="overview">Account</TabsTrigger>
             {isAdmin && <TabsTrigger value="users">Users</TabsTrigger>}
             <TabsTrigger value="trailers">Trailers</TabsTrigger>
           </TabsList>
-
-          <TabsContent value="overview" className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Total Users</CardTitle>
-                  <Users className="h-4 w-4 text-muted-foreground" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">
-                    {isAdmin ? (users as AdminUser[])?.length || 0 : "N/A"}
-                  </div>
-                  <p className="text-xs text-muted-foreground">
-                    Active admin users
-                  </p>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Your Role</CardTitle>
-                  <Settings className="h-4 w-4 text-muted-foreground" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold capitalize">{user.role}</div>
-                  <p className="text-xs text-muted-foreground">
-                    Access level
-                  </p>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Last Login</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">
-                    {user.lastLogin 
-                      ? new Date(user.lastLogin).toLocaleDateString()
-                      : "First time"
-                    }
-                  </div>
-                  <p className="text-xs text-muted-foreground">
-                    Previous session
-                  </p>
-                </CardContent>
-              </Card>
-            </div>
-          </TabsContent>
 
           {isAdmin && (
             <TabsContent value="users" className="space-y-6">
