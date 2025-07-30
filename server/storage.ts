@@ -93,6 +93,7 @@ export interface IStorage {
   getAllOptions(): Promise<TrailerOptionResponse[]>;
   updateModel(id: number, updates: any): Promise<TrailerModelResponse>;
   updateOption(id: number, updates: any): Promise<TrailerOptionResponse>;
+  createOption(data: { name: string; price: number; category: string; modelId: string }): Promise<TrailerOptionResponse>;
 }
 
 export class MemStorage implements IStorage {
@@ -823,6 +824,31 @@ export class DatabaseStorage implements IStorage {
       };
     } catch (error) {
       console.error('Error updating option:', error);
+      throw error;
+    }
+  }
+
+  async createOption(data: { name: string; price: number; category: string; modelId: string }): Promise<TrailerOptionResponse> {
+    try {
+      const result = await db.execute(sql`
+        INSERT INTO trailer_options (model_id, name, category, price, is_multi_select)
+        VALUES (${data.modelId}, ${data.name}, ${data.category}, ${data.price}, false)
+        RETURNING id, model_id, name, category, price, is_multi_select
+      `);
+      
+      const newOption = result.rows[0] as any;
+      return {
+        id: newOption.id,
+        modelId: newOption.model_id,
+        name: newOption.name,
+        category: newOption.category,
+        price: newOption.price,
+        isRequired: false,
+        isMultiSelect: newOption.is_multi_select || false,
+        options: [],
+      };
+    } catch (error) {
+      console.error('Error creating option:', error);
       throw error;
     }
   }

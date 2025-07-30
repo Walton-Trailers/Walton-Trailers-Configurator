@@ -1,5 +1,5 @@
 import { useState, useMemo } from "react";
-import { ArrowLeft, Edit, Save, X, DollarSign, Search, ChevronDown } from "lucide-react";
+import { ArrowLeft, Edit, Save, X, DollarSign, Search, ChevronDown, Plus } from "lucide-react";
 import { Link } from "wouter";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
@@ -11,6 +11,8 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { useAdminAuth } from "@/hooks/useAdminAuth";
 
@@ -44,6 +46,14 @@ export default function PricingManagement() {
   const [editingOption, setEditingOption] = useState<TrailerOption | null>(null);
   const [editData, setEditData] = useState<{ [key: number]: any }>({});
   const [searchQuery, setSearchQuery] = useState("");
+  const [showAddOption, setShowAddOption] = useState(false);
+  const [newOptionData, setNewOptionData] = useState({
+    name: "",
+    price: 0,
+    category: "",
+    modelId: "",
+    relatedModels: [] as string[]
+  });
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -146,6 +156,38 @@ export default function PricingManagement() {
       toast({
         title: "Error",
         description: error.message || "Failed to update option",
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Create new option mutation
+  const createOptionMutation = useMutation({
+    mutationFn: (data: { name: string; price: number; category: string; modelId: string }) =>
+      apiRequest("/api/options", {
+        method: "POST",
+        body: data,
+        headers: sessionId ? { Authorization: `Bearer ${sessionId}` } : {},
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/options/all"] });
+      setShowAddOption(false);
+      setNewOptionData({
+        name: "",
+        price: 0,
+        category: "",
+        modelId: "",
+        relatedModels: []
+      });
+      toast({
+        title: "Success",
+        description: "Option created successfully",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to create option",
         variant: "destructive",
       });
     },
@@ -454,11 +496,16 @@ export default function PricingManagement() {
 
           <TabsContent value="options">
             <Card>
-              <CardHeader>
-                <CardTitle>Options & Add-ons</CardTitle>
-                <CardDescription>
-                  Update pricing and details for trailer options and accessories
-                </CardDescription>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
+                <div>
+                  <CardTitle>Options & Add-ons</CardTitle>
+                  <CardDescription>
+                    Update pricing and details for trailer options and accessories
+                  </CardDescription>
+                </div>
+                <Button onClick={() => setShowAddOption(true)} className="shrink-0">
+                  Add New Option
+                </Button>
               </CardHeader>
               <CardContent>
                 {optionsLoading ? (
@@ -695,6 +742,80 @@ export default function PricingManagement() {
             </Card>
           </TabsContent>
         </Tabs>
+
+        {/* Add New Option Dialog */}
+        <Dialog open={showAddOption} onOpenChange={setShowAddOption}>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle>Add New Option</DialogTitle>
+              <DialogDescription>
+                Create a new option or add-on for trailer models
+              </DialogDescription>
+            </DialogHeader>
+            <div className="grid gap-4 py-4">
+              <div className="grid gap-2">
+                <Label htmlFor="option-name">Option Name</Label>
+                <Input
+                  id="option-name"
+                  placeholder="Enter option name"
+                  value={newOptionData.name}
+                  onChange={(e) => setNewOptionData({ ...newOptionData, name: e.target.value })}
+                />
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="option-category">Category</Label>
+                <Select
+                  value={newOptionData.category}
+                  onValueChange={(value) => setNewOptionData({ ...newOptionData, category: value })}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select category" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {optionCategories?.map((category: string) => (
+                      <SelectItem key={category} value={category}>
+                        {category}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="option-model">Model ID</Label>
+                <Input
+                  id="option-model"
+                  placeholder="Enter model ID (e.g., DHV207)"
+                  value={newOptionData.modelId}
+                  onChange={(e) => setNewOptionData({ ...newOptionData, modelId: e.target.value })}
+                />
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="option-price">Price</Label>
+                <Input
+                  id="option-price"
+                  type="number"
+                  placeholder="Enter price"
+                  value={newOptionData.price}
+                  onChange={(e) => setNewOptionData({ ...newOptionData, price: parseInt(e.target.value) || 0 })}
+                />
+              </div>
+            </div>
+            <DialogFooter>
+              <Button
+                variant="outline"
+                onClick={() => setShowAddOption(false)}
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={() => createOptionMutation.mutate(newOptionData)}
+                disabled={createOptionMutation.isPending || !newOptionData.name || !newOptionData.category}
+              >
+                {createOptionMutation.isPending ? "Creating..." : "Create Option"}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
     </div>
   );

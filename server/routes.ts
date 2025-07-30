@@ -377,6 +377,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
 
 
+  app.post("/api/options", requireAuth, async (req, res) => {
+    try {
+      const { name, price, category, modelId } = req.body;
+      
+      console.log("Creating new option:", req.body);
+      
+      const newOption = await storage.createOption({
+        name,
+        price,
+        category,
+        modelId,
+      });
+      
+      console.log("Created option:", newOption);
+      res.json(newOption);
+    } catch (error) {
+      console.error("Error creating option:", error);
+      res.status(500).json({ message: "Failed to create option" });
+    }
+  });
+
   app.patch("/api/options/:id", requireAuth, async (req, res) => {
     try {
       const optionId = parseInt(req.params.id);
