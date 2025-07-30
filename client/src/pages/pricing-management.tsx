@@ -869,9 +869,14 @@ export default function PricingManagement() {
                                     // Restore option - remove archive status
                                     updateOptionMutation.mutate({ 
                                       id: option.id, 
+                                      price: option.price,
+                                      name: option.name,
+                                      category: option.category,
+                                      modelId: option.modelId,
                                       isArchived: false 
                                     });
                                   }}
+                                  disabled={updateOptionMutation.isPending}
                                   title="Restore option"
                                   className="text-green-600 hover:text-green-700"
                                 >
