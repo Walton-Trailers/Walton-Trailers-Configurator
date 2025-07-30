@@ -732,21 +732,6 @@ export class DatabaseStorage implements IStorage {
         FROM trailer_models WHERE id = ${id}
       `);
       
-      const model = result.rows[0] as any;
-      return {
-        id: model.id,
-        categoryId: model.category_id,
-        modelId: model.model_id,
-        name: model.name,
-        gvwr: model.gvwr,
-        payload: model.payload,
-        deckSize: model.deck_size,
-        axles: model.axles,
-        basePrice: model.base_price,
-        imageUrl: model.image_url,
-        features: model.features || [],
-      };
-      
       const updatedModel = result.rows[0] as any;
       return {
         id: updatedModel.id,
