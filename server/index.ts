@@ -23,11 +23,6 @@ app.get('/health', (req, res) => {
   res.status(200).json({ status: 'ok', timestamp: new Date().toISOString() });
 });
 
-// Also add a root route for health checks (may be overridden by Vite in dev)
-app.get('/', (req, res) => {
-  res.status(200).json({ status: 'ok', timestamp: new Date().toISOString() });
-});
-
 app.use((req, res, next) => {
   const start = Date.now();
   const path = req.path;
