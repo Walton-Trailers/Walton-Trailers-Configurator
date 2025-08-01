@@ -65,8 +65,8 @@ export default function FastPricing() {
   const sessionId = localStorage.getItem("admin_session");
   const queryClient = useQueryClient();
 
-  const { data: models = [], isLoading } = useFastQuery.allModels(sessionId);
-  const { data: options = [] } = useFastQuery.allOptions(sessionId);
+  const { data: models = [], isLoading, error: modelsError } = useFastQuery.allModels(sessionId);
+  const { data: options = [], error: optionsError } = useFastQuery.allOptions(sessionId);
 
   // Fast filtering with memoization
   const { activeModels, archivedModels } = useMemo(() => {
@@ -125,6 +125,21 @@ export default function FastPricing() {
       name: data.name ?? model.name,
     });
   };
+
+  // Handle authentication errors
+  if (modelsError || optionsError) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <h2 className="text-xl font-semibold mb-4">Authentication Required</h2>
+          <p className="text-gray-600 mb-6">Please log in to access the pricing management.</p>
+          <Link href="/admin/login">
+            <Button>Go to Login</Button>
+          </Link>
+        </div>
+      </div>
+    );
+  }
 
   if (isLoading) return <div className="p-8 text-center">Loading...</div>;
 
