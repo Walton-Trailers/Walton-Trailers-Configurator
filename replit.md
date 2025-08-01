@@ -95,6 +95,13 @@ The application is designed to be deployed on platforms like Replit, with specif
 
 ## Recent Changes
 
+### August 1, 2025 - Deployment Stability Fixes
+- **Health Check Endpoints**: Added dedicated `/health` and root `/` routes for deployment health checks
+- **Error Handling**: Removed process-crashing `throw err` statements in error middleware to prevent early exit
+- **Global Error Protection**: Added `unhandledRejection` and `uncaughtException` handlers to prevent process crashes
+- **Startup Error Handling**: Wrapped entire server startup in try-catch block for graceful error handling
+- **Production Readiness**: Ensured server stays alive for health checks even when startup errors occur
+
 ### August 1, 2025 - Enhanced Admin Interface & Error Handling
 - **Restored Options & Extras Tab**: Brought back full tab interface in pricing management with Models and Options & Extras sections
 - **Complete Options Management**: Added comprehensive editing functionality for trailer options with real-time search and filtering
