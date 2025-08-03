@@ -107,20 +107,36 @@ async function startServer() {
 }
 
 // Start the server and keep the process alive
-startServer().then(() => {
-  log('Server started successfully');
-  // Keep the process alive by setting up an interval
+(async () => {
+  try {
+    await startServer();
+    log('Server started successfully');
+    log('Process will remain alive for health checks');
+  } catch (error) {
+    console.error('Failed to start server:', error);
+    log('Server failed to start, but keeping process alive for health checks');
+  }
+  
+  // Keep the process alive indefinitely
   // This prevents the main thread from exiting after initialization
-  setInterval(() => {
+  const keepAliveInterval = setInterval(() => {
     // Empty interval to keep process alive
     // This is a common pattern for Node.js servers in production
-  }, 1000 * 60 * 60); // Check every hour (minimal overhead)
-}).catch((error) => {
-  console.error('Failed to start server:', error);
-  // In production, we still want to keep the process alive for health checks
-  // even if there's an initialization error
-  log('Server failed to start, but keeping process alive for health checks');
-  setInterval(() => {
-    // Keep alive even on startup failure
-  }, 1000 * 60 * 60);
-});
+  }, 1000 * 60); // Check every minute for better responsiveness
+  
+  // Ensure the interval doesn't prevent graceful shutdown
+  keepAliveInterval.unref();
+  
+  // Handle graceful shutdown signals
+  process.on('SIGTERM', () => {
+    log('Received SIGTERM, shutting down gracefully');
+    clearInterval(keepAliveInterval);
+    process.exit(0);
+  });
+  
+  process.on('SIGINT', () => {
+    log('Received SIGINT, shutting down gracefully');
+    clearInterval(keepAliveInterval);
+    process.exit(0);
+  });
+})();
