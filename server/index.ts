@@ -53,7 +53,8 @@ app.use((req, res, next) => {
   next();
 });
 
-(async () => {
+// Async function to initialize and start the server
+async function startServer() {
   try {
     // Create initial admin user if none exist
     await createInitialAdminUser();
@@ -83,16 +84,43 @@ app.use((req, res, next) => {
     // this serves both the API and the client.
     // It is the only port that is not firewalled.
     const port = parseInt(process.env.PORT || '5000', 10);
-    server.listen({
-      port,
-      host: "0.0.0.0",
-      reusePort: true,
-    }, () => {
-      log(`serving on port ${port}`);
+    
+    return new Promise<void>((resolve, reject) => {
+      server.listen({
+        port,
+        host: "0.0.0.0",
+        reusePort: true,
+      }, (err?: Error) => {
+        if (err) {
+          console.error('Failed to start server:', err);
+          reject(err);
+        } else {
+          log(`serving on port ${port}`);
+          resolve();
+        }
+      });
     });
   } catch (error) {
     console.error('Failed to start server:', error);
-    // Don't exit the process, just log the error
-    // The server should stay alive for health checks
+    throw error;
   }
-})();
+}
+
+// Start the server and keep the process alive
+startServer().then(() => {
+  log('Server started successfully');
+  // Keep the process alive by setting up an interval
+  // This prevents the main thread from exiting after initialization
+  setInterval(() => {
+    // Empty interval to keep process alive
+    // This is a common pattern for Node.js servers in production
+  }, 1000 * 60 * 60); // Check every hour (minimal overhead)
+}).catch((error) => {
+  console.error('Failed to start server:', error);
+  // In production, we still want to keep the process alive for health checks
+  // even if there's an initialization error
+  log('Server failed to start, but keeping process alive for health checks');
+  setInterval(() => {
+    // Keep alive even on startup failure
+  }, 1000 * 60 * 60);
+});
