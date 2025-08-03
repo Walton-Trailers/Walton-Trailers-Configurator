@@ -2,16 +2,27 @@ import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 import { createInitialAdminUser } from "./admin-seed";
+import { validateEnvironment } from "./environment-check";
 
 // Global error handlers to prevent process exit
 process.on('unhandledRejection', (reason, promise) => {
   console.error('Unhandled Rejection at:', promise, 'reason:', reason);
-  // Don't exit the process
+  // Log stack trace if available
+  if (reason instanceof Error) {
+    console.error('Stack trace:', reason.stack);
+  }
+  // Don't exit the process in production
 });
 
 process.on('uncaughtException', (error) => {
   console.error('Uncaught Exception:', error);
-  // Don't exit the process
+  console.error('Stack trace:', error.stack);
+  // Don't exit the process in production
+});
+
+// Memory management
+process.on('warning', (warning) => {
+  console.warn('Node.js warning:', warning.name, warning.message);
 });
 
 const app = express();
@@ -170,14 +181,21 @@ process.on('SIGINT', () => {
 // Start the server and keep the process alive
 (async () => {
   try {
+    // Validate environment before starting server
+    validateEnvironment();
+    
     await startServer();
     log('Server started successfully');
     log('Process will remain alive for health checks');
     
-    // Simple keep-alive mechanism
+    // Simple keep-alive mechanism with memory monitoring
     keepAliveInterval = setInterval(() => {
       // Keep process alive for health checks
-    }, 30000); // Check every 30 seconds
+      const memUsage = process.memoryUsage();
+      if (memUsage.heapUsed > 100 * 1024 * 1024) { // Log if over 100MB
+        log(`Memory usage: ${Math.round(memUsage.heapUsed / 1024 / 1024)}MB heap, ${Math.round(memUsage.rss / 1024 / 1024)}MB RSS`);
+      }
+    }, 60000); // Check every minute
     
   } catch (error) {
     console.error('Failed to start server:', error);

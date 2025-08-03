@@ -429,7 +429,11 @@ export class MemStorage implements IStorage {
     throw new Error("MemStorage restoreModel not implemented for pricing management");
   }
 
-
+  async getOptionCategories(): Promise<string[]> {
+    const allOptions = Array.from(this.options.values()).flat();
+    const categories = new Set(allOptions.map(option => option.category));
+    return Array.from(categories);
+  }
 }
 
 export class DatabaseStorage implements IStorage {
@@ -1001,7 +1005,19 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
-
+  async getOptionCategories(): Promise<string[]> {
+    try {
+      const result = await db.execute(sql`
+        SELECT DISTINCT category FROM trailer_options 
+        WHERE category IS NOT NULL 
+        ORDER BY category
+      `);
+      return result.rows.map((row: any) => row.category);
+    } catch (error) {
+      console.error('Error fetching option categories:', error);
+      throw error;
+    }
+  }
 }
 
 // Use database storage in production, fallback to memory for development

@@ -67,7 +67,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(categories);
     } catch (error) {
       console.error("Error in /api/categories:", error);
-      res.status(500).json({ message: "Failed to fetch categories", error: error instanceof Error ? error.message : String(error) });
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+      res.status(500).json({ 
+        message: "Failed to fetch categories", 
+        error: errorMessage,
+        timestamp: new Date().toISOString()
+      });
     }
   });
 
