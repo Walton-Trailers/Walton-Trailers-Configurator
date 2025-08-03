@@ -1,5 +1,4 @@
 import type { Express, Request, Response, NextFunction } from "express";
-import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { db } from "./db";
 import { sql } from "drizzle-orm";
@@ -58,7 +57,7 @@ const createUserSchema = insertAdminUserSchema.extend({
   password: z.string().min(8, 'Password must be at least 8 characters'),
 }).omit({ passwordHash: true });
 
-export async function registerRoutes(app: Express): Promise<Server> {
+export async function registerRoutes(app: Express): Promise<Express> {
   // Get all trailer categories
   app.get("/api/categories", async (req, res) => {
     try {
@@ -473,7 +472,5 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
 
 
-  const httpServer = createServer(app);
-  
-  return httpServer;
+  return app;
 }

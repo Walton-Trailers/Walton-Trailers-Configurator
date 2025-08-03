@@ -1,4 +1,5 @@
 import express, { type Request, Response, NextFunction } from "express";
+import { createServer } from "http";
 import path from "path";
 import { fileURLToPath } from 'url';
 import { dirname } from 'path';
@@ -21,17 +22,32 @@ app.get('/healthz', (req, res) => res.status(200).send('OK'));
 app.get('/ping', (req, res) => res.status(200).send('pong'));
 app.get('/status', (req, res) => res.status(200).json({ status: 'ok', env: process.env.NODE_ENV }));
 
-// Handle health checks on root with JSON accept header
+// Root path handler - respond immediately for health checks
 app.get('/', (req, res, next) => {
   const acceptHeader = req.get('Accept') || '';
+  
+  // JSON health check response
   if (acceptHeader.includes('application/json')) {
     return res.status(200).json({ status: 'ok' });
   }
-  // In production, serve the React app for root path
+  
+  // In production, immediately serve a minimal HTML response
   if (!isDevelopment) {
-    const staticPath = path.join(process.cwd(), 'dist', 'public');
-    return res.sendFile('index.html', { root: staticPath });
+    return res.status(200).send(`<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Walton Trailers</title>
+  <script>window.location.href = '/index.html';</script>
+</head>
+<body>
+  <noscript>Loading Walton Trailers...</noscript>
+</body>
+</html>`);
   }
+  
+  // In development, pass to Vite
   next();
 });
 
@@ -62,8 +78,11 @@ async function initializeServer() {
     console.log('Admin user setup complete');
     
     // Register API routes
-    const server = await registerRoutes(app);
+    await registerRoutes(app);
     console.log('API routes registered');
+    
+    // Create HTTP server
+    const server = createServer(app);
     
     // Setup static file serving
     if (isDevelopment) {
@@ -73,7 +92,8 @@ async function initializeServer() {
       console.log('Vite development server configured');
     } else {
       // Production: Serve static files directly
-      const staticPath = path.join(process.cwd(), 'dist', 'public');
+      // In production, the server runs from the dist directory
+      const staticPath = path.join(__dirname, 'public');
       
       // Verify static files exist
       if (!fs.existsSync(staticPath)) {
@@ -84,10 +104,13 @@ async function initializeServer() {
       app.use(express.static(staticPath, {
         maxAge: '1d',
         etag: true,
-        lastModified: true
+        lastModified: true,
+        index: 'index.html'  // Explicitly set index file
       }));
       
-      // SPA fallback - must be after all other routes
+
+      
+      // SPA fallback for all other routes
       app.get('*', (req, res) => {
         res.sendFile('index.html', { root: staticPath });
       });
