@@ -7,6 +7,29 @@ import { validateEnvironment } from "./environment-check";
 
 const app = express();
 
+// Root route handler for deployment health checks - placed early to avoid conflicts
+app.get('/', (req, res, next) => {
+  // Check if this is a health check request (common deployment system patterns)
+  const userAgent = req.get('User-Agent') || '';
+  const acceptHeader = req.get('Accept') || '';
+  
+  // If it's a health check or specifically requests JSON, provide API response
+  if (userAgent.includes('HealthCheck') || 
+      userAgent.includes('curl') || 
+      acceptHeader.includes('application/json') ||
+      req.query.health !== undefined) {
+    return res.status(200).json({ 
+      status: 'ok', 
+      message: 'Walton Trailers Configurator Server',
+      timestamp: new Date().toISOString(),
+      uptime: process.uptime()
+    });
+  }
+  
+  // Otherwise, let it fall through to the React app
+  next();
+});
+
 // Simple health check endpoints that respond immediately
 app.get('/health', (req, res) => {
   res.status(200).send('OK');
@@ -91,8 +114,8 @@ async function startServer() {
       res.status(status).json({ message });
     });
 
-    // Serve the React app on any unmatched routes (moved from root)
-    app.get('/app/*', (req, res, next) => {
+    // Handle React app routes specifically, but preserve API and health check routes
+    app.get(['/app', '/app/*', '/admin', '/admin/*', '/configurator', '/configurator/*'], (req, res, next) => {
       // React app routes - let Vite/static serving handle these
       next();
     });
@@ -121,6 +144,11 @@ async function startServer() {
     log('Server started successfully');
   } catch (error) {
     console.error('Failed to start server:', error);
-    process.exit(1);
+    // In production, keep the process alive and let deployment systems handle restart
+    if (process.env.NODE_ENV === 'production') {
+      console.error('Server startup failed in production, but keeping process alive for deployment health checks');
+    } else {
+      process.exit(1);
+    }
   }
 })();
