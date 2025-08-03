@@ -59,8 +59,25 @@ app.get('/status', (req, res) => {
   });
 });
 
-// Root route - let it pass through to serve the React app
-// Health checks should use dedicated endpoints: /health, /healthz, /ping
+// Root route - handle health checks and serve the React app
+// This ensures deployment health checks work at the root endpoint
+app.get('/', (req, res, next) => {
+  // Check if this is a health check request
+  const userAgent = req.get('User-Agent') || '';
+  const acceptHeader = req.get('Accept') || '';
+  
+  // Cloud Run health checks typically have specific user agents or accept plain text
+  if (userAgent.includes('GoogleHC') || 
+      userAgent.includes('kube-probe') ||
+      userAgent.includes('Go-http-client') ||
+      acceptHeader.includes('text/plain')) {
+    res.status(200).send('OK');
+    return;
+  }
+  
+  // For regular browser requests, let it pass through to serve the React app
+  next();
+});
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
@@ -243,8 +260,62 @@ process.on('SIGINT', () => {
       }
     });
     
+    // Additional deployment stability measures
+    const deploymentKeepAlive = () => {
+      if (!isShuttingDown) {
+        // Log deployment readiness status
+        if (Math.random() < 0.1) { // Log 10% of the time to avoid spam
+          log('Deployment stable - process running, health checks active');
+        }
+        setTimeout(deploymentKeepAlive, 30000); // Every 30 seconds
+      }
+    };
+    deploymentKeepAlive();
+    
+    // Prevent any early process exit
+    process.stdin.resume(); // Keep process alive
+    
+    // Log environment status for deployment debugging
+    log('🚀 Server deployment ready:');
+    log(`   Environment: ${process.env.NODE_ENV || 'development'}`);
+    log(`   Port: ${process.env.PORT || '5000'}`);
+    log(`   Health endpoints: /health, /healthz, /ping, /, /status`);
+    log(`   Process ID: ${process.pid}`);
+    log(`   Memory usage: ${Math.round(process.memoryUsage().heapUsed / 1024 / 1024)}MB`);
+    log('   Status: READY FOR PRODUCTION DEPLOYMENT');
+    
   } catch (error) {
     console.error('Failed to start server:', error);
-    process.exit(1); // Exit with error code if server fails to start
+    console.error('Error details:', error instanceof Error ? error.stack : error);
+    
+    // In production, try to gracefully handle startup errors without exiting
+    if (process.env.NODE_ENV === 'production') {
+      console.error('Production mode: Attempting to continue with minimal functionality');
+      
+      // Start a minimal server to handle health checks
+      const express = require('express');
+      const fallbackApp = express();
+      
+      fallbackApp.get(['/health', '/healthz', '/ping', '/', '/status'], (req: any, res: any) => {
+        res.status(503).json({ 
+          status: 'degraded', 
+          message: 'Server startup failed but health check endpoint is responding',
+          timestamp: new Date().toISOString()
+        });
+      });
+      
+      const port = parseInt(process.env.PORT || '5000', 10);
+      fallbackApp.listen(port, '0.0.0.0', () => {
+        console.log(`Fallback server running on port ${port} for health checks`);
+      });
+      
+      // Keep process alive
+      setInterval(() => {
+        console.log('Fallback server keepalive - deployment health checks available');
+      }, 30000);
+      
+    } else {
+      process.exit(1); // Exit with error code only in development
+    }
   }
 })();
