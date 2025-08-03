@@ -45,7 +45,13 @@ export class NoDatabaseStorage implements IStorage {
     const id = this.nextId++;
     const user: AdminUser = {
       id,
-      ...data,
+      username: data.username,
+      email: data.email,
+      passwordHash: data.passwordHash,
+      firstName: data.firstName ?? null,
+      lastName: data.lastName ?? null,
+      role: data.role ?? 'standard',
+      isActive: data.isActive ?? true,
       lastLogin: null,
       createdAt: new Date(),
       updatedAt: new Date(),
@@ -156,7 +162,7 @@ export class NoDatabaseStorage implements IStorage {
     return { id: 1, ...config };
   }
 
-  async getUserConfiguration(id: number): Promise<any | undefined> {
+  async getUserConfiguration(sessionId: string): Promise<any | undefined> {
     return undefined;
   }
 
