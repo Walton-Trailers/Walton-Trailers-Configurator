@@ -471,16 +471,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Handle React app routes in production
-  if (process.env.NODE_ENV === 'production') {
-    const path = await import('path');
-    
-    // Serve React app for non-API routes
-    app.get(['/app', '/app/*', '/admin', '/admin/*', '/configurator', '/configurator/*'], (_req, res) => {
-      const indexPath = path.resolve(process.cwd(), 'public', 'index.html');
-      res.sendFile(indexPath);
-    });
-  }
+
 
   const httpServer = createServer(app);
   

@@ -27,6 +27,11 @@ app.get('/', (req, res, next) => {
   if (acceptHeader.includes('application/json')) {
     return res.status(200).json({ status: 'ok' });
   }
+  // In production, serve the React app for root path
+  if (!isDevelopment) {
+    const staticPath = path.join(process.cwd(), 'dist', 'public');
+    return res.sendFile('index.html', { root: staticPath });
+  }
   next();
 });
 
