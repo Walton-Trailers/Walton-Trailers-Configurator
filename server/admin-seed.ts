@@ -36,7 +36,7 @@ async function createInitialAdminUser() {
     }
 
     // Create initial admin user
-    const adminPassword = "admin123"; // Should be changed on first login
+    const adminPassword = process.env.ADMIN_SEED_PASSWORD || "admin123"; // Should be changed on first login
     const passwordHash = await hashPassword(adminPassword);
 
     const adminUser = await storage.createAdminUser({
@@ -51,12 +51,12 @@ async function createInitialAdminUser() {
 
     console.log("✅ Initial admin user created:");
     console.log("   Username: admin");
-    console.log("   Password: admin123");
+    console.log("   Password: [Check ADMIN_SEED_PASSWORD env var or use default]");
     console.log("   Email: admin@waltontrailers.com");
     console.log("   ⚠️  Please change this password on first login!");
 
     // Create a standard user as well
-    const standardPassword = "user123";
+    const standardPassword = process.env.STANDARD_SEED_PASSWORD || "user123";
     const standardPasswordHash = await hashPassword(standardPassword);
 
     const standardUser = await storage.createAdminUser({
@@ -71,7 +71,7 @@ async function createInitialAdminUser() {
 
     console.log("✅ Standard user created:");
     console.log("   Username: employee");
-    console.log("   Password: user123");
+    console.log("   Password: [Check STANDARD_SEED_PASSWORD env var or use default]");
     console.log("   Email: employee@waltontrailers.com");
 
   } catch (error) {
