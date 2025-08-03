@@ -59,40 +59,8 @@ app.get('/status', (req, res) => {
   });
 });
 
-// Simple root route handler for deployment health checks - optimized for fast response
-app.get('/', (req, res, next) => {
-  // Immediate response for deployment health checks to prevent timeout
-  const userAgent = req.get('User-Agent') || '';
-  const acceptHeader = req.get('Accept') || '';
-  const contentType = req.get('Content-Type') || '';
-  
-  // More aggressive health check detection - deployment systems often don't send standard browser headers
-  const isHealthCheck = 
-    !userAgent || // Empty user agent (common for health checks)
-    userAgent === '' ||
-    userAgent === '-' ||
-    acceptHeader.includes('application/json') ||
-    acceptHeader.includes('*/*') ||
-    !acceptHeader.includes('text/html') || // Not requesting HTML = likely health check
-    userAgent.toLowerCase().includes('replit') ||
-    userAgent.toLowerCase().includes('health') ||
-    userAgent.toLowerCase().includes('check') ||
-    userAgent.toLowerCase().includes('curl') ||
-    userAgent.toLowerCase().includes('wget') ||
-    userAgent.toLowerCase().includes('deployment') ||
-    userAgent.toLowerCase().includes('monitor') ||
-    req.headers['user-agent'] === undefined ||
-    req.headers['x-forwarded-for'] === undefined; // Deployment systems often lack forwarding headers
-  
-  if (isHealthCheck) {
-    // Ultra-fast response for deployment systems
-    res.status(200).send('OK');
-    return;
-  }
-  
-  // For browser requests, continue to the React app
-  next();
-});
+// Root route - let it pass through to serve the React app
+// Health checks should use dedicated endpoints: /health, /healthz, /ping
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
