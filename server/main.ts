@@ -16,6 +16,14 @@ const app = express();
 const isDevelopment = process.env.NODE_ENV !== 'production';
 const port = parseInt(process.env.PORT || '5000', 10);
 
+// Log all requests in production for debugging
+if (!isDevelopment) {
+  app.use((req, res, next) => {
+    console.log(`[${new Date().toISOString()}] ${req.method} ${req.path}`);
+    next();
+  });
+}
+
 // Health check endpoints - always first
 app.get('/health', (req, res) => res.status(200).send('OK'));
 app.get('/healthz', (req, res) => res.status(200).send('OK'));
@@ -31,24 +39,14 @@ app.get('/', (req, res, next) => {
     return res.status(200).json({ status: 'ok' });
   }
   
-  // In production, immediately serve a minimal HTML response
+  // In production, let static file middleware or SPA fallback handle it
   if (!isDevelopment) {
-    return res.status(200).send(`<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Walton Trailers</title>
-  <script>window.location.href = '/index.html';</script>
-</head>
-<body>
-  <noscript>Loading Walton Trailers...</noscript>
-</body>
-</html>`);
+    // Don't handle here, let it fall through to static serving
+    next();
+  } else {
+    // In development, pass to Vite
+    next();
   }
-  
-  // In development, pass to Vite
-  next();
 });
 
 // Middleware
@@ -119,12 +117,36 @@ async function initializeServer() {
       console.log('Vite development server configured');
     } else {
       // Production: Serve static files directly
-      // In production, the server runs from the dist directory
-      const staticPath = path.join(__dirname, 'public');
+      // Try multiple possible paths for static files
+      const possiblePaths = [
+        path.join(__dirname, 'public'),
+        path.join(process.cwd(), 'dist', 'public'),
+        path.join(process.cwd(), 'public'),
+        path.resolve('dist/public'),
+        path.resolve('public')
+      ];
+      
+      let staticPath = '';
+      for (const testPath of possiblePaths) {
+        if (fs.existsSync(testPath)) {
+          staticPath = testPath;
+          break;
+        }
+      }
+      
+      console.log('Production mode - Static file configuration:');
+      console.log(`  __dirname: ${__dirname}`);
+      console.log(`  process.cwd(): ${process.cwd()}`);
+      console.log(`  Selected staticPath: ${staticPath}`);
       
       // Verify static files exist
-      if (!fs.existsSync(staticPath)) {
-        throw new Error(`Static files not found at ${staticPath}. Run 'npm run build' first.`);
+      if (!staticPath || !fs.existsSync(staticPath)) {
+        console.error('Static files not found in any of these paths:');
+        possiblePaths.forEach(p => console.log(`  - ${p}: ${fs.existsSync(p) ? 'EXISTS' : 'NOT FOUND'}`));
+        throw new Error(`Static files not found. Run 'npm run build' first.`);
+      } else {
+        console.log(`  Static files found at: ${staticPath}`);
+        console.log(`  Contents: ${fs.readdirSync(staticPath).join(', ')}`);
       }
       
       // Serve static files with caching
@@ -135,11 +157,14 @@ async function initializeServer() {
         index: 'index.html'  // Explicitly set index file
       }));
       
-
-      
-      // SPA fallback for all other routes
+      // SPA fallback for all other routes (including root)
       app.get('*', (req, res) => {
-        res.sendFile('index.html', { root: staticPath });
+        const indexPath = path.join(staticPath, 'index.html');
+        if (fs.existsSync(indexPath)) {
+          res.sendFile(indexPath);
+        } else {
+          res.status(404).send('Page not found');
+        }
       });
       
       console.log(`Serving static files from ${staticPath}`);
