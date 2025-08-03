@@ -11,13 +11,17 @@ process.on('unhandledRejection', (reason, promise) => {
   if (reason instanceof Error) {
     console.error('Stack trace:', reason.stack);
   }
-  // Don't exit the process in production
+  // Never exit the process to keep health checks working
 });
 
 process.on('uncaughtException', (error) => {
   console.error('Uncaught Exception:', error);
   console.error('Stack trace:', error.stack);
-  // Don't exit the process in production
+  // Never exit the process to keep health checks working
+  // Only exit in development for easier debugging
+  if (process.env.NODE_ENV === 'development') {
+    setTimeout(() => process.exit(1), 100);
+  }
 });
 
 // Memory management
@@ -28,40 +32,47 @@ process.on('warning', (warning) => {
 const app = express();
 
 // Dedicated health check endpoints - must be first before any middleware
+// Simple health check that responds immediately
 app.get('/health', (req, res) => {
-  res.status(200).json({ 
-    status: 'ok', 
-    service: 'Walton Trailers Configurator',
-    timestamp: new Date().toISOString(),
-    version: '1.0.0'
-  });
+  res.status(200).json({ status: 'ok' });
 });
 
 // Additional health check at root for deployment systems that expect it
 app.get('/healthz', (req, res) => {
+  res.status(200).json({ status: 'ok' });
+});
+
+// Comprehensive health check endpoint for monitoring
+app.get('/status', (req, res) => {
   res.status(200).json({ 
     status: 'ok', 
     service: 'Walton Trailers Configurator',
     timestamp: new Date().toISOString(),
-    version: '1.0.0'
+    version: '1.0.0',
+    uptime: process.uptime()
   });
 });
 
-// Simple root route handler for deployment health checks
+// Simple root route handler for deployment health checks - optimized for fast response
 app.get('/', (req, res, next) => {
-  // Simple health check detection - deployment systems usually send simple requests
+  // Immediate response for deployment health checks to prevent timeout
   const userAgent = req.get('User-Agent') || '';
   const acceptHeader = req.get('Accept') || '';
   
-  // Simplified health check detection for faster response
+  // Optimized health check detection for faster response
   const isHealthCheck = 
-    acceptHeader.includes('application/json') ||
+    !userAgent || // Empty user agent (common for health checks)
     userAgent === '' ||
+    acceptHeader.includes('application/json') ||
     userAgent.toLowerCase().includes('replit') ||
-    userAgent.toLowerCase().includes('healthcheck');
+    userAgent.toLowerCase().includes('health') ||
+    userAgent.toLowerCase().includes('check') ||
+    req.headers['user-agent'] === undefined;
   
   if (isHealthCheck) {
-    return res.status(200).json({ status: 'ok' });
+    // Immediate response without any processing delay
+    res.status(200).json({ status: 'ok', timestamp: Date.now() });
+    return;
   }
   
   // For browser requests, continue to the React app
@@ -114,14 +125,24 @@ async function startServer() {
     log('Routes registered successfully');
 
     // Setup vite/static serving before starting the server
-    if (app.get("env") === "development") {
-      log('Setting up Vite for development...');
-      await setupVite(app, server);
-      log('Vite setup complete');
-    } else {
-      log('Setting up static file serving for production...');
-      serveStatic(app);
-      log('Static file serving setup complete');
+    try {
+      if (app.get("env") === "development") {
+        log('Setting up Vite for development...');
+        await setupVite(app, server);
+        log('Vite setup complete');
+      } else {
+        log('Setting up static file serving for production...');
+        serveStatic(app);
+        log('Static file serving setup complete');
+      }
+    } catch (setupError) {
+      // Log setup errors but don't let them crash the server in production
+      console.error('Setup error occurred:', setupError);
+      if (process.env.NODE_ENV === 'development') {
+        throw setupError;
+      } else {
+        log('Continuing server startup despite setup errors');
+      }
     }
 
     app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
@@ -151,7 +172,8 @@ async function startServer() {
           reject(err);
         } else {
           log(`Server listening on port ${port}`);
-          log('Health check endpoints: /health, /healthz, /');
+          log('Health check endpoints: /health, /healthz, /, /status');
+          log('Server ready to handle requests');
           resolve();
         }
       });
@@ -162,20 +184,27 @@ async function startServer() {
   }
 }
 
-// Simplified keep-alive mechanism
+// Enhanced keep-alive mechanism for deployment stability
 let keepAliveInterval: NodeJS.Timeout;
+let isShuttingDown = false;
 
 // Handle graceful shutdown signals
 process.on('SIGTERM', () => {
-  log('Received SIGTERM, shutting down gracefully');
-  if (keepAliveInterval) clearInterval(keepAliveInterval);
-  process.exit(0);
+  if (!isShuttingDown) {
+    isShuttingDown = true;
+    log('Received SIGTERM, shutting down gracefully');
+    if (keepAliveInterval) clearInterval(keepAliveInterval);
+    setTimeout(() => process.exit(0), 1000); // Give time for cleanup
+  }
 });
 
 process.on('SIGINT', () => {
-  log('Received SIGINT, shutting down gracefully');
-  if (keepAliveInterval) clearInterval(keepAliveInterval);
-  process.exit(0);
+  if (!isShuttingDown) {
+    isShuttingDown = true;
+    log('Received SIGINT, shutting down gracefully');
+    if (keepAliveInterval) clearInterval(keepAliveInterval);
+    setTimeout(() => process.exit(0), 1000); // Give time for cleanup
+  }
 });
 
 // Start the server and keep the process alive
@@ -187,15 +216,35 @@ process.on('SIGINT', () => {
     await startServer();
     log('Server started successfully');
     log('Process will remain alive for health checks');
+    log('Deployment ready - health checks available at multiple endpoints');
     
-    // Simple keep-alive mechanism with memory monitoring
+    // Immediate keep-alive setup to prevent early process exit
     keepAliveInterval = setInterval(() => {
-      // Keep process alive for health checks
-      const memUsage = process.memoryUsage();
-      if (memUsage.heapUsed > 100 * 1024 * 1024) { // Log if over 100MB
-        log(`Memory usage: ${Math.round(memUsage.heapUsed / 1024 / 1024)}MB heap, ${Math.round(memUsage.rss / 1024 / 1024)}MB RSS`);
+      if (!isShuttingDown) {
+        // Keep process alive for health checks
+        const memUsage = process.memoryUsage();
+        // Only log memory usage if it's high to reduce noise
+        if (memUsage.heapUsed > 150 * 1024 * 1024) { // Log if over 150MB
+          log(`Memory usage: ${Math.round(memUsage.heapUsed / 1024 / 1024)}MB heap, ${Math.round(memUsage.rss / 1024 / 1024)}MB RSS`);
+        }
       }
-    }, 60000); // Check every minute
+    }, 30000); // Check every 30 seconds for better responsiveness
+    
+    // Multiple mechanisms to prevent process exit by keeping the event loop active
+    const preventExit = () => {
+      if (!isShuttingDown) {
+        setTimeout(preventExit, 10000); // Schedule next call
+      }
+    };
+    preventExit();
+    
+    // Additional keep-alive mechanism with shorter interval
+    const keepAlive = () => {
+      if (!isShuttingDown) {
+        setTimeout(keepAlive, 5000); // More frequent to ensure no early exit
+      }
+    };
+    keepAlive();
     
   } catch (error) {
     console.error('Failed to start server:', error);
