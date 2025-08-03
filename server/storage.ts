@@ -1027,17 +1027,22 @@ export class DatabaseStorage implements IStorage {
 import { NoDatabaseStorage } from "./no-db-storage";
 
 // Use appropriate storage based on environment and database availability
-let storageInstance: IStorage;
+let storageInstance: IStorage | null = null;
 
-if (isDatabaseAvailable && process.env.DATABASE_URL) {
-  console.log('Using database storage');
-  storageInstance = new DatabaseStorage();
-} else if (process.env.NODE_ENV === 'production') {
-  console.log('Using no-database storage for production');
-  storageInstance = new NoDatabaseStorage();
-} else {
-  console.log('Using in-memory storage for development');
-  storageInstance = new MemStorage();
+function getStorage(): IStorage {
+  if (!storageInstance) {
+    if (isDatabaseAvailable && process.env.DATABASE_URL) {
+      console.log('Using database storage');
+      storageInstance = new DatabaseStorage();
+    } else if (process.env.NODE_ENV === 'production') {
+      console.log('Using no-database storage for production');
+      storageInstance = new NoDatabaseStorage();
+    } else {
+      console.log('Using in-memory storage for development');
+      storageInstance = new MemStorage();
+    }
+  }
+  return storageInstance;
 }
 
-export const storage = storageInstance;
+export const storage = getStorage();

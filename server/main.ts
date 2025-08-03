@@ -74,12 +74,39 @@ async function initializeServer() {
     validateEnvironment();
     
     // Create admin user
-    await createInitialAdminUser();
-    console.log('Admin user setup complete');
+    console.log('Starting admin user setup...');
+    try {
+      // Add timeout for admin user creation in production
+      if (process.env.NODE_ENV === 'production') {
+        const timeoutPromise = new Promise((_, reject) => 
+          setTimeout(() => reject(new Error('Admin user setup timeout')), 10000)
+        );
+        await Promise.race([
+          createInitialAdminUser(),
+          timeoutPromise
+        ]);
+      } else {
+        await createInitialAdminUser();
+      }
+      console.log('Admin user setup complete');
+    } catch (error) {
+      console.error('Error in admin user setup:', error);
+      if (process.env.NODE_ENV === 'production') {
+        console.log('Continuing without admin user setup due to error');
+      } else {
+        throw error;
+      }
+    }
     
     // Register API routes
-    await registerRoutes(app);
-    console.log('API routes registered');
+    console.log('About to register API routes...');
+    try {
+      await registerRoutes(app);
+      console.log('API routes registered');
+    } catch (error) {
+      console.error('Error registering routes:', error);
+      throw error;
+    }
     
     // Create HTTP server
     const server = createServer(app);

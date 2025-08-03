@@ -17,9 +17,10 @@ if (process.env.DATABASE_URL) {
   // Create connection pool with optimized settings for deployment
   pool = new Pool({ 
     connectionString: process.env.DATABASE_URL,
-    max: 20, // Max connections
-    idleTimeoutMillis: 30000, // 30 seconds
-    connectionTimeoutMillis: 10000, // 10 seconds
+    max: 5, // Reduced for faster startup
+    idleTimeoutMillis: 10000, // 10 seconds
+    connectionTimeoutMillis: 5000, // 5 seconds for faster failure
+    ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : undefined
   });
   
   db = drizzle({ client: pool, schema });

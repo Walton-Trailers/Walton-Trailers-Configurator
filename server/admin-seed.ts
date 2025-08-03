@@ -9,8 +9,26 @@ async function createInitialAdminUser() {
       return;
     }
     
-    // Check if any admin users exist
-    const existingUsers = await storage.getAllAdminUsers();
+    // In production, skip database check to avoid hanging
+    if (process.env.NODE_ENV === 'production') {
+      console.log('Skipping admin user check in production mode');
+      return;
+    }
+    
+    // Check if any admin users exist with timeout
+    let existingUsers: any[] = [];
+    try {
+      const timeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('Database query timeout')), 5000)
+      );
+      existingUsers = await Promise.race([
+        storage.getAllAdminUsers(),
+        timeoutPromise
+      ]) as any[];
+    } catch (error) {
+      console.error('Error checking existing users:', error);
+      return;
+    }
     
     if (existingUsers.length > 0) {
       console.log("Admin users already exist. Skipping seed.");
@@ -61,8 +79,8 @@ async function createInitialAdminUser() {
   }
 }
 
-// Run if called directly
-if (import.meta.url === `file://${process.argv[1]}`) {
+// Run if called directly (disabled in production to prevent auto-execution)
+if (process.env.NODE_ENV !== 'production' && import.meta.url === `file://${process.argv[1]}`) {
   createInitialAdminUser()
     .then(() => process.exit(0))
     .catch((error) => {
