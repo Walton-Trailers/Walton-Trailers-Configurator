@@ -3,6 +3,12 @@ import { hashPassword } from "./auth";
 
 async function createInitialAdminUser() {
   try {
+    // Skip if no database in production
+    if (process.env.NODE_ENV === 'production' && !process.env.DATABASE_URL) {
+      console.log("No database configured - skipping admin user creation.");
+      return;
+    }
+    
     // Check if any admin users exist
     const existingUsers = await storage.getAllAdminUsers();
     

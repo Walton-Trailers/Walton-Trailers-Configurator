@@ -91,11 +91,48 @@ async function startServer() {
       log('Static file serving setup complete');
     }
 
-    app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
+    app.use((err: any, req: Request, res: Response, _next: NextFunction) => {
       const status = err.status || err.statusCode || 500;
       const message = err.message || "Internal Server Error";
-      console.error('Error occurred:', err);
-      res.status(status).json({ message });
+      
+      // In production, log detailed errors but send generic message
+      if (process.env.NODE_ENV === 'production') {
+        console.error('Production error:', {
+          method: req.method,
+          path: req.path,
+          error: err.stack || err,
+          message: err.message
+        });
+        
+        // Check for database connection issues
+        if (err.message && err.message.includes('DATABASE_URL')) {
+          res.status(500).send(`
+            <!DOCTYPE html>
+            <html>
+            <head><title>Configuration Error</title></head>
+            <body style="font-family: system-ui; text-align: center; padding: 50px;">
+              <h1>Server Configuration Error</h1>
+              <p>The application is not properly configured.</p>
+              <p>Please ensure the DATABASE_URL environment variable is set in the deployment settings.</p>
+            </body>
+            </html>
+          `);
+        } else {
+          res.status(status).send(`
+            <!DOCTYPE html>
+            <html>
+            <head><title>Server Error</title></head>
+            <body style="font-family: system-ui; text-align: center; padding: 50px;">
+              <h1>${status === 500 ? 'Internal Server Error' : message}</h1>
+              <p>The server encountered an error. Please try again later.</p>
+            </body>
+            </html>
+          `);
+        }
+      } else {
+        console.error('Error occurred:', err);
+        res.status(status).json({ message, stack: err.stack });
+      }
     });
 
     // Start server

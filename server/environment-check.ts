@@ -1,7 +1,9 @@
 import { log } from "./vite";
 
 export function validateEnvironment() {
-  const requiredEnvVars = ['DATABASE_URL'];
+  // In production, DATABASE_URL might be injected differently by Replit
+  const isProduction = process.env.NODE_ENV === 'production';
+  const requiredEnvVars = isProduction ? [] : ['DATABASE_URL'];
   const warnings: string[] = [];
   const errors: string[] = [];
 
@@ -10,6 +12,11 @@ export function validateEnvironment() {
     if (!process.env[envVar]) {
       errors.push(`Missing required environment variable: ${envVar}`);
     }
+  }
+  
+  // In production, warn if DATABASE_URL is missing but don't fail
+  if (isProduction && !process.env.DATABASE_URL) {
+    warnings.push('DATABASE_URL not set in production - database features will be disabled');
   }
 
   // Check NODE_ENV

@@ -1,4 +1,7 @@
 import { db } from "./db";
+
+// Check if database is available
+const isDatabaseAvailable = !!db;
 import { sql, eq } from "drizzle-orm";
 import { 
   adminUsers, 
@@ -1020,5 +1023,21 @@ export class DatabaseStorage implements IStorage {
   }
 }
 
-// Use database storage in production, fallback to memory for development
-export const storage = process.env.DATABASE_URL ? new DatabaseStorage() : new MemStorage();
+// Import no-database storage for production fallback
+import { NoDatabaseStorage } from "./no-db-storage";
+
+// Use appropriate storage based on environment and database availability
+let storageInstance: IStorage;
+
+if (isDatabaseAvailable && process.env.DATABASE_URL) {
+  console.log('Using database storage');
+  storageInstance = new DatabaseStorage();
+} else if (process.env.NODE_ENV === 'production') {
+  console.log('Using no-database storage for production');
+  storageInstance = new NoDatabaseStorage();
+} else {
+  console.log('Using in-memory storage for development');
+  storageInstance = new MemStorage();
+}
+
+export const storage = storageInstance;
