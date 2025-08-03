@@ -149,14 +149,7 @@ export default function Configurator() {
     queryKey: ['/api/categories'],
   });
 
-  // Debug logging
-  console.log('Configurator state:', { 
-    categories, 
-    isLoading, 
-    error, 
-    categoriesLength: categories?.length,
-    currentStep 
-  });
+
 
   const { data: models } = useQuery<TrailerModel[]>({
     queryKey: ['/api/categories', selectedCategory?.slug, 'models'],
