@@ -49,17 +49,41 @@ const bundledServer = path.resolve('dist', 'index.js');
 if (fs.existsSync(bundledServer)) {
   try {
     let content = fs.readFileSync(bundledServer, 'utf8');
+    let modified = false;
     
-    // Replace the problematic path resolution
-    const oldPattern = 'path.resolve(import.meta.dirname, "public")';
-    const newPattern = 'path.resolve(process.cwd(), "dist", "public")';
+    // Fix all variations of static path resolution
+    const replacements = [
+      {
+        old: 'path.resolve(import.meta.dirname, "public")',
+        new: 'path.resolve(process.cwd(), "dist", "public")'
+      },
+      {
+        old: 'path2.resolve(import.meta.dirname, "public")',
+        new: 'path2.resolve(process.cwd(), "dist", "public")'
+      },
+      {
+        old: 'path3.resolve(import.meta.dirname, "public")',
+        new: 'path3.resolve(process.cwd(), "dist", "public")'
+      },
+      {
+        old: 'import.meta.dirname, "public"',
+        new: 'process.cwd(), "dist", "public"'
+      }
+    ];
     
-    if (content.includes(oldPattern)) {
-      content = content.replace(oldPattern, newPattern);
+    for (const { old: oldPattern, new: newPattern } of replacements) {
+      if (content.includes(oldPattern)) {
+        content = content.replace(new RegExp(oldPattern.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'g'), newPattern);
+        modified = true;
+        console.log(`✓ Replaced: ${oldPattern}`);
+      }
+    }
+    
+    if (modified) {
       fs.writeFileSync(bundledServer, content);
-      console.log('✓ Patched static file path in dist/index.js');
+      console.log('✓ Patched all static file paths in dist/index.js');
     } else {
-      console.log('⚠ Could not find path pattern to patch in dist/index.js');
+      console.log('⚠ No path patterns found to patch in dist/index.js');
     }
   } catch (e) {
     console.error('Failed to patch dist/index.js:', e.message);
