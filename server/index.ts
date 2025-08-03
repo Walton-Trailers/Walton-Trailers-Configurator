@@ -121,22 +121,31 @@ async function startServer() {
   // This prevents the main thread from exiting after initialization
   const keepAliveInterval = setInterval(() => {
     // Empty interval to keep process alive
-    // This is a common pattern for Node.js servers in production
+    // This ensures the process stays running for health checks
   }, 1000 * 60); // Check every minute for better responsiveness
   
-  // Ensure the interval doesn't prevent graceful shutdown
-  keepAliveInterval.unref();
+  // Additional keep-alive mechanism to prevent early exit
+  process.stdin.resume(); // Keeps the process running by keeping stdin open
   
   // Handle graceful shutdown signals
   process.on('SIGTERM', () => {
     log('Received SIGTERM, shutting down gracefully');
     clearInterval(keepAliveInterval);
+    process.stdin.pause();
     process.exit(0);
   });
   
   process.on('SIGINT', () => {
     log('Received SIGINT, shutting down gracefully');
     clearInterval(keepAliveInterval);
+    process.stdin.pause();
     process.exit(0);
+  });
+  
+  // Prevent the async IIFE from allowing natural process exit
+  // This is a fail-safe to ensure the process stays alive
+  return new Promise(() => {
+    // This promise never resolves, keeping the async function alive
+    // The process can only exit through the signal handlers above
   });
 })();
