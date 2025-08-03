@@ -145,8 +145,17 @@ export default function Configurator() {
   const [hoveredCategory, setHoveredCategory] = useState<TrailerCategory | null>(null);
   const [hoveredModel, setHoveredModel] = useState<TrailerModel | null>(null);
 
-  const { data: categories, isLoading } = useQuery<TrailerCategory[]>({
+  const { data: categories, isLoading, error } = useQuery<TrailerCategory[]>({
     queryKey: ['/api/categories'],
+  });
+
+  // Debug logging
+  console.log('Configurator state:', { 
+    categories, 
+    isLoading, 
+    error, 
+    categoriesLength: categories?.length,
+    currentStep 
   });
 
   const { data: models } = useQuery<TrailerModel[]>({
@@ -189,10 +198,30 @@ export default function Configurator() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
+      <div className="min-h-screen bg-white flex items-center justify-center">
         <div className="text-center">
-          <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-muted-foreground">Loading configurator...</p>
+          <div className="w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading configurator...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-white flex items-center justify-center">
+        <div className="text-center">
+          <p className="text-red-600">Error loading configurator: {error.message}</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!categories || categories.length === 0) {
+    return (
+      <div className="min-h-screen bg-white flex items-center justify-center">
+        <div className="text-center">
+          <p className="text-gray-600">No categories available</p>
         </div>
       </div>
     );
