@@ -1,7 +1,6 @@
 import type { Express, Request, Response, NextFunction } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { registerFastRoutes } from "./fast-routes";
 import { db } from "./db";
 import { sql } from "drizzle-orm";
 import { 
@@ -484,8 +483,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
   }
 
   const httpServer = createServer(app);
-  // Register optimized fast routes
-  registerFastRoutes(app);
   
   return httpServer;
 }

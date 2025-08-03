@@ -10,7 +10,14 @@ Preferred communication style: Simple, everyday language.
 
 ## System Architecture
 
-The application follows a full-stack monorepo structure with clear separation of concerns. The frontend is built with React and TypeScript, utilizing Vite for development. The backend uses an Express.js server with TypeScript. Data persistence is managed with PostgreSQL and Drizzle ORM. UI components are built with Shadcn/ui and styled using Tailwind CSS. State management leverages TanStack Query for server state and custom hooks for local state.
+The application follows a full-stack monorepo structure with a simplified, deployment-first architecture. The frontend is built with React and TypeScript, utilizing Vite for development. The backend uses a unified Express.js server (main.ts) that handles both development and production environments seamlessly. Data persistence is managed with PostgreSQL and Drizzle ORM. UI components are built with Shadcn/ui and styled using Tailwind CSS. State management leverages TanStack Query for server state and custom hooks for local state.
+
+### Deployment Architecture (Updated: January 3, 2025)
+- **Single Server Entry Point**: `server/main.ts` handles both development and production
+- **No Symlinks**: Direct static file serving from `dist/public` in production
+- **Simple Build Process**: Frontend builds to `dist/public`, server builds to `dist/server.js`
+- **Environment-Based Configuration**: Clear separation between dev (Vite) and prod (static) modes
+- **Health Check Endpoints**: `/health`, `/healthz`, `/ping`, `/status` for deployment verification
 
 ### Frontend Architecture
 - **UI Framework**: Shadcn/ui components for consistent, accessible UI elements.
