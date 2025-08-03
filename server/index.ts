@@ -188,6 +188,13 @@ async function main() {
     validateEnvironment();
     await startServer();
     log('Server started successfully');
+    
+    // Keep the main function alive - prevent process exit
+    return new Promise(() => {
+      // This promise never resolves, keeping the function alive
+      // The server will continue running and responding to requests
+    });
+    
   } catch (error) {
     console.error('Failed to start server:', error);
     // In production, start fallback server for health checks
@@ -195,7 +202,7 @@ async function main() {
       console.error('Starting fallback health check server...');
       startFallbackServer();
       // Keep process alive indefinitely
-      setInterval(() => {}, 1000000);
+      return new Promise(() => {});
     } else {
       process.exit(1);
     }
@@ -230,12 +237,7 @@ process.on('unhandledRejection', (reason, promise) => {
   }
 });
 
-// Keep process alive in production for deployment health checks
-if (process.env.NODE_ENV === 'production') {
-  setInterval(() => {
-    // Minimal heartbeat to prevent process exit
-  }, 10000);
-}
+
 
 // Start the application
 main();
