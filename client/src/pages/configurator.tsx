@@ -301,10 +301,19 @@ Configuration Date: ${new Date().toLocaleDateString()}
     <div className="min-h-screen bg-white text-gray-900 font-medium">
       {/* Tesla-style Header */}
       <header className="fixed top-0 left-0 right-0 bg-white/95 backdrop-blur-xl z-50 border-b border-gray-200">
-        <div className="max-w-7xl mx-auto px-8">
-          <div className="flex items-center justify-between h-20">
-            <div className="text-2xl font-semibold tracking-tight">WALTON</div>
+        <div className="max-w-7xl mx-auto px-4 md:px-8">
+          <div className="flex items-center justify-between h-16 md:h-20">
+            <div className="text-xl md:text-2xl font-semibold tracking-tight">WALTON</div>
             
+            {/* Mobile progress indicator - horizontal dots */}
+            <div className="flex md:hidden items-center space-x-2">
+              <div className={`w-2 h-2 rounded-full transition-all duration-300 ${currentStep >= 1 ? 'bg-blue-600' : 'bg-gray-300'}`} />
+              <div className={`w-2 h-2 rounded-full transition-all duration-300 ${currentStep >= 2 ? 'bg-blue-600' : 'bg-gray-300'}`} />
+              <div className={`w-2 h-2 rounded-full transition-all duration-300 ${currentStep >= 3 ? 'bg-blue-600' : 'bg-gray-300'}`} />
+              <div className={`w-2 h-2 rounded-full transition-all duration-300 ${currentStep >= 4 ? 'bg-blue-600' : 'bg-gray-300'}`} />
+            </div>
+            
+            {/* Desktop progress indicator */}
             <div className="hidden md:flex items-center space-x-6 text-sm">
               <div className={`px-4 py-2 rounded-full transition-all duration-300 ${currentStep >= 1 ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-600'}`}>
                 Category
@@ -321,8 +330,8 @@ Configuration Date: ${new Date().toLocaleDateString()}
             </div>
             
             <div className="text-right">
-              <div className="text-sm text-gray-500 font-normal">Est. Price</div>
-              <div className="text-2xl font-semibold text-blue-600 transition-all duration-500">
+              <div className="text-xs md:text-sm text-gray-500 font-normal">Est. Price</div>
+              <div className="text-lg md:text-2xl font-semibold text-blue-600 transition-all duration-500">
                 ${totalPrice.toLocaleString()}
               </div>
             </div>
@@ -330,20 +339,20 @@ Configuration Date: ${new Date().toLocaleDateString()}
         </div>
       </header>
       {/* Main Content */}
-      <div className="pt-20 min-h-screen">
+      <div className="pt-16 md:pt-20 min-h-screen">
         {/* Step 1: Category Selection - Full Width Layout */}
         {currentStep === 1 && (
-          <div className="max-w-7xl mx-auto px-8 py-8">
-            <div className="text-center mb-8">
-              <h1 className="text-4xl font-bold text-gray-900 mb-4 tracking-tight">
+          <div className="max-w-7xl mx-auto px-4 md:px-8 py-6 md:py-8">
+            <div className="text-center mb-6 md:mb-8">
+              <h1 className="text-2xl md:text-4xl font-bold text-gray-900 mb-3 md:mb-4 tracking-tight">
                 Choose Your Trailer
               </h1>
-              <p className="text-lg text-gray-600 max-w-2xl mx-auto leading-relaxed">
+              <p className="text-base md:text-lg text-gray-600 max-w-2xl mx-auto leading-relaxed px-4 md:px-0">
                 Select from our premium line of commercial trailers designed for professionals
               </p>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 max-w-full mx-auto px-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {categories?.map((category, index) => (
                 <div
                   key={category.id}
@@ -358,7 +367,7 @@ Configuration Date: ${new Date().toLocaleDateString()}
                   >
                     <div className="flex flex-col">
                       {/* Top - Image */}
-                      <div className="w-full h-36 relative overflow-hidden rounded-t-3xl">
+                      <div className="w-full h-32 md:h-36 relative overflow-hidden rounded-t-3xl">
                         <img 
                           src={category.imageUrl}
                           alt={category.name}
@@ -368,19 +377,19 @@ Configuration Date: ${new Date().toLocaleDateString()}
                       </div>
                       
                       {/* Bottom - Content */}
-                      <div className="w-full p-5">
-                        <div className="flex items-center justify-between mb-3">
-                          <h3 className="text-xl font-semibold text-gray-900 group-hover:text-blue-600 transition-colors duration-300">
+                      <div className="w-full p-4 md:p-5">
+                        <div className="flex items-center justify-between mb-2 md:mb-3">
+                          <h3 className="text-lg md:text-xl font-semibold text-gray-900 group-hover:text-blue-600 transition-colors duration-300">
                             {category.name}
                           </h3>
                           <ArrowRight className="w-4 h-4 text-gray-400 group-hover:text-blue-500 group-hover:translate-x-1 transition-all duration-300" />
                         </div>
                         
-                        <p className="text-gray-600 mb-4 leading-relaxed text-sm">
+                        <p className="text-gray-600 mb-3 md:mb-4 leading-relaxed text-sm line-clamp-2 md:line-clamp-none">
                           {category.description}
                         </p>
                         
-                        <div className="text-base font-semibold text-blue-600">
+                        <div className="text-sm md:text-base font-semibold text-blue-600">
                           Starting at ${category.startingPrice.toLocaleString()}
                         </div>
                       </div>
@@ -391,10 +400,10 @@ Configuration Date: ${new Date().toLocaleDateString()}
             </div>
 
             {/* Subtle CTA for custom quotes */}
-            <div className="text-center mt-16 mb-8">
-              <p className="text-sm text-gray-500">
+            <div className="text-center mt-8 md:mt-16 mb-4 md:mb-8 px-4">
+              <p className="text-xs md:text-sm text-gray-500">
                 Don't see your desired trailer type? 
-                <span className="ml-1 text-gray-600 hover:text-blue-600 transition-colors duration-300 cursor-pointer">
+                <span className="ml-1 text-gray-600 hover:text-blue-600 transition-colors duration-300 cursor-pointer block md:inline">
                   Contact Walton Trailers for a custom quote
                 </span>
               </p>
@@ -402,11 +411,22 @@ Configuration Date: ${new Date().toLocaleDateString()}
           </div>
         )}
 
-        {/* Steps 2+ - Split Screen Layout */}
+        {/* Steps 2+ - Responsive Layout */}
         {currentStep > 1 && (
-          <>
-            {/* Left Panel - Image (Fixed) */}
-            <div className="fixed left-0 top-20 w-[65%] h-[calc(100vh-5rem)] flex items-center justify-center overflow-hidden z-10 bg-gray-50">
+          <div className="flex flex-col lg:flex-row min-h-screen">
+            {/* Mobile/Tablet Image - Sticky Top */}
+            <div className="lg:hidden sticky top-16 md:top-20 z-10 bg-gray-50 h-48 md:h-64">
+              <div className="relative w-full h-full p-4">
+                <img 
+                  src={currentTrailerImage}
+                  alt="Trailer"
+                  className="w-full h-full object-contain drop-shadow-lg"
+                />
+              </div>
+            </div>
+
+            {/* Desktop Image Panel - Fixed */}
+            <div className="hidden lg:block lg:fixed left-0 top-20 w-[65%] h-[calc(100vh-5rem)] flex items-center justify-center overflow-hidden z-10 bg-gray-50">
               <div className="relative w-full h-full max-w-5xl max-h-[80vh] mx-auto my-auto p-8">
                 <img 
                   src={currentTrailerImage}
@@ -416,9 +436,9 @@ Configuration Date: ${new Date().toLocaleDateString()}
               </div>
             </div>
 
-            {/* Right Panel - Configuration (Scrollable) */}
-            <div className="ml-[65%] w-[35%] bg-white min-h-screen">
-              <div className="max-w-lg mx-auto py-12 px-6">
+            {/* Configuration Panel - Responsive */}
+            <div className="flex-1 lg:ml-[65%] lg:w-[35%] bg-white">
+              <div className="max-w-lg mx-auto py-6 md:py-8 lg:py-12 px-4 md:px-6">
 
           {/* Step 2: Model Selection */}
           {currentStep === 2 && selectedCategory && (
@@ -434,10 +454,10 @@ Configuration Date: ${new Date().toLocaleDateString()}
               </div>
               
               <div>
-                <h1 className="text-5xl font-bold text-gray-900 mb-6 tracking-tight leading-tight">
+                <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold text-gray-900 mb-3 md:mb-6 tracking-tight leading-tight">
                   {selectedCategory.name}
                 </h1>
-                <p className="text-gray-600 text-xl leading-relaxed">
+                <p className="text-gray-600 text-base md:text-lg lg:text-xl leading-relaxed">
                   Choose the perfect model for your specific requirements
                 </p>
               </div>
@@ -450,7 +470,7 @@ Configuration Date: ${new Date().toLocaleDateString()}
                     style={{ animationDelay: `${index * 150}ms` }}
                   >
                     <button
-                      className={`w-full text-left p-6 rounded-2xl border-2 transition-all duration-300 hover:shadow-lg hover:scale-[1.02] active:scale-[0.98] ${
+                      className={`w-full text-left p-4 md:p-6 rounded-2xl border-2 transition-all duration-300 hover:shadow-lg hover:scale-[1.02] active:scale-[0.98] ${
                         selectedModel?.id === model.id 
                           ? 'border-blue-500 bg-blue-50 shadow-lg' 
                           : 'border-gray-200 hover:border-gray-300 bg-white'
@@ -461,28 +481,28 @@ Configuration Date: ${new Date().toLocaleDateString()}
                     >
                       <div className="flex justify-between items-start">
                         <div className="flex-1">
-                          <h3 className="text-2xl font-semibold mb-4 text-gray-900">{model.name}</h3>
-                          <div className="grid grid-cols-2 gap-6 text-base mb-6">
-                            <div className="space-y-2">
-                              <div className="text-gray-500 text-sm font-medium uppercase tracking-wide">GVWR</div>
+                          <h3 className="text-lg md:text-xl lg:text-2xl font-semibold mb-3 md:mb-4 text-gray-900">{model.name}</h3>
+                          <div className="grid grid-cols-2 gap-3 md:gap-6 text-sm md:text-base mb-4 md:mb-6">
+                            <div className="space-y-1 md:space-y-2">
+                              <div className="text-gray-500 text-xs md:text-sm font-medium uppercase tracking-wide">GVWR</div>
                               <div className="font-semibold text-gray-900">{model.gvwr}</div>
                             </div>
-                            <div className="space-y-2">
-                              <div className="text-gray-500 text-sm font-medium uppercase tracking-wide">Payload</div>
+                            <div className="space-y-1 md:space-y-2">
+                              <div className="text-gray-500 text-xs md:text-sm font-medium uppercase tracking-wide">Payload</div>
                               <div className="font-semibold text-gray-900">{model.payload}</div>
                             </div>
-                            <div className="space-y-2">
-                              <div className="text-gray-500 text-sm font-medium uppercase tracking-wide">Deck Size</div>
+                            <div className="space-y-1 md:space-y-2">
+                              <div className="text-gray-500 text-xs md:text-sm font-medium uppercase tracking-wide">Deck Size</div>
                               <div className="font-semibold text-gray-900">{model.deckSize}</div>
                             </div>
-                            <div className="space-y-2">
-                              <div className="text-gray-500 text-sm font-medium uppercase tracking-wide">Axles</div>
+                            <div className="space-y-1 md:space-y-2">
+                              <div className="text-gray-500 text-xs md:text-sm font-medium uppercase tracking-wide">Axles</div>
                               <div className="font-semibold text-gray-900">{model.axles}</div>
                             </div>
                           </div>
-                          <div className="text-2xl font-bold text-blue-600">${model.basePrice.toLocaleString()}</div>
+                          <div className="text-lg md:text-xl lg:text-2xl font-bold text-blue-600">${model.basePrice.toLocaleString()}</div>
                         </div>
-                        <ArrowRight className="w-6 h-6 text-gray-400 ml-6 transition-transform duration-300 group-hover:translate-x-1" />
+                        <ArrowRight className="w-5 h-5 md:w-6 md:h-6 text-gray-400 ml-3 md:ml-6 transition-transform duration-300 group-hover:translate-x-1 flex-shrink-0" />
                       </div>
                     </button>
                   </div>
@@ -513,12 +533,12 @@ Configuration Date: ${new Date().toLocaleDateString()}
               </div>
               
               <div>
-                <h1 className="text-4xl font-bold mb-2">{selectedModel.name}</h1>
-                <div className="flex items-center space-x-4 text-sm text-zinc-600 dark:text-zinc-400">
+                <h1 className="text-2xl md:text-3xl lg:text-4xl font-bold mb-2">{selectedModel.name}</h1>
+                <div className="flex flex-wrap items-center gap-2 md:gap-4 text-xs md:text-sm text-zinc-600 dark:text-zinc-400">
                   <span>{selectedModel.gvwr}</span>
-                  <span>•</span>
+                  <span className="hidden md:inline">•</span>
                   <span>{selectedModel.payload}</span>
-                  <span>•</span>
+                  <span className="hidden md:inline">•</span>
                   <span>{selectedModel.deckSize}</span>
                 </div>
               </div>
@@ -532,8 +552,8 @@ Configuration Date: ${new Date().toLocaleDateString()}
                 }, {} as Record<string, TrailerOption[]>)
               ).map(([category, categoryOptions]) => (
                 <Card key={category} className="border border-zinc-200 dark:border-zinc-700">
-                  <CardContent className="p-6">
-                    <h3 className="text-lg font-semibold mb-4 capitalize">
+                  <CardContent className="p-4 md:p-6">
+                    <h3 className="text-base md:text-lg font-semibold mb-3 md:mb-4 capitalize">
                       {category === 'tires' ? 'Tire Options' : 
                        category === 'ramps' ? 'Ramp Options' : 
                        category === 'color' ? 'Color Options' : 
@@ -638,8 +658,8 @@ Configuration Date: ${new Date().toLocaleDateString()}
               </div>
               
               <div>
-                <h1 className="text-4xl font-bold mb-4">Your Configuration</h1>
-                <p className="text-zinc-600 dark:text-zinc-400 text-lg">
+                <h1 className="text-2xl md:text-3xl lg:text-4xl font-bold mb-3 md:mb-4">Your Configuration</h1>
+                <p className="text-zinc-600 dark:text-zinc-400 text-base md:text-lg">
                   Review your configuration and request a quote
                 </p>
               </div>
@@ -683,38 +703,39 @@ Configuration Date: ${new Date().toLocaleDateString()}
                       description: "A dealer will contact you within 24 hours.",
                     });
                   }}
-                  className="bg-blue-500 hover:bg-blue-600 text-white py-6"
+                  className="bg-blue-500 hover:bg-blue-600 text-white py-4 md:py-6 text-sm md:text-base min-h-[48px]"
                 >
-                  <Mail className="w-5 h-5 mr-2" />
+                  <Mail className="w-4 h-4 md:w-5 md:h-5 mr-2" />
                   Request Quote
                 </Button>
                 <Button 
                   variant="outline"
                   onClick={handleDownloadPDF}
-                  className="py-6"
+                  className="py-4 md:py-6 text-sm md:text-base min-h-[48px]"
                 >
-                  <Download className="w-5 h-5 mr-2" />
+                  <Download className="w-4 h-4 md:w-5 md:h-5 mr-2" />
                   Download Spec Sheet
                 </Button>
               </div>
             </div>
-              )}
+          )}
               </div>
             </div>
-          </>
+          </div>
         )}
       </div>
       
-      {/* Fixed Employee Portal Button - Left Side */}
+      {/* Fixed Employee Portal Button - Mobile Friendly */}
       <div className="fixed left-4 bottom-4 z-40">
         <Link href="/admin/login">
           <Button
             variant="ghost"
             size="sm"
-            className="bg-white/20 backdrop-blur-sm hover:bg-white/40 border-0 hover:border-gray-200 text-gray-400 hover:text-gray-600 transition-all duration-500 text-xs px-3 py-1.5 opacity-60 hover:opacity-100"
+            className="bg-white/80 md:bg-white/20 backdrop-blur-sm hover:bg-white/90 md:hover:bg-white/40 border border-gray-200 md:border-0 hover:border-gray-300 md:hover:border-gray-200 text-gray-600 md:text-gray-400 hover:text-gray-800 md:hover:text-gray-600 transition-all duration-500 text-xs px-3 py-2 md:py-1.5 opacity-90 md:opacity-60 hover:opacity-100 shadow-sm md:shadow-none"
           >
             <Users className="w-3 h-3 mr-1.5" />
-            Employees
+            <span className="hidden md:inline">Employees</span>
+            <span className="md:hidden">Staff</span>
           </Button>
         </Link>
       </div>
