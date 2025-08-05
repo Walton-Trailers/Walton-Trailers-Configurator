@@ -12,7 +12,7 @@ import { ArrowLeft, ArrowRight, Download, Mail, MapPin, RotateCcw, Info, X, User
 import { Link } from "wouter";
 import { useToast } from "@/hooks/use-toast";
 import { getOptionInfo } from "@/lib/trailer-option-info";
-
+import waltonLogo from "@/assets/walton-logo.png";
 // Import the response types that match our API
 interface TrailerCategory {
   id: number;
@@ -305,18 +305,12 @@ Configuration Date: ${new Date().toLocaleDateString()}
         <div className="max-w-7xl mx-auto px-4 md:px-8">
           <div className="flex items-center justify-between h-16 md:h-20">
             <div className="flex items-center">
-              <div className="flex items-center gap-3">
-                <div className="flex items-center">
-                  <span className="text-2xl md:text-3xl font-black tracking-tight text-gray-900" style={{ fontFamily: 'system-ui, -apple-system, sans-serif' }}>
-                    WALTON
-                  </span>
-                  <div className="ml-3 pl-3 border-l-2 border-gray-300">
-                    <span className="text-sm md:text-base font-semibold tracking-wide text-gray-700 uppercase" style={{ fontFamily: 'system-ui, -apple-system, sans-serif' }}>
-                      Trailers
-                    </span>
-                  </div>
-                </div>
-              </div>
+              <img 
+                src={waltonLogo} 
+                alt="Walton Trailers" 
+                className="h-6 md:h-8 lg:h-10 w-auto object-contain max-w-[120px] md:max-w-[150px] lg:max-w-[180px]"
+                style={{ filter: 'brightness(0) saturate(100%)' }}
+              />
             </div>
             
             {/* Mobile progress indicator - horizontal dots */}
