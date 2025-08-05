@@ -27,6 +27,21 @@ const Input = ({ className = '', ...props }: any) => (
   />
 );
 
+const Select = ({ value, onValueChange, children }: any) => (
+  <select
+    value={value}
+    onChange={(e) => onValueChange(e.target.value)}
+    className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+  >
+    {children}
+  </select>
+);
+
+const SelectTrigger = ({ children }: any) => <>{children}</>;
+const SelectValue = () => null;
+const SelectContent = ({ children }: any) => <>{children}</>;
+const SelectItem = ({ value, children }: any) => <option value={value}>{children}</option>;
+
 const Card = ({ children, className = '' }: any) => (
   <div className={`bg-white rounded-lg border shadow-sm ${className}`}>
     {children}
@@ -121,8 +136,10 @@ export default function FastPricing() {
     const data = editData[model.id] || {};
     updateMutation.mutate({
       id: model.id,
-      basePrice: data.basePrice ?? model.basePrice,
+      modelId: data.modelId ?? model.modelId,
       name: data.name ?? model.name,
+      categoryId: data.categoryId ?? model.categoryId,
+      basePrice: data.basePrice ?? model.basePrice,
     });
   };
 
@@ -213,7 +230,19 @@ export default function FastPricing() {
               <TableBody>
                 {activeModels.map((model: any) => (
                   <TableRow key={model.id}>
-                    <TableCell className="font-medium">{model.modelId}</TableCell>
+                    <TableCell className="font-medium">
+                      {editingModel?.id === model.id ? (
+                        <Input
+                          value={editData[model.id]?.modelId ?? model.modelId}
+                          onChange={(e: any) => setEditData({
+                            ...editData,
+                            [model.id]: { ...editData[model.id], modelId: e.target.value }
+                          })}
+                        />
+                      ) : (
+                        model.modelId
+                      )}
+                    </TableCell>
                     <TableCell>
                       {editingModel?.id === model.id ? (
                         <Input
@@ -227,7 +256,26 @@ export default function FastPricing() {
                         model.name
                       )}
                     </TableCell>
-                    <TableCell>{model.categoryName}</TableCell>
+                    <TableCell>
+                      {editingModel?.id === model.id ? (
+                        <Select
+                          value={editData[model.id]?.categoryId?.toString() ?? model.categoryId?.toString()}
+                          onValueChange={(value) => setEditData({
+                            ...editData,
+                            [model.id]: { ...editData[model.id], categoryId: parseInt(value) }
+                          })}
+                        >
+                          <SelectItem value="6">Gooseneck Trailers</SelectItem>
+                          <SelectItem value="7">Car/Equipment Haulers</SelectItem>
+                          <SelectItem value="8">Dump Trailers</SelectItem>
+                          <SelectItem value="9">Landscape Trailers</SelectItem>
+                          <SelectItem value="10">Utility Trailers</SelectItem>
+                          <SelectItem value="11">Specialty Trailers</SelectItem>
+                        </Select>
+                      ) : (
+                        model.categoryName
+                      )}
+                    </TableCell>
                     <TableCell>
                       {editingModel?.id === model.id ? (
                         <Input
