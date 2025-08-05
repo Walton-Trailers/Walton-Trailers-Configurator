@@ -143,6 +143,38 @@ export default function FastPricing() {
     });
   };
 
+  // Options update mutation
+  const updateOptionMutation = useMutation({
+    mutationFn: ({ id, ...data }: any) => fastMutate(`/api/options/${id}`, {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${sessionId}`,
+      },
+      body: JSON.stringify(data),
+    }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin', 'options'] });
+      setEditingOption(null);
+      setEditData({});
+    },
+  });
+
+  const handleOptionUpdate = (option: any) => {
+    const data = editData[option.id] || {};
+    const modelIds = data.modelIds || [option.modelId];
+    
+    // For now, update the first model association
+    // In a full implementation, you might need to handle multiple model associations
+    updateOptionMutation.mutate({
+      id: option.id,
+      name: data.name ?? option.name,
+      modelId: modelIds[0] || option.modelId,
+      category: data.category ?? option.category,
+      price: data.price ?? option.price,
+    });
+  };
+
   // Handle authentication errors
   if (modelsError || optionsError) {
     return (
@@ -428,8 +460,58 @@ export default function FastPricing() {
                           option.name
                         )}
                       </TableCell>
-                      <TableCell>{option.modelId}</TableCell>
-                      <TableCell>{option.category}</TableCell>
+                      <TableCell>
+                        {editingOption?.id === option.id ? (
+                          <div className="space-y-1 max-h-32 overflow-y-auto">
+                            {activeModels.map((model: any) => (
+                              <label key={model.id} className="flex items-center space-x-2 text-xs">
+                                <input
+                                  type="checkbox"
+                                  checked={editData[option.id]?.modelIds?.includes(model.modelId) ?? option.modelId === model.modelId}
+                                  onChange={(e) => {
+                                    const currentModelIds = editData[option.id]?.modelIds ?? (option.modelId === model.modelId ? [option.modelId] : []);
+                                    const newModelIds = e.target.checked 
+                                      ? [...currentModelIds.filter((id: string) => id !== model.modelId), model.modelId]
+                                      : currentModelIds.filter((id: string) => id !== model.modelId);
+                                    setEditData({
+                                      ...editData,
+                                      [option.id]: { ...editData[option.id], modelIds: newModelIds }
+                                    });
+                                  }}
+                                  className="rounded"
+                                />
+                                <span>{model.modelId}</span>
+                              </label>
+                            ))}
+                          </div>
+                        ) : (
+                          option.modelId
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        {editingOption?.id === option.id ? (
+                          <Select
+                            value={editData[option.id]?.category ?? option.category}
+                            onValueChange={(value) => setEditData({
+                              ...editData,
+                              [option.id]: { ...editData[option.id], category: value }
+                            })}
+                          >
+                            <SelectItem value="tires">Tires</SelectItem>
+                            <SelectItem value="ramps">Ramps</SelectItem>
+                            <SelectItem value="color">Color</SelectItem>
+                            <SelectItem value="extras">Extras</SelectItem>
+                            <SelectItem value="deck">Deck</SelectItem>
+                            <SelectItem value="walls">Walls</SelectItem>
+                            <SelectItem value="winch">Winch</SelectItem>
+                            <SelectItem value="wheels">Wheels</SelectItem>
+                            <SelectItem value="brakes">Brakes</SelectItem>
+                            <SelectItem value="hitch">Hitch</SelectItem>
+                          </Select>
+                        ) : (
+                          option.category
+                        )}
+                      </TableCell>
                       <TableCell>
                         {editingOption?.id === option.id ? (
                           <Input
@@ -449,11 +531,7 @@ export default function FastPricing() {
                           <div className="flex gap-2">
                             <Button
                               size="sm"
-                              onClick={() => {
-                                // Handle option update logic here
-                                setEditingOption(null);
-                                setEditData({});
-                              }}
+                              onClick={() => handleOptionUpdate(option)}
                             >
                               <Save className="w-4 h-4" />
                             </Button>
