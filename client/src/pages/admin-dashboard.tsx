@@ -598,8 +598,9 @@ export default function AdminDashboard() {
                               variant="outline"
                               size="sm"
                               onClick={() => handleEditUser(adminUser)}
+                              className="flex items-center"
                             >
-                              <Edit2 className="w-3 h-3 mr-1" />
+                              <Edit2 className="w-4 h-4 mr-2" />
                               Edit
                             </Button>
                             
