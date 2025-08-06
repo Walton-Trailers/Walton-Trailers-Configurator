@@ -286,8 +286,13 @@ export async function registerRoutes(app: Express): Promise<Express> {
       const userId = parseInt(req.params.id);
       const updates = req.body;
       
-      // Don't allow password updates through this endpoint
-      delete updates.passwordHash;
+      // Handle password update if provided
+      if (updates.password && updates.password.length > 0) {
+        const passwordHash = await hashPassword(updates.password);
+        updates.passwordHash = passwordHash;
+      }
+      
+      // Remove password field from updates (only passwordHash should be stored)
       delete updates.password;
       
       const updatedUser = await storage.updateAdminUser(userId, updates);

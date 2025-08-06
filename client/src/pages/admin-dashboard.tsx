@@ -7,7 +7,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAdminAuth } from "@/hooks/useAdminAuth";
 import { useLocation } from "wouter";
 import { apiRequest } from "@/lib/queryClient";
-import { LogOut, Users, Settings, Plus, DollarSign } from "lucide-react";
+import { LogOut, Users, Settings, Plus, DollarSign, Edit2 } from "lucide-react";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -38,12 +38,23 @@ const createUserSchema = z.object({
   password: z.string().min(8, "Password must be at least 8 characters"),
 });
 
+const editUserSchema = z.object({
+  username: z.string().min(3, "Username must be at least 3 characters"),
+  email: z.string().email("Invalid email address"),
+  firstName: z.string().optional(),
+  lastName: z.string().optional(),
+  role: z.enum(["admin", "standard"]),
+  password: z.string().min(8, "Password must be at least 8 characters").optional().or(z.literal("")),
+});
+
 type CreateUserForm = z.infer<typeof createUserSchema>;
+type EditUserForm = z.infer<typeof editUserSchema>;
 
 export default function AdminDashboard() {
   const { user, logout, isAdmin, isLoading } = useAdminAuth();
   const [, setLocation] = useLocation();
   const [showCreateUser, setShowCreateUser] = useState(false);
+  const [editingUser, setEditingUser] = useState<AdminUser | null>(null);
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -112,8 +123,47 @@ export default function AdminDashboard() {
     },
   });
 
+  const updateUserMutation = useMutation({
+    mutationFn: ({ userId, data }: { userId: number; data: EditUserForm }) =>
+      apiRequest(`/api/admin/users/${userId}`, {
+        method: "PATCH",
+        body: data,
+        headers: {
+          Authorization: `Bearer ${sessionId}`,
+        },
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/users"] });
+      setEditingUser(null);
+      toast({
+        title: "Success",
+        description: "User updated successfully",
+      });
+      editForm.reset();
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to update user",
+        variant: "destructive",
+      });
+    },
+  });
+
   const form = useForm<CreateUserForm>({
     resolver: zodResolver(createUserSchema),
+    defaultValues: {
+      username: "",
+      email: "",
+      firstName: "",
+      lastName: "",
+      role: "standard",
+      password: "",
+    },
+  });
+
+  const editForm = useForm<EditUserForm>({
+    resolver: zodResolver(editUserSchema),
     defaultValues: {
       username: "",
       email: "",
@@ -136,6 +186,29 @@ export default function AdminDashboard() {
   const handleDeactivateUser = (userId: number) => {
     if (confirm("Are you sure you want to deactivate this user?")) {
       deactivateUserMutation.mutate(userId);
+    }
+  };
+
+  const handleEditUser = (adminUser: AdminUser) => {
+    setEditingUser(adminUser);
+    editForm.reset({
+      username: adminUser.username,
+      email: adminUser.email,
+      firstName: adminUser.firstName || "",
+      lastName: adminUser.lastName || "",
+      role: adminUser.role as "admin" | "standard",
+      password: "",
+    });
+  };
+
+  const onUpdateUser = async (data: EditUserForm) => {
+    if (editingUser) {
+      // Remove password from data if it's empty
+      const updateData = { ...data };
+      if (!updateData.password) {
+        delete updateData.password;
+      }
+      updateUserMutation.mutate({ userId: editingUser.id, data: updateData });
     }
   };
 
@@ -376,6 +449,118 @@ export default function AdminDashboard() {
                     </form>
                   </DialogContent>
                 </Dialog>
+
+                {/* Edit User Dialog */}
+                <Dialog open={!!editingUser} onOpenChange={(open) => !open && setEditingUser(null)}>
+                  <DialogContent>
+                    <DialogHeader>
+                      <DialogTitle>Edit User</DialogTitle>
+                      <DialogDescription>
+                        Update user information
+                      </DialogDescription>
+                    </DialogHeader>
+                    
+                    <form onSubmit={editForm.handleSubmit(onUpdateUser)} className="space-y-4">
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <Label htmlFor="edit-username">Username</Label>
+                          <Input
+                            id="edit-username"
+                            {...editForm.register("username")}
+                            placeholder="Enter username"
+                          />
+                          {editForm.formState.errors.username && (
+                            <p className="text-sm text-red-600">
+                              {editForm.formState.errors.username.message}
+                            </p>
+                          )}
+                        </div>
+
+                        <div className="space-y-2">
+                          <Label htmlFor="edit-email">Email</Label>
+                          <Input
+                            id="edit-email"
+                            type="email"
+                            {...editForm.register("email")}
+                            placeholder="Enter email"
+                          />
+                          {editForm.formState.errors.email && (
+                            <p className="text-sm text-red-600">
+                              {editForm.formState.errors.email.message}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <Label htmlFor="edit-firstName">First Name</Label>
+                          <Input
+                            id="edit-firstName"
+                            {...editForm.register("firstName")}
+                            placeholder="Optional"
+                          />
+                        </div>
+
+                        <div className="space-y-2">
+                          <Label htmlFor="edit-lastName">Last Name</Label>
+                          <Input
+                            id="edit-lastName"
+                            {...editForm.register("lastName")}
+                            placeholder="Optional"
+                          />
+                        </div>
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label htmlFor="edit-role">Role</Label>
+                        <Select 
+                          value={editForm.watch("role")} 
+                          onValueChange={(value: "admin" | "standard") => editForm.setValue("role", value)}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select role" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="standard">Standard User</SelectItem>
+                            <SelectItem value="admin">Administrator</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label htmlFor="edit-password">New Password (optional)</Label>
+                        <Input
+                          id="edit-password"
+                          type="password"
+                          {...editForm.register("password")}
+                          placeholder="Leave blank to keep current password"
+                        />
+                        {editForm.formState.errors.password && (
+                          <p className="text-sm text-red-600">
+                            {editForm.formState.errors.password.message}
+                          </p>
+                        )}
+                      </div>
+
+                      <div className="flex justify-end space-x-2">
+                        <Button 
+                          type="button" 
+                          variant="outline" 
+                          onClick={() => setEditingUser(null)}
+                        >
+                          Cancel
+                        </Button>
+                        <Button 
+                          type="submit" 
+                          disabled={updateUserMutation.isPending}
+                        >
+                          {updateUserMutation.isPending ? "Updating..." : "Update User"}
+                        </Button>
+                      </div>
+                    </form>
+                  </DialogContent>
+                </Dialog>
               </div>
 
               <Card>
@@ -408,6 +593,15 @@ export default function AdminDashboard() {
                             <Badge variant={adminUser.isActive ? "outline" : "destructive"}>
                               {adminUser.isActive ? "Active" : "Inactive"}
                             </Badge>
+                            
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleEditUser(adminUser)}
+                            >
+                              <Edit2 className="w-3 h-3 mr-1" />
+                              Edit
+                            </Button>
                             
                             {adminUser.isActive && adminUser.id !== user.id && (
                               <Button
