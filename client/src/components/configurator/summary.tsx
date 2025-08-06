@@ -22,8 +22,8 @@ export default function Summary({
 
   const handleRequestQuote = () => {
     toast({
-      title: "Quote Request Sent",
-      description: "A dealer will contact you within 24 hours with pricing and availability.",
+      title: "Sent to Nearest Dealer",
+      description: "Your configuration has been sent to the nearest dealer. They will contact you within 24 hours.",
     });
   };
 
@@ -136,7 +136,7 @@ export default function Summary({
             className="bg-primary hover:bg-primary/90 text-primary-foreground font-semibold py-4 px-8 flex items-center justify-center"
           >
             <Mail className="w-5 h-5 mr-2" />
-            Request Quote
+            Send to Nearest Dealer
           </Button>
           <Button 
             variant="outline"
