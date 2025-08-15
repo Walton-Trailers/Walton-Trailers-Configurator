@@ -313,6 +313,7 @@ export default function FastPricing() {
                   <TableHead>Name</TableHead>
                   <TableHead>Category</TableHead>
                   <TableHead>Price</TableHead>
+                  <TableHead>Image</TableHead>
                   <TableHead>Actions</TableHead>
                 </TableRow>
               </TableHeader>
@@ -380,6 +381,18 @@ export default function FastPricing() {
                       )}
                     </TableCell>
                     <TableCell>
+                      <ObjectUploader
+                        onGetUploadParameters={handleGetUploadParameters}
+                        onComplete={(result) => handleImageUploadComplete(model.id, result)}
+                      >
+                        {model.imageUrl ? (
+                          <Image className="w-4 h-4" />
+                        ) : (
+                          <Upload className="w-4 h-4" />
+                        )}
+                      </ObjectUploader>
+                    </TableCell>
+                    <TableCell>
                       {editingModel?.id === model.id ? (
                         <div className="flex gap-2">
                           <Button
@@ -409,25 +422,13 @@ export default function FastPricing() {
                           </Button>
                         </div>
                       ) : (
-                        <div className="flex gap-2">
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => setEditingModel(model)}
-                          >
-                            <Edit className="w-4 h-4" />
-                          </Button>
-                          <ObjectUploader
-                            onGetUploadParameters={handleGetUploadParameters}
-                            onComplete={(result) => handleImageUploadComplete(model.id, result)}
-                          >
-                            {model.imageUrl ? (
-                              <Image className="w-4 h-4" />
-                            ) : (
-                              <Upload className="w-4 h-4" />
-                            )}
-                          </ObjectUploader>
-                        </div>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => setEditingModel(model)}
+                        >
+                          <Edit className="w-4 h-4" />
+                        </Button>
                       )}
                     </TableCell>
                   </TableRow>
@@ -459,6 +460,7 @@ export default function FastPricing() {
                           <TableHead>Name</TableHead>
                           <TableHead>Category</TableHead>
                           <TableHead>Price</TableHead>
+                          <TableHead>Image</TableHead>
                           <TableHead>Actions</TableHead>
                         </TableRow>
                       </TableHeader>
@@ -469,6 +471,13 @@ export default function FastPricing() {
                             <TableCell>{model.name}</TableCell>
                             <TableCell>{model.categoryName}</TableCell>
                             <TableCell>${model.basePrice?.toLocaleString()}</TableCell>
+                            <TableCell>
+                              {model.imageUrl ? (
+                                <Image className="w-4 h-4 text-gray-400" />
+                              ) : (
+                                <span className="text-gray-400">-</span>
+                              )}
+                            </TableCell>
                             <TableCell>
                               <Button
                                 size="sm"
