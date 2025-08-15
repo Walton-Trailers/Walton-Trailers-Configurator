@@ -1,8 +1,11 @@
 import { useState, useMemo } from "react";
-import { ArrowLeft, Edit, Save, X, Archive, RotateCcw } from "lucide-react";
+import { ArrowLeft, Edit, Save, X, Archive, RotateCcw, Upload, Image } from "lucide-react";
 import { Link } from "wouter";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useFastQuery } from "@/hooks/useFastQuery";
+import { ObjectUploader } from "@/components/ObjectUploader";
+import { apiRequest } from "@/lib/queryClient";
+import { useToast } from "@/hooks/use-toast";
 
 // Minimal UI components for maximum performance
 const Button = ({ children, onClick, disabled, variant = 'default', size = 'default', ...props }: any) => (
@@ -76,9 +79,11 @@ export default function FastPricing() {
   const [editData, setEditData] = useState<any>({});
   const [searchQuery, setSearchQuery] = useState("");
   const [showArchived, setShowArchived] = useState(false);
+  const [uploadingModelId, setUploadingModelId] = useState<number | null>(null);
 
   const sessionId = localStorage.getItem("admin_session");
   const queryClient = useQueryClient();
+  const { toast } = useToast();
 
   const { data: models = [], isLoading, error: modelsError } = useFastQuery.allModels(sessionId);
   const { data: options = [], error: optionsError } = useFastQuery.allOptions(sessionId);
@@ -173,6 +178,58 @@ export default function FastPricing() {
       category: data.category ?? option.category,
       price: data.price ?? option.price,
     });
+  };
+
+  // Image upload handlers
+  const handleGetUploadParameters = async () => {
+    const response = await apiRequest("/api/models/upload-url", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${sessionId}`,
+      },
+    });
+    return {
+      method: "PUT" as const,
+      url: response.uploadURL,
+    };
+  };
+
+  const handleImageUploadComplete = async (modelId: number, result: any) => {
+    try {
+      const uploadedFile = result.successful?.[0];
+      if (!uploadedFile) {
+        throw new Error("No file uploaded");
+      }
+
+      const imageUrl = uploadedFile.uploadURL;
+      
+      // Update the model with the new image URL
+      await apiRequest(`/api/models/${modelId}/image`, {
+        method: "PATCH",
+        body: { imageUrl },
+        headers: {
+          Authorization: `Bearer ${sessionId}`,
+        },
+      });
+
+      // Refresh the models data
+      queryClient.invalidateQueries({ queryKey: ['admin', 'models'] });
+      
+      toast({
+        title: "Success",
+        description: "Model image uploaded successfully",
+      });
+      
+      setUploadingModelId(null);
+    } catch (error) {
+      console.error("Error uploading image:", error);
+      toast({
+        title: "Error",
+        description: "Failed to upload image",
+        variant: "destructive",
+      });
+      setUploadingModelId(null);
+    }
   };
 
   // Handle authentication errors
@@ -352,13 +409,25 @@ export default function FastPricing() {
                           </Button>
                         </div>
                       ) : (
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => setEditingModel(model)}
-                        >
-                          <Edit className="w-4 h-4" />
-                        </Button>
+                        <div className="flex gap-2">
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => setEditingModel(model)}
+                          >
+                            <Edit className="w-4 h-4" />
+                          </Button>
+                          <ObjectUploader
+                            onGetUploadParameters={handleGetUploadParameters}
+                            onComplete={(result) => handleImageUploadComplete(model.id, result)}
+                          >
+                            {model.imageUrl ? (
+                              <Image className="w-4 h-4" />
+                            ) : (
+                              <Upload className="w-4 h-4" />
+                            )}
+                          </ObjectUploader>
+                        </div>
                       )}
                     </TableCell>
                   </TableRow>

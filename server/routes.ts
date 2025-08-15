@@ -12,6 +12,10 @@ import {
 } from "./auth";
 import { insertAdminUserSchema, type AdminUser } from "@shared/schema";
 import { z } from "zod";
+import {
+  ObjectStorageService,
+  ObjectNotFoundError,
+} from "./objectStorage";
 
 // Extend Express Request interface
 interface AuthenticatedRequest extends Request {
@@ -472,6 +476,69 @@ export async function registerRoutes(app: Express): Promise<Express> {
     } catch (error) {
       console.error('Error restoring model:', error);
       res.status(500).json({ error: "Failed to restore model" });
+    }
+  });
+
+  // Model image upload routes
+  app.post("/api/models/upload-url", requireAuth, async (req, res) => {
+    try {
+      const objectStorageService = new ObjectStorageService();
+      const uploadURL = await objectStorageService.getObjectEntityUploadURL();
+      res.json({ uploadURL });
+    } catch (error) {
+      console.error("Error getting upload URL:", error);
+      res.status(500).json({ error: "Failed to get upload URL" });
+    }
+  });
+
+  app.patch("/api/models/:id/image", requireAuth, async (req, res) => {
+    try {
+      const modelId = parseInt(req.params.id);
+      const { imageUrl } = req.body;
+
+      if (!imageUrl) {
+        return res.status(400).json({ error: "imageUrl is required" });
+      }
+
+      const objectStorageService = new ObjectStorageService();
+      const objectPath = await objectStorageService.trySetObjectEntityAclPolicy(
+        imageUrl,
+        {
+          owner: "admin",
+          visibility: "public", // Model images should be public for customers to see
+        }
+      );
+
+      // Update the model with the new image URL
+      const updatedModel = await storage.updateModel(modelId, {
+        imageUrl: objectPath,
+      });
+
+      res.json({
+        success: true,
+        imageUrl: objectPath,
+        model: updatedModel,
+      });
+    } catch (error) {
+      console.error("Error updating model image:", error);
+      res.status(500).json({ error: "Failed to update model image" });
+    }
+  });
+
+  // Serve model images
+  app.get("/objects/:objectPath(*)", async (req, res) => {
+    const objectStorageService = new ObjectStorageService();
+    try {
+      const objectFile = await objectStorageService.getObjectEntityFile(
+        req.path
+      );
+      objectStorageService.downloadObject(objectFile, res);
+    } catch (error) {
+      console.error("Error serving object:", error);
+      if (error instanceof ObjectNotFoundError) {
+        return res.sendStatus(404);
+      }
+      return res.sendStatus(500);
     }
   });
 
