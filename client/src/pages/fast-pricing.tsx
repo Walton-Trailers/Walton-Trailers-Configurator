@@ -385,6 +385,8 @@ export default function FastPricing() {
                         onGetUploadParameters={handleGetUploadParameters}
                         onComplete={(result) => handleImageUploadComplete(model.id, result)}
                         buttonClassName="p-0"
+                        currentImageUrl={model.imageUrl}
+                        modelName={model.name}
                       >
                         {model.imageUrl ? (
                           <div className="w-12 h-12 rounded-md overflow-hidden border border-gray-200 hover:border-gray-400 transition-colors cursor-pointer">

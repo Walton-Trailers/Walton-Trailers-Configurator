@@ -20,6 +20,8 @@ interface ObjectUploaderProps {
   ) => void;
   buttonClassName?: string;
   children: ReactNode;
+  currentImageUrl?: string;
+  modelName?: string;
 }
 
 /**
@@ -57,6 +59,8 @@ export function ObjectUploader({
   onComplete,
   buttonClassName,
   children,
+  currentImageUrl,
+  modelName,
 }: ObjectUploaderProps) {
   const [showModal, setShowModal] = useState(false);
   const [uppy] = useState(() =>
@@ -78,6 +82,10 @@ export function ObjectUploader({
       })
   );
 
+  const noteMessage = currentImageUrl 
+    ? `⚠️ Replacing existing image for ${modelName || 'this model'}. Upload a new image (max 10MB)`
+    : `Upload an image for ${modelName || 'this model'} (max 10MB)`;
+
   return (
     <div>
       <Button 
@@ -86,6 +94,7 @@ export function ObjectUploader({
         className={buttonClassName}
         variant="outline"
         size="sm"
+        title={currentImageUrl ? "Click to replace existing image" : "Click to upload image"}
       >
         {children}
       </Button>
@@ -95,7 +104,8 @@ export function ObjectUploader({
         open={showModal}
         onRequestClose={() => setShowModal(false)}
         proudlyDisplayPoweredByUppy={false}
-        note="Upload an image for this model (max 10MB)"
+        note={noteMessage}
+        theme="light"
       />
     </div>
   );
