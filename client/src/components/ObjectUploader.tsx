@@ -7,6 +7,14 @@ import "@uppy/dashboard/dist/style.min.css";
 import AwsS3 from "@uppy/aws-s3";
 import type { UploadResult } from "@uppy/core";
 import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 interface ObjectUploaderProps {
   maxNumberOfFiles?: number;
@@ -62,7 +70,8 @@ export function ObjectUploader({
   currentImageUrl,
   modelName,
 }: ObjectUploaderProps) {
-  const [showModal, setShowModal] = useState(false);
+  const [showPreviewModal, setShowPreviewModal] = useState(false);
+  const [showUploadModal, setShowUploadModal] = useState(false);
   const [uppy] = useState(() =>
     new Uppy({
       restrictions: {
@@ -78,7 +87,8 @@ export function ObjectUploader({
       })
       .on("complete", (result) => {
         onComplete?.(result);
-        setShowModal(false);
+        setShowUploadModal(false);
+        setShowPreviewModal(false);
       })
   );
 
@@ -86,23 +96,74 @@ export function ObjectUploader({
     ? `⚠️ Replacing existing image for ${modelName || 'this model'}. Recommended dimensions: 1600x1200px or 4:3 aspect ratio (max 10MB)`
     : `Upload an image for ${modelName || 'this model'}. Recommended dimensions: 1600x1200px or 4:3 aspect ratio (max 10MB)`;
 
+  const handleButtonClick = () => {
+    if (currentImageUrl) {
+      setShowPreviewModal(true);
+    } else {
+      setShowUploadModal(true);
+    }
+  };
+
+  const handleReplaceImage = () => {
+    setShowPreviewModal(false);
+    setShowUploadModal(true);
+  };
+
   return (
     <div>
       <Button 
         type="button"
-        onClick={() => setShowModal(true)} 
+        onClick={handleButtonClick} 
         className={buttonClassName}
         variant="outline"
         size="sm"
-        title={currentImageUrl ? "Click to replace existing image" : "Click to upload image"}
+        title={currentImageUrl ? "Click to view/replace existing image" : "Click to upload image"}
       >
         {children}
       </Button>
 
+      {/* Preview Modal for Existing Image */}
+      <Dialog open={showPreviewModal} onOpenChange={setShowPreviewModal}>
+        <DialogContent className="sm:max-w-[500px]">
+          <DialogHeader>
+            <DialogTitle>Current Image for {modelName || 'Model'}</DialogTitle>
+            <DialogDescription>
+              View the current image or replace it with a new one.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-4">
+            <img 
+              src={currentImageUrl} 
+              alt={modelName || "Current image"}
+              className="w-full h-64 object-contain rounded-lg border bg-gray-50"
+              onError={(e: any) => {
+                e.target.onerror = null;
+                e.target.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="400" height="256" fill="none"%3E%3Crect width="400" height="256" fill="%23f3f4f6"/%3E%3Ctext x="200" y="128" text-anchor="middle" fill="%239ca3af" font-family="system-ui" font-size="14"%3EImage not available%3C/text%3E%3C/svg%3E';
+              }}
+            />
+            <p className="text-sm text-gray-500 mt-2">
+              Recommended dimensions: 1600x1200px or 4:3 aspect ratio
+            </p>
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setShowPreviewModal(false)}
+            >
+              Keep Current
+            </Button>
+            <Button onClick={handleReplaceImage}>
+              Replace Image
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Upload Modal */}
       <DashboardModal
         uppy={uppy}
-        open={showModal}
-        onRequestClose={() => setShowModal(false)}
+        open={showUploadModal}
+        onRequestClose={() => setShowUploadModal(false)}
         proudlyDisplayPoweredByUppy={false}
         note={noteMessage}
         theme="light"
