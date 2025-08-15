@@ -83,8 +83,8 @@ export function ObjectUploader({
   );
 
   const noteMessage = currentImageUrl 
-    ? `⚠️ Replacing existing image for ${modelName || 'this model'}. Recommended dimensions: 800x600px or 4:3 aspect ratio (max 10MB)`
-    : `Upload an image for ${modelName || 'this model'}. Recommended dimensions: 800x600px or 4:3 aspect ratio (max 10MB)`;
+    ? `⚠️ Replacing existing image for ${modelName || 'this model'}. Recommended dimensions: 1600x1200px or 4:3 aspect ratio (max 10MB)`
+    : `Upload an image for ${modelName || 'this model'}. Recommended dimensions: 1600x1200px or 4:3 aspect ratio (max 10MB)`;
 
   return (
     <div>
