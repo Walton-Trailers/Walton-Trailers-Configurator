@@ -81,6 +81,7 @@ export default function FastPricing() {
   const [searchQuery, setSearchQuery] = useState("");
   const [showArchived, setShowArchived] = useState(false);
   const [uploadingModelId, setUploadingModelId] = useState<number | null>(null);
+  const [uploadingCategoryId, setUploadingCategoryId] = useState<number | null>(null);
   const [showAddCategory, setShowAddCategory] = useState(false);
   const [newCategoryData, setNewCategoryData] = useState({
     slug: "",
@@ -244,6 +245,54 @@ export default function FastPricing() {
   };
 
   // Option image upload handlers
+  const handleGetCategoryUploadParameters = async () => {
+    const response = await apiRequest("/api/categories/upload-url", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${sessionId}`,
+      },
+    });
+    return {
+      method: "PUT" as const,
+      url: response.uploadURL,
+    };
+  };
+
+  const handleCategoryImageUploadComplete = async (categoryId: number, result: any) => {
+    try {
+      const uploadedFile = result.successful?.[0];
+      if (!uploadedFile) {
+        throw new Error("No file uploaded");
+      }
+
+      const imageUrl = uploadedFile.uploadURL;
+      
+      // Update the category with the new image URL
+      await apiRequest(`/api/categories/${categoryId}`, {
+        method: "PATCH",
+        body: { imageUrl },
+        headers: {
+          Authorization: `Bearer ${sessionId}`,
+        },
+      });
+
+      // Refresh the categories list
+      queryClient.invalidateQueries({ queryKey: ["categories"] });
+      
+      toast({
+        title: "Success",
+        description: "Category image updated successfully",
+      });
+    } catch (error) {
+      console.error("Error updating category image:", error);
+      toast({
+        title: "Error",
+        description: "Failed to update category image",
+        variant: "destructive",
+      });
+    }
+  };
+
   const handleGetOptionUploadParameters = async () => {
     const response = await apiRequest("/api/options/upload-url", {
       method: "POST",
@@ -487,6 +536,7 @@ export default function FastPricing() {
                 <TableHeader>
                   <TableRow>
                     <TableHead>Order</TableHead>
+                    <TableHead>Image</TableHead>
                     <TableHead>Slug</TableHead>
                     <TableHead>Name</TableHead>
                     <TableHead>Description</TableHead>
@@ -517,6 +567,33 @@ export default function FastPricing() {
                           ) : (
                             category.orderIndex ?? 0
                           )}
+                        </TableCell>
+                        <TableCell>
+                          <ObjectUploader
+                            onGetUploadParameters={handleGetCategoryUploadParameters}
+                            onComplete={(result) => handleCategoryImageUploadComplete(category.id, result)}
+                            buttonClassName="p-0"
+                            currentImageUrl={category.imageUrl}
+                            modelName={category.name}
+                          >
+                            {category.imageUrl ? (
+                              <div className="w-12 h-12 rounded-md overflow-hidden border border-gray-200 hover:border-gray-400 transition-colors cursor-pointer">
+                                <img 
+                                  src={category.imageUrl} 
+                                  alt={category.name}
+                                  className="w-full h-full object-cover"
+                                  onError={(e: any) => {
+                                    e.target.onerror = null;
+                                    e.target.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="48" height="48" fill="none"%3E%3Crect width="48" height="48" fill="%23f3f4f6"/%3E%3Cpath stroke="%239ca3af" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M24 16v16m-8-8h16"/%3E%3C/svg%3E';
+                                  }}
+                                />
+                              </div>
+                            ) : (
+                              <div className="w-12 h-12 rounded-md border-2 border-dashed border-gray-300 hover:border-gray-400 transition-colors cursor-pointer flex items-center justify-center bg-gray-50">
+                                <Upload className="w-5 h-5 text-gray-400" />
+                              </div>
+                            )}
+                          </ObjectUploader>
                         </TableCell>
                         <TableCell>
                           {editingCategory?.id === category.id ? (
