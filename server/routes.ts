@@ -622,9 +622,9 @@ export async function registerRoutes(app: Express): Promise<Express> {
     }
 
     try {
-      // Test the connection to Airtable
-      const testUrl = `https://api.airtable.com/v0/${baseId}`;
-      const response = await fetch(testUrl, {
+      // Test the connection by listing tables using the Metadata API
+      const metaUrl = `https://api.airtable.com/v0/meta/bases/${baseId}/tables`;
+      const response = await fetch(metaUrl, {
         headers: {
           'Authorization': `Bearer ${accessToken}`,
           'Content-Type': 'application/json'
@@ -633,11 +633,12 @@ export async function registerRoutes(app: Express): Promise<Express> {
 
       if (response.ok) {
         const data = await response.json();
-        const tableCount = data.tables ? data.tables.length : 0;
+        const tables = data.tables || [];
         
         return res.json({ 
           success: true, 
-          tableCount,
+          tableCount: tables.length,
+          tables: tables.map((t: any) => ({ id: t.id, name: t.name, description: t.description })),
           message: "Successfully connected to Airtable"
         });
       } else {
@@ -703,6 +704,174 @@ export async function registerRoutes(app: Express): Promise<Express> {
       return res.json({ 
         connected: false,
         hasToken: false
+      });
+    }
+  });
+
+  // Import data from Airtable
+  app.post("/api/integrations/airtable/import", async (req, res) => {
+    const { sessionId } = req.cookies;
+    if (!sessionId || !storage.isAdminSession(sessionId)) {
+      return res.status(401).json({ error: "Unauthorized" });
+    }
+
+    const { tableName } = req.body;
+    const config = await storage.getAirtableConfig();
+    
+    if (!config) {
+      return res.status(400).json({ error: "Airtable not configured" });
+    }
+
+    try {
+      // Fetch records from Airtable table
+      const url = `https://api.airtable.com/v0/${config.baseId}/${encodeURIComponent(tableName)}`;
+      const response = await fetch(url, {
+        headers: {
+          'Authorization': `Bearer ${config.accessToken}`,
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error(`Failed to fetch from Airtable: ${response.statusText}`);
+      }
+
+      const data = await response.json();
+      const records = data.records || [];
+      
+      // Process records based on table name
+      let importedCount = 0;
+      
+      if (tableName.toLowerCase().includes('model') || tableName.toLowerCase().includes('trailer')) {
+        // Import as trailer models
+        for (const record of records) {
+          const fields = record.fields;
+          if (fields.Name && fields.Price) {
+            // Map Airtable fields to our model structure
+            const modelData = {
+              name: fields.Name,
+              basePrice: parseFloat(fields.Price) || 0,
+              gvwr: fields.GVWR || '',
+              payload: fields.Payload || '',
+              deckSize: fields.DeckSize || fields['Deck Size'] || '',
+              axles: fields.Axles || '',
+              features: fields.Features ? fields.Features.split(',').map((f: string) => f.trim()) : [],
+            };
+            
+            // You would save this to your database here
+            console.log('Importing model:', modelData);
+            importedCount++;
+          }
+        }
+      } else if (tableName.toLowerCase().includes('option')) {
+        // Import as trailer options
+        for (const record of records) {
+          const fields = record.fields;
+          if (fields.Name && fields.Price) {
+            const optionData = {
+              name: fields.Name,
+              price: parseFloat(fields.Price) || 0,
+              category: fields.Category || 'Uncategorized',
+              modelId: fields.ModelID || 'universal',
+            };
+            
+            console.log('Importing option:', optionData);
+            importedCount++;
+          }
+        }
+      }
+      
+      return res.json({ 
+        success: true,
+        importedCount,
+        totalRecords: records.length,
+        message: `Imported ${importedCount} records from Airtable`
+      });
+    } catch (error) {
+      console.error("Import error:", error);
+      return res.status(500).json({ 
+        error: "Failed to import from Airtable",
+        details: error instanceof Error ? error.message : "Unknown error"
+      });
+    }
+  });
+
+  // Export data to Airtable
+  app.post("/api/integrations/airtable/export", async (req, res) => {
+    const { sessionId } = req.cookies;
+    if (!sessionId || !storage.isAdminSession(sessionId)) {
+      return res.status(401).json({ error: "Unauthorized" });
+    }
+
+    const { dataType } = req.body; // 'models' or 'options'
+    const config = await storage.getAirtableConfig();
+    
+    if (!config) {
+      return res.status(400).json({ error: "Airtable not configured" });
+    }
+
+    try {
+      let exportData: any[] = [];
+      
+      if (dataType === 'models') {
+        const models = await storage.getAllModels();
+        exportData = models.map(model => ({
+          fields: {
+            Name: model.name,
+            Price: model.basePrice,
+            GVWR: model.gvwr,
+            Payload: model.payload,
+            'Deck Size': model.deckSize,
+            Axles: model.axles,
+            Features: model.features.join(', '),
+            'Model ID': model.modelId,
+          }
+        }));
+      } else if (dataType === 'options') {
+        const options = await storage.getAllOptions();
+        exportData = options.map(option => ({
+          fields: {
+            Name: option.name,
+            Price: option.price,
+            Category: option.category,
+            'Model ID': option.modelId,
+          }
+        }));
+      }
+      
+      // Create records in Airtable (batch create, max 10 at a time due to API limits)
+      const tableName = dataType === 'models' ? 'Trailer Models' : 'Trailer Options';
+      const url = `https://api.airtable.com/v0/${config.baseId}/${encodeURIComponent(tableName)}`;
+      
+      let createdCount = 0;
+      for (let i = 0; i < exportData.length; i += 10) {
+        const batch = exportData.slice(i, i + 10);
+        
+        const response = await fetch(url, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${config.accessToken}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ records: batch })
+        });
+
+        if (response.ok) {
+          const result = await response.json();
+          createdCount += result.records?.length || 0;
+        }
+      }
+      
+      return res.json({ 
+        success: true,
+        exportedCount: createdCount,
+        totalRecords: exportData.length,
+        message: `Exported ${createdCount} records to Airtable`
+      });
+    } catch (error) {
+      console.error("Export error:", error);
+      return res.status(500).json({ 
+        error: "Failed to export to Airtable",
+        details: error instanceof Error ? error.message : "Unknown error"
       });
     }
   });

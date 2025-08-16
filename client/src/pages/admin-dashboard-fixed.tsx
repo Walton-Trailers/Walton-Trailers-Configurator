@@ -57,6 +57,11 @@ export default function AdminDashboard() {
   const [airtableToken, setAirtableToken] = useState("");
   const [airtableBaseId, setAirtableBaseId] = useState("");
   const [isTestingAirtable, setIsTestingAirtable] = useState(false);
+  const [airtableTables, setAirtableTables] = useState<any[]>([]);
+  const [showImportDialog, setShowImportDialog] = useState(false);
+  const [selectedTable, setSelectedTable] = useState("");
+  const [isImporting, setIsImporting] = useState(false);
+  const [isExporting, setIsExporting] = useState(false);
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -81,6 +86,17 @@ export default function AdminDashboard() {
     queryKey: ["/api/admin/users"],
     queryFn: () =>
       apiRequest("/api/admin/users", {
+        headers: {
+          Authorization: `Bearer ${sessionId}`,
+        },
+      }),
+    enabled: !!user && user.role === "admin" && !!sessionId,
+  });
+
+  const { data: airtableStatus } = useQuery({
+    queryKey: ["/api/integrations/airtable/status"],
+    queryFn: () =>
+      apiRequest("/api/integrations/airtable/status", {
         headers: {
           Authorization: `Bearer ${sessionId}`,
         },
@@ -200,6 +216,78 @@ export default function AdminDashboard() {
     }
   };
 
+  const handleImportFromAirtable = async () => {
+    if (!selectedTable) {
+      toast({
+        title: "Error",
+        description: "Please select a table to import from",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsImporting(true);
+    try {
+      const response = await apiRequest("/api/integrations/airtable/import", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${sessionId}`,
+          "Content-Type": "application/json",
+        },
+        body: {
+          tableName: selectedTable,
+        },
+      });
+
+      toast({
+        title: "Import Successful",
+        description: response.message,
+      });
+      
+      setShowImportDialog(false);
+      setSelectedTable("");
+      queryClient.invalidateQueries({ queryKey: ["/api/models"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/options"] });
+    } catch (error) {
+      toast({
+        title: "Import Failed",
+        description: "Unable to import data from Airtable",
+        variant: "destructive",
+      });
+    } finally {
+      setIsImporting(false);
+    }
+  };
+
+  const handleExportToAirtable = async (dataType: 'models' | 'options') => {
+    setIsExporting(true);
+    try {
+      const response = await apiRequest("/api/integrations/airtable/export", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${sessionId}`,
+          "Content-Type": "application/json",
+        },
+        body: {
+          dataType,
+        },
+      });
+
+      toast({
+        title: "Export Successful",
+        description: response.message,
+      });
+    } catch (error) {
+      toast({
+        title: "Export Failed",
+        description: "Unable to export data to Airtable",
+        variant: "destructive",
+      });
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
   const handleTestAirtableConnection = async () => {
     if (!airtableToken || !airtableBaseId) {
       toast({
@@ -229,6 +317,9 @@ export default function AdminDashboard() {
           title: "Success",
           description: `Connected to Airtable! Found ${response.tableCount} tables.`,
         });
+        
+        // Store the tables for import dialog
+        setAirtableTables(response.tables || []);
         
         // Save the configuration
         await apiRequest("/api/integrations/airtable/save", {
@@ -667,7 +758,13 @@ export default function AdminDashboard() {
                             <h4 className="font-medium">Airtable Sync</h4>
                             <p className="text-sm text-gray-600">Connect your Airtable base to sync data</p>
                           </div>
-                          <Badge variant="outline">Not connected</Badge>
+                          <Badge variant={airtableStatus?.connected ? "default" : "outline"}>
+                            {airtableStatus?.connected ? (
+                              <><CheckCircle className="w-3 h-3 mr-1" /> Connected</>
+                            ) : (
+                              "Not connected"
+                            )}
+                          </Badge>
                         </div>
                         
                         <Dialog open={showAirtableConfig} onOpenChange={setShowAirtableConfig}>
@@ -755,14 +852,84 @@ export default function AdminDashboard() {
                       <div className="border-t pt-4">
                         <h4 className="text-sm font-medium mb-2">Sync Options</h4>
                         <div className="space-y-2">
-                          <Button size="sm" className="w-full" variant="outline" disabled>
-                            <Database className="w-4 h-4 mr-2" />
-                            Import from Airtable
-                          </Button>
-                          <Button size="sm" className="w-full" variant="outline" disabled>
-                            <Database className="w-4 h-4 mr-2" />
-                            Export to Airtable
-                          </Button>
+                          <Dialog open={showImportDialog} onOpenChange={setShowImportDialog}>
+                            <DialogTrigger asChild>
+                              <Button 
+                                size="sm" 
+                                className="w-full" 
+                                variant="outline" 
+                                disabled={!airtableStatus?.connected}
+                              >
+                                <Database className="w-4 h-4 mr-2" />
+                                Import from Airtable
+                              </Button>
+                            </DialogTrigger>
+                            <DialogContent>
+                              <DialogHeader>
+                                <DialogTitle>Import from Airtable</DialogTitle>
+                                <DialogDescription>
+                                  Select a table to import data from
+                                </DialogDescription>
+                              </DialogHeader>
+                              <div className="space-y-4">
+                                <div className="space-y-2">
+                                  <Label>Select Table</Label>
+                                  <Select value={selectedTable} onValueChange={setSelectedTable}>
+                                    <SelectTrigger>
+                                      <SelectValue placeholder="Choose a table..." />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                      {airtableTables.map((table) => (
+                                        <SelectItem key={table.id} value={table.name}>
+                                          {table.name}
+                                        </SelectItem>
+                                      ))}
+                                    </SelectContent>
+                                  </Select>
+                                </div>
+                                <div className="flex justify-end space-x-2">
+                                  <Button
+                                    variant="outline"
+                                    onClick={() => {
+                                      setShowImportDialog(false);
+                                      setSelectedTable("");
+                                    }}
+                                  >
+                                    Cancel
+                                  </Button>
+                                  <Button
+                                    onClick={handleImportFromAirtable}
+                                    disabled={!selectedTable || isImporting}
+                                  >
+                                    {isImporting ? "Importing..." : "Import"}
+                                  </Button>
+                                </div>
+                              </div>
+                            </DialogContent>
+                          </Dialog>
+                          
+                          <div className="flex gap-2">
+                            <Button 
+                              size="sm" 
+                              className="flex-1" 
+                              variant="outline" 
+                              disabled={!airtableStatus?.connected || isExporting}
+                              onClick={() => handleExportToAirtable('models')}
+                            >
+                              <Database className="w-4 h-4 mr-2" />
+                              Export Models
+                            </Button>
+                            <Button 
+                              size="sm" 
+                              className="flex-1" 
+                              variant="outline" 
+                              disabled={!airtableStatus?.connected || isExporting}
+                              onClick={() => handleExportToAirtable('options')}
+                            >
+                              <Database className="w-4 h-4 mr-2" />
+                              Export Options
+                            </Button>
+                          </div>
                         </div>
                       </div>
                     </div>
