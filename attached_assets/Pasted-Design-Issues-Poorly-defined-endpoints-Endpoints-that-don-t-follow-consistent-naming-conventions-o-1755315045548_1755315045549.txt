@@ -1,0 +1,65 @@
+Design Issues
+
+Poorly defined endpoints: Endpoints that don’t follow consistent naming conventions or RESTful principles can confuse developers.
+
+Lack of versioning: Not planning for API versioning can make future changes break existing client integrations.
+
+Overcomplication: Designing an overly complex API (too many endpoints, unclear hierarchies) makes adoption harder.
+
+Ignoring standards: Not following conventions (REST, GraphQL standards, OpenAPI specs) creates friction for consumers.
+
+2. Security Risks
+
+No authentication/authorization: Leaving endpoints open or implementing weak authentication exposes sensitive data.
+
+Exposing too much data: Over-sharing through payloads or error messages can leak internal details.
+
+Injection attacks: Not sanitizing inputs can make the API vulnerable to SQL injection, command injection, etc.
+
+Weak rate limiting: Without throttling, APIs are vulnerable to brute-force attacks and abuse.
+
+CORS misconfigurations: Allowing any origin can lead to unauthorized access from malicious sites.
+
+3. Performance & Reliability Problems
+
+Slow responses: Inefficient queries, poor caching, or heavy payloads make APIs sluggish.
+
+No rate limiting or throttling: APIs can be overwhelmed by spikes in traffic (intentional or accidental).
+
+Unscalable architecture: If the backend isn’t designed for growth, performance will degrade as usage increases.
+
+Poor error handling: Not returning meaningful errors makes debugging difficult for clients.
+
+4. Data Handling & Consistency
+
+Inconsistent formats: Returning mixed response structures, inconsistent status codes, or irregular JSON fields frustrates developers.
+
+Lack of validation: Allowing bad data through creates downstream issues.
+
+Race conditions: If multiple requests can modify the same resource, you may get conflicts or data corruption.
+
+No idempotency for critical operations: Actions like payments or record creation may accidentally be duplicated.
+
+5. Documentation & Usability Failures
+
+Incomplete or outdated documentation: Without clear docs, even a good API is unusable.
+
+Not providing examples: Developers struggle without sample requests/responses.
+
+Ignoring SDKs or client libraries: Forcing every client to build from scratch increases friction.
+
+6. Operational & Maintenance Issues
+
+No monitoring/observability: Without logging, tracing, or metrics, you won’t know when things go wrong.
+
+Deployment mistakes: Breaking changes pushed to production without notice can take down integrations.
+
+No testing coverage: APIs can regress quickly if unit, integration, and load tests aren’t in place.
+
+Not handling deprecations gracefully: Removing features without a migration path angers users.
+
+7. Legal & Compliance Risks
+
+Ignoring privacy requirements: APIs dealing with personal data must comply with GDPR, HIPAA, etc.
+
+Licensing issues: Using third-party data or libraries without respecting licenses can cause legal trouble.
