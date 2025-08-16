@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
+import { useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -141,6 +142,7 @@ function OptionInfoModal({ optionName, children }: { optionName: string; childre
 }
 
 export default function Configurator() {
+  const [, setLocation] = useLocation();
   const { toast } = useToast();
   const [currentStep, setCurrentStep] = useState(1);
   const [selectedCategory, setSelectedCategory] = useState<TrailerCategory | null>(null);
@@ -189,6 +191,10 @@ export default function Configurator() {
         description: "The configuration has been saved to your dealer account.",
       });
       setShowDealerSaveDialog(false);
+      // Redirect to dealer dashboard after successful save
+      setTimeout(() => {
+        setLocation("/dealer/dashboard");
+      }, 1000);
     },
     onError: (error: any) => {
       toast({

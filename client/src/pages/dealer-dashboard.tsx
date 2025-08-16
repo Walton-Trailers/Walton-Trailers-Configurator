@@ -70,12 +70,16 @@ export default function DealerDashboard() {
   const { data: profile } = useQuery<DealerProfile>({
     queryKey: ["/api/dealer/profile"],
     enabled: !!localStorage.getItem("dealer_session"),
+    refetchOnMount: "always",
+    refetchOnWindowFocus: true,
   });
 
   // Get dealer orders
   const { data: orders = [], isLoading, refetch } = useQuery<DealerOrder[]>({
     queryKey: ["/api/dealer/orders"],
     enabled: !!localStorage.getItem("dealer_session"),
+    refetchOnMount: "always",
+    refetchOnWindowFocus: true,
   });
 
   // Update order mutation
