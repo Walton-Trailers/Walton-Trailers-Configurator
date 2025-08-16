@@ -14,7 +14,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { ArrowLeft, ArrowRight, Download, Mail, MapPin, RotateCcw, Info, X, Users, Phone, Building, Building2, Save } from "lucide-react";
 import { Link } from "wouter";
 import { useToast } from "@/hooks/use-toast";
-import { apiRequest } from "@/lib/queryClient";
+import { apiRequest, queryClient } from "@/lib/queryClient";
 import { getOptionInfo } from "@/lib/trailer-option-info";
 import waltonLogo from "@/assets/walton-logo.png";
 import { DealerSaveDialog } from "@/components/dealer-save-dialog";
@@ -188,13 +188,18 @@ export default function Configurator() {
     onSuccess: () => {
       toast({
         title: "Configuration Saved",
-        description: "The configuration has been saved to your dealer account.",
+        description: "The configuration has been saved to your dealer account. Redirecting to your dashboard...",
       });
       setShowDealerSaveDialog(false);
+      
+      // Invalidate dealer orders query to ensure fresh data
+      queryClient.invalidateQueries({ queryKey: ["/api/dealer/orders"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/dealer/profile"] });
+      
       // Redirect to dealer dashboard after successful save
       setTimeout(() => {
         setLocation("/dealer/dashboard");
-      }, 1000);
+      }, 1500);
     },
     onError: (error: any) => {
       toast({

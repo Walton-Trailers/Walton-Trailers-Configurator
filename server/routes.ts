@@ -55,15 +55,11 @@ const requireAdmin = (req: AuthenticatedRequest, res: Response, next: NextFuncti
 // Dealer authentication middleware
 const requireDealerAuth = async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
   const authHeader = req.get('authorization');
-  console.log('Dealer Auth - Authorization header:', authHeader);
   const sessionId = authHeader?.replace('Bearer ', '');
   
   if (!sessionId) {
-    console.log('Dealer Auth - No session ID found');
     return res.status(401).json({ error: 'Authentication required' });
   }
-
-  console.log('Dealer Auth - Session ID:', sessionId);
   try {
     const [session] = await db.select()
       .from(dealerSessions)

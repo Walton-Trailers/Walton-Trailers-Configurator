@@ -21,9 +21,6 @@ export async function apiRequest(
   const adminSession = localStorage.getItem("admin_session");
   const dealerSession = localStorage.getItem("dealer_session");
   
-  console.log('API Request - URL:', url);
-  console.log('API Request - Dealer Session:', dealerSession);
-  
   const requestHeaders = {
     ...headers,
     ...(body ? { "Content-Type": "application/json" } : {}),
@@ -80,8 +77,13 @@ export const queryClient = new QueryClient({
     queries: {
       queryFn: getQueryFn({ on401: "throw" }),
       refetchInterval: false,
-      refetchOnWindowFocus: false,
-      staleTime: Infinity,
+      refetchOnWindowFocus: (query) => {
+        // Enable refetch on focus for dealer endpoints
+        const queryKey = query.queryKey as string[];
+        return queryKey?.[0]?.includes('/dealer/');
+      },
+      staleTime: 0, // Always consider data stale
+      gcTime: 0, // Don't cache queries (v5 uses gcTime instead of cacheTime)
       retry: false,
     },
     mutations: {

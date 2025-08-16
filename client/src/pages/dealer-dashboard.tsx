@@ -13,7 +13,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
-import { Building2, Plus, FileText, Edit, Trash2, LogOut, Package, User, Phone, Mail, DollarSign, Calendar, StickyNote } from "lucide-react";
+import { Building2, Plus, FileText, Edit, Trash2, LogOut, Package, User, Phone, Mail, DollarSign, Calendar, StickyNote, RefreshCw } from "lucide-react";
 import { format } from "date-fns";
 
 interface DealerOrder {
@@ -61,31 +61,24 @@ export default function DealerDashboard() {
   // Check authentication
   useEffect(() => {
     const sessionId = localStorage.getItem("dealer_session");
-    console.log("Dealer Dashboard - Session ID:", sessionId);
     if (!sessionId) {
-      console.log("No session found, redirecting to login");
       setLocation("/dealer/login");
     }
-    // Clear any stale query cache on mount
-    queryClient.invalidateQueries();
   }, [setLocation]);
 
   // Get dealer profile
-  const sessionId = localStorage.getItem("dealer_session");
   const { data: profile } = useQuery<DealerProfile>({
     queryKey: ["/api/dealer/profile"],
-    enabled: !!sessionId,
-    refetchOnMount: "always",
-    refetchOnWindowFocus: true,
+    enabled: !!localStorage.getItem("dealer_session"),
   });
 
-  // Get dealer orders
+  // Get dealer orders - refetch on mount and focus
   const { data: orders = [], isLoading, refetch } = useQuery<DealerOrder[]>({
     queryKey: ["/api/dealer/orders"],
-    enabled: !!sessionId,
+    enabled: !!localStorage.getItem("dealer_session"),
     refetchOnMount: "always",
     refetchOnWindowFocus: true,
-    retry: 1,
+    refetchInterval: 5000, // Auto-refresh every 5 seconds
   });
 
   // Update order mutation
@@ -139,10 +132,13 @@ export default function DealerDashboard() {
   });
 
   const handleLogout = () => {
-    localStorage.removeItem("dealer_session");
-    localStorage.removeItem("dealer_user");
+    // Clear everything
+    localStorage.clear();
+    sessionStorage.clear();
     queryClient.clear();
-    setLocation("/dealer/login");
+    queryClient.resetQueries();
+    // Force page reload to clear all state
+    window.location.href = "/dealer/login";
   };
 
   const handleEditOrder = (order: DealerOrder) => {
@@ -288,10 +284,23 @@ export default function DealerDashboard() {
           <TabsContent value="orders" className="mt-6">
             <Card>
               <CardHeader>
-                <CardTitle>Your Orders</CardTitle>
-                <CardDescription>
-                  Manage your saved trailer configurations and customer orders
-                </CardDescription>
+                <div className="flex justify-between items-start">
+                  <div>
+                    <CardTitle>Your Orders</CardTitle>
+                    <CardDescription>
+                      Manage your saved trailer configurations and customer orders
+                    </CardDescription>
+                  </div>
+                  <Button
+                    onClick={() => refetch()}
+                    variant="outline"
+                    size="sm"
+                    disabled={isLoading}
+                  >
+                    <RefreshCw className={`w-4 h-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
+                    Refresh
+                  </Button>
+                </div>
               </CardHeader>
               <CardContent>
                 {isLoading ? (
