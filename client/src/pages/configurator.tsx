@@ -155,6 +155,9 @@ export default function Configurator() {
     email: "",
     phone: "",
     company: "",
+    city: "",
+    state: "",
+    zipCode: "",
     requirements: ""
   });
   const [isSubmittingQuote, setIsSubmittingQuote] = useState(false);
@@ -513,6 +516,45 @@ Configuration Date: ${new Date().toLocaleDateString()}
                   </div>
                   
                   <div className="space-y-2">
+                    <Label>Location *</Label>
+                    <div className="grid grid-cols-6 gap-2">
+                      <div className="col-span-3">
+                        <div className="relative">
+                          <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                          <Input
+                            id="city"
+                            value={customQuoteForm.city}
+                            onChange={(e) => setCustomQuoteForm({ ...customQuoteForm, city: e.target.value })}
+                            placeholder="City"
+                            className="pl-10"
+                            required
+                          />
+                        </div>
+                      </div>
+                      <div className="col-span-1">
+                        <Input
+                          id="state"
+                          value={customQuoteForm.state}
+                          onChange={(e) => setCustomQuoteForm({ ...customQuoteForm, state: e.target.value.toUpperCase() })}
+                          placeholder="State"
+                          maxLength={2}
+                          required
+                        />
+                      </div>
+                      <div className="col-span-2">
+                        <Input
+                          id="zipCode"
+                          value={customQuoteForm.zipCode}
+                          onChange={(e) => setCustomQuoteForm({ ...customQuoteForm, zipCode: e.target.value })}
+                          placeholder="ZIP Code"
+                          pattern="[0-9]{5}(-[0-9]{4})?"
+                          required
+                        />
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div className="space-y-2">
                     <Label htmlFor="requirements">Trailer Requirements *</Label>
                     <Textarea
                       id="requirements"
@@ -536,7 +578,8 @@ Configuration Date: ${new Date().toLocaleDateString()}
                     onClick={async () => {
                       // Validate required fields
                       if (!customQuoteForm.firstName || !customQuoteForm.lastName || !customQuoteForm.email || 
-                          !customQuoteForm.phone || !customQuoteForm.requirements) {
+                          !customQuoteForm.phone || !customQuoteForm.city || !customQuoteForm.state || 
+                          !customQuoteForm.zipCode || !customQuoteForm.requirements) {
                         toast({
                           title: "Missing Information",
                           description: "Please fill in all required fields.",
@@ -576,6 +619,9 @@ Configuration Date: ${new Date().toLocaleDateString()}
                           email: "",
                           phone: "",
                           company: "",
+                          city: "",
+                          state: "",
+                          zipCode: "",
                           requirements: ""
                         });
                         setShowCustomQuoteModal(false);

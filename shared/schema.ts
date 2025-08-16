@@ -110,6 +110,9 @@ export const customQuoteRequests = pgTable("custom_quote_requests", {
   email: varchar("email", { length: 200 }).notNull(),
   phone: varchar("phone", { length: 20 }).notNull(),
   company: varchar("company", { length: 200 }),
+  city: varchar("city", { length: 100 }).notNull(),
+  state: varchar("state", { length: 2 }).notNull(),
+  zipCode: varchar("zip_code", { length: 10 }).notNull(),
   requirements: text("requirements").notNull(),
   status: varchar("status", { length: 20 }).notNull().default("pending"), // pending, contacted, quoted, closed
   notes: text("notes"), // Admin notes
