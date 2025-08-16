@@ -102,6 +102,21 @@ export const adminSessions = pgTable("admin_sessions", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
+// Custom Quote Requests
+export const customQuoteRequests = pgTable("custom_quote_requests", {
+  id: serial("id").primaryKey(),
+  firstName: varchar("first_name", { length: 100 }).notNull(),
+  lastName: varchar("last_name", { length: 100 }).notNull(),
+  email: varchar("email", { length: 200 }).notNull(),
+  phone: varchar("phone", { length: 20 }).notNull(),
+  company: varchar("company", { length: 200 }),
+  requirements: text("requirements").notNull(),
+  status: varchar("status", { length: 20 }).notNull().default("pending"), // pending, contacted, quoted, closed
+  notes: text("notes"), // Admin notes
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
 // Insert schemas
 export const insertTrailerCategorySchema = createInsertSchema(trailerCategories).omit({ id: true });
 export const insertTrailerModelSchema = createInsertSchema(trailerModels).omit({ id: true });
@@ -121,6 +136,13 @@ export const insertAdminUserSchema = createInsertSchema(adminUsers).omit({
 export const insertAdminSessionSchema = createInsertSchema(adminSessions).omit({
   createdAt: true,
 });
+export const insertCustomQuoteRequestSchema = createInsertSchema(customQuoteRequests).omit({
+  id: true,
+  status: true,
+  notes: true,
+  createdAt: true,
+  updatedAt: true,
+});
 
 // Types
 export type TrailerCategory = typeof trailerCategories.$inferSelect;
@@ -130,6 +152,7 @@ export type TrailerOption = typeof trailerOptions.$inferSelect;
 export type UserConfiguration = typeof userConfigurations.$inferSelect;
 export type AdminUser = typeof adminUsers.$inferSelect;
 export type AdminSession = typeof adminSessions.$inferSelect;
+export type CustomQuoteRequest = typeof customQuoteRequests.$inferSelect;
 export type InsertTrailerCategory = z.infer<typeof insertTrailerCategorySchema>;
 export type InsertTrailerModel = z.infer<typeof insertTrailerModelSchema>;
 export type InsertModelVariant = z.infer<typeof insertModelVariantSchema>;
@@ -137,6 +160,7 @@ export type InsertTrailerOption = z.infer<typeof insertTrailerOptionSchema>;
 export type InsertUserConfiguration = z.infer<typeof insertUserConfigurationSchema>;
 export type InsertAdminUser = z.infer<typeof insertAdminUserSchema>;
 export type InsertAdminSession = z.infer<typeof insertAdminSessionSchema>;
+export type InsertCustomQuoteRequest = z.infer<typeof insertCustomQuoteRequestSchema>;
 
 // Relations
 export const trailerCategoriesRelations = relations(trailerCategories, ({ many }) => ({

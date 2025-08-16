@@ -7,10 +7,13 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { ArrowLeft, ArrowRight, Download, Mail, MapPin, RotateCcw, Info, X, Users } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription, DialogFooter } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { ArrowLeft, ArrowRight, Download, Mail, MapPin, RotateCcw, Info, X, Users, Phone, Building } from "lucide-react";
 import { Link } from "wouter";
 import { useToast } from "@/hooks/use-toast";
+import { apiRequest } from "@/lib/queryClient";
 import { getOptionInfo } from "@/lib/trailer-option-info";
 import waltonLogo from "@/assets/walton-logo.png";
 // Import the response types that match our API
@@ -145,6 +148,16 @@ export default function Configurator() {
   const [totalPrice, setTotalPrice] = useState(0);
   const [hoveredCategory, setHoveredCategory] = useState<TrailerCategory | null>(null);
   const [hoveredModel, setHoveredModel] = useState<TrailerModel | null>(null);
+  const [showCustomQuoteModal, setShowCustomQuoteModal] = useState(false);
+  const [customQuoteForm, setCustomQuoteForm] = useState({
+    firstName: "",
+    lastName: "",
+    email: "",
+    phone: "",
+    company: "",
+    requirements: ""
+  });
+  const [isSubmittingQuote, setIsSubmittingQuote] = useState(false);
 
   const { data: categories, isLoading, error } = useQuery<TrailerCategory[]>({
     queryKey: ['/api/categories'],
@@ -411,11 +424,178 @@ Configuration Date: ${new Date().toLocaleDateString()}
             <div className="text-center mt-8 md:mt-16 mb-4 md:mb-8 px-4">
               <p className="text-xs md:text-sm text-gray-500">
                 Don't see your desired trailer type? 
-                <span className="ml-1 text-gray-600 hover:text-blue-600 transition-colors duration-300 cursor-pointer block md:inline">
+                <span 
+                  className="ml-1 text-gray-600 hover:text-blue-600 transition-colors duration-300 cursor-pointer block md:inline"
+                  onClick={() => setShowCustomQuoteModal(true)}
+                >
                   Contact Walton Trailers for a custom quote
                 </span>
               </p>
             </div>
+
+            {/* Custom Quote Modal */}
+            <Dialog open={showCustomQuoteModal} onOpenChange={setShowCustomQuoteModal}>
+              <DialogContent className="max-w-lg">
+                <DialogHeader>
+                  <DialogTitle>Request a Custom Trailer Quote</DialogTitle>
+                  <DialogDescription>
+                    Tell us about your specific trailer needs and we'll provide a custom quote.
+                  </DialogDescription>
+                </DialogHeader>
+                <div className="grid gap-4 py-4">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="firstName">First Name *</Label>
+                      <Input
+                        id="firstName"
+                        value={customQuoteForm.firstName}
+                        onChange={(e) => setCustomQuoteForm({ ...customQuoteForm, firstName: e.target.value })}
+                        placeholder="John"
+                        required
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="lastName">Last Name *</Label>
+                      <Input
+                        id="lastName"
+                        value={customQuoteForm.lastName}
+                        onChange={(e) => setCustomQuoteForm({ ...customQuoteForm, lastName: e.target.value })}
+                        placeholder="Doe"
+                        required
+                      />
+                    </div>
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="email">Email *</Label>
+                    <div className="relative">
+                      <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                      <Input
+                        id="email"
+                        type="email"
+                        value={customQuoteForm.email}
+                        onChange={(e) => setCustomQuoteForm({ ...customQuoteForm, email: e.target.value })}
+                        placeholder="john@example.com"
+                        className="pl-10"
+                        required
+                      />
+                    </div>
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="phone">Phone *</Label>
+                    <div className="relative">
+                      <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                      <Input
+                        id="phone"
+                        type="tel"
+                        value={customQuoteForm.phone}
+                        onChange={(e) => setCustomQuoteForm({ ...customQuoteForm, phone: e.target.value })}
+                        placeholder="(555) 123-4567"
+                        className="pl-10"
+                        required
+                      />
+                    </div>
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="company">Company (Optional)</Label>
+                    <div className="relative">
+                      <Building className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                      <Input
+                        id="company"
+                        value={customQuoteForm.company}
+                        onChange={(e) => setCustomQuoteForm({ ...customQuoteForm, company: e.target.value })}
+                        placeholder="Acme Corp"
+                        className="pl-10"
+                      />
+                    </div>
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="requirements">Trailer Requirements *</Label>
+                    <Textarea
+                      id="requirements"
+                      value={customQuoteForm.requirements}
+                      onChange={(e) => setCustomQuoteForm({ ...customQuoteForm, requirements: e.target.value })}
+                      placeholder="Please describe your specific trailer needs, including type, size, features, and any special requirements..."
+                      className="min-h-[120px]"
+                      required
+                    />
+                  </div>
+                </div>
+                <DialogFooter>
+                  <Button
+                    variant="outline"
+                    onClick={() => setShowCustomQuoteModal(false)}
+                    disabled={isSubmittingQuote}
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    onClick={async () => {
+                      // Validate required fields
+                      if (!customQuoteForm.firstName || !customQuoteForm.lastName || !customQuoteForm.email || 
+                          !customQuoteForm.phone || !customQuoteForm.requirements) {
+                        toast({
+                          title: "Missing Information",
+                          description: "Please fill in all required fields.",
+                          variant: "destructive"
+                        });
+                        return;
+                      }
+                      
+                      // Validate email format
+                      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+                      if (!emailRegex.test(customQuoteForm.email)) {
+                        toast({
+                          title: "Invalid Email",
+                          description: "Please enter a valid email address.",
+                          variant: "destructive"
+                        });
+                        return;
+                      }
+                      
+                      setIsSubmittingQuote(true);
+                      
+                      try {
+                        await apiRequest("/api/custom-quotes", {
+                          method: "POST",
+                          body: customQuoteForm
+                        });
+                        
+                        toast({
+                          title: "Quote Request Submitted",
+                          description: "We've received your custom trailer quote request. Our team will contact you within 24-48 hours.",
+                        });
+                        
+                        // Reset form and close modal
+                        setCustomQuoteForm({
+                          firstName: "",
+                          lastName: "",
+                          email: "",
+                          phone: "",
+                          company: "",
+                          requirements: ""
+                        });
+                        setShowCustomQuoteModal(false);
+                      } catch (error) {
+                        toast({
+                          title: "Submission Failed",
+                          description: "Unable to submit your quote request. Please try again or call us directly.",
+                          variant: "destructive"
+                        });
+                      } finally {
+                        setIsSubmittingQuote(false);
+                      }
+                    }}
+                    disabled={isSubmittingQuote}
+                  >
+                    {isSubmittingQuote ? "Submitting..." : "Submit Quote Request"}
+                  </Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
           </div>
         )}
 

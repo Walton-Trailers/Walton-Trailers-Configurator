@@ -10,7 +10,7 @@ import {
   hashPassword,
   isAdmin
 } from "./auth";
-import { insertAdminUserSchema, type AdminUser, trailerCategories, trailerModels } from "@shared/schema";
+import { insertAdminUserSchema, type AdminUser, trailerCategories, trailerModels, customQuoteRequests, insertCustomQuoteRequestSchema } from "@shared/schema";
 import { z } from "zod";
 import {
   ObjectStorageService,
@@ -161,6 +161,68 @@ export async function registerRoutes(app: Express): Promise<Express> {
       res.json(models);
     } catch (error) {
       res.status(500).json({ message: "Failed to fetch models" });
+    }
+  });
+
+  // Custom quote request routes
+  app.post("/api/custom-quotes", async (req, res) => {
+    try {
+      const quoteData = insertCustomQuoteRequestSchema.parse(req.body);
+      
+      const result = await db.insert(customQuoteRequests).values(quoteData).returning();
+      
+      res.json({ 
+        success: true, 
+        message: "Quote request submitted successfully",
+        id: result[0].id 
+      });
+    } catch (error) {
+      console.error("Error submitting custom quote:", error);
+      if (error instanceof z.ZodError) {
+        res.status(400).json({ 
+          message: "Invalid quote data",
+          errors: error.errors 
+        });
+      } else {
+        res.status(500).json({ message: "Failed to submit quote request" });
+      }
+    }
+  });
+
+  // Get all custom quote requests (admin only)
+  app.get("/api/custom-quotes", requireAuth, async (req, res) => {
+    try {
+      const quotes = await db.select().from(customQuoteRequests).orderBy(customQuoteRequests.createdAt);
+      res.json(quotes);
+    } catch (error) {
+      console.error("Error fetching custom quotes:", error);
+      res.status(500).json({ message: "Failed to fetch quote requests" });
+    }
+  });
+
+  // Update custom quote request status (admin only)
+  app.patch("/api/custom-quotes/:id", requireAuth, async (req, res) => {
+    try {
+      const quoteId = parseInt(req.params.id);
+      const { status, notes } = req.body;
+      
+      const updateData: any = { updatedAt: new Date() };
+      if (status) updateData.status = status;
+      if (notes !== undefined) updateData.notes = notes;
+      
+      const result = await db.update(customQuoteRequests)
+        .set(updateData)
+        .where(eq(customQuoteRequests.id, quoteId))
+        .returning();
+      
+      if (result.length === 0) {
+        return res.status(404).json({ message: "Quote request not found" });
+      }
+      
+      res.json(result[0]);
+    } catch (error) {
+      console.error("Error updating custom quote:", error);
+      res.status(500).json({ message: "Failed to update quote request" });
     }
   });
 
