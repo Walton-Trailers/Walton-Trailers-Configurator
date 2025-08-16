@@ -61,15 +61,18 @@ export default function DealerDashboard() {
   // Check authentication
   useEffect(() => {
     const sessionId = localStorage.getItem("dealer_session");
+    console.log("Dealer Dashboard - Session ID:", sessionId);
     if (!sessionId) {
+      console.log("No session found, redirecting to login");
       setLocation("/dealer/login");
     }
   }, [setLocation]);
 
   // Get dealer profile
+  const sessionId = localStorage.getItem("dealer_session");
   const { data: profile } = useQuery<DealerProfile>({
     queryKey: ["/api/dealer/profile"],
-    enabled: !!localStorage.getItem("dealer_session"),
+    enabled: !!sessionId,
     refetchOnMount: "always",
     refetchOnWindowFocus: true,
   });
@@ -77,9 +80,10 @@ export default function DealerDashboard() {
   // Get dealer orders
   const { data: orders = [], isLoading, refetch } = useQuery<DealerOrder[]>({
     queryKey: ["/api/dealer/orders"],
-    enabled: !!localStorage.getItem("dealer_session"),
+    enabled: !!sessionId,
     refetchOnMount: "always",
     refetchOnWindowFocus: true,
+    retry: 1,
   });
 
   // Update order mutation

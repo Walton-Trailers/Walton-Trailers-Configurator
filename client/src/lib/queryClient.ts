@@ -21,6 +21,9 @@ export async function apiRequest(
   const adminSession = localStorage.getItem("admin_session");
   const dealerSession = localStorage.getItem("dealer_session");
   
+  console.log('API Request - URL:', url);
+  console.log('API Request - Dealer Session:', dealerSession);
+  
   const requestHeaders = {
     ...headers,
     ...(body ? { "Content-Type": "application/json" } : {}),
