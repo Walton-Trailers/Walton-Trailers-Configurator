@@ -426,9 +426,9 @@ export default function AdminDashboard() {
         <Tabs defaultValue="products" className="space-y-6">
           <TabsList>
             <TabsTrigger value="products">Product Management</TabsTrigger>
-            <TabsTrigger value="quotes">Custom Requests</TabsTrigger>
             {isAdmin && <TabsTrigger value="users">User Management</TabsTrigger>}
             {isAdmin && <TabsTrigger value="integrations">Integrations</TabsTrigger>}
+            <TabsTrigger value="quotes">Custom Requests</TabsTrigger>
           </TabsList>
 
           <TabsContent value="products" className="space-y-6">
