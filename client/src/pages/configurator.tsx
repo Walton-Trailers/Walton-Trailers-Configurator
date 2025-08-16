@@ -972,7 +972,7 @@ Configuration Date: ${new Date().toLocaleDateString()}
             <span className="md:hidden">Staff</span>
           </Button>
         </Link>
-        <Link href="/admin/dealers">
+        <Link href="/dealer/login">
           <Button
             variant="ghost"
             size="sm"

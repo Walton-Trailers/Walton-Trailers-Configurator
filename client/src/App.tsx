@@ -9,6 +9,7 @@ import AdminLogin from "@/pages/admin-login";
 import AdminDashboard from "@/pages/admin-dashboard-fixed";
 import FastPricing from "@/pages/fast-pricing";
 import AccountManagement from "@/pages/account-management";
+import DealerLogin from "@/pages/dealer-login";
 
 function Router() {
   return (
@@ -18,6 +19,7 @@ function Router() {
       <Route path="/admin" component={AdminDashboard} />
       <Route path="/admin/pricing" component={FastPricing} />
       <Route path="/admin/account" component={AccountManagement} />
+      <Route path="/dealer/login" component={DealerLogin} />
       <Route component={NotFound} />
     </Switch>
   );
