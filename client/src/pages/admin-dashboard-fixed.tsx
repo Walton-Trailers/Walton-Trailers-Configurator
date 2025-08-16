@@ -426,7 +426,7 @@ export default function AdminDashboard() {
         <Tabs defaultValue="products" className="space-y-6">
           <TabsList>
             <TabsTrigger value="products">Product Management</TabsTrigger>
-            <TabsTrigger value="quotes">Quote Requests</TabsTrigger>
+            <TabsTrigger value="quotes">Custom Requests</TabsTrigger>
             {isAdmin && <TabsTrigger value="users">User Management</TabsTrigger>}
             {isAdmin && <TabsTrigger value="integrations">Integrations</TabsTrigger>}
           </TabsList>
@@ -463,8 +463,8 @@ export default function AdminDashboard() {
           <TabsContent value="quotes" className="space-y-6">
             <div className="flex justify-between items-center">
               <div>
-                <h3 className="text-lg font-medium">Custom Quote Requests</h3>
-                <p className="text-sm text-gray-600">Manage custom trailer quote requests from customers</p>
+                <h3 className="text-lg font-medium">Custom Requests</h3>
+                <p className="text-sm text-gray-600">Manage custom trailer requests from customers</p>
               </div>
               <Badge variant="outline" className="px-3 py-1">
                 {quoteRequests.length} Total Requests
