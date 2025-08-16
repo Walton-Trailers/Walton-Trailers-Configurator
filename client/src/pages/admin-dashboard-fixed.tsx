@@ -487,7 +487,7 @@ export default function AdminDashboard() {
                                 )}
                               </td>
                               <td className="px-6 py-4 whitespace-nowrap">
-                                {editingUser?.id === adminUser.id ? (
+                                {editingUser?.id === adminUser.id && adminUser.id !== user.id ? (
                                   <Select
                                     value={editData.role ?? adminUser.role}
                                     onValueChange={(value) => setEditData({ ...editData, role: value })}
@@ -540,19 +540,17 @@ export default function AdminDashboard() {
                                     </>
                                   ) : (
                                     <>
-                                      {adminUser.id !== user.id && (
-                                        <Button
-                                          variant="outline"
-                                          size="sm"
-                                          onClick={() => {
-                                            setEditingUser(adminUser);
-                                            setEditData({});
-                                          }}
-                                          className="h-8"
-                                        >
-                                          <Edit className="w-4 h-4" />
-                                        </Button>
-                                      )}
+                                      <Button
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={() => {
+                                          setEditingUser(adminUser);
+                                          setEditData({});
+                                        }}
+                                        className="h-8"
+                                      >
+                                        <Edit className="w-4 h-4" />
+                                      </Button>
                                       
                                       {adminUser.isActive && adminUser.id !== user.id && (
                                         <Button
