@@ -12,6 +12,7 @@ import AccountManagement from "@/pages/account-management";
 import DealerLogin from "@/pages/dealer-login";
 import DealerDashboard from "@/pages/dealer-dashboard";
 import AdminDealers from "@/pages/admin-dealers";
+import { ClearDealerSession } from "@/components/clear-dealer-session";
 
 function Router() {
   return (
@@ -24,6 +25,7 @@ function Router() {
       <Route path="/admin/dealers" component={AdminDealers} />
       <Route path="/dealer/login" component={DealerLogin} />
       <Route path="/dealer/dashboard" component={DealerDashboard} />
+      <Route path="/dealer/clear" component={ClearDealerSession} />
       <Route component={NotFound} />
     </Switch>
   );

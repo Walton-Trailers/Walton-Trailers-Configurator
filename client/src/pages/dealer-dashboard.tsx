@@ -66,6 +66,8 @@ export default function DealerDashboard() {
       console.log("No session found, redirecting to login");
       setLocation("/dealer/login");
     }
+    // Clear any stale query cache on mount
+    queryClient.invalidateQueries();
   }, [setLocation]);
 
   // Get dealer profile
@@ -139,6 +141,7 @@ export default function DealerDashboard() {
   const handleLogout = () => {
     localStorage.removeItem("dealer_session");
     localStorage.removeItem("dealer_user");
+    queryClient.clear();
     setLocation("/dealer/login");
   };
 

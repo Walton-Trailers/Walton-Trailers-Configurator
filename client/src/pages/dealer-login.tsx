@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useLocation } from "wouter";
-import { apiRequest } from "@/lib/queryClient";
+import { apiRequest, queryClient } from "@/lib/queryClient";
 import { Loader2, Building2 } from "lucide-react";
 
 const loginSchema = z.object({
@@ -62,9 +62,16 @@ export default function DealerLogin() {
         body: data,
       });
 
-      // Store session info in localStorage
+      // Clear any old sessions first
+      localStorage.removeItem("dealer_session");
+      localStorage.removeItem("dealer_user");
+      
+      // Store new session info in localStorage
       localStorage.setItem("dealer_session", response.sessionId);
       localStorage.setItem("dealer_user", JSON.stringify(response.dealer));
+
+      // Clear React Query cache to ensure fresh data
+      queryClient.clear();
 
       // Redirect to dealer dashboard
       setLocation("/dealer/dashboard");
