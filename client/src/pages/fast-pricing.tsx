@@ -73,13 +73,23 @@ const fastMutate = async (url: string, options: RequestInit) => {
 };
 
 export default function FastPricing() {
-  const [activeTab, setActiveTab] = useState("models");
+  const [activeTab, setActiveTab] = useState("categories");
   const [editingModel, setEditingModel] = useState<any>(null);
   const [editingOption, setEditingOption] = useState<any>(null);
+  const [editingCategory, setEditingCategory] = useState<any>(null);
   const [editData, setEditData] = useState<any>({});
   const [searchQuery, setSearchQuery] = useState("");
   const [showArchived, setShowArchived] = useState(false);
   const [uploadingModelId, setUploadingModelId] = useState<number | null>(null);
+  const [showAddCategory, setShowAddCategory] = useState(false);
+  const [newCategoryData, setNewCategoryData] = useState({
+    slug: "",
+    name: "",
+    description: "",
+    imageUrl: "",
+    startingPrice: 0,
+    orderIndex: 0
+  });
 
   const sessionId = localStorage.getItem("admin_session");
   const queryClient = useQueryClient();
@@ -87,6 +97,7 @@ export default function FastPricing() {
 
   const { data: models = [], isLoading, error: modelsError } = useFastQuery.allModels(sessionId);
   const { data: options = [], error: optionsError } = useFastQuery.allOptions(sessionId);
+  const { data: categories = [] } = useFastQuery.categories();
 
   // Fast filtering with memoization
   const { activeModels, archivedModels } = useMemo(() => {
@@ -317,6 +328,16 @@ export default function FastPricing() {
           <div className="border-b border-gray-200">
             <nav className="-mb-px flex space-x-8">
               <button
+                onClick={() => setActiveTab("categories")}
+                className={`py-2 px-1 border-b-2 font-medium text-sm ${
+                  activeTab === "categories"
+                    ? "border-blue-500 text-blue-600"
+                    : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+                }`}
+              >
+                Categories
+              </button>
+              <button
                 onClick={() => setActiveTab("models")}
                 className={`py-2 px-1 border-b-2 font-medium text-sm ${
                   activeTab === "models"
@@ -343,12 +364,295 @@ export default function FastPricing() {
         {/* Search bar */}
         <div className="mb-6">
           <Input
-            placeholder={activeTab === "models" ? "Search models..." : "Search options..."}
+            placeholder={activeTab === "categories" ? "Search categories..." : activeTab === "models" ? "Search models..." : "Search options..."}
             value={searchQuery}
             onChange={(e: any) => setSearchQuery(e.target.value)}
             className="max-w-md"
           />
         </div>
+
+        {/* Categories table */}
+        {activeTab === "categories" && (
+          <Card>
+            <div className="p-6">
+              <div className="flex justify-between items-center mb-4">
+                <h2 className="text-lg font-semibold">Categories ({categories.length})</h2>
+                <Button onClick={() => setShowAddCategory(true)} size="sm">
+                  Add Category
+                </Button>
+              </div>
+              
+              {/* Add Category Dialog */}
+              {showAddCategory && (
+                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+                  <div className="bg-white rounded-lg p-6 max-w-2xl w-full">
+                    <h3 className="text-lg font-semibold mb-4">Add New Category</h3>
+                    <div className="space-y-4">
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <label className="block text-sm font-medium mb-1">Slug (URL)</label>
+                          <Input
+                            placeholder="e.g., dump-trailers"
+                            value={newCategoryData.slug}
+                            onChange={(e: any) => setNewCategoryData({ ...newCategoryData, slug: e.target.value })}
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium mb-1">Name</label>
+                          <Input
+                            placeholder="e.g., Dump Trailers"
+                            value={newCategoryData.name}
+                            onChange={(e: any) => setNewCategoryData({ ...newCategoryData, name: e.target.value })}
+                          />
+                        </div>
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium mb-1">Description</label>
+                        <Input
+                          placeholder="Category description"
+                          value={newCategoryData.description}
+                          onChange={(e: any) => setNewCategoryData({ ...newCategoryData, description: e.target.value })}
+                        />
+                      </div>
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <label className="block text-sm font-medium mb-1">Image URL</label>
+                          <Input
+                            placeholder="https://..."
+                            value={newCategoryData.imageUrl}
+                            onChange={(e: any) => setNewCategoryData({ ...newCategoryData, imageUrl: e.target.value })}
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium mb-1">Starting Price</label>
+                          <Input
+                            type="number"
+                            placeholder="0"
+                            value={newCategoryData.startingPrice}
+                            onChange={(e: any) => setNewCategoryData({ ...newCategoryData, startingPrice: parseInt(e.target.value) || 0 })}
+                          />
+                        </div>
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium mb-1">Order Index</label>
+                        <Input
+                          type="number"
+                          placeholder="0"
+                          value={newCategoryData.orderIndex}
+                          onChange={(e: any) => setNewCategoryData({ ...newCategoryData, orderIndex: parseInt(e.target.value) || 0 })}
+                        />
+                      </div>
+                    </div>
+                    <div className="flex justify-end gap-2 mt-6">
+                      <Button variant="outline" onClick={() => setShowAddCategory(false)}>Cancel</Button>
+                      <Button 
+                        onClick={async () => {
+                          try {
+                            await apiRequest("/api/categories", {
+                              method: "POST",
+                              body: newCategoryData,
+                              headers: sessionId ? { Authorization: `Bearer ${sessionId}` } : {},
+                            });
+                            queryClient.invalidateQueries({ queryKey: ["/api/categories"] });
+                            setShowAddCategory(false);
+                            setNewCategoryData({
+                              slug: "",
+                              name: "",
+                              description: "",
+                              imageUrl: "",
+                              startingPrice: 0,
+                              orderIndex: 0
+                            });
+                            toast({
+                              title: "Success",
+                              description: "Category created successfully",
+                            });
+                          } catch (error) {
+                            toast({
+                              title: "Error",
+                              description: "Failed to create category",
+                              variant: "destructive",
+                            });
+                          }
+                        }}
+                      >
+                        Create Category
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              )}
+              
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Order</TableHead>
+                    <TableHead>Slug</TableHead>
+                    <TableHead>Name</TableHead>
+                    <TableHead>Description</TableHead>
+                    <TableHead>Starting Price</TableHead>
+                    <TableHead>Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {categories
+                    .filter((cat: any) => !searchQuery || 
+                      cat.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                      cat.slug.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                      cat.description.toLowerCase().includes(searchQuery.toLowerCase())
+                    )
+                    .map((category: any) => (
+                      <TableRow key={category.id}>
+                        <TableCell>
+                          {editingCategory?.id === category.id ? (
+                            <Input
+                              type="number"
+                              value={editData[category.id]?.orderIndex ?? category.orderIndex ?? 0}
+                              onChange={(e: any) => setEditData((prev: any) => ({
+                                ...prev,
+                                [category.id]: { ...prev[category.id], orderIndex: parseInt(e.target.value) || 0 }
+                              }))}
+                              className="w-20"
+                            />
+                          ) : (
+                            category.orderIndex ?? 0
+                          )}
+                        </TableCell>
+                        <TableCell>
+                          {editingCategory?.id === category.id ? (
+                            <Input
+                              value={editData[category.id]?.slug ?? category.slug}
+                              onChange={(e: any) => setEditData((prev: any) => ({
+                                ...prev,
+                                [category.id]: { ...prev[category.id], slug: e.target.value }
+                              }))}
+                              className="w-40"
+                            />
+                          ) : (
+                            category.slug
+                          )}
+                        </TableCell>
+                        <TableCell>
+                          {editingCategory?.id === category.id ? (
+                            <Input
+                              value={editData[category.id]?.name ?? category.name}
+                              onChange={(e: any) => setEditData((prev: any) => ({
+                                ...prev,
+                                [category.id]: { ...prev[category.id], name: e.target.value }
+                              }))}
+                              className="w-48"
+                            />
+                          ) : (
+                            category.name
+                          )}
+                        </TableCell>
+                        <TableCell>
+                          {editingCategory?.id === category.id ? (
+                            <Input
+                              value={editData[category.id]?.description ?? category.description}
+                              onChange={(e: any) => setEditData((prev: any) => ({
+                                ...prev,
+                                [category.id]: { ...prev[category.id], description: e.target.value }
+                              }))}
+                              className="w-full"
+                            />
+                          ) : (
+                            <span className="text-sm text-gray-600">{category.description}</span>
+                          )}
+                        </TableCell>
+                        <TableCell>
+                          {editingCategory?.id === category.id ? (
+                            <Input
+                              type="number"
+                              value={editData[category.id]?.startingPrice ?? category.startingPrice}
+                              onChange={(e: any) => setEditData((prev: any) => ({
+                                ...prev,
+                                [category.id]: { ...prev[category.id], startingPrice: parseInt(e.target.value) || 0 }
+                              }))}
+                              className="w-32"
+                            />
+                          ) : (
+                            `$${category.startingPrice?.toLocaleString()}`
+                          )}
+                        </TableCell>
+                        <TableCell>
+                          {editingCategory?.id === category.id ? (
+                            <div className="flex gap-2">
+                              <Button
+                                size="sm"
+                                onClick={async () => {
+                                  try {
+                                    await apiRequest(`/api/categories/${category.id}`, {
+                                      method: "PATCH",
+                                      body: editData[category.id],
+                                      headers: sessionId ? { Authorization: `Bearer ${sessionId}` } : {},
+                                    });
+                                    queryClient.invalidateQueries({ queryKey: ["/api/categories"] });
+                                    setEditingCategory(null);
+                                    setEditData({});
+                                    toast({
+                                      title: "Success",
+                                      description: "Category updated successfully",
+                                    });
+                                  } catch (error) {
+                                    toast({
+                                      title: "Error",
+                                      description: "Failed to update category",
+                                      variant: "destructive",
+                                    });
+                                  }
+                                }}
+                              >
+                                <Save className="w-4 h-4" />
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => {
+                                  setEditingCategory(null);
+                                  setEditData((prev: any) => {
+                                    const newData = { ...prev };
+                                    delete newData[category.id];
+                                    return newData;
+                                  });
+                                }}
+                              >
+                                <X className="w-4 h-4" />
+                              </Button>
+                            </div>
+                          ) : (
+                            <div className="flex gap-2">
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => {
+                                  setEditingCategory(category);
+                                  setEditData((prev: any) => ({
+                                    ...prev,
+                                    [category.id]: {
+                                      slug: category.slug,
+                                      name: category.name,
+                                      description: category.description,
+                                      imageUrl: category.imageUrl,
+                                      startingPrice: category.startingPrice,
+                                      orderIndex: category.orderIndex
+                                    }
+                                  }));
+                                }}
+                              >
+                                <Edit className="w-4 h-4" />
+                              </Button>
+                            </div>
+                          )}
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  }
+                </TableBody>
+              </Table>
+            </div>
+          </Card>
+        )}
 
         {/* Models table */}
         {activeTab === "models" && (
