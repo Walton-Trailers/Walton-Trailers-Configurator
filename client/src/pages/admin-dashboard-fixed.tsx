@@ -16,6 +16,12 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useToast } from "@/hooks/use-toast";
+import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from "@/components/ui/tabs";
 
 interface AdminUser {
   id: number;
@@ -209,8 +215,13 @@ export default function AdminDashboard() {
           <p className="text-gray-600">Manage Walton Trailers administration</p>
         </div>
 
-        <div className="space-y-6">
-          <div className="space-y-6">
+        <Tabs defaultValue="products" className="space-y-6">
+          <TabsList>
+            <TabsTrigger value="products">Product Management</TabsTrigger>
+            {isAdmin && <TabsTrigger value="users">User Management</TabsTrigger>}
+          </TabsList>
+
+          <TabsContent value="products" className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-1 gap-6">
               <Card>
                 <CardHeader>
@@ -219,20 +230,28 @@ export default function AdminDashboard() {
                     Product Management
                   </CardTitle>
                   <CardDescription>
-                    Update trailer and option details
+                    Update trailer and option pricing & details
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
+                  <div className="space-y-2 text-gray-600 mb-4">
+                    <p>• Edit trailer categories and descriptions</p>
+                    <p>• Manage trailer models and specifications</p>
+                    <p>• Upload and manage trailer images</p>
+                  </div>
                   <Link href="/admin/pricing">
-                    <Button>Manage Products</Button>
+                    <Button>
+                      <DollarSign className="w-4 h-4 mr-2" />
+                      Update Products Catalog
+                    </Button>
                   </Link>
                 </CardContent>
               </Card>
             </div>
-          </div>
+          </TabsContent>
 
           {isAdmin && (
-            <div className="space-y-6">
+            <TabsContent value="users" className="space-y-6">
               <div className="flex justify-between items-center">
                 <div>
                   <h3 className="text-lg font-medium">User Management</h3>
@@ -405,9 +424,9 @@ export default function AdminDashboard() {
                   )}
                 </CardContent>
               </Card>
-            </div>
+            </TabsContent>
           )}
-        </div>
+        </Tabs>
       </main>
     </div>
   );
