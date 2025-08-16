@@ -180,4 +180,19 @@ export class NoDatabaseStorage implements IStorage {
       this.adminUsers.set(id, user);
     }
   }
+
+  // Airtable configuration methods
+  private airtableConfig: { accessToken: string; baseId: string } | null = null;
+
+  async saveAirtableConfig(config: { accessToken: string; baseId: string }): Promise<void> {
+    this.airtableConfig = config;
+  }
+
+  async getAirtableConfig(): Promise<{ accessToken: string; baseId: string } | null> {
+    return this.airtableConfig;
+  }
+
+  isAdminSession(sessionId: string): boolean {
+    return this.adminSessions.has(sessionId);
+  }
 }

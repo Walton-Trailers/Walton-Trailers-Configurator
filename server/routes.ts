@@ -608,6 +608,105 @@ export async function registerRoutes(app: Express): Promise<Express> {
     }
   });
 
+  // Airtable Integration Routes
+  app.post("/api/integrations/airtable/test", async (req, res) => {
+    const { sessionId } = req.cookies;
+    if (!sessionId || !storage.isAdminSession(sessionId)) {
+      return res.status(401).json({ error: "Unauthorized" });
+    }
+
+    const { accessToken, baseId } = req.body;
+    
+    if (!accessToken || !baseId) {
+      return res.status(400).json({ error: "Access token and base ID are required" });
+    }
+
+    try {
+      // Test the connection to Airtable
+      const testUrl = `https://api.airtable.com/v0/${baseId}`;
+      const response = await fetch(testUrl, {
+        headers: {
+          'Authorization': `Bearer ${accessToken}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        const tableCount = data.tables ? data.tables.length : 0;
+        
+        return res.json({ 
+          success: true, 
+          tableCount,
+          message: "Successfully connected to Airtable"
+        });
+      } else {
+        const errorText = await response.text();
+        console.error("Airtable test failed:", errorText);
+        return res.status(400).json({ 
+          error: "Failed to connect to Airtable",
+          details: errorText
+        });
+      }
+    } catch (error) {
+      console.error("Airtable test error:", error);
+      return res.status(500).json({ 
+        error: "Failed to test Airtable connection",
+        details: error instanceof Error ? error.message : "Unknown error"
+      });
+    }
+  });
+
+  app.post("/api/integrations/airtable/save", async (req, res) => {
+    const { sessionId } = req.cookies;
+    if (!sessionId || !storage.isAdminSession(sessionId)) {
+      return res.status(401).json({ error: "Unauthorized" });
+    }
+
+    const { accessToken, baseId } = req.body;
+    
+    if (!accessToken || !baseId) {
+      return res.status(400).json({ error: "Access token and base ID are required" });
+    }
+
+    try {
+      // Save the Airtable configuration
+      await storage.saveAirtableConfig({ accessToken, baseId });
+      
+      return res.json({ 
+        success: true,
+        message: "Airtable configuration saved successfully"
+      });
+    } catch (error) {
+      console.error("Failed to save Airtable config:", error);
+      return res.status(500).json({ 
+        error: "Failed to save Airtable configuration"
+      });
+    }
+  });
+
+  app.get("/api/integrations/airtable/status", async (req, res) => {
+    const { sessionId } = req.cookies;
+    if (!sessionId || !storage.isAdminSession(sessionId)) {
+      return res.status(401).json({ error: "Unauthorized" });
+    }
+
+    try {
+      const config = await storage.getAirtableConfig();
+      return res.json({ 
+        connected: !!config,
+        hasToken: !!config?.accessToken,
+        baseId: config?.baseId
+      });
+    } catch (error) {
+      console.error("Failed to get Airtable status:", error);
+      return res.json({ 
+        connected: false,
+        hasToken: false
+      });
+    }
+  });
+
 
 
   return app;

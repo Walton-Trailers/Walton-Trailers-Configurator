@@ -108,6 +108,13 @@ export interface IStorage {
   archiveModel(id: number): Promise<void>;
   restoreModel(id: number): Promise<TrailerModelResponse>;
   getOptionCategories(): Promise<string[]>;
+  
+  // Integration operations
+  saveAirtableConfig(config: { accessToken: string; baseId: string }): Promise<void>;
+  getAirtableConfig(): Promise<{ accessToken: string; baseId: string } | null>;
+  
+  // Admin session helper
+  isAdminSession(sessionId: string): boolean;
 }
 
 export class MemStorage implements IStorage {
@@ -438,6 +445,23 @@ export class MemStorage implements IStorage {
     const allOptions = Array.from(this.options.values()).flat();
     const categories = new Set(allOptions.map(option => option.category));
     return Array.from(categories);
+  }
+
+  // Store Airtable config in memory (for development)
+  private airtableConfig: { accessToken: string; baseId: string } | null = null;
+  private adminSessions: Set<string> = new Set();
+
+  async saveAirtableConfig(config: { accessToken: string; baseId: string }): Promise<void> {
+    this.airtableConfig = config;
+  }
+
+  async getAirtableConfig(): Promise<{ accessToken: string; baseId: string } | null> {
+    return this.airtableConfig;
+  }
+
+  isAdminSession(sessionId: string): boolean {
+    // In development, consider all sessions as admin sessions for testing
+    return true;
   }
 }
 
@@ -1043,6 +1067,25 @@ export class DatabaseStorage implements IStorage {
       console.error('Error fetching option categories:', error);
       throw error;
     }
+  }
+
+  // Airtable configuration methods (stored in memory for now)
+  private airtableConfig: { accessToken: string; baseId: string } | null = null;
+
+  async saveAirtableConfig(config: { accessToken: string; baseId: string }): Promise<void> {
+    // In production, this would be saved to the database
+    // For now, store in memory
+    this.airtableConfig = config;
+  }
+
+  async getAirtableConfig(): Promise<{ accessToken: string; baseId: string } | null> {
+    return this.airtableConfig;
+  }
+
+  isAdminSession(sessionId: string): boolean {
+    // For now, we'll trust the sessionId if it exists
+    // In production, this would check a cached session store
+    return !!sessionId;
   }
 }
 

@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { useAdminAuth } from "@/hooks/useAdminAuth";
 import { useLocation, Link } from "wouter";
 import { apiRequest } from "@/lib/queryClient";
-import { LogOut, Users, Settings, Plus, DollarSign, Edit, Save, X, Plug, Key, Webhook, Mail } from "lucide-react";
+import { LogOut, Users, Settings, Plus, DollarSign, Edit, Save, X, Plug, Key, Webhook, Mail, Database, CheckCircle, AlertCircle } from "lucide-react";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -53,6 +53,10 @@ export default function AdminDashboard() {
   const [showCreateUser, setShowCreateUser] = useState(false);
   const [editingUser, setEditingUser] = useState<AdminUser | null>(null);
   const [editData, setEditData] = useState<Partial<AdminUser>>({});
+  const [showAirtableConfig, setShowAirtableConfig] = useState(false);
+  const [airtableToken, setAirtableToken] = useState("");
+  const [airtableBaseId, setAirtableBaseId] = useState("");
+  const [isTestingAirtable, setIsTestingAirtable] = useState(false);
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -193,6 +197,63 @@ export default function AdminDashboard() {
         id: editingUser.id,
         ...editData,
       });
+    }
+  };
+
+  const handleTestAirtableConnection = async () => {
+    if (!airtableToken || !airtableBaseId) {
+      toast({
+        title: "Error",
+        description: "Please provide both Access Token and Base ID",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsTestingAirtable(true);
+    try {
+      const response = await apiRequest("/api/integrations/airtable/test", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${sessionId}`,
+          "Content-Type": "application/json",
+        },
+        body: {
+          accessToken: airtableToken,
+          baseId: airtableBaseId,
+        },
+      });
+
+      if (response.success) {
+        toast({
+          title: "Success",
+          description: `Connected to Airtable! Found ${response.tableCount} tables.`,
+        });
+        
+        // Save the configuration
+        await apiRequest("/api/integrations/airtable/save", {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${sessionId}`,
+            "Content-Type": "application/json",
+          },
+          body: {
+            accessToken: airtableToken,
+            baseId: airtableBaseId,
+          },
+        });
+        
+        setShowAirtableConfig(false);
+        queryClient.invalidateQueries({ queryKey: ["/api/integrations/airtable/status"] });
+      }
+    } catch (error) {
+      toast({
+        title: "Connection Failed",
+        description: "Unable to connect to Airtable. Please check your credentials.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsTestingAirtable(false);
     }
   };
 
@@ -587,38 +648,122 @@ export default function AdminDashboard() {
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {/* API Keys Section */}
+                {/* Airtable Integration Section */}
                 <Card>
                   <CardHeader>
                     <CardTitle className="flex items-center">
-                      <Key className="w-5 h-5 mr-2" />
-                      API Keys
+                      <Database className="w-5 h-5 mr-2" />
+                      Airtable Integration
                     </CardTitle>
                     <CardDescription>
-                      Manage API keys for external services
+                      Sync trailer data with Airtable bases
                     </CardDescription>
                   </CardHeader>
                   <CardContent>
                     <div className="space-y-4">
                       <div className="border rounded-lg p-4">
-                        <div className="flex justify-between items-start mb-2">
+                        <div className="flex justify-between items-start mb-3">
                           <div>
-                            <h4 className="font-medium">Google Maps API</h4>
-                            <p className="text-sm text-gray-600">For dealer location services</p>
+                            <h4 className="font-medium">Airtable Sync</h4>
+                            <p className="text-sm text-gray-600">Connect your Airtable base to sync data</p>
                           </div>
-                          <Badge variant="outline">Not configured</Badge>
+                          <Badge variant="outline">Not connected</Badge>
                         </div>
-                        <Button size="sm" variant="outline">Configure</Button>
+                        
+                        <Dialog open={showAirtableConfig} onOpenChange={setShowAirtableConfig}>
+                          <DialogTrigger asChild>
+                            <Button size="sm" variant="outline">
+                              Configure Connection
+                            </Button>
+                          </DialogTrigger>
+                          <DialogContent className="max-w-md">
+                            <DialogHeader>
+                              <DialogTitle>Configure Airtable Connection</DialogTitle>
+                              <DialogDescription>
+                                Connect your Airtable base using a Personal Access Token
+                              </DialogDescription>
+                            </DialogHeader>
+                            
+                            <div className="space-y-4">
+                              <div className="space-y-2">
+                                <Label htmlFor="airtable-token">Personal Access Token</Label>
+                                <Input
+                                  id="airtable-token"
+                                  type="password"
+                                  placeholder="pat..."
+                                  value={airtableToken}
+                                  onChange={(e) => setAirtableToken(e.target.value)}
+                                />
+                                <p className="text-xs text-gray-500">
+                                  Get your token from{" "}
+                                  <a 
+                                    href="https://airtable.com/create/tokens" 
+                                    target="_blank" 
+                                    rel="noopener noreferrer"
+                                    className="text-blue-600 hover:underline"
+                                  >
+                                    Airtable Developer Hub
+                                  </a>
+                                </p>
+                              </div>
+                              
+                              <div className="space-y-2">
+                                <Label htmlFor="airtable-base">Base ID</Label>
+                                <Input
+                                  id="airtable-base"
+                                  placeholder="app..."
+                                  value={airtableBaseId}
+                                  onChange={(e) => setAirtableBaseId(e.target.value)}
+                                />
+                                <p className="text-xs text-gray-500">
+                                  Find your Base ID in Airtable URL or API documentation
+                                </p>
+                              </div>
+                              
+                              <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
+                                <p className="text-sm text-yellow-800">
+                                  <strong>Required Permissions:</strong>
+                                  <br />• data.records:read
+                                  <br />• data.records:write
+                                  <br />• schema.bases:read
+                                </p>
+                              </div>
+                              
+                              <div className="flex justify-end space-x-2">
+                                <Button
+                                  variant="outline"
+                                  onClick={() => {
+                                    setShowAirtableConfig(false);
+                                    setAirtableToken("");
+                                    setAirtableBaseId("");
+                                  }}
+                                >
+                                  Cancel
+                                </Button>
+                                <Button
+                                  onClick={handleTestAirtableConnection}
+                                  disabled={isTestingAirtable || !airtableToken || !airtableBaseId}
+                                >
+                                  {isTestingAirtable ? "Testing..." : "Test & Save"}
+                                </Button>
+                              </div>
+                            </div>
+                          </DialogContent>
+                        </Dialog>
                       </div>
-                      <div className="border rounded-lg p-4">
-                        <div className="flex justify-between items-start mb-2">
-                          <div>
-                            <h4 className="font-medium">SendGrid API</h4>
-                            <p className="text-sm text-gray-600">For email notifications</p>
-                          </div>
-                          <Badge variant="outline">Not configured</Badge>
+                      
+                      <div className="border-t pt-4">
+                        <h4 className="text-sm font-medium mb-2">Sync Options</h4>
+                        <div className="space-y-2">
+                          <Button size="sm" className="w-full" variant="outline" disabled>
+                            <Database className="w-4 h-4 mr-2" />
+                            Import from Airtable
+                          </Button>
+                          <Button size="sm" className="w-full" variant="outline" disabled>
+                            <Database className="w-4 h-4 mr-2" />
+                            Export to Airtable
+                          </Button>
                         </div>
-                        <Button size="sm" variant="outline">Configure</Button>
                       </div>
                     </div>
                   </CardContent>

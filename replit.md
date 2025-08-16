@@ -21,6 +21,14 @@ This is a Tesla-style trailer configurator application for Walton Trailers, desi
 - Enhanced ObjectUploader component with replacement flow for existing images
 - When clicking existing image thumbnails, shows modal with clear replacement indication
 
+### Airtable Integration (August 16, 2025)
+- Added new Integrations tab in admin dashboard for managing third-party services
+- Implemented Airtable API integration using Personal Access Tokens (recommended authentication method)
+- Created secure configuration dialog with token and base ID input fields
+- Added connection testing functionality with real-time validation
+- Included helpful links to Airtable Developer Hub for token generation
+- Prepared foundation for data sync operations between Airtable and database
+
 ## User Preferences
 
 Preferred communication style: Simple, everyday language.
