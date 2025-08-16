@@ -50,4 +50,13 @@ export const useFastQuery = {
     staleTime: 60000, // 1 minute
     enabled: !!sessionId,
   }),
+
+  customQuotes: (sessionId: string | null) => useQuery({
+    queryKey: ['admin', 'custom-quotes'],
+    queryFn: () => fastFetch('/api/custom-quotes', {
+      headers: sessionId ? { Authorization: `Bearer ${sessionId}` } : {},
+    }),
+    staleTime: 30000, // 30 seconds - refresh more frequently for quote requests
+    enabled: !!sessionId,
+  }),
 };

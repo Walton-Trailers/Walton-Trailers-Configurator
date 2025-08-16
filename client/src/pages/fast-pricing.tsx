@@ -99,6 +99,7 @@ export default function FastPricing() {
   const { data: models = [], isLoading, error: modelsError } = useFastQuery.allModels(sessionId);
   const { data: options = [], error: optionsError } = useFastQuery.allOptions(sessionId);
   const { data: categories = [] } = useFastQuery.categories();
+  const { data: quoteRequests = [] } = useFastQuery.customQuotes(sessionId);
 
   // Fast filtering with memoization
   const { activeModels, archivedModels } = useMemo(() => {
@@ -406,6 +407,16 @@ export default function FastPricing() {
               >
                 Options & Extras
               </button>
+              <button
+                onClick={() => setActiveTab("quotes")}
+                className={`py-2 px-1 border-b-2 font-medium text-sm ${
+                  activeTab === "quotes"
+                    ? "border-blue-500 text-blue-600"
+                    : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+                }`}
+              >
+                Quote Requests
+              </button>
             </nav>
           </div>
         </div>
@@ -413,7 +424,7 @@ export default function FastPricing() {
         {/* Search bar */}
         <div className="mb-6">
           <Input
-            placeholder={activeTab === "categories" ? "Search categories..." : activeTab === "models" ? "Search models..." : "Search options..."}
+            placeholder={activeTab === "categories" ? "Search categories..." : activeTab === "models" ? "Search models..." : activeTab === "options" ? "Search options..." : "Search quotes..."}
             value={searchQuery}
             onChange={(e: any) => setSearchQuery(e.target.value)}
             className="max-w-md"
@@ -954,6 +965,129 @@ export default function FastPricing() {
               </Card>
             )}
           </>
+        )}
+
+        {/* Quote Requests Tab */}
+        {activeTab === "quotes" && (
+          <Card>
+            <div className="p-6">
+              <h2 className="text-lg font-semibold mb-4">Custom Quote Requests ({quoteRequests.length})</h2>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Date</TableHead>
+                    <TableHead>Name</TableHead>
+                    <TableHead>Email</TableHead>
+                    <TableHead>Phone</TableHead>
+                    <TableHead>Location</TableHead>
+                    <TableHead>Company</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead>Requirements</TableHead>
+                    <TableHead>Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {quoteRequests
+                    .filter((quote: any) => !searchQuery || 
+                      quote.firstName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                      quote.lastName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                      quote.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                      quote.company?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                      quote.city.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                      quote.requirements.toLowerCase().includes(searchQuery.toLowerCase())
+                    )
+                    .map((quote: any) => (
+                      <TableRow key={quote.id}>
+                        <TableCell className="text-xs">
+                          {new Date(quote.createdAt).toLocaleDateString()}
+                        </TableCell>
+                        <TableCell className="font-medium">
+                          {quote.firstName} {quote.lastName}
+                        </TableCell>
+                        <TableCell>
+                          <a href={`mailto:${quote.email}`} className="text-blue-600 hover:underline">
+                            {quote.email}
+                          </a>
+                        </TableCell>
+                        <TableCell>
+                          <a href={`tel:${quote.phone}`} className="text-blue-600 hover:underline">
+                            {quote.phone}
+                          </a>
+                        </TableCell>
+                        <TableCell className="text-sm">
+                          {quote.city}, {quote.state} {quote.zipCode}
+                        </TableCell>
+                        <TableCell>
+                          {quote.company || "-"}
+                        </TableCell>
+                        <TableCell>
+                          <select
+                            value={quote.status}
+                            onChange={async (e) => {
+                              const value = e.target.value;
+                              try {
+                                await apiRequest(`/api/custom-quotes/${quote.id}`, {
+                                  method: "PATCH",
+                                  body: { status: value },
+                                  headers: sessionId ? { Authorization: `Bearer ${sessionId}` } : {},
+                                });
+                                queryClient.invalidateQueries({ queryKey: ["admin", "custom-quotes"] });
+                                toast({
+                                  title: "Status Updated",
+                                  description: `Quote status changed to ${value}`,
+                                });
+                              } catch (error) {
+                                toast({
+                                  title: "Error",
+                                  description: "Failed to update status",
+                                  variant: "destructive",
+                                });
+                              }
+                            }}
+                            className={`px-2 py-1 text-xs rounded-md border ${
+                              quote.status === "pending" ? "bg-yellow-50 border-yellow-300 text-yellow-700" :
+                              quote.status === "contacted" ? "bg-blue-50 border-blue-300 text-blue-700" :
+                              quote.status === "quoted" ? "bg-purple-50 border-purple-300 text-purple-700" :
+                              "bg-gray-50 border-gray-300 text-gray-700"
+                            }`}
+                          >
+                            <option value="pending">Pending</option>
+                            <option value="contacted">Contacted</option>
+                            <option value="quoted">Quoted</option>
+                            <option value="closed">Closed</option>
+                          </select>
+                        </TableCell>
+                        <TableCell className="max-w-xs">
+                          <div className="truncate" title={quote.requirements}>
+                            {quote.requirements}
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => {
+                              // Create a details modal or expand view
+                              const details = `
+Custom Quote Request Details\n\nName: ${quote.firstName} ${quote.lastName}\nEmail: ${quote.email}\nPhone: ${quote.phone}\nCompany: ${quote.company || 'N/A'}\nLocation: ${quote.city}, ${quote.state} ${quote.zipCode}\n\nRequirements:\n${quote.requirements}\n\nSubmitted: ${new Date(quote.createdAt).toLocaleString()}\nStatus: ${quote.status}`;
+                              alert(details);
+                            }}
+                          >
+                            View Details
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  }
+                </TableBody>
+              </Table>
+              {quoteRequests.length === 0 && (
+                <div className="text-center py-8 text-gray-500">
+                  No quote requests yet
+                </div>
+              )}
+            </div>
+          </Card>
         )}
 
         {/* Options & Extras Tab */}
