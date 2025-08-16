@@ -1,4 +1,5 @@
 import { db } from "./db";
+import { cache } from "./cache";
 
 // Check if database is available
 const isDatabaseAvailable = !!db;
@@ -822,6 +823,10 @@ export class DatabaseStorage implements IStorage {
       `);
       
       const updatedModel = result.rows[0] as any;
+      
+      // Clear cache after updating model to ensure fresh data
+      cache.clear();
+      
       return {
         id: updatedModel.id,
         categoryId: updatedModel.category_id,

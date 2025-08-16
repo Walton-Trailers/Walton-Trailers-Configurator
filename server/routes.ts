@@ -94,6 +94,14 @@ export async function registerRoutes(app: Express): Promise<Express> {
     try {
       const models = await storage.getAllModels();
       console.log("Found models:", models.length);
+      
+      // Set cache control headers to prevent stale data
+      res.set({
+        'Cache-Control': 'no-cache, no-store, must-revalidate',
+        'Pragma': 'no-cache',
+        'Expires': '0'
+      });
+      
       res.json(models);
     } catch (error) {
       console.error("Error fetching all models:", error);
@@ -496,6 +504,8 @@ export async function registerRoutes(app: Express): Promise<Express> {
       const modelId = parseInt(req.params.id);
       const { imageUrl } = req.body;
 
+      console.log(`Updating image for model ${modelId}, new URL: ${imageUrl}`);
+
       if (!imageUrl) {
         return res.status(400).json({ error: "imageUrl is required" });
       }
@@ -509,10 +519,14 @@ export async function registerRoutes(app: Express): Promise<Express> {
         }
       );
 
+      console.log(`Object path after ACL policy: ${objectPath}`);
+
       // Update the model with the new image URL
       const updatedModel = await storage.updateModel(modelId, {
         imageUrl: objectPath,
       });
+
+      console.log(`Updated model result:`, updatedModel);
 
       res.json({
         success: true,
