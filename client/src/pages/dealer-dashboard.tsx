@@ -57,6 +57,8 @@ export default function DealerDashboard() {
   const [deleteConfirmOrder, setDeleteConfirmOrder] = useState<DealerOrder | null>(null);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [activeTab, setActiveTab] = useState("orders");
+  const [isEditingProfile, setIsEditingProfile] = useState(false);
+  const [profileFormData, setProfileFormData] = useState<Partial<DealerProfile>>({});
 
   // Check authentication
   useEffect(() => {
@@ -67,10 +69,17 @@ export default function DealerDashboard() {
   }, [setLocation]);
 
   // Get dealer profile
-  const { data: profile } = useQuery<DealerProfile>({
+  const { data: profile, refetch: refetchProfile } = useQuery<DealerProfile>({
     queryKey: ["/api/dealer/profile"],
     enabled: !!localStorage.getItem("dealer_session"),
   });
+  
+  // Initialize profile form data when profile loads
+  useEffect(() => {
+    if (profile && !isEditingProfile) {
+      setProfileFormData(profile);
+    }
+  }, [profile, isEditingProfile]);
 
   // Get dealer orders - refetch on mount and focus
   const { data: orders = [], isLoading, refetch } = useQuery<DealerOrder[]>({
@@ -102,6 +111,31 @@ export default function DealerDashboard() {
       toast({
         title: "Update failed",
         description: error.message || "Failed to update order",
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Update profile mutation
+  const updateProfileMutation = useMutation({
+    mutationFn: async (data: Partial<DealerProfile>) => {
+      return apiRequest("/api/dealer/profile", {
+        method: "PATCH",
+        body: data,
+      });
+    },
+    onSuccess: () => {
+      toast({
+        title: "Profile updated",
+        description: "Your profile has been successfully updated.",
+      });
+      setIsEditingProfile(false);
+      refetchProfile();
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Update failed",
+        description: error.message || "Failed to update profile",
         variant: "destructive",
       });
     },
@@ -385,10 +419,49 @@ export default function DealerDashboard() {
           <TabsContent value="profile" className="mt-6">
             <Card>
               <CardHeader>
-                <CardTitle>Dealer Profile</CardTitle>
-                <CardDescription>
-                  Your dealer account information
-                </CardDescription>
+                <div className="flex justify-between items-start">
+                  <div>
+                    <CardTitle>Dealer Profile</CardTitle>
+                    <CardDescription>
+                      Your dealer account information
+                    </CardDescription>
+                  </div>
+                  {!isEditingProfile ? (
+                    <Button
+                      onClick={() => {
+                        setIsEditingProfile(true);
+                        setProfileFormData(profile || {});
+                      }}
+                      variant="outline"
+                      size="sm"
+                    >
+                      <Edit className="w-4 h-4 mr-2" />
+                      Edit Profile
+                    </Button>
+                  ) : (
+                    <div className="flex gap-2">
+                      <Button
+                        onClick={() => {
+                          setIsEditingProfile(false);
+                          setProfileFormData(profile || {});
+                        }}
+                        variant="outline"
+                        size="sm"
+                      >
+                        Cancel
+                      </Button>
+                      <Button
+                        onClick={() => {
+                          const { dealerId, id, ...updates } = profileFormData;
+                          updateProfileMutation.mutate(updates);
+                        }}
+                        size="sm"
+                      >
+                        Save Changes
+                      </Button>
+                    </div>
+                  )}
+                </div>
               </CardHeader>
               <CardContent>
                 {profile && (
@@ -400,30 +473,94 @@ export default function DealerDashboard() {
                       </div>
                       <div>
                         <Label className="text-sm text-gray-600">Company Name</Label>
-                        <p className="font-medium">{profile.dealerName}</p>
+                        {isEditingProfile ? (
+                          <Input
+                            value={profileFormData.dealerName || ""}
+                            onChange={(e) => setProfileFormData({ ...profileFormData, dealerName: e.target.value })}
+                          />
+                        ) : (
+                          <p className="font-medium">{profile.dealerName}</p>
+                        )}
                       </div>
                       <div>
                         <Label className="text-sm text-gray-600">Contact Person</Label>
-                        <p className="font-medium">{profile.contactName}</p>
+                        {isEditingProfile ? (
+                          <Input
+                            value={profileFormData.contactName || ""}
+                            onChange={(e) => setProfileFormData({ ...profileFormData, contactName: e.target.value })}
+                          />
+                        ) : (
+                          <p className="font-medium">{profile.contactName}</p>
+                        )}
                       </div>
                       <div>
                         <Label className="text-sm text-gray-600">Territory</Label>
-                        <p className="font-medium">{profile.territory}</p>
+                        {isEditingProfile ? (
+                          <Input
+                            value={profileFormData.territory || ""}
+                            onChange={(e) => setProfileFormData({ ...profileFormData, territory: e.target.value })}
+                          />
+                        ) : (
+                          <p className="font-medium">{profile.territory}</p>
+                        )}
                       </div>
                       <div>
                         <Label className="text-sm text-gray-600">Email</Label>
-                        <p className="font-medium">{profile.email}</p>
+                        {isEditingProfile ? (
+                          <Input
+                            type="email"
+                            value={profileFormData.email || ""}
+                            onChange={(e) => setProfileFormData({ ...profileFormData, email: e.target.value })}
+                          />
+                        ) : (
+                          <p className="font-medium">{profile.email}</p>
+                        )}
                       </div>
                       <div>
                         <Label className="text-sm text-gray-600">Phone</Label>
-                        <p className="font-medium">{profile.phone}</p>
+                        {isEditingProfile ? (
+                          <Input
+                            value={profileFormData.phone || ""}
+                            onChange={(e) => setProfileFormData({ ...profileFormData, phone: e.target.value })}
+                          />
+                        ) : (
+                          <p className="font-medium">{profile.phone}</p>
+                        )}
                       </div>
                       <div className="md:col-span-2">
                         <Label className="text-sm text-gray-600">Address</Label>
-                        <p className="font-medium">
-                          {profile.address}<br />
-                          {profile.city}, {profile.state} {profile.zipCode}
-                        </p>
+                        {isEditingProfile ? (
+                          <div className="space-y-2">
+                            <Input
+                              placeholder="Street Address"
+                              value={profileFormData.address || ""}
+                              onChange={(e) => setProfileFormData({ ...profileFormData, address: e.target.value })}
+                            />
+                            <div className="grid grid-cols-3 gap-2">
+                              <Input
+                                placeholder="City"
+                                value={profileFormData.city || ""}
+                                onChange={(e) => setProfileFormData({ ...profileFormData, city: e.target.value })}
+                              />
+                              <Input
+                                placeholder="State"
+                                maxLength={2}
+                                value={profileFormData.state || ""}
+                                onChange={(e) => setProfileFormData({ ...profileFormData, state: e.target.value.toUpperCase() })}
+                              />
+                              <Input
+                                placeholder="ZIP Code"
+                                value={profileFormData.zipCode || ""}
+                                onChange={(e) => setProfileFormData({ ...profileFormData, zipCode: e.target.value })}
+                              />
+                            </div>
+                          </div>
+                        ) : (
+                          <p className="font-medium">
+                            {profile.address}<br />
+                            {profile.city}, {profile.state} {profile.zipCode}
+                          </p>
+                        )}
                       </div>
                     </div>
                   </div>

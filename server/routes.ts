@@ -326,6 +326,37 @@ export async function registerRoutes(app: Express): Promise<Express> {
     res.json(req.dealer);
   });
   
+  // Update dealer profile
+  app.patch("/api/dealer/profile", requireDealerAuth, async (req: AuthenticatedRequest, res) => {
+    try {
+      const updates = req.body;
+      const dealerId = req.dealer!.id;
+      
+      // Don't allow updating dealer ID, password, or active status
+      delete updates.dealerId;
+      delete updates.passwordHash;
+      delete updates.isActive;
+      delete updates.id;
+      
+      const [updatedDealer] = await db.update(dealers)
+        .set({
+          ...updates,
+          updatedAt: new Date(),
+        })
+        .where(eq(dealers.id, dealerId))
+        .returning();
+      
+      if (!updatedDealer) {
+        return res.status(404).json({ error: "Dealer not found" });
+      }
+      
+      res.json(updatedDealer);
+    } catch (error) {
+      console.error("Error updating dealer profile:", error);
+      res.status(500).json({ error: "Failed to update profile" });
+    }
+  });
+  
   // Get dealer orders
   app.get("/api/dealer/orders", requireDealerAuth, async (req: AuthenticatedRequest, res) => {
     try {
