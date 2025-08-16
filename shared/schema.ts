@@ -102,6 +102,56 @@ export const adminSessions = pgTable("admin_sessions", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
+// Dealers
+export const dealers = pgTable("dealers", {
+  id: serial("id").primaryKey(),
+  dealerId: varchar("dealer_id", { length: 50 }).notNull().unique(),
+  dealerName: varchar("dealer_name", { length: 200 }).notNull(),
+  contactName: varchar("contact_name", { length: 100 }).notNull(),
+  email: varchar("email", { length: 200 }).notNull().unique(),
+  phone: varchar("phone", { length: 20 }).notNull(),
+  territory: varchar("territory", { length: 100 }),
+  address: text("address"),
+  city: varchar("city", { length: 100 }),
+  state: varchar("state", { length: 2 }),
+  zipCode: varchar("zip_code", { length: 10 }),
+  passwordHash: text("password_hash").notNull(),
+  isActive: boolean("is_active").notNull().default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Dealer Sessions
+export const dealerSessions = pgTable("dealer_sessions", {
+  id: varchar("id", { length: 255 }).primaryKey(),
+  dealerId: integer("dealer_id").notNull(),
+  expiresAt: timestamp("expires_at").notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// Dealer Saved Orders
+export const dealerOrders = pgTable("dealer_orders", {
+  id: serial("id").primaryKey(),
+  dealerId: integer("dealer_id").notNull(),
+  orderNumber: varchar("order_number", { length: 50 }).notNull().unique(),
+  customerName: varchar("customer_name", { length: 200 }),
+  customerEmail: varchar("customer_email", { length: 200 }),
+  customerPhone: varchar("customer_phone", { length: 20 }),
+  categorySlug: text("category_slug").notNull(),
+  categoryName: text("category_name").notNull(),
+  modelId: text("model_id").notNull(),
+  modelName: text("model_name").notNull(),
+  modelSpecs: json("model_specs").$type<any>().notNull(),
+  selectedOptions: json("selected_options").$type<Record<string, any>>().notNull(),
+  basePrice: integer("base_price").notNull(),
+  optionsPrice: integer("options_price").notNull(),
+  totalPrice: integer("total_price").notNull(),
+  status: varchar("status", { length: 20 }).notNull().default("draft"), // draft, submitted, processing, completed
+  notes: text("notes"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
 // Custom Quote Requests
 export const customQuoteRequests = pgTable("custom_quote_requests", {
   id: serial("id").primaryKey(),
@@ -121,6 +171,20 @@ export const customQuoteRequests = pgTable("custom_quote_requests", {
 });
 
 // Insert schemas
+export const insertDealerSchema = createInsertSchema(dealers).omit({ 
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+export const insertDealerSessionSchema = createInsertSchema(dealerSessions).omit({
+  createdAt: true,
+});
+export const insertDealerOrderSchema = createInsertSchema(dealerOrders).omit({
+  id: true,
+  orderNumber: true,
+  createdAt: true,
+  updatedAt: true,
+});
 export const insertTrailerCategorySchema = createInsertSchema(trailerCategories).omit({ id: true });
 export const insertTrailerModelSchema = createInsertSchema(trailerModels).omit({ id: true });
 export const insertModelVariantSchema = createInsertSchema(modelVariants).omit({ id: true });
@@ -148,6 +212,12 @@ export const insertCustomQuoteRequestSchema = createInsertSchema(customQuoteRequ
 });
 
 // Types
+export type Dealer = typeof dealers.$inferSelect;
+export type DealerSession = typeof dealerSessions.$inferSelect;
+export type DealerOrder = typeof dealerOrders.$inferSelect;
+export type InsertDealer = z.infer<typeof insertDealerSchema>;
+export type InsertDealerSession = z.infer<typeof insertDealerSessionSchema>;
+export type InsertDealerOrder = z.infer<typeof insertDealerOrderSchema>;
 export type TrailerCategory = typeof trailerCategories.$inferSelect;
 export type TrailerModel = typeof trailerModels.$inferSelect;
 export type ModelVariant = typeof modelVariants.$inferSelect;
@@ -205,5 +275,24 @@ export const adminSessionsRelations = relations(adminSessions, ({ one }) => ({
   user: one(adminUsers, {
     fields: [adminSessions.userId],
     references: [adminUsers.id],
+  }),
+}));
+
+export const dealersRelations = relations(dealers, ({ many }) => ({
+  sessions: many(dealerSessions),
+  orders: many(dealerOrders),
+}));
+
+export const dealerSessionsRelations = relations(dealerSessions, ({ one }) => ({
+  dealer: one(dealers, {
+    fields: [dealerSessions.dealerId],
+    references: [dealers.id],
+  }),
+}));
+
+export const dealerOrdersRelations = relations(dealerOrders, ({ one }) => ({
+  dealer: one(dealers, {
+    fields: [dealerOrders.dealerId],
+    references: [dealers.id],
   }),
 }));

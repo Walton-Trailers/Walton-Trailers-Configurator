@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -10,12 +10,13 @@ import { Separator } from "@/components/ui/separator";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { ArrowLeft, ArrowRight, Download, Mail, MapPin, RotateCcw, Info, X, Users, Phone, Building, Building2 } from "lucide-react";
+import { ArrowLeft, ArrowRight, Download, Mail, MapPin, RotateCcw, Info, X, Users, Phone, Building, Building2, Save } from "lucide-react";
 import { Link } from "wouter";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import { getOptionInfo } from "@/lib/trailer-option-info";
 import waltonLogo from "@/assets/walton-logo.png";
+import { DealerSaveDialog } from "@/components/dealer-save-dialog";
 // Import the response types that match our API
 interface TrailerCategory {
   id: number;
@@ -161,10 +162,67 @@ export default function Configurator() {
     requirements: ""
   });
   const [isSubmittingQuote, setIsSubmittingQuote] = useState(false);
+  const [isDealerLoggedIn, setIsDealerLoggedIn] = useState(false);
+  const [showDealerSaveDialog, setShowDealerSaveDialog] = useState(false);
 
   const { data: categories, isLoading, error } = useQuery<TrailerCategory[]>({
     queryKey: ['/api/categories'],
   });
+
+  // Check if dealer is logged in
+  useEffect(() => {
+    const dealerSession = localStorage.getItem("dealer_session");
+    setIsDealerLoggedIn(!!dealerSession);
+  }, []);
+
+  // Save order mutation for dealers
+  const saveOrderMutation = useMutation({
+    mutationFn: async (orderData: any) => {
+      return apiRequest("/api/dealer/orders", {
+        method: "POST",
+        body: orderData,
+      });
+    },
+    onSuccess: () => {
+      toast({
+        title: "Configuration Saved",
+        description: "The configuration has been saved to your dealer account.",
+      });
+      setShowDealerSaveDialog(false);
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Save Failed",
+        description: error.message || "Failed to save configuration",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const handleDealerSaveConfiguration = async (customerInfo: any) => {
+    if (!selectedModel || !selectedCategory) return;
+
+    await saveOrderMutation.mutateAsync({
+      customerName: customerInfo.customerName || null,
+      customerEmail: customerInfo.customerEmail || null,
+      customerPhone: customerInfo.customerPhone || null,
+      categorySlug: selectedCategory.slug,
+      categoryName: selectedCategory.name,
+      modelId: selectedModel.modelId,
+      modelName: selectedModel.name,
+      modelSpecs: {
+        gvwr: selectedModel.gvwr,
+        payload: selectedModel.payload,
+        deckSize: selectedModel.deckSize,
+        axles: selectedModel.axles
+      },
+      selectedOptions: selectedOptions,
+      basePrice: selectedModel.basePrice,
+      optionsPrice: totalPrice - selectedModel.basePrice,
+      totalPrice: totalPrice,
+      notes: customerInfo.notes || null
+    });
+  };
 
 
 
@@ -951,6 +1009,17 @@ Configuration Date: ${new Date().toLocaleDateString()}
                   Download Spec Sheet
                 </Button>
               </div>
+
+              {/* Save Configuration for Dealers */}
+              {isDealerLoggedIn && (
+                <Button
+                  onClick={() => setShowDealerSaveDialog(true)}
+                  className="w-full bg-green-600 hover:bg-green-700 text-white py-4 md:py-6 text-sm md:text-base min-h-[48px] mt-4"
+                >
+                  <Save className="w-4 h-4 md:w-5 md:h-5 mr-2" />
+                  Save Configuration to Dealer Account
+                </Button>
+              )}
             </div>
           )}
               </div>
@@ -984,6 +1053,13 @@ Configuration Date: ${new Date().toLocaleDateString()}
           </Button>
         </Link>
       </div>
+
+      {/* Dealer Save Dialog */}
+      <DealerSaveDialog
+        open={showDealerSaveDialog}
+        onOpenChange={setShowDealerSaveDialog}
+        onSave={handleDealerSaveConfiguration}
+      />
     </div>
   );
 }

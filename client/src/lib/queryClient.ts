@@ -17,9 +17,15 @@ export async function apiRequest(
 ): Promise<any> {
   const { method = "GET", body, headers = {} } = options || {};
   
+  // Check for admin or dealer session
+  const adminSession = localStorage.getItem("admin_session");
+  const dealerSession = localStorage.getItem("dealer_session");
+  
   const requestHeaders = {
     ...headers,
     ...(body ? { "Content-Type": "application/json" } : {}),
+    ...(adminSession ? { "Authorization": `Bearer ${adminSession}` } : {}),
+    ...(dealerSession ? { "Authorization": `Bearer ${dealerSession}` } : {}),
   };
 
   const res = await fetch(url, {
@@ -42,8 +48,20 @@ export const getQueryFn: <T>(options: {
 }) => QueryFunction<T> =
   ({ on401: unauthorizedBehavior }) =>
   async ({ queryKey }) => {
+    // Check for admin or dealer session
+    const adminSession = localStorage.getItem("admin_session");
+    const dealerSession = localStorage.getItem("dealer_session");
+    
+    const headers: Record<string, string> = {};
+    if (adminSession) {
+      headers["Authorization"] = `Bearer ${adminSession}`;
+    } else if (dealerSession) {
+      headers["Authorization"] = `Bearer ${dealerSession}`;
+    }
+    
     const res = await fetch(queryKey.join("/") as string, {
       credentials: "include",
+      headers,
     });
 
     if (unauthorizedBehavior === "returnNull" && res.status === 401) {

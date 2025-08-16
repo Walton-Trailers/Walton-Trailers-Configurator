@@ -10,8 +10,9 @@ import {
   hashPassword,
   isAdmin
 } from "./auth";
-import { insertAdminUserSchema, type AdminUser, trailerCategories, trailerModels, customQuoteRequests, insertCustomQuoteRequestSchema } from "@shared/schema";
+import { insertAdminUserSchema, type AdminUser, trailerCategories, trailerModels, customQuoteRequests, insertCustomQuoteRequestSchema, dealers, dealerSessions, dealerOrders, type Dealer } from "@shared/schema";
 import { z } from "zod";
+import crypto from "crypto";
 import {
   ObjectStorageService,
   ObjectNotFoundError,
@@ -20,6 +21,7 @@ import {
 // Extend Express Request interface
 interface AuthenticatedRequest extends Request {
   user?: AdminUser;
+  dealer?: Dealer;
   sessionId?: string;
 }
 
@@ -50,6 +52,39 @@ const requireAdmin = (req: AuthenticatedRequest, res: Response, next: NextFuncti
   next();
 };
 
+// Dealer authentication middleware
+const requireDealerAuth = async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
+  const sessionId = req.get('authorization')?.replace('Bearer ', '');
+  
+  if (!sessionId) {
+    return res.status(401).json({ error: 'Authentication required' });
+  }
+
+  try {
+    const [session] = await db.select()
+      .from(dealerSessions)
+      .where(eq(dealerSessions.id, sessionId));
+    
+    if (!session || session.expiresAt < new Date()) {
+      return res.status(401).json({ error: 'Session expired or invalid' });
+    }
+
+    const [dealer] = await db.select()
+      .from(dealers)
+      .where(eq(dealers.id, session.dealerId));
+    
+    if (!dealer || !dealer.isActive) {
+      return res.status(401).json({ error: 'Dealer account not active' });
+    }
+
+    req.dealer = dealer;
+    req.sessionId = sessionId;
+    next();
+  } catch (error) {
+    return res.status(401).json({ error: 'Authentication failed' });
+  }
+};
+
 // Login validation schema
 const loginSchema = z.object({
   username: z.string().min(1, 'Username is required'),
@@ -60,6 +95,13 @@ const loginSchema = z.object({
 const createUserSchema = insertAdminUserSchema.extend({
   password: z.string().min(8, 'Password must be at least 8 characters'),
 }).omit({ passwordHash: true });
+
+// Generate order number
+const generateOrderNumber = () => {
+  const timestamp = Date.now().toString(36).toUpperCase();
+  const random = Math.random().toString(36).substring(2, 7).toUpperCase();
+  return `WT-${timestamp}-${random}`;
+};
 
 export async function registerRoutes(app: Express): Promise<Express> {
   // Get all trailer categories
@@ -223,6 +265,167 @@ export async function registerRoutes(app: Express): Promise<Express> {
     } catch (error) {
       console.error("Error updating custom quote:", error);
       res.status(500).json({ message: "Failed to update quote request" });
+    }
+  });
+
+  // ========================
+  // Dealer Routes
+  // ========================
+  
+  // Dealer login
+  app.post("/api/dealer/login", async (req, res) => {
+    try {
+      const { dealerId, password } = req.body;
+      
+      const [dealer] = await db.select()
+        .from(dealers)
+        .where(eq(dealers.dealerId, dealerId));
+      
+      if (!dealer || !dealer.isActive) {
+        return res.status(401).json({ error: "Invalid credentials" });
+      }
+      
+      // For demo purposes, using simple password check
+      // In production, use bcrypt to verify password hash
+      const validPassword = password === 'dealer123'; // Demo password
+      
+      if (!validPassword) {
+        return res.status(401).json({ error: "Invalid credentials" });
+      }
+      
+      // Create session
+      const sessionId = crypto.randomUUID();
+      const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
+      
+      await db.insert(dealerSessions).values({
+        id: sessionId,
+        dealerId: dealer.id,
+        expiresAt,
+      });
+      
+      res.json({
+        dealer: {
+          id: dealer.id,
+          dealerId: dealer.dealerId,
+          dealerName: dealer.dealerName,
+          contactName: dealer.contactName,
+          email: dealer.email,
+          territory: dealer.territory,
+        },
+        sessionId,
+        expiresAt: expiresAt.toISOString(),
+      });
+    } catch (error) {
+      console.error("Dealer login error:", error);
+      res.status(500).json({ error: "Login failed" });
+    }
+  });
+  
+  // Get dealer profile
+  app.get("/api/dealer/profile", requireDealerAuth, async (req: AuthenticatedRequest, res) => {
+    res.json(req.dealer);
+  });
+  
+  // Get dealer orders
+  app.get("/api/dealer/orders", requireDealerAuth, async (req: AuthenticatedRequest, res) => {
+    try {
+      const orders = await db.select()
+        .from(dealerOrders)
+        .where(eq(dealerOrders.dealerId, req.dealer!.id))
+        .orderBy(dealerOrders.createdAt);
+      
+      res.json(orders);
+    } catch (error) {
+      console.error("Error fetching dealer orders:", error);
+      res.status(500).json({ error: "Failed to fetch orders" });
+    }
+  });
+  
+  // Save dealer order
+  app.post("/api/dealer/orders", requireDealerAuth, async (req: AuthenticatedRequest, res) => {
+    try {
+      const orderData = req.body;
+      const orderNumber = generateOrderNumber();
+      
+      const [order] = await db.insert(dealerOrders).values({
+        ...orderData,
+        dealerId: req.dealer!.id,
+        orderNumber,
+        status: 'draft',
+      }).returning();
+      
+      res.json(order);
+    } catch (error) {
+      console.error("Error saving dealer order:", error);
+      res.status(500).json({ error: "Failed to save order" });
+    }
+  });
+  
+  // Update dealer order
+  app.patch("/api/dealer/orders/:id", requireDealerAuth, async (req: AuthenticatedRequest, res) => {
+    try {
+      const orderId = parseInt(req.params.id);
+      const updates = req.body;
+      
+      // Verify order belongs to dealer
+      const [existingOrder] = await db.select()
+        .from(dealerOrders)
+        .where(eq(dealerOrders.id, orderId));
+      
+      if (!existingOrder || existingOrder.dealerId !== req.dealer!.id) {
+        return res.status(404).json({ error: "Order not found" });
+      }
+      
+      const [updatedOrder] = await db.update(dealerOrders)
+        .set({ ...updates, updatedAt: new Date() })
+        .where(eq(dealerOrders.id, orderId))
+        .returning();
+      
+      res.json(updatedOrder);
+    } catch (error) {
+      console.error("Error updating dealer order:", error);
+      res.status(500).json({ error: "Failed to update order" });
+    }
+  });
+  
+  // Delete dealer order
+  app.delete("/api/dealer/orders/:id", requireDealerAuth, async (req: AuthenticatedRequest, res) => {
+    try {
+      const orderId = parseInt(req.params.id);
+      
+      // Verify order belongs to dealer and is in draft status
+      const [existingOrder] = await db.select()
+        .from(dealerOrders)
+        .where(eq(dealerOrders.id, orderId));
+      
+      if (!existingOrder || existingOrder.dealerId !== req.dealer!.id) {
+        return res.status(404).json({ error: "Order not found" });
+      }
+      
+      if (existingOrder.status !== 'draft') {
+        return res.status(400).json({ error: "Can only delete draft orders" });
+      }
+      
+      await db.delete(dealerOrders)
+        .where(eq(dealerOrders.id, orderId));
+      
+      res.json({ message: "Order deleted successfully" });
+    } catch (error) {
+      console.error("Error deleting dealer order:", error);
+      res.status(500).json({ error: "Failed to delete order" });
+    }
+  });
+  
+  // Dealer logout
+  app.post("/api/dealer/logout", requireDealerAuth, async (req: AuthenticatedRequest, res) => {
+    try {
+      await db.delete(dealerSessions)
+        .where(eq(dealerSessions.id, req.sessionId!));
+      
+      res.json({ message: "Logged out successfully" });
+    } catch (error) {
+      console.error("Dealer logout error:", error);
+      res.status(500).json({ error: "Logout failed" });
     }
   });
 
