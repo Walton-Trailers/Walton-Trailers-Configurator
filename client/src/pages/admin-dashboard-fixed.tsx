@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { useAdminAuth } from "@/hooks/useAdminAuth";
 import { useLocation, Link } from "wouter";
 import { apiRequest } from "@/lib/queryClient";
-import { LogOut, Users, Settings, Plus, DollarSign } from "lucide-react";
+import { LogOut, Users, Settings, Plus, DollarSign, Edit, Save, X } from "lucide-react";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -51,6 +51,8 @@ export default function AdminDashboard() {
   const { user, logout, isLoading } = useAdminAuth();
   const [, setLocation] = useLocation();
   const [showCreateUser, setShowCreateUser] = useState(false);
+  const [editingUser, setEditingUser] = useState<AdminUser | null>(null);
+  const [editData, setEditData] = useState<Partial<AdminUser>>({});
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -134,6 +136,34 @@ export default function AdminDashboard() {
     },
   });
 
+  const updateUserMutation = useMutation({
+    mutationFn: ({ id, ...data }: Partial<AdminUser> & { id: number }) =>
+      apiRequest(`/api/admin/users/${id}`, {
+        method: "PATCH",
+        headers: {
+          Authorization: `Bearer ${sessionId}`,
+          "Content-Type": "application/json",
+        },
+        body: data,
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/users"] });
+      toast({
+        title: "Success",
+        description: "User updated successfully",
+      });
+      setEditingUser(null);
+      setEditData({});
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to update user",
+        variant: "destructive",
+      });
+    },
+  });
+
   // Effect for redirection
   useEffect(() => {
     if (!isLoading && !user) {
@@ -154,6 +184,15 @@ export default function AdminDashboard() {
   const handleDeactivateUser = (userId: number) => {
     if (confirm("Are you sure you want to deactivate this user?")) {
       deactivateUserMutation.mutate(userId);
+    }
+  };
+
+  const handleUpdateUser = () => {
+    if (editingUser) {
+      updateUserMutation.mutate({
+        id: editingUser.id,
+        ...editData,
+      });
     }
   };
 
@@ -385,37 +424,120 @@ export default function AdminDashboard() {
                       {(users as AdminUser[])?.map((adminUser: AdminUser) => (
                         <div key={adminUser.id} className="p-6 flex items-center justify-between">
                           <div className="flex items-center space-x-4">
-                            <div>
-                              <h4 className="font-medium">
-                                {adminUser.firstName && adminUser.lastName
-                                  ? `${adminUser.firstName} ${adminUser.lastName}`
-                                  : adminUser.username
-                                }
-                              </h4>
-                              <p className="text-sm text-gray-600">{adminUser.email}</p>
-                              <p className="text-xs text-gray-500">
-                                Created: {new Date(adminUser.createdAt).toLocaleDateString()}
-                              </p>
+                            <div className="space-y-2">
+                              {editingUser?.id === adminUser.id ? (
+                                <>
+                                  <div className="flex gap-2">
+                                    <Input
+                                      placeholder="First Name"
+                                      value={editData.firstName ?? adminUser.firstName ?? ""}
+                                      onChange={(e) => setEditData({ ...editData, firstName: e.target.value })}
+                                      className="w-32"
+                                    />
+                                    <Input
+                                      placeholder="Last Name"
+                                      value={editData.lastName ?? adminUser.lastName ?? ""}
+                                      onChange={(e) => setEditData({ ...editData, lastName: e.target.value })}
+                                      className="w-32"
+                                    />
+                                  </div>
+                                  <Input
+                                    placeholder="Username"
+                                    value={editData.username ?? adminUser.username}
+                                    onChange={(e) => setEditData({ ...editData, username: e.target.value })}
+                                    className="w-64"
+                                  />
+                                  <Input
+                                    placeholder="Email"
+                                    type="email"
+                                    value={editData.email ?? adminUser.email}
+                                    onChange={(e) => setEditData({ ...editData, email: e.target.value })}
+                                    className="w-64"
+                                  />
+                                </>
+                              ) : (
+                                <>
+                                  <h4 className="font-medium">
+                                    {adminUser.firstName && adminUser.lastName
+                                      ? `${adminUser.firstName} ${adminUser.lastName}`
+                                      : adminUser.username
+                                    }
+                                  </h4>
+                                  <p className="text-sm text-gray-600">{adminUser.email}</p>
+                                  <p className="text-xs text-gray-500">
+                                    Created: {new Date(adminUser.createdAt).toLocaleDateString()}
+                                  </p>
+                                </>
+                              )}
                             </div>
                           </div>
                           
                           <div className="flex items-center space-x-2">
-                            <Badge variant={adminUser.role === "admin" ? "default" : "secondary"}>
-                              {adminUser.role}
-                            </Badge>
-                            <Badge variant={adminUser.isActive ? "outline" : "destructive"}>
-                              {adminUser.isActive ? "Active" : "Inactive"}
-                            </Badge>
-                            
-                            {adminUser.isActive && adminUser.id !== user.id && (
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => handleDeactivateUser(adminUser.id)}
-                                disabled={deactivateUserMutation.isPending}
-                              >
-                                Deactivate
-                              </Button>
+                            {editingUser?.id === adminUser.id ? (
+                              <>
+                                <Select
+                                  value={editData.role ?? adminUser.role}
+                                  onValueChange={(value) => setEditData({ ...editData, role: value })}
+                                >
+                                  <SelectTrigger className="w-32">
+                                    <SelectValue />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    <SelectItem value="standard">Standard</SelectItem>
+                                    <SelectItem value="admin">Admin</SelectItem>
+                                  </SelectContent>
+                                </Select>
+                                <Button
+                                  size="sm"
+                                  onClick={handleUpdateUser}
+                                  disabled={updateUserMutation.isPending}
+                                >
+                                  <Save className="w-4 h-4" />
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => {
+                                    setEditingUser(null);
+                                    setEditData({});
+                                  }}
+                                >
+                                  <X className="w-4 h-4" />
+                                </Button>
+                              </>
+                            ) : (
+                              <>
+                                <Badge variant={adminUser.role === "admin" ? "default" : "secondary"}>
+                                  {adminUser.role}
+                                </Badge>
+                                <Badge variant={adminUser.isActive ? "outline" : "destructive"}>
+                                  {adminUser.isActive ? "Active" : "Inactive"}
+                                </Badge>
+                                
+                                {adminUser.id !== user.id && (
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => {
+                                      setEditingUser(adminUser);
+                                      setEditData({});
+                                    }}
+                                  >
+                                    <Edit className="w-4 h-4" />
+                                  </Button>
+                                )}
+                                
+                                {adminUser.isActive && adminUser.id !== user.id && (
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => handleDeactivateUser(adminUser.id)}
+                                    disabled={deactivateUserMutation.isPending}
+                                  >
+                                    Deactivate
+                                  </Button>
+                                )}
+                              </>
                             )}
                           </div>
                         </div>
