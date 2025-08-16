@@ -11,6 +11,7 @@ import FastPricing from "@/pages/fast-pricing";
 import AccountManagement from "@/pages/account-management";
 import DealerLogin from "@/pages/dealer-login";
 import DealerDashboard from "@/pages/dealer-dashboard";
+import AdminDealers from "@/pages/admin-dealers";
 
 function Router() {
   return (
@@ -20,6 +21,7 @@ function Router() {
       <Route path="/admin" component={AdminDashboard} />
       <Route path="/admin/pricing" component={FastPricing} />
       <Route path="/admin/account" component={AccountManagement} />
+      <Route path="/admin/dealers" component={AdminDealers} />
       <Route path="/dealer/login" component={DealerLogin} />
       <Route path="/dealer/dashboard" component={DealerDashboard} />
       <Route component={NotFound} />

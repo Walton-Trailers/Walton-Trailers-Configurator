@@ -683,6 +683,124 @@ export async function registerRoutes(app: Express): Promise<Express> {
     }
   });
 
+  // Admin dealer management endpoints
+  // Get all dealers (admin only)
+  app.get("/api/admin/dealers", requireAuth, requireAdmin, async (req, res) => {
+    try {
+      const allDealers = await db.select().from(dealers).orderBy(dealers.dealerName);
+      res.json(allDealers);
+    } catch (error) {
+      console.error("Error fetching dealers:", error);
+      res.status(500).json({ error: "Failed to fetch dealers" });
+    }
+  });
+
+  // Get dealer stats (admin only)
+  app.get("/api/admin/dealers/stats", requireAuth, requireAdmin, async (req, res) => {
+    try {
+      const stats = await db
+        .select({
+          dealerId: dealerOrders.dealerId,
+          orderCount: sql<number>`count(*)::int`,
+          totalRevenue: sql<number>`sum(${dealerOrders.totalPrice})::int`
+        })
+        .from(dealerOrders)
+        .groupBy(dealerOrders.dealerId);
+      res.json(stats);
+    } catch (error) {
+      console.error("Error fetching dealer stats:", error);
+      res.status(500).json({ error: "Failed to fetch dealer stats" });
+    }
+  });
+
+  // Add new dealer (admin only)
+  app.post("/api/admin/dealers", requireAuth, requireAdmin, async (req, res) => {
+    try {
+      const { dealerId, dealerName, contactName, email, phone, territory, address, city, state, zipCode, password } = req.body;
+      
+      // Check if dealer ID or email already exists
+      const existing = await db.select()
+        .from(dealers)
+        .where(sql`${dealers.dealerId} = ${dealerId} OR ${dealers.email} = ${email}`);
+      
+      if (existing.length > 0) {
+        return res.status(400).json({ error: "Dealer ID or email already exists" });
+      }
+      
+      const passwordHash = await hashPassword(password);
+      
+      const [newDealer] = await db.insert(dealers).values({
+        dealerId,
+        dealerName,
+        contactName,
+        email,
+        phone,
+        territory: territory || null,
+        address: address || null,
+        city: city || null,
+        state: state || null,
+        zipCode: zipCode || null,
+        passwordHash,
+        isActive: true
+      }).returning();
+      
+      res.json(newDealer);
+    } catch (error) {
+      console.error("Error creating dealer:", error);
+      res.status(500).json({ error: "Failed to create dealer" });
+    }
+  });
+
+  // Update dealer (admin only)
+  app.patch("/api/admin/dealers/:id", requireAuth, requireAdmin, async (req, res) => {
+    try {
+      const dealerId = parseInt(req.params.id);
+      const updates = req.body;
+      
+      // Handle password update if provided
+      if (updates.password && updates.password.length > 0) {
+        updates.passwordHash = await hashPassword(updates.password);
+      }
+      delete updates.password;
+      
+      const [updatedDealer] = await db.update(dealers)
+        .set(updates)
+        .where(eq(dealers.id, dealerId))
+        .returning();
+      
+      if (!updatedDealer) {
+        return res.status(404).json({ error: "Dealer not found" });
+      }
+      
+      res.json(updatedDealer);
+    } catch (error) {
+      console.error("Error updating dealer:", error);
+      res.status(500).json({ error: "Failed to update dealer" });
+    }
+  });
+
+  // Toggle dealer status (admin only)
+  app.patch("/api/admin/dealers/:id/status", requireAuth, requireAdmin, async (req, res) => {
+    try {
+      const dealerId = parseInt(req.params.id);
+      const { isActive } = req.body;
+      
+      const [updatedDealer] = await db.update(dealers)
+        .set({ isActive })
+        .where(eq(dealers.id, dealerId))
+        .returning();
+      
+      if (!updatedDealer) {
+        return res.status(404).json({ error: "Dealer not found" });
+      }
+      
+      res.json(updatedDealer);
+    } catch (error) {
+      console.error("Error updating dealer status:", error);
+      res.status(500).json({ error: "Failed to update dealer status" });
+    }
+  });
+
 
 
   // Get all categories for dropdown
