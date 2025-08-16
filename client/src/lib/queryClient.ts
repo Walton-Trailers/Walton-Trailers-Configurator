@@ -18,15 +18,34 @@ export async function apiRequest(
   const { method = "GET", body, headers = {} } = options || {};
   
   // Check for admin or dealer session
+  // Determine which session to use based on the URL
+  const isAdminRoute = url.includes('/admin/');
+  const isDealerRoute = url.includes('/dealer/');
+  
   const adminSession = localStorage.getItem("admin_session");
   const dealerSession = localStorage.getItem("dealer_session");
+  
+  
+  // Use appropriate session based on route
+  let authHeader = {};
+  if (isDealerRoute && dealerSession) {
+    authHeader = { "Authorization": `Bearer ${dealerSession}` };
+  } else if (isAdminRoute && adminSession) {
+    authHeader = { "Authorization": `Bearer ${adminSession}` };
+  } else if (dealerSession && !isAdminRoute) {
+    // Default to dealer session if available and not an admin route
+    authHeader = { "Authorization": `Bearer ${dealerSession}` };
+  } else if (adminSession && !isDealerRoute) {
+    // Default to admin session if available and not a dealer route
+    authHeader = { "Authorization": `Bearer ${adminSession}` };
+  }
   
   const requestHeaders = {
     ...headers,
     ...(body ? { "Content-Type": "application/json" } : {}),
-    ...(adminSession ? { "Authorization": `Bearer ${adminSession}` } : {}),
-    ...(dealerSession ? { "Authorization": `Bearer ${dealerSession}` } : {}),
+    ...authHeader,
   };
+  
 
   const res = await fetch(url, {
     method,
@@ -49,15 +68,29 @@ export const getQueryFn: <T>(options: {
   ({ on401: unauthorizedBehavior }) =>
   async ({ queryKey }) => {
     // Check for admin or dealer session
+    const url = queryKey.join("/") as string;
+    const isAdminRoute = url.includes('/admin/');
+    const isDealerRoute = url.includes('/dealer/');
+    
     const adminSession = localStorage.getItem("admin_session");
     const dealerSession = localStorage.getItem("dealer_session");
     
+    
     const headers: Record<string, string> = {};
-    if (adminSession) {
-      headers["Authorization"] = `Bearer ${adminSession}`;
-    } else if (dealerSession) {
+    
+    // Use appropriate session based on route
+    if (isDealerRoute && dealerSession) {
       headers["Authorization"] = `Bearer ${dealerSession}`;
+    } else if (isAdminRoute && adminSession) {
+      headers["Authorization"] = `Bearer ${adminSession}`;
+    } else if (dealerSession && !isAdminRoute) {
+      // Default to dealer session if available and not an admin route
+      headers["Authorization"] = `Bearer ${dealerSession}`;
+    } else if (adminSession && !isDealerRoute) {
+      // Default to admin session if available and not a dealer route
+      headers["Authorization"] = `Bearer ${adminSession}`;
     }
+    
     
     const res = await fetch(queryKey.join("/") as string, {
       credentials: "include",
