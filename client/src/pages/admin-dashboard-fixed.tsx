@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { useAdminAuth } from "@/hooks/useAdminAuth";
 import { useLocation, Link } from "wouter";
 import { apiRequest } from "@/lib/queryClient";
-import { LogOut, Users, Settings, Plus, DollarSign, Edit, Save, X } from "lucide-react";
+import { LogOut, Users, Settings, Plus, DollarSign, Edit, Save, X, Plug, Key, Webhook, Mail } from "lucide-react";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -258,6 +258,7 @@ export default function AdminDashboard() {
           <TabsList>
             <TabsTrigger value="products">Product Management</TabsTrigger>
             {isAdmin && <TabsTrigger value="users">User Management</TabsTrigger>}
+            {isAdmin && <TabsTrigger value="integrations">Integrations</TabsTrigger>}
           </TabsList>
 
           <TabsContent value="products" className="space-y-6">
@@ -575,6 +576,162 @@ export default function AdminDashboard() {
                   )}
                 </CardContent>
               </Card>
+            </TabsContent>
+          )}
+
+          {isAdmin && (
+            <TabsContent value="integrations" className="space-y-6">
+              <div className="mb-6">
+                <h3 className="text-lg font-medium">Integrations</h3>
+                <p className="text-sm text-gray-600">Manage API connections and third-party services</p>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {/* API Keys Section */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center">
+                      <Key className="w-5 h-5 mr-2" />
+                      API Keys
+                    </CardTitle>
+                    <CardDescription>
+                      Manage API keys for external services
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-4">
+                      <div className="border rounded-lg p-4">
+                        <div className="flex justify-between items-start mb-2">
+                          <div>
+                            <h4 className="font-medium">Google Maps API</h4>
+                            <p className="text-sm text-gray-600">For dealer location services</p>
+                          </div>
+                          <Badge variant="outline">Not configured</Badge>
+                        </div>
+                        <Button size="sm" variant="outline">Configure</Button>
+                      </div>
+                      <div className="border rounded-lg p-4">
+                        <div className="flex justify-between items-start mb-2">
+                          <div>
+                            <h4 className="font-medium">SendGrid API</h4>
+                            <p className="text-sm text-gray-600">For email notifications</p>
+                          </div>
+                          <Badge variant="outline">Not configured</Badge>
+                        </div>
+                        <Button size="sm" variant="outline">Configure</Button>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Webhooks Section */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center">
+                      <Webhook className="w-5 h-5 mr-2" />
+                      Webhooks
+                    </CardTitle>
+                    <CardDescription>
+                      Configure webhook endpoints for events
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-4">
+                      <div className="border rounded-lg p-4">
+                        <div className="flex justify-between items-start mb-2">
+                          <div>
+                            <h4 className="font-medium">New Configuration</h4>
+                            <p className="text-sm text-gray-600">Trigger when configuration is submitted</p>
+                          </div>
+                          <Badge variant="outline">Inactive</Badge>
+                        </div>
+                        <Button size="sm" variant="outline">Setup</Button>
+                      </div>
+                      <div className="border rounded-lg p-4">
+                        <div className="flex justify-between items-start mb-2">
+                          <div>
+                            <h4 className="font-medium">Price Update</h4>
+                            <p className="text-sm text-gray-600">Notify when prices are changed</p>
+                          </div>
+                          <Badge variant="outline">Inactive</Badge>
+                        </div>
+                        <Button size="sm" variant="outline">Setup</Button>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Email Settings */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center">
+                      <Mail className="w-5 h-5 mr-2" />
+                      Email Settings
+                    </CardTitle>
+                    <CardDescription>
+                      Configure email service and templates
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-4">
+                      <div className="space-y-2">
+                        <Label>From Email</Label>
+                        <Input 
+                          placeholder="noreply@waltontrailers.com"
+                          defaultValue="admin@waltontrailers.com"
+                          disabled
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label>Reply-To Email</Label>
+                        <Input 
+                          placeholder="sales@waltontrailers.com"
+                          defaultValue="sales@waltontrailers.com"
+                          disabled
+                        />
+                      </div>
+                      <Button size="sm">Update Settings</Button>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* CRM Integration */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center">
+                      <Plug className="w-5 h-5 mr-2" />
+                      CRM Integration
+                    </CardTitle>
+                    <CardDescription>
+                      Connect with customer management systems
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-4">
+                      <div className="border rounded-lg p-4">
+                        <div className="flex justify-between items-start mb-2">
+                          <div>
+                            <h4 className="font-medium">Salesforce</h4>
+                            <p className="text-sm text-gray-600">Sync leads and configurations</p>
+                          </div>
+                          <Badge variant="outline">Not connected</Badge>
+                        </div>
+                        <Button size="sm" variant="outline">Connect</Button>
+                      </div>
+                      <div className="border rounded-lg p-4">
+                        <div className="flex justify-between items-start mb-2">
+                          <div>
+                            <h4 className="font-medium">HubSpot</h4>
+                            <p className="text-sm text-gray-600">Import contacts and deals</p>
+                          </div>
+                          <Badge variant="outline">Not connected</Badge>
+                        </div>
+                        <Button size="sm" variant="outline">Connect</Button>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
             </TabsContent>
           )}
         </Tabs>
