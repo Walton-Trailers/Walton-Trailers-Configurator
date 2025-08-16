@@ -210,6 +210,27 @@ export default function AdminDashboard() {
         </div>
 
         <div className="space-y-6">
+          <div className="space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-1 gap-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center">
+                    <DollarSign className="w-5 h-5 mr-2" />
+                    Product Management
+                  </CardTitle>
+                  <CardDescription>
+                    Update trailer and option details
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <Link href="/admin/pricing">
+                    <Button>Manage Products</Button>
+                  </Link>
+                </CardContent>
+              </Card>
+            </div>
+          </div>
+
           {isAdmin && (
             <div className="space-y-6">
               <div className="flex justify-between items-center">
@@ -386,27 +407,6 @@ export default function AdminDashboard() {
               </Card>
             </div>
           )}
-
-          <div className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-1 gap-6">
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center">
-                    <DollarSign className="w-5 h-5 mr-2" />
-                    Product Management
-                  </CardTitle>
-                  <CardDescription>
-                    Update trailer and option details
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <Link href="/admin/pricing">
-                    <Button>Manage Products</Button>
-                  </Link>
-                </CardContent>
-              </Card>
-            </div>
-          </div>
         </div>
       </main>
     </div>
