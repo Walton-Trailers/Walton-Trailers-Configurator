@@ -1006,43 +1006,6 @@ export default function AdminDashboard() {
                     </div>
                   </CardContent>
                 </Card>
-
-                {/* CRM Integration */}
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center">
-                      <Plug className="w-5 h-5 mr-2" />
-                      CRM Integration
-                    </CardTitle>
-                    <CardDescription>
-                      Connect with customer management systems
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-4">
-                      <div className="border rounded-lg p-4">
-                        <div className="flex justify-between items-start mb-2">
-                          <div>
-                            <h4 className="font-medium">Salesforce</h4>
-                            <p className="text-sm text-gray-600">Sync leads and configurations</p>
-                          </div>
-                          <Badge variant="outline">Not connected</Badge>
-                        </div>
-                        <Button size="sm" variant="outline">Connect</Button>
-                      </div>
-                      <div className="border rounded-lg p-4">
-                        <div className="flex justify-between items-start mb-2">
-                          <div>
-                            <h4 className="font-medium">HubSpot</h4>
-                            <p className="text-sm text-gray-600">Import contacts and deals</p>
-                          </div>
-                          <Badge variant="outline">Not connected</Badge>
-                        </div>
-                        <Button size="sm" variant="outline">Connect</Button>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
               </div>
             </TabsContent>
           )}
