@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { useAdminAuth } from "@/hooks/useAdminAuth";
 import { useLocation, Link } from "wouter";
 import { apiRequest } from "@/lib/queryClient";
-import { LogOut, Users, Settings, Plus, DollarSign, Edit, Save, X, Plug, Key, Mail, Database, CheckCircle, AlertCircle } from "lucide-react";
+import { LogOut, Users, Settings, Plus, DollarSign, Edit, Save, X, Plug, Key, Mail, Database, CheckCircle, AlertCircle, Home } from "lucide-react";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -385,6 +385,12 @@ export default function AdminDashboard() {
                   {user.role}
                 </Badge>
               </div>
+              <Link href="/">
+                <Button variant="ghost" size="sm" title="View Site">
+                  <Home className="w-4 h-4 mr-2" />
+                  View Site
+                </Button>
+              </Link>
               <Link href="/admin/account">
                 <Button variant="ghost" size="sm" title="Account Settings">
                   <Users className="w-4 h-4" />
