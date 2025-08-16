@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { useAdminAuth } from "@/hooks/useAdminAuth";
 import { useLocation, Link } from "wouter";
 import { apiRequest } from "@/lib/queryClient";
-import { LogOut, Users, Settings, Plus, DollarSign, Edit, Save, X, Plug, Key, Webhook, Mail, Database, CheckCircle, AlertCircle } from "lucide-react";
+import { LogOut, Users, Settings, Plus, DollarSign, Edit, Save, X, Plug, Key, Mail, Database, CheckCircle, AlertCircle } from "lucide-react";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -931,43 +931,6 @@ export default function AdminDashboard() {
                             </Button>
                           </div>
                         </div>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-
-                {/* Webhooks Section */}
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center">
-                      <Webhook className="w-5 h-5 mr-2" />
-                      Webhooks
-                    </CardTitle>
-                    <CardDescription>
-                      Configure webhook endpoints for events
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-4">
-                      <div className="border rounded-lg p-4">
-                        <div className="flex justify-between items-start mb-2">
-                          <div>
-                            <h4 className="font-medium">New Configuration</h4>
-                            <p className="text-sm text-gray-600">Trigger when configuration is submitted</p>
-                          </div>
-                          <Badge variant="outline">Inactive</Badge>
-                        </div>
-                        <Button size="sm" variant="outline">Setup</Button>
-                      </div>
-                      <div className="border rounded-lg p-4">
-                        <div className="flex justify-between items-start mb-2">
-                          <div>
-                            <h4 className="font-medium">Price Update</h4>
-                            <p className="text-sm text-gray-600">Notify when prices are changed</p>
-                          </div>
-                          <Badge variant="outline">Inactive</Badge>
-                        </div>
-                        <Button size="sm" variant="outline">Setup</Button>
                       </div>
                     </div>
                   </CardContent>
