@@ -539,7 +539,59 @@ export async function registerRoutes(app: Express): Promise<Express> {
     }
   });
 
-  // Serve model images
+  // Option image upload routes
+  app.post("/api/options/upload-url", requireAuth, async (req, res) => {
+    try {
+      const objectStorageService = new ObjectStorageService();
+      const uploadURL = await objectStorageService.getObjectEntityUploadURL();
+      res.json({ uploadURL });
+    } catch (error) {
+      console.error("Error getting upload URL for option:", error);
+      res.status(500).json({ error: "Failed to get upload URL" });
+    }
+  });
+
+  app.patch("/api/options/:id/image", requireAuth, async (req, res) => {
+    try {
+      const optionId = parseInt(req.params.id);
+      const { imageUrl } = req.body;
+
+      console.log(`Updating image for option ${optionId}, new URL: ${imageUrl}`);
+
+      if (!imageUrl) {
+        return res.status(400).json({ error: "imageUrl is required" });
+      }
+
+      const objectStorageService = new ObjectStorageService();
+      const objectPath = await objectStorageService.trySetObjectEntityAclPolicy(
+        imageUrl,
+        {
+          owner: "admin",
+          visibility: "public", // Option images should be public for customers to see
+        }
+      );
+
+      console.log(`Object path after ACL policy: ${objectPath}`);
+
+      // Update the option with the new image URL
+      const updatedOption = await storage.updateOption(optionId, {
+        imageUrl: objectPath,
+      });
+
+      console.log(`Updated option result:`, updatedOption);
+
+      res.json({
+        success: true,
+        imageUrl: objectPath,
+        option: updatedOption,
+      });
+    } catch (error) {
+      console.error("Error updating option image:", error);
+      res.status(500).json({ error: "Failed to update option image" });
+    }
+  });
+
+  // Serve model and option images
   app.get("/objects/:objectPath(*)", async (req, res) => {
     const objectStorageService = new ObjectStorageService();
     try {

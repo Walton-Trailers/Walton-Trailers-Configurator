@@ -232,6 +232,56 @@ export default function FastPricing() {
     }
   };
 
+  // Option image upload handlers
+  const handleGetOptionUploadParameters = async () => {
+    const response = await apiRequest("/api/options/upload-url", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${sessionId}`,
+      },
+    });
+    return {
+      method: "PUT" as const,
+      url: response.uploadURL,
+    };
+  };
+
+  const handleOptionImageUploadComplete = async (optionId: number, result: any) => {
+    try {
+      const uploadedFile = result.successful?.[0];
+      if (!uploadedFile) {
+        throw new Error("No file uploaded");
+      }
+
+      const imageUrl = uploadedFile.uploadURL;
+      
+      // Update the option with the new image URL
+      await apiRequest(`/api/options/${optionId}/image`, {
+        method: "PATCH",
+        body: { imageUrl },
+        headers: {
+          Authorization: `Bearer ${sessionId}`,
+        },
+      });
+
+      // Refresh the options data
+      queryClient.invalidateQueries({ queryKey: ['admin', 'options'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/options/all'] });
+      
+      toast({
+        title: "Success",
+        description: "Option image uploaded successfully",
+      });
+    } catch (error) {
+      console.error("Error uploading option image:", error);
+      toast({
+        title: "Error",
+        description: "Failed to upload option image",
+        variant: "destructive",
+      });
+    }
+  };
+
   // Handle authentication errors
   if (modelsError || optionsError) {
     return (
@@ -537,6 +587,7 @@ export default function FastPricing() {
                     <TableHead>Model</TableHead>
                     <TableHead>Category</TableHead>
                     <TableHead>Price</TableHead>
+                    <TableHead>Image</TableHead>
                     <TableHead>Actions</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -628,6 +679,33 @@ export default function FastPricing() {
                         ) : (
                           `$${option.price?.toLocaleString()}`
                         )}
+                      </TableCell>
+                      <TableCell>
+                        <ObjectUploader
+                          onGetUploadParameters={handleGetOptionUploadParameters}
+                          onComplete={(result) => handleOptionImageUploadComplete(option.id, result)}
+                          buttonClassName="p-0"
+                          currentImageUrl={option.imageUrl}
+                          modelName={option.name}
+                        >
+                          {option.imageUrl ? (
+                            <div className="w-12 h-12 rounded-md overflow-hidden border border-gray-200 hover:border-gray-400 transition-colors cursor-pointer">
+                              <img 
+                                src={option.imageUrl} 
+                                alt={option.name}
+                                className="w-full h-full object-cover"
+                                onError={(e: any) => {
+                                  e.target.onerror = null;
+                                  e.target.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="48" height="48" fill="none"%3E%3Crect width="48" height="48" fill="%23f3f4f6"/%3E%3Cpath stroke="%239ca3af" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M24 16v16m-8-8h16"/%3E%3C/svg%3E';
+                                }}
+                              />
+                            </div>
+                          ) : (
+                            <div className="w-12 h-12 rounded-md border-2 border-dashed border-gray-300 hover:border-gray-400 transition-colors cursor-pointer flex items-center justify-center bg-gray-50">
+                              <Upload className="w-5 h-5 text-gray-400" />
+                            </div>
+                          )}
+                        </ObjectUploader>
                       </TableCell>
                       <TableCell>
                         {editingOption?.id === option.id ? (

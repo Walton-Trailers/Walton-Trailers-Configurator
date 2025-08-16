@@ -49,6 +49,7 @@ export interface TrailerOptionResponse {
   isRequired?: boolean;
   isMultiSelect: boolean;
   isArchived?: boolean;
+  imageUrl?: string;
   options?: any[];
 }
 
@@ -726,7 +727,7 @@ export class DatabaseStorage implements IStorage {
   async getAllOptions(): Promise<TrailerOptionResponse[]> {
     try {
       const result = await db.execute(sql`
-        SELECT id, model_id, category, name, price, is_multi_select, is_archived
+        SELECT id, model_id, category, name, price, is_multi_select, is_archived, image_url
         FROM trailer_options
         ORDER BY category, name
       `);
@@ -740,6 +741,7 @@ export class DatabaseStorage implements IStorage {
         isRequired: false,
         isMultiSelect: option.is_multi_select || false,
         isArchived: option.is_archived || false,
+        imageUrl: option.image_url,
         options: [],
       }));
     } catch (error) {
@@ -858,6 +860,7 @@ export class DatabaseStorage implements IStorage {
       if (updates.category !== undefined) updateData.category = updates.category;
       if (updates.modelId !== undefined) updateData.model_id = updates.modelId;
       if (updates.isArchived !== undefined) updateData.is_archived = updates.isArchived;
+      if (updates.imageUrl !== undefined) updateData.image_url = updates.imageUrl;
       
       if (Object.keys(updateData).length > 0) {
         // Use individual SQL statements for each field to avoid parameter issues
@@ -896,11 +899,18 @@ export class DatabaseStorage implements IStorage {
             WHERE id = ${id}
           `);
         }
+        if (updates.imageUrl !== undefined) {
+          await db.execute(sql`
+            UPDATE trailer_options 
+            SET image_url = ${updates.imageUrl}
+            WHERE id = ${id}
+          `);
+        }
       }
       
       // Get the updated record
       result = await db.execute(sql`
-        SELECT id, model_id, category, name, price, is_multi_select, is_archived
+        SELECT id, model_id, category, name, price, is_multi_select, is_archived, image_url
         FROM trailer_options WHERE id = ${id}
       `);
       
@@ -913,6 +923,7 @@ export class DatabaseStorage implements IStorage {
         price: updatedOption.price,
         isMultiSelect: updatedOption.is_multi_select || false,
         isArchived: updatedOption.is_archived || false,
+        imageUrl: updatedOption.image_url,
       };
     } catch (error) {
       console.error('Error updating option:', error);
