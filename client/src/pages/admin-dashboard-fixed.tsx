@@ -420,128 +420,159 @@ export default function AdminDashboard() {
                   {usersLoading ? (
                     <div className="p-6 text-center">Loading users...</div>
                   ) : (
-                    <div className="divide-y">
-                      {(users as AdminUser[])?.map((adminUser: AdminUser) => (
-                        <div key={adminUser.id} className="p-6 flex items-center justify-between">
-                          <div className="flex items-center space-x-4">
-                            <div className="space-y-2">
-                              {editingUser?.id === adminUser.id ? (
-                                <>
+                    <div className="overflow-x-auto">
+                      <table className="w-full">
+                        <thead className="border-b bg-gray-50">
+                          <tr>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Username</th>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Role</th>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Created</th>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                          </tr>
+                        </thead>
+                        <tbody className="bg-white divide-y divide-gray-200">
+                          {(users as AdminUser[])?.map((adminUser: AdminUser) => (
+                            <tr key={adminUser.id} className="hover:bg-gray-50">
+                              <td className="px-6 py-4 whitespace-nowrap">
+                                {editingUser?.id === adminUser.id ? (
                                   <div className="flex gap-2">
                                     <Input
                                       placeholder="First Name"
                                       value={editData.firstName ?? adminUser.firstName ?? ""}
                                       onChange={(e) => setEditData({ ...editData, firstName: e.target.value })}
-                                      className="w-32"
+                                      className="w-24 h-8 text-sm"
                                     />
                                     <Input
                                       placeholder="Last Name"
                                       value={editData.lastName ?? adminUser.lastName ?? ""}
                                       onChange={(e) => setEditData({ ...editData, lastName: e.target.value })}
-                                      className="w-32"
+                                      className="w-24 h-8 text-sm"
                                     />
                                   </div>
+                                ) : (
+                                  <div className="text-sm font-medium text-gray-900">
+                                    {adminUser.firstName && adminUser.lastName
+                                      ? `${adminUser.firstName} ${adminUser.lastName}`
+                                      : "-"
+                                    }
+                                  </div>
+                                )}
+                              </td>
+                              <td className="px-6 py-4 whitespace-nowrap">
+                                {editingUser?.id === adminUser.id ? (
                                   <Input
                                     placeholder="Username"
                                     value={editData.username ?? adminUser.username}
                                     onChange={(e) => setEditData({ ...editData, username: e.target.value })}
-                                    className="w-64"
+                                    className="w-32 h-8 text-sm"
                                   />
+                                ) : (
+                                  <div className="text-sm text-gray-900">{adminUser.username}</div>
+                                )}
+                              </td>
+                              <td className="px-6 py-4 whitespace-nowrap">
+                                {editingUser?.id === adminUser.id ? (
                                   <Input
                                     placeholder="Email"
                                     type="email"
                                     value={editData.email ?? adminUser.email}
                                     onChange={(e) => setEditData({ ...editData, email: e.target.value })}
-                                    className="w-64"
+                                    className="w-48 h-8 text-sm"
                                   />
-                                </>
-                              ) : (
-                                <>
-                                  <h4 className="font-medium">
-                                    {adminUser.firstName && adminUser.lastName
-                                      ? `${adminUser.firstName} ${adminUser.lastName}`
-                                      : adminUser.username
-                                    }
-                                  </h4>
-                                  <p className="text-sm text-gray-600">{adminUser.email}</p>
-                                  <p className="text-xs text-gray-500">
-                                    Created: {new Date(adminUser.createdAt).toLocaleDateString()}
-                                  </p>
-                                </>
-                              )}
-                            </div>
-                          </div>
-                          
-                          <div className="flex items-center space-x-2">
-                            {editingUser?.id === adminUser.id ? (
-                              <>
-                                <Select
-                                  value={editData.role ?? adminUser.role}
-                                  onValueChange={(value) => setEditData({ ...editData, role: value })}
-                                >
-                                  <SelectTrigger className="w-32">
-                                    <SelectValue />
-                                  </SelectTrigger>
-                                  <SelectContent>
-                                    <SelectItem value="standard">Standard</SelectItem>
-                                    <SelectItem value="admin">Admin</SelectItem>
-                                  </SelectContent>
-                                </Select>
-                                <Button
-                                  size="sm"
-                                  onClick={handleUpdateUser}
-                                  disabled={updateUserMutation.isPending}
-                                >
-                                  <Save className="w-4 h-4" />
-                                </Button>
-                                <Button
-                                  size="sm"
-                                  variant="outline"
-                                  onClick={() => {
-                                    setEditingUser(null);
-                                    setEditData({});
-                                  }}
-                                >
-                                  <X className="w-4 h-4" />
-                                </Button>
-                              </>
-                            ) : (
-                              <>
-                                <Badge variant={adminUser.role === "admin" ? "default" : "secondary"}>
-                                  {adminUser.role}
-                                </Badge>
+                                ) : (
+                                  <div className="text-sm text-gray-900">{adminUser.email}</div>
+                                )}
+                              </td>
+                              <td className="px-6 py-4 whitespace-nowrap">
+                                {editingUser?.id === adminUser.id ? (
+                                  <Select
+                                    value={editData.role ?? adminUser.role}
+                                    onValueChange={(value) => setEditData({ ...editData, role: value })}
+                                  >
+                                    <SelectTrigger className="w-28 h-8 text-sm">
+                                      <SelectValue />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                      <SelectItem value="standard">Standard</SelectItem>
+                                      <SelectItem value="admin">Admin</SelectItem>
+                                    </SelectContent>
+                                  </Select>
+                                ) : (
+                                  <Badge variant={adminUser.role === "admin" ? "default" : "secondary"}>
+                                    {adminUser.role}
+                                  </Badge>
+                                )}
+                              </td>
+                              <td className="px-6 py-4 whitespace-nowrap">
                                 <Badge variant={adminUser.isActive ? "outline" : "destructive"}>
                                   {adminUser.isActive ? "Active" : "Inactive"}
                                 </Badge>
-                                
-                                {adminUser.id !== user.id && (
-                                  <Button
-                                    variant="outline"
-                                    size="sm"
-                                    onClick={() => {
-                                      setEditingUser(adminUser);
-                                      setEditData({});
-                                    }}
-                                  >
-                                    <Edit className="w-4 h-4" />
-                                  </Button>
-                                )}
-                                
-                                {adminUser.isActive && adminUser.id !== user.id && (
-                                  <Button
-                                    variant="outline"
-                                    size="sm"
-                                    onClick={() => handleDeactivateUser(adminUser.id)}
-                                    disabled={deactivateUserMutation.isPending}
-                                  >
-                                    Deactivate
-                                  </Button>
-                                )}
-                              </>
-                            )}
-                          </div>
-                        </div>
-                      ))}
+                              </td>
+                              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                {new Date(adminUser.createdAt).toLocaleDateString()}
+                              </td>
+                              <td className="px-6 py-4 whitespace-nowrap">
+                                <div className="flex items-center space-x-2">
+                                  {editingUser?.id === adminUser.id ? (
+                                    <>
+                                      <Button
+                                        size="sm"
+                                        onClick={handleUpdateUser}
+                                        disabled={updateUserMutation.isPending}
+                                        className="h-8"
+                                      >
+                                        <Save className="w-4 h-4" />
+                                      </Button>
+                                      <Button
+                                        size="sm"
+                                        variant="outline"
+                                        onClick={() => {
+                                          setEditingUser(null);
+                                          setEditData({});
+                                        }}
+                                        className="h-8"
+                                      >
+                                        <X className="w-4 h-4" />
+                                      </Button>
+                                    </>
+                                  ) : (
+                                    <>
+                                      {adminUser.id !== user.id && (
+                                        <Button
+                                          variant="outline"
+                                          size="sm"
+                                          onClick={() => {
+                                            setEditingUser(adminUser);
+                                            setEditData({});
+                                          }}
+                                          className="h-8"
+                                        >
+                                          <Edit className="w-4 h-4" />
+                                        </Button>
+                                      )}
+                                      
+                                      {adminUser.isActive && adminUser.id !== user.id && (
+                                        <Button
+                                          variant="outline"
+                                          size="sm"
+                                          onClick={() => handleDeactivateUser(adminUser.id)}
+                                          disabled={deactivateUserMutation.isPending}
+                                          className="h-8"
+                                        >
+                                          Deactivate
+                                        </Button>
+                                      )}
+                                    </>
+                                  )}
+                                </div>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
                     </div>
                   )}
                 </CardContent>
