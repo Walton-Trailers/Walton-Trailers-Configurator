@@ -1,7 +1,7 @@
 import type { Express, Request, Response, NextFunction } from "express";
 import { storage } from "./storage";
 import { db } from "./db";
-import { sql } from "drizzle-orm";
+import { sql, eq } from "drizzle-orm";
 import { 
   authenticateUser, 
   createSession, 
@@ -10,7 +10,7 @@ import {
   hashPassword,
   isAdmin
 } from "./auth";
-import { insertAdminUserSchema, type AdminUser } from "@shared/schema";
+import { insertAdminUserSchema, type AdminUser, trailerCategories, trailerModels } from "@shared/schema";
 import { z } from "zod";
 import {
   ObjectStorageService,
@@ -75,6 +75,81 @@ export async function registerRoutes(app: Express): Promise<Express> {
         error: errorMessage,
         timestamp: new Date().toISOString()
       });
+    }
+  });
+
+  // Create a new category
+  app.post("/api/categories", requireAuth, async (req, res) => {
+    try {
+      const { slug, name, description, imageUrl, startingPrice, orderIndex } = req.body;
+      const result = await db.insert(trailerCategories).values({
+        slug,
+        name,
+        description,
+        imageUrl,
+        startingPrice,
+        orderIndex: orderIndex || 0
+      }).returning();
+      res.json(result[0]);
+    } catch (error) {
+      console.error("Error creating category:", error);
+      res.status(500).json({ message: "Failed to create category" });
+    }
+  });
+
+  // Update a category
+  app.patch("/api/categories/:id", requireAuth, async (req, res) => {
+    try {
+      const categoryId = parseInt(req.params.id);
+      const { slug, name, description, imageUrl, startingPrice, orderIndex } = req.body;
+      
+      const updateData: any = {};
+      if (slug !== undefined) updateData.slug = slug;
+      if (name !== undefined) updateData.name = name;
+      if (description !== undefined) updateData.description = description;
+      if (imageUrl !== undefined) updateData.imageUrl = imageUrl;
+      if (startingPrice !== undefined) updateData.startingPrice = startingPrice;
+      if (orderIndex !== undefined) updateData.orderIndex = orderIndex;
+      
+      const result = await db.update(trailerCategories)
+        .set(updateData)
+        .where(eq(trailerCategories.id, categoryId))
+        .returning();
+      
+      if (result.length === 0) {
+        return res.status(404).json({ message: "Category not found" });
+      }
+      
+      res.json(result[0]);
+    } catch (error) {
+      console.error("Error updating category:", error);
+      res.status(500).json({ message: "Failed to update category" });
+    }
+  });
+
+  // Delete a category
+  app.delete("/api/categories/:id", requireAuth, async (req, res) => {
+    try {
+      const categoryId = parseInt(req.params.id);
+      
+      // Check if category has any models
+      const models = await db.select().from(trailerModels).where(eq(trailerModels.categoryId, categoryId));
+      if (models.length > 0) {
+        return res.status(400).json({ message: "Cannot delete category with existing models" });
+      }
+      
+      const result = await db.delete(trailerCategories)
+        .where(eq(trailerCategories.id, categoryId))
+        .returning();
+      
+      if (result.length === 0) {
+        return res.status(404).json({ message: "Category not found" });
+      }
+      
+      res.json({ message: "Category deleted successfully" });
+    } catch (error) {
+      console.error("Error deleting category:", error);
+      res.status(500).json({ message: "Failed to delete category" });
     }
   });
 

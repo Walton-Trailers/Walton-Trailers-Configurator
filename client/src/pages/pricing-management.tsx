@@ -42,13 +42,25 @@ interface TrailerOption {
   isArchived?: boolean;
 }
 
+interface TrailerCategory {
+  id: number;
+  slug: string;
+  name: string;
+  description: string;
+  imageUrl: string;
+  startingPrice: number;
+  orderIndex?: number;
+}
+
 export default function PricingManagement() {
   const { user, isLoading: authLoading } = useAdminAuth();
   const [editingModel, setEditingModel] = useState<TrailerModel | null>(null);
   const [editingOption, setEditingOption] = useState<TrailerOption | null>(null);
+  const [editingCategory, setEditingCategory] = useState<TrailerCategory | null>(null);
   const [editData, setEditData] = useState<{ [key: number]: any }>({});
   const [searchQuery, setSearchQuery] = useState("");
   const [showAddOption, setShowAddOption] = useState(false);
+  const [showAddCategory, setShowAddCategory] = useState(false);
   const [showArchivedOptions, setShowArchivedOptions] = useState(false);
   const [showArchivedModels, setShowArchivedModels] = useState(false);
   const [newOptionData, setNewOptionData] = useState({
@@ -57,6 +69,14 @@ export default function PricingManagement() {
     category: "",
     modelId: "",
     relatedModels: [] as string[]
+  });
+  const [newCategoryData, setNewCategoryData] = useState({
+    slug: "",
+    name: "",
+    description: "",
+    imageUrl: "",
+    startingPrice: 0,
+    orderIndex: 0
   });
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -92,8 +112,8 @@ export default function PricingManagement() {
       }),
   });
 
-  // Fetch all trailer categories for the dropdown
-  const { data: trailerCategories } = useQuery({
+  // Fetch all trailer categories for the dropdown and management
+  const { data: trailerCategories, isLoading: categoriesLoading } = useQuery({
     queryKey: ["/api/categories"],
     queryFn: () => apiRequest("/api/categories"),
   });
@@ -268,6 +288,93 @@ export default function PricingManagement() {
     },
   });
 
+  // Category mutations
+  const updateCategoryMutation = useMutation({
+    mutationFn: (data: { id: number; slug?: string; name?: string; description?: string; imageUrl?: string; startingPrice?: number; orderIndex?: number }) =>
+      apiRequest(`/api/categories/${data.id}`, {
+        method: "PATCH",
+        body: { 
+          slug: data.slug,
+          name: data.name,
+          description: data.description,
+          imageUrl: data.imageUrl,
+          startingPrice: data.startingPrice,
+          orderIndex: data.orderIndex
+        },
+        headers: sessionId ? { Authorization: `Bearer ${sessionId}` } : {},
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/categories"] });
+      setEditingCategory(null);
+      setEditData({});
+      toast({
+        title: "Success",
+        description: "Category updated successfully",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to update category",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const createCategoryMutation = useMutation({
+    mutationFn: (data: typeof newCategoryData) =>
+      apiRequest("/api/categories", {
+        method: "POST",
+        body: data,
+        headers: sessionId ? { Authorization: `Bearer ${sessionId}` } : {},
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/categories"] });
+      setShowAddCategory(false);
+      setNewCategoryData({
+        slug: "",
+        name: "",
+        description: "",
+        imageUrl: "",
+        startingPrice: 0,
+        orderIndex: 0
+      });
+      toast({
+        title: "Success",
+        description: "Category created successfully",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to create category",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const deleteCategoryMutation = useMutation({
+    mutationFn: (id: number) =>
+      apiRequest(`/api/categories/${id}`, {
+        method: "DELETE",
+        headers: sessionId ? { Authorization: `Bearer ${sessionId}` } : {},
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/categories"] });
+      toast({
+        title: "Success",
+        description: "Category deleted successfully",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to delete category",
+        variant: "destructive",
+      });
+    },
+  });
+
   const handleModelPriceUpdate = (model: TrailerModel) => {
     const data = editData[model.id] || {};
     updateModelMutation.mutate({
@@ -380,9 +487,13 @@ export default function PricingManagement() {
           </div>
         </div>
 
-        <Tabs defaultValue="models" className="space-y-6">
+        <Tabs defaultValue="categories" className="space-y-6">
           <div className="flex items-center justify-between mb-6">
-            <TabsList className="grid w-full max-w-[400px] grid-cols-2">
+            <TabsList className="grid w-full max-w-[600px] grid-cols-3">
+              <TabsTrigger value="categories" className="flex items-center gap-2">
+                <Archive className="w-4 h-4" />
+                Categories
+              </TabsTrigger>
               <TabsTrigger value="models" className="flex items-center gap-2">
                 <DollarSign className="w-4 h-4" />
                 Trailer Models
@@ -402,6 +513,264 @@ export default function PricingManagement() {
               />
             </div>
           </div>
+
+          <TabsContent value="categories">
+            <Card>
+              <CardHeader>
+                <div className="flex justify-between items-center">
+                  <div>
+                    <CardTitle>Trailer Categories</CardTitle>
+                    <CardDescription>
+                      Manage trailer categories displayed on the frontend
+                    </CardDescription>
+                  </div>
+                  <Dialog open={showAddCategory} onOpenChange={setShowAddCategory}>
+                    <DialogTrigger asChild>
+                      <Button>
+                        <Plus className="w-4 h-4 mr-2" />
+                        Add Category
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent className="max-w-2xl">
+                      <DialogHeader>
+                        <DialogTitle>Add New Category</DialogTitle>
+                        <DialogDescription>
+                          Create a new trailer category
+                        </DialogDescription>
+                      </DialogHeader>
+                      <div className="grid gap-4 py-4">
+                        <div className="grid grid-cols-2 gap-4">
+                          <div className="space-y-2">
+                            <Label htmlFor="new-slug">Slug (URL)</Label>
+                            <Input
+                              id="new-slug"
+                              placeholder="e.g., dump-trailers"
+                              value={newCategoryData.slug}
+                              onChange={(e) => setNewCategoryData({ ...newCategoryData, slug: e.target.value })}
+                            />
+                          </div>
+                          <div className="space-y-2">
+                            <Label htmlFor="new-name">Name</Label>
+                            <Input
+                              id="new-name"
+                              placeholder="e.g., Dump Trailers"
+                              value={newCategoryData.name}
+                              onChange={(e) => setNewCategoryData({ ...newCategoryData, name: e.target.value })}
+                            />
+                          </div>
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="new-description">Description</Label>
+                          <Input
+                            id="new-description"
+                            placeholder="Category description"
+                            value={newCategoryData.description}
+                            onChange={(e) => setNewCategoryData({ ...newCategoryData, description: e.target.value })}
+                          />
+                        </div>
+                        <div className="grid grid-cols-2 gap-4">
+                          <div className="space-y-2">
+                            <Label htmlFor="new-imageUrl">Image URL</Label>
+                            <Input
+                              id="new-imageUrl"
+                              placeholder="https://..."
+                              value={newCategoryData.imageUrl}
+                              onChange={(e) => setNewCategoryData({ ...newCategoryData, imageUrl: e.target.value })}
+                            />
+                          </div>
+                          <div className="space-y-2">
+                            <Label htmlFor="new-startingPrice">Starting Price</Label>
+                            <Input
+                              id="new-startingPrice"
+                              type="number"
+                              placeholder="0"
+                              value={newCategoryData.startingPrice}
+                              onChange={(e) => setNewCategoryData({ ...newCategoryData, startingPrice: parseInt(e.target.value) || 0 })}
+                            />
+                          </div>
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="new-orderIndex">Order Index</Label>
+                          <Input
+                            id="new-orderIndex"
+                            type="number"
+                            placeholder="0"
+                            value={newCategoryData.orderIndex}
+                            onChange={(e) => setNewCategoryData({ ...newCategoryData, orderIndex: parseInt(e.target.value) || 0 })}
+                          />
+                        </div>
+                      </div>
+                      <DialogFooter>
+                        <Button variant="outline" onClick={() => setShowAddCategory(false)}>Cancel</Button>
+                        <Button onClick={() => createCategoryMutation.mutate(newCategoryData)}>Create Category</Button>
+                      </DialogFooter>
+                    </DialogContent>
+                  </Dialog>
+                </div>
+              </CardHeader>
+              <CardContent>
+                {categoriesLoading ? (
+                  <div className="text-center py-8">Loading categories...</div>
+                ) : (
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead className="w-[100px]">Order</TableHead>
+                        <TableHead>Slug</TableHead>
+                        <TableHead>Name</TableHead>
+                        <TableHead>Description</TableHead>
+                        <TableHead className="text-right">Starting Price</TableHead>
+                        <TableHead className="text-right">Actions</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {(trailerCategories as TrailerCategory[])?.map((category) => (
+                        <TableRow key={category.id}>
+                          <TableCell>
+                            {editingCategory?.id === category.id ? (
+                              <Input
+                                type="number"
+                                value={editData[category.id]?.orderIndex ?? category.orderIndex ?? 0}
+                                onChange={(e) => setEditData(prev => ({
+                                  ...prev,
+                                  [category.id]: { ...prev[category.id], orderIndex: parseInt(e.target.value) || 0 }
+                                }))}
+                                className="w-20"
+                              />
+                            ) : (
+                              category.orderIndex ?? 0
+                            )}
+                          </TableCell>
+                          <TableCell>
+                            {editingCategory?.id === category.id ? (
+                              <Input
+                                value={editData[category.id]?.slug ?? category.slug}
+                                onChange={(e) => setEditData(prev => ({
+                                  ...prev,
+                                  [category.id]: { ...prev[category.id], slug: e.target.value }
+                                }))}
+                                className="w-40"
+                              />
+                            ) : (
+                              category.slug
+                            )}
+                          </TableCell>
+                          <TableCell>
+                            {editingCategory?.id === category.id ? (
+                              <Input
+                                value={editData[category.id]?.name ?? category.name}
+                                onChange={(e) => setEditData(prev => ({
+                                  ...prev,
+                                  [category.id]: { ...prev[category.id], name: e.target.value }
+                                }))}
+                                className="w-48"
+                              />
+                            ) : (
+                              category.name
+                            )}
+                          </TableCell>
+                          <TableCell>
+                            {editingCategory?.id === category.id ? (
+                              <Input
+                                value={editData[category.id]?.description ?? category.description}
+                                onChange={(e) => setEditData(prev => ({
+                                  ...prev,
+                                  [category.id]: { ...prev[category.id], description: e.target.value }
+                                }))}
+                                className="w-full"
+                              />
+                            ) : (
+                              <span className="text-sm text-gray-600">{category.description}</span>
+                            )}
+                          </TableCell>
+                          <TableCell className="text-right">
+                            {editingCategory?.id === category.id ? (
+                              <Input
+                                type="number"
+                                value={editData[category.id]?.startingPrice ?? category.startingPrice}
+                                onChange={(e) => setEditData(prev => ({
+                                  ...prev,
+                                  [category.id]: { ...prev[category.id], startingPrice: parseInt(e.target.value) || 0 }
+                                }))}
+                                className="w-32"
+                              />
+                            ) : (
+                              `$${category.startingPrice?.toLocaleString()}`
+                            )}
+                          </TableCell>
+                          <TableCell className="text-right">
+                            {editingCategory?.id === category.id ? (
+                              <div className="flex justify-end gap-2">
+                                <Button
+                                  size="sm"
+                                  onClick={() => {
+                                    updateCategoryMutation.mutate({
+                                      id: category.id,
+                                      ...editData[category.id]
+                                    });
+                                  }}
+                                >
+                                  <Save className="w-4 h-4" />
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => {
+                                    setEditingCategory(null);
+                                    setEditData(prev => {
+                                      const newData = { ...prev };
+                                      delete newData[category.id];
+                                      return newData;
+                                    });
+                                  }}
+                                >
+                                  <X className="w-4 h-4" />
+                                </Button>
+                              </div>
+                            ) : (
+                              <div className="flex justify-end gap-2">
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => {
+                                    setEditingCategory(category);
+                                    setEditData(prev => ({
+                                      ...prev,
+                                      [category.id]: {
+                                        slug: category.slug,
+                                        name: category.name,
+                                        description: category.description,
+                                        imageUrl: category.imageUrl,
+                                        startingPrice: category.startingPrice,
+                                        orderIndex: category.orderIndex
+                                      }
+                                    }));
+                                  }}
+                                >
+                                  <Edit className="w-4 h-4" />
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  variant="destructive"
+                                  onClick={() => {
+                                    if (confirm(`Are you sure you want to delete the "${category.name}" category?`)) {
+                                      deleteCategoryMutation.mutate(category.id);
+                                    }
+                                  }}
+                                >
+                                  <Trash2 className="w-4 h-4" />
+                                </Button>
+                              </div>
+                            )}
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
 
           <TabsContent value="models">
             <Card>
