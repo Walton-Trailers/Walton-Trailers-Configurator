@@ -272,8 +272,8 @@ export default function AdminDashboard() {
         <Tabs defaultValue="overview" className="space-y-6">
           <TabsList>
             <TabsTrigger value="overview">Account</TabsTrigger>
-            {isAdmin && <TabsTrigger value="users">Users</TabsTrigger>}
-            <TabsTrigger value="trailers">Trailers</TabsTrigger>
+            <TabsTrigger value="trailers">Product Management</TabsTrigger>
+            {isAdmin && <TabsTrigger value="users">User Management</TabsTrigger>}
           </TabsList>
 
           <TabsContent value="overview" className="space-y-6">
@@ -320,6 +320,30 @@ export default function AdminDashboard() {
                   <p className="text-xs text-muted-foreground">
                     Previous session
                   </p>
+                </CardContent>
+              </Card>
+            </div>
+          </TabsContent>
+
+          <TabsContent value="trailers" className="space-y-6">
+            <div className="grid grid-cols-1 gap-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Product Management</CardTitle>
+                  <CardDescription>
+                    Update trailer and option pricing & details
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-2 text-gray-600 mb-4">
+                    <p>• Edit trailer categories and descriptions</p>
+                    <p>• Manage trailer models and specifications</p>
+                    <p>• Upload and manage trailer images</p>
+                  </div>
+                  <Button onClick={() => setLocation("/admin/pricing")}>
+                    <DollarSign className="w-4 h-4 mr-2" />
+                    Update Products Catalog
+                  </Button>
                 </CardContent>
               </Card>
             </div>
@@ -620,32 +644,6 @@ export default function AdminDashboard() {
               </Card>
             </TabsContent>
           )}
-
-          <TabsContent value="trailers" className="space-y-6">
-            <div className="grid grid-cols-1 gap-6">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Product Management</CardTitle>
-                  <CardDescription>
-                    Update trailer and option pricing & details
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-2 text-gray-600 mb-4">
-                    <p>• Edit trailer categories and descriptions</p>
-                    <p>• Manage trailer models and specifications</p>
-                    <p>• Upload and manage trailer images</p>
-                  </div>
-                  <Button onClick={() => setLocation("/admin/pricing")}>
-                    <DollarSign className="w-4 h-4 mr-2" />
-                    Update Products Catalog
-                  </Button>
-                </CardContent>
-              </Card>
-
-
-            </div>
-          </TabsContent>
         </Tabs>
       </main>
     </div>
