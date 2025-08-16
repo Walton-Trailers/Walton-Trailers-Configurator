@@ -136,6 +136,9 @@ export class FastStorage {
     if (updates.isArchived !== undefined) {
       queries.push(db.execute(sql`UPDATE trailer_models SET is_archived = ${updates.isArchived} WHERE id = ${id}`));
     }
+    if (updates.imageUrl !== undefined) {
+      queries.push(db.execute(sql`UPDATE trailer_models SET image_url = ${updates.imageUrl} WHERE id = ${id}`));
+    }
     
     await Promise.all(queries);
     

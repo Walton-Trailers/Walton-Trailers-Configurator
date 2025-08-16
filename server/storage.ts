@@ -806,6 +806,13 @@ export class DatabaseStorage implements IStorage {
           WHERE id = ${id}
         `);
       }
+      if (updates.imageUrl !== undefined) {
+        await db.execute(sql`
+          UPDATE trailer_models 
+          SET image_url = ${updates.imageUrl}
+          WHERE id = ${id}
+        `);
+      }
       
       // Get the updated record
       const result = await db.execute(sql`
