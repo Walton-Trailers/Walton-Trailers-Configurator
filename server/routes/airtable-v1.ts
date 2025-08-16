@@ -361,7 +361,7 @@ router.post(
       // Fetch data to export
       if (dataType === 'models') {
         const models = await storage.getAllModels();
-        exportData = models.map(model => ({
+        exportData = models.map((model: any) => ({
           fields: {
             Name: model.name,
             Price: model.basePrice,
@@ -375,7 +375,7 @@ router.post(
         }));
       } else if (dataType === 'options') {
         const options = await storage.getAllOptions();
-        exportData = options.map(option => ({
+        exportData = options.map((option: any) => ({
           fields: {
             Name: option.name,
             Price: option.price,

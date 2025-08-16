@@ -400,7 +400,7 @@ export default function FastPricing() {
                       {editingModel?.id === model.id ? (
                         <Select
                           value={editData[model.id]?.categoryId?.toString() ?? model.categoryId?.toString()}
-                          onValueChange={(value) => setEditData({
+                          onValueChange={(value: string) => setEditData({
                             ...editData,
                             [model.id]: { ...editData[model.id], categoryId: parseInt(value) }
                           })}
@@ -646,7 +646,7 @@ export default function FastPricing() {
                         {editingOption?.id === option.id ? (
                           <Select
                             value={editData[option.id]?.category ?? option.category}
-                            onValueChange={(value) => setEditData({
+                            onValueChange={(value: string) => setEditData({
                               ...editData,
                               [option.id]: { ...editData[option.id], category: value }
                             })}

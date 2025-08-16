@@ -3,6 +3,7 @@ import { createServer } from "http";
 import path from "path";
 import { fileURLToPath } from 'url';
 import { dirname } from 'path';
+import cookieParser from "cookie-parser";
 import { registerRoutes } from "./routes";
 import { createInitialAdminUser } from "./admin-seed";
 import { validateEnvironment } from "./environment-check";
@@ -52,6 +53,7 @@ app.get('/', (req, res, next) => {
 // Middleware
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
+app.use(cookieParser());
 
 // Request logging
 app.use((req, res, next) => {

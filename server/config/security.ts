@@ -85,7 +85,7 @@ export class TokenEncryption {
     let encrypted = cipher.update(text, 'utf8', 'hex');
     encrypted += cipher.final('hex');
     
-    const authTag = cipher.getAuthTag();
+    const authTag = (cipher as any).getAuthTag();
     
     // Combine iv, authTag, and encrypted data
     return iv.toString('hex') + ':' + authTag.toString('hex') + ':' + encrypted;
@@ -107,7 +107,7 @@ export class TokenEncryption {
       iv
     );
     
-    decipher.setAuthTag(authTag);
+    (decipher as any).setAuthTag(authTag);
     
     let decrypted = decipher.update(encrypted, 'hex', 'utf8');
     decrypted += decipher.final('utf8');
