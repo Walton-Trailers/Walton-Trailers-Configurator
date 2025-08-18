@@ -29,6 +29,15 @@ This is a Tesla-style trailer configurator application for Walton Trailers, desi
 - Included helpful links to Airtable Developer Hub for token generation
 - Prepared foundation for data sync operations between Airtable and database
 
+### Configurations Overview Tab (August 18, 2025)
+- Added new Configurations tab to admin dashboard for viewing all saved trailer configurations
+- Displays comprehensive feed of configurations from both dealers and public users
+- Includes source identification badges (blue for dealer, grey for public)
+- Shows dealer name and ID for dealer configurations, session ID for public configurations
+- Displays customer information, category, model details, pricing, and status
+- Provides at-a-glance overview of all configuration activity across the platform
+- Enables admin oversight of both dealer and public configurator usage
+
 ## User Preferences
 
 Preferred communication style: Simple, everyday language.

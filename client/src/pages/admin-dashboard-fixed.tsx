@@ -115,6 +115,17 @@ export default function AdminDashboard() {
     enabled: !!user && !!sessionId,
   });
 
+  const { data: configurations = [] } = useQuery({
+    queryKey: ["/api/admin/configurations"],
+    queryFn: () =>
+      apiRequest("/api/admin/configurations", {
+        headers: {
+          Authorization: `Bearer ${sessionId}`,
+        },
+      }),
+    enabled: !!user && user.role === "admin" && !!sessionId,
+  });
+
   // Always call useMutation hooks
   const createUserMutation = useMutation({
     mutationFn: (userData: CreateUserForm) =>
@@ -436,6 +447,7 @@ export default function AdminDashboard() {
             {isAdmin && <TabsTrigger value="users">User Management</TabsTrigger>}
             {isAdmin && <TabsTrigger value="integrations">Integrations</TabsTrigger>}
             <TabsTrigger value="quotes">Custom Requests</TabsTrigger>
+            {isAdmin && <TabsTrigger value="configurations">Configurations</TabsTrigger>}
           </TabsList>
 
           <TabsContent value="products" className="space-y-6">
@@ -1134,6 +1146,145 @@ ${quote.notes ? `\nAdmin Notes: ${quote.notes}` : ''}`;
                   </CardContent>
                 </Card>
               </div>
+            </TabsContent>
+          )}
+
+          {isAdmin && (
+            <TabsContent value="configurations" className="space-y-6">
+              <div className="flex justify-between items-center">
+                <div>
+                  <h3 className="text-lg font-medium">Saved Configurations</h3>
+                  <p className="text-sm text-gray-600">View all trailer configurations from dealers and public users</p>
+                </div>
+                <Badge variant="outline" className="px-3 py-1">
+                  {(configurations as any[]).length} Total Configurations
+                </Badge>
+              </div>
+
+              <Card>
+                <CardContent className="p-0">
+                  <div className="overflow-x-auto">
+                    <table className="w-full">
+                      <thead className="border-b bg-gray-50">
+                        <tr>
+                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
+                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Source</th>
+                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Dealer/User</th>
+                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Customer</th>
+                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Category</th>
+                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Model</th>
+                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Total Price</th>
+                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Details</th>
+                        </tr>
+                      </thead>
+                      <tbody className="bg-white divide-y divide-gray-200">
+                        {(configurations as any[]).length > 0 ? (
+                          (configurations as any[]).map((config: any) => (
+                            <tr key={`${config.type}-${config.id}`} className="hover:bg-gray-50">
+                              <td className="px-4 py-3 text-sm text-gray-900">
+                                {new Date(config.createdAt).toLocaleDateString()}
+                              </td>
+                              <td className="px-4 py-3">
+                                <Badge 
+                                  variant={config.type === 'dealer' ? 'default' : 'secondary'}
+                                  className={config.type === 'dealer' ? 'bg-blue-100 text-blue-800' : ''}
+                                >
+                                  {config.source}
+                                </Badge>
+                              </td>
+                              <td className="px-4 py-3">
+                                {config.type === 'dealer' ? (
+                                  <div>
+                                    <div className="text-sm font-medium text-gray-900">
+                                      {config.dealerName || 'N/A'}
+                                    </div>
+                                    <div className="text-xs text-gray-500">
+                                      ID: {config.dealerId}
+                                    </div>
+                                  </div>
+                                ) : (
+                                  <div className="text-sm text-gray-500">
+                                    Session: {config.sessionId?.substring(0, 8)}...
+                                  </div>
+                                )}
+                              </td>
+                              <td className="px-4 py-3">
+                                {config.customerName ? (
+                                  <div>
+                                    <div className="text-sm font-medium text-gray-900">
+                                      {config.customerName}
+                                    </div>
+                                    {config.customerEmail && (
+                                      <div className="text-xs text-gray-500">{config.customerEmail}</div>
+                                    )}
+                                    {config.customerPhone && (
+                                      <div className="text-xs text-gray-500">{config.customerPhone}</div>
+                                    )}
+                                  </div>
+                                ) : (
+                                  <span className="text-sm text-gray-400">—</span>
+                                )}
+                              </td>
+                              <td className="px-4 py-3 text-sm text-gray-900">
+                                {config.categoryName || config.categorySlug || 'N/A'}
+                              </td>
+                              <td className="px-4 py-3">
+                                <div className="text-sm font-medium text-gray-900">
+                                  {config.modelName || `Model ${config.modelId}`}
+                                </div>
+                                {config.variantId && (
+                                  <div className="text-xs text-gray-500">
+                                    Variant: {config.variantId}
+                                  </div>
+                                )}
+                                {config.orderNumber && (
+                                  <div className="text-xs text-gray-500">
+                                    Order: {config.orderNumber}
+                                  </div>
+                                )}
+                              </td>
+                              <td className="px-4 py-3 text-sm font-medium text-gray-900">
+                                ${(config.totalPrice || 0).toLocaleString()}
+                              </td>
+                              <td className="px-4 py-3">
+                                <Badge 
+                                  variant={
+                                    config.status === 'completed' ? 'default' : 
+                                    config.status === 'submitted' ? 'secondary' :
+                                    config.status === 'processing' ? 'outline' :
+                                    'secondary'
+                                  }
+                                >
+                                  {config.status || 'saved'}
+                                </Badge>
+                              </td>
+                              <td className="px-4 py-3">
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => {
+                                    // TODO: Implement view details dialog
+                                    console.log('View details for:', config);
+                                  }}
+                                >
+                                  View
+                                </Button>
+                              </td>
+                            </tr>
+                          ))
+                        ) : (
+                          <tr>
+                            <td colSpan={9} className="text-center py-8 text-gray-500">
+                              No configurations saved yet
+                            </td>
+                          </tr>
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
+                </CardContent>
+              </Card>
             </TabsContent>
           )}
         </Tabs>

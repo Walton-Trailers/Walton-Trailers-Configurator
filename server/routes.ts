@@ -1039,6 +1039,72 @@ export async function registerRoutes(app: Express): Promise<Express> {
     }
   });
 
+  // Get all configurations (admin only) - includes both public and dealer configurations
+  app.get("/api/admin/configurations", requireAuth, requireAdmin, async (req, res) => {
+    try {
+      // Fetch public configurations from userConfigurations table
+      const publicConfigs = await db.select({
+        id: userConfigurations.id,
+        type: sql<string>`'public'`,
+        source: sql<string>`'Public'`,
+        dealerId: sql<string>`NULL`,
+        dealerName: sql<string>`NULL`,
+        customerName: sql<string>`NULL`,
+        customerEmail: sql<string>`NULL`,
+        customerPhone: sql<string>`NULL`,
+        categorySlug: userConfigurations.categorySlug,
+        categoryName: sql<string>`NULL`,
+        modelId: sql<string>`cast(${userConfigurations.modelId} as text)`,
+        modelName: sql<string>`NULL`,
+        variantId: userConfigurations.variantId,
+        selectedOptions: userConfigurations.selectedOptions,
+        totalPrice: userConfigurations.totalPrice,
+        status: sql<string>`'saved'`,
+        notes: userConfigurations.notes,
+        createdAt: userConfigurations.createdAt,
+        sessionId: userConfigurations.sessionId
+      })
+      .from(userConfigurations)
+      .orderBy(sql`${userConfigurations.createdAt} DESC`);
+
+      // Fetch dealer configurations from dealerOrders table
+      const dealerConfigs = await db.select({
+        id: dealerOrders.id,
+        type: sql<string>`'dealer'`,
+        source: sql<string>`'Dealer'`,
+        dealerId: sql<string>`cast(${dealerOrders.dealerId} as text)`,
+        dealerName: dealers.dealerName,
+        customerName: dealerOrders.customerName,
+        customerEmail: dealerOrders.customerEmail,
+        customerPhone: dealerOrders.customerPhone,
+        categorySlug: dealerOrders.categorySlug,
+        categoryName: dealerOrders.categoryName,
+        modelId: dealerOrders.modelId,
+        modelName: dealerOrders.modelName,
+        variantId: sql<number>`NULL`,
+        selectedOptions: dealerOrders.selectedOptions,
+        totalPrice: dealerOrders.totalPrice,
+        status: dealerOrders.status,
+        notes: dealerOrders.notes,
+        createdAt: dealerOrders.createdAt,
+        orderNumber: dealerOrders.orderNumber
+      })
+      .from(dealerOrders)
+      .leftJoin(dealers, eq(dealerOrders.dealerId, dealers.id))
+      .orderBy(sql`${dealerOrders.createdAt} DESC`);
+
+      // Combine and sort all configurations by date
+      const allConfigs = [...publicConfigs, ...dealerConfigs].sort((a, b) => 
+        new Date(b.createdAt!).getTime() - new Date(a.createdAt!).getTime()
+      );
+
+      res.json(allConfigs);
+    } catch (error) {
+      console.error("Error fetching configurations:", error);
+      res.status(500).json({ error: "Failed to fetch configurations" });
+    }
+  });
+
 
 
   // Get all categories for dropdown
