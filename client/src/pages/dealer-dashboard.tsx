@@ -69,9 +69,10 @@ export default function DealerDashboard() {
   }, [setLocation]);
 
   // Get dealer profile
-  const { data: profile, refetch: refetchProfile } = useQuery<DealerProfile>({
+  const { data: profile, refetch: refetchProfile, error: profileError } = useQuery<DealerProfile>({
     queryKey: ["/api/dealer/profile"],
     enabled: !!localStorage.getItem("dealer_session"),
+    retry: false,
   });
   
   // Initialize profile form data when profile loads
@@ -82,13 +83,33 @@ export default function DealerDashboard() {
   }, [profile, isEditingProfile]);
 
   // Get dealer orders - refetch on mount and focus
-  const { data: orders = [], isLoading, refetch } = useQuery<DealerOrder[]>({
+  const { data: orders = [], isLoading, refetch, error: ordersError } = useQuery<DealerOrder[]>({
     queryKey: ["/api/dealer/orders"],
     enabled: !!localStorage.getItem("dealer_session"),
     refetchOnMount: "always",
     refetchOnWindowFocus: true,
     refetchInterval: 5000, // Auto-refresh every 5 seconds
+    retry: false,
   });
+  
+  // Handle session expiration
+  useEffect(() => {
+    if (profileError?.message?.includes('401') || ordersError?.message?.includes('401')) {
+      toast({
+        title: "Session Expired",
+        description: "Your session has expired. Please log in again.",
+        variant: "destructive",
+      });
+      // Clear the expired session
+      localStorage.removeItem("dealer_session");
+      sessionStorage.clear();
+      queryClient.clear();
+      // Redirect to login
+      setTimeout(() => {
+        setLocation("/dealer/login");
+      }, 2000);
+    }
+  }, [profileError, ordersError, toast, setLocation]);
 
   // Update order mutation
   const updateOrderMutation = useMutation({
@@ -464,7 +485,14 @@ export default function DealerDashboard() {
                 </div>
               </CardHeader>
               <CardContent>
-                {profile && (
+                {!profile ? (
+                  <div className="flex items-center justify-center py-12">
+                    <div className="text-center space-y-3">
+                      <RefreshCw className="w-8 h-8 mx-auto animate-spin text-gray-400" />
+                      <p className="text-gray-500">Loading profile information...</p>
+                    </div>
+                  </div>
+                ) : (
                   <div className="space-y-6">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                       <div>
