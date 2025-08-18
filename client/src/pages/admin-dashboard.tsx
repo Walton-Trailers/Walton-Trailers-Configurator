@@ -55,6 +55,8 @@ export default function AdminDashboard() {
   const [, setLocation] = useLocation();
   const [showCreateUser, setShowCreateUser] = useState(false);
   const [editingUser, setEditingUser] = useState<AdminUser | null>(null);
+  const [changingPasswordUser, setChangingPasswordUser] = useState<AdminUser | null>(null);
+  const [newPassword, setNewPassword] = useState("");
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -145,6 +147,33 @@ export default function AdminDashboard() {
       toast({
         title: "Error",
         description: error.message || "Failed to update user",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const changePasswordMutation = useMutation({
+    mutationFn: ({ userId, password }: { userId: number; password: string }) =>
+      apiRequest(`/api/admin/users/${userId}`, {
+        method: "PATCH",
+        body: { password },
+        headers: {
+          Authorization: `Bearer ${sessionId}`,
+        },
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/users"] });
+      setChangingPasswordUser(null);
+      setNewPassword("");
+      toast({
+        title: "Success",
+        description: "Password changed successfully",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to change password",
         variant: "destructive",
       });
     },
@@ -585,6 +614,62 @@ export default function AdminDashboard() {
                     </form>
                   </DialogContent>
                 </Dialog>
+
+                {/* Password Change Dialog */}
+                <Dialog open={!!changingPasswordUser} onOpenChange={(open) => !open && setChangingPasswordUser(null)}>
+                  <DialogContent>
+                    <DialogHeader>
+                      <DialogTitle>Change Password</DialogTitle>
+                      <DialogDescription>
+                        Change password for {changingPasswordUser?.firstName} {changingPasswordUser?.lastName} ({changingPasswordUser?.username})
+                      </DialogDescription>
+                    </DialogHeader>
+                    
+                    <div className="space-y-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="new-password">New Password</Label>
+                        <Input
+                          id="new-password"
+                          type="password"
+                          value={newPassword}
+                          onChange={(e) => setNewPassword(e.target.value)}
+                          placeholder="Enter new password (minimum 8 characters)"
+                        />
+                        {newPassword && newPassword.length < 8 && (
+                          <p className="text-sm text-red-600">
+                            Password must be at least 8 characters
+                          </p>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="flex justify-end space-x-2 mt-4">
+                      <Button 
+                        type="button" 
+                        variant="outline" 
+                        onClick={() => {
+                          setChangingPasswordUser(null);
+                          setNewPassword("");
+                        }}
+                      >
+                        Cancel
+                      </Button>
+                      <Button 
+                        onClick={() => {
+                          if (changingPasswordUser && newPassword.length >= 8) {
+                            changePasswordMutation.mutate({
+                              userId: changingPasswordUser.id,
+                              password: newPassword
+                            });
+                          }
+                        }}
+                        disabled={!newPassword || newPassword.length < 8 || changePasswordMutation.isPending}
+                      >
+                        {changePasswordMutation.isPending ? "Changing..." : "Change Password"}
+                      </Button>
+                    </div>
+                  </DialogContent>
+                </Dialog>
               </div>
 
               <Card>
@@ -623,6 +708,16 @@ export default function AdminDashboard() {
                               onClick={() => handleEditUser(adminUser)}
                             >
                               Edit
+                            </button>
+                            
+                            <button
+                              className="px-3 py-1 text-sm font-medium text-blue-700 bg-white border border-blue-300 rounded-md hover:bg-blue-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                              onClick={() => {
+                                setChangingPasswordUser(adminUser);
+                                setNewPassword("");
+                              }}
+                            >
+                              Change Password
                             </button>
                             
                             {adminUser.isActive && adminUser.id !== user.id && (
