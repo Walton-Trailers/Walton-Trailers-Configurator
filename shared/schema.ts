@@ -102,28 +102,63 @@ export const adminSessions = pgTable("admin_sessions", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
-// Dealers
+// Dealers - Updated with new fields
 export const dealers = pgTable("dealers", {
   id: serial("id").primaryKey(),
   dealerId: varchar("dealer_id", { length: 50 }).notNull().unique(),
-  dealerName: varchar("dealer_name", { length: 200 }).notNull(),
-  contactName: varchar("contact_name", { length: 100 }).notNull(),
-  email: varchar("email", { length: 200 }).notNull().unique(),
+  companyName: varchar("company_name", { length: 200 }).notNull(),
+  website: varchar("website", { length: 200 }),
   phone: varchar("phone", { length: 20 }).notNull(),
-  territory: varchar("territory", { length: 100 }),
+  // Address fields
   address: text("address"),
   city: varchar("city", { length: 100 }),
   state: varchar("state", { length: 2 }),
   zipCode: varchar("zip_code", { length: 10 }),
+  // Primary contact person
+  contactFirstName: varchar("contact_first_name", { length: 100 }).notNull(),
+  contactLastName: varchar("contact_last_name", { length: 100 }).notNull(),
+  contactEmail: varchar("contact_email", { length: 200 }).notNull(),
+  contactTitle: varchar("contact_title", { length: 100 }),
+  // Legacy fields for backwards compatibility
+  dealerName: varchar("dealer_name", { length: 200 }),
+  contactName: varchar("contact_name", { length: 100 }),
+  email: varchar("email", { length: 200 }),
+  territory: varchar("territory", { length: 100 }),
   passwordHash: text("password_hash").notNull(),
   isActive: boolean("is_active").notNull().default(true),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
-// Dealer Sessions
+// Dealer Users - For multi-user access per dealer
+export const dealerUsers = pgTable("dealer_users", {
+  id: serial("id").primaryKey(),
+  dealerId: integer("dealer_id").notNull(),
+  username: varchar("username", { length: 100 }).notNull().unique(),
+  email: varchar("email", { length: 200 }).notNull().unique(),
+  firstName: varchar("first_name", { length: 100 }).notNull(),
+  lastName: varchar("last_name", { length: 100 }).notNull(),
+  title: varchar("title", { length: 100 }),
+  passwordHash: text("password_hash").notNull(),
+  role: varchar("role", { length: 20 }).notNull().default("user"), // 'admin' or 'user'
+  isActive: boolean("is_active").notNull().default(true),
+  lastLogin: timestamp("last_login"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Dealer Sessions - For main dealer account
 export const dealerSessions = pgTable("dealer_sessions", {
   id: varchar("id", { length: 255 }).primaryKey(),
+  dealerId: integer("dealer_id").notNull(),
+  expiresAt: timestamp("expires_at").notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// Dealer User Sessions - For dealer users
+export const dealerUserSessions = pgTable("dealer_user_sessions", {
+  id: varchar("id", { length: 255 }).primaryKey(),
+  userId: integer("user_id").notNull(),
   dealerId: integer("dealer_id").notNull(),
   expiresAt: timestamp("expires_at").notNull(),
   createdAt: timestamp("created_at").defaultNow(),
@@ -176,7 +211,16 @@ export const insertDealerSchema = createInsertSchema(dealers).omit({
   createdAt: true,
   updatedAt: true,
 });
+export const insertDealerUserSchema = createInsertSchema(dealerUsers).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+  lastLogin: true,
+});
 export const insertDealerSessionSchema = createInsertSchema(dealerSessions).omit({
+  createdAt: true,
+});
+export const insertDealerUserSessionSchema = createInsertSchema(dealerUserSessions).omit({
   createdAt: true,
 });
 export const insertDealerOrderSchema = createInsertSchema(dealerOrders).omit({
@@ -213,10 +257,14 @@ export const insertCustomQuoteRequestSchema = createInsertSchema(customQuoteRequ
 
 // Types
 export type Dealer = typeof dealers.$inferSelect;
+export type DealerUser = typeof dealerUsers.$inferSelect;
 export type DealerSession = typeof dealerSessions.$inferSelect;
+export type DealerUserSession = typeof dealerUserSessions.$inferSelect;
 export type DealerOrder = typeof dealerOrders.$inferSelect;
 export type InsertDealer = z.infer<typeof insertDealerSchema>;
+export type InsertDealerUser = z.infer<typeof insertDealerUserSchema>;
 export type InsertDealerSession = z.infer<typeof insertDealerSessionSchema>;
+export type InsertDealerUserSession = z.infer<typeof insertDealerUserSessionSchema>;
 export type InsertDealerOrder = z.infer<typeof insertDealerOrderSchema>;
 export type TrailerCategory = typeof trailerCategories.$inferSelect;
 export type TrailerModel = typeof trailerModels.$inferSelect;
@@ -281,11 +329,31 @@ export const adminSessionsRelations = relations(adminSessions, ({ one }) => ({
 export const dealersRelations = relations(dealers, ({ many }) => ({
   sessions: many(dealerSessions),
   orders: many(dealerOrders),
+  users: many(dealerUsers),
+}));
+
+export const dealerUsersRelations = relations(dealerUsers, ({ one, many }) => ({
+  dealer: one(dealers, {
+    fields: [dealerUsers.dealerId],
+    references: [dealers.id],
+  }),
+  sessions: many(dealerUserSessions),
 }));
 
 export const dealerSessionsRelations = relations(dealerSessions, ({ one }) => ({
   dealer: one(dealers, {
     fields: [dealerSessions.dealerId],
+    references: [dealers.id],
+  }),
+}));
+
+export const dealerUserSessionsRelations = relations(dealerUserSessions, ({ one }) => ({
+  user: one(dealerUsers, {
+    fields: [dealerUserSessions.userId],
+    references: [dealerUsers.id],
+  }),
+  dealer: one(dealers, {
+    fields: [dealerUserSessions.dealerId],
     references: [dealers.id],
   }),
 }));

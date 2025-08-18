@@ -13,7 +13,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
-import { Building2, Plus, FileText, Edit, Trash2, LogOut, Package, User, Phone, Mail, DollarSign, Calendar, StickyNote, RefreshCw } from "lucide-react";
+import { Building2, Plus, FileText, Edit, Trash2, LogOut, Package, User, Users, Phone, Mail, DollarSign, Calendar, StickyNote, RefreshCw } from "lucide-react";
 import { format } from "date-fns";
 
 interface DealerOrder {
@@ -38,15 +38,48 @@ interface DealerOrder {
 interface DealerProfile {
   id: number;
   dealerId: string;
-  dealerName: string;
-  contactName: string;
-  email: string;
+  companyName: string;
+  website: string;
   phone: string;
-  territory: string;
   address: string;
   city: string;
   state: string;
   zipCode: string;
+  contactFirstName: string;
+  contactLastName: string;
+  contactEmail: string;
+  contactTitle: string;
+  // Legacy fields
+  dealerName?: string;
+  contactName?: string;
+  email?: string;
+  territory?: string;
+}
+
+interface DealerUser {
+  id: number;
+  dealerId: number;
+  username: string;
+  email: string;
+  firstName: string;
+  lastName: string;
+  title: string | null;
+  role: 'admin' | 'user';
+  createdAt: string;
+  updatedAt: string;
+}
+
+interface DealerUser {
+  id: number;
+  username: string;
+  email: string;
+  firstName: string;
+  lastName: string;
+  title: string;
+  role: 'admin' | 'user';
+  isActive: boolean;
+  lastLogin: string | null;
+  createdAt: string;
 }
 
 export default function DealerDashboard() {
@@ -59,6 +92,17 @@ export default function DealerDashboard() {
   const [activeTab, setActiveTab] = useState("orders");
   const [isEditingProfile, setIsEditingProfile] = useState(false);
   const [profileFormData, setProfileFormData] = useState<Partial<DealerProfile>>({});
+  const [isAddingUser, setIsAddingUser] = useState(false);
+  const [editingUser, setEditingUser] = useState<DealerUser | null>(null);
+  const [newUserData, setNewUserData] = useState({
+    username: "",
+    email: "",
+    firstName: "",
+    lastName: "",
+    title: "",
+    password: "",
+    role: "user" as 'admin' | 'user',
+  });
 
   // Check authentication
   useEffect(() => {
@@ -89,6 +133,13 @@ export default function DealerDashboard() {
     refetchOnMount: "always",
     refetchOnWindowFocus: true,
     refetchInterval: 5000, // Auto-refresh every 5 seconds
+    retry: false,
+  });
+  
+  // Get dealer users
+  const { data: users = [], refetch: refetchUsers } = useQuery<DealerUser[]>({
+    queryKey: ["/api/dealer/users"],
+    enabled: !!localStorage.getItem("dealer_session") && activeTab === "users",
     retry: false,
   });
   
@@ -181,6 +232,88 @@ export default function DealerDashboard() {
       toast({
         title: "Delete failed",
         description: error.message || "Failed to delete order",
+        variant: "destructive",
+      });
+    },
+  });
+  
+  // Create user mutation
+  const createUserMutation = useMutation({
+    mutationFn: async (userData: typeof newUserData) => {
+      return apiRequest("/api/dealer/users", {
+        method: "POST",
+        body: userData,
+      });
+    },
+    onSuccess: () => {
+      toast({
+        title: "User created",
+        description: "The user has been successfully created.",
+      });
+      setIsAddingUser(false);
+      setNewUserData({
+        username: "",
+        email: "",
+        firstName: "",
+        lastName: "",
+        title: "",
+        password: "",
+        role: "user",
+      });
+      refetchUsers();
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Create failed",
+        description: error.message || "Failed to create user",
+        variant: "destructive",
+      });
+    },
+  });
+  
+  // Update user mutation
+  const updateUserMutation = useMutation({
+    mutationFn: async (data: { id: number; updates: Partial<DealerUser> }) => {
+      return apiRequest(`/api/dealer/users/${data.id}`, {
+        method: "PATCH",
+        body: data.updates,
+      });
+    },
+    onSuccess: () => {
+      toast({
+        title: "User updated",
+        description: "The user has been successfully updated.",
+      });
+      setEditingUser(null);
+      refetchUsers();
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Update failed",
+        description: error.message || "Failed to update user",
+        variant: "destructive",
+      });
+    },
+  });
+  
+  // Delete user mutation
+  const deleteUserMutation = useMutation({
+    mutationFn: async (userId: number) => {
+      return apiRequest(`/api/dealer/users/${userId}`, {
+        method: "DELETE",
+      });
+    },
+    onSuccess: () => {
+      toast({
+        title: "User deleted",
+        description: "The user has been successfully deleted.",
+      });
+      refetchUsers();
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Delete failed",
+        description: error.message || "Failed to delete user",
         variant: "destructive",
       });
     },
@@ -331,9 +464,10 @@ export default function DealerDashboard() {
 
         {/* Main Content */}
         <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="grid w-full grid-cols-2">
+          <TabsList className="grid w-full grid-cols-3">
             <TabsTrigger value="orders">Orders</TabsTrigger>
             <TabsTrigger value="profile">Profile</TabsTrigger>
+            <TabsTrigger value="users">Users</TabsTrigger>
           </TabsList>
 
           <TabsContent value="orders" className="mt-6">
@@ -494,67 +628,107 @@ export default function DealerDashboard() {
                   </div>
                 ) : (
                   <div className="space-y-6">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      <div>
-                        <Label className="text-sm text-gray-600">Dealer ID</Label>
-                        <p className="font-medium">{profile.dealerId}</p>
+                    {/* Company Information */}
+                    <div>
+                      <h3 className="text-lg font-semibold mb-4">Company Information</h3>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                          <Label className="text-sm text-gray-600">Dealer ID</Label>
+                          <p className="font-medium">{profile.dealerId}</p>
+                        </div>
+                        <div>
+                          <Label className="text-sm text-gray-600">Company Name</Label>
+                          {isEditingProfile ? (
+                            <Input
+                              value={profileFormData.companyName || ""}
+                              onChange={(e) => setProfileFormData({ ...profileFormData, companyName: e.target.value })}
+                            />
+                          ) : (
+                            <p className="font-medium">{profile.companyName || profile.dealerName}</p>
+                          )}
+                        </div>
+                        <div>
+                          <Label className="text-sm text-gray-600">Website</Label>
+                          {isEditingProfile ? (
+                            <Input
+                              value={profileFormData.website || ""}
+                              placeholder="https://example.com"
+                              onChange={(e) => setProfileFormData({ ...profileFormData, website: e.target.value })}
+                            />
+                          ) : (
+                            <p className="font-medium">{profile.website || "Not provided"}</p>
+                          )}
+                        </div>
+                        <div>
+                          <Label className="text-sm text-gray-600">Phone</Label>
+                          {isEditingProfile ? (
+                            <Input
+                              value={profileFormData.phone || ""}
+                              onChange={(e) => setProfileFormData({ ...profileFormData, phone: e.target.value })}
+                            />
+                          ) : (
+                            <p className="font-medium">{profile.phone}</p>
+                          )}
+                        </div>
                       </div>
-                      <div>
-                        <Label className="text-sm text-gray-600">Company Name</Label>
-                        {isEditingProfile ? (
-                          <Input
-                            value={profileFormData.dealerName || ""}
-                            onChange={(e) => setProfileFormData({ ...profileFormData, dealerName: e.target.value })}
-                          />
-                        ) : (
-                          <p className="font-medium">{profile.dealerName}</p>
-                        )}
+                    </div>
+                    
+                    {/* Primary Contact */}
+                    <div>
+                      <h3 className="text-lg font-semibold mb-4">Primary Point of Contact</h3>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                          <Label className="text-sm text-gray-600">First Name</Label>
+                          {isEditingProfile ? (
+                            <Input
+                              value={profileFormData.contactFirstName || ""}
+                              onChange={(e) => setProfileFormData({ ...profileFormData, contactFirstName: e.target.value })}
+                            />
+                          ) : (
+                            <p className="font-medium">{profile.contactFirstName || "-"}</p>
+                          )}
+                        </div>
+                        <div>
+                          <Label className="text-sm text-gray-600">Last Name</Label>
+                          {isEditingProfile ? (
+                            <Input
+                              value={profileFormData.contactLastName || ""}
+                              onChange={(e) => setProfileFormData({ ...profileFormData, contactLastName: e.target.value })}
+                            />
+                          ) : (
+                            <p className="font-medium">{profile.contactLastName || "-"}</p>
+                          )}
+                        </div>
+                        <div>
+                          <Label className="text-sm text-gray-600">Email</Label>
+                          {isEditingProfile ? (
+                            <Input
+                              type="email"
+                              value={profileFormData.contactEmail || ""}
+                              onChange={(e) => setProfileFormData({ ...profileFormData, contactEmail: e.target.value })}
+                            />
+                          ) : (
+                            <p className="font-medium">{profile.contactEmail || profile.email}</p>
+                          )}
+                        </div>
+                        <div>
+                          <Label className="text-sm text-gray-600">Title</Label>
+                          {isEditingProfile ? (
+                            <Input
+                              value={profileFormData.contactTitle || ""}
+                              placeholder="e.g. Sales Manager"
+                              onChange={(e) => setProfileFormData({ ...profileFormData, contactTitle: e.target.value })}
+                            />
+                          ) : (
+                            <p className="font-medium">{profile.contactTitle || "Not provided"}</p>
+                          )}
+                        </div>
                       </div>
-                      <div>
-                        <Label className="text-sm text-gray-600">Contact Person</Label>
-                        {isEditingProfile ? (
-                          <Input
-                            value={profileFormData.contactName || ""}
-                            onChange={(e) => setProfileFormData({ ...profileFormData, contactName: e.target.value })}
-                          />
-                        ) : (
-                          <p className="font-medium">{profile.contactName}</p>
-                        )}
-                      </div>
-                      <div>
-                        <Label className="text-sm text-gray-600">Territory</Label>
-                        {isEditingProfile ? (
-                          <Input
-                            value={profileFormData.territory || ""}
-                            onChange={(e) => setProfileFormData({ ...profileFormData, territory: e.target.value })}
-                          />
-                        ) : (
-                          <p className="font-medium">{profile.territory}</p>
-                        )}
-                      </div>
-                      <div>
-                        <Label className="text-sm text-gray-600">Email</Label>
-                        {isEditingProfile ? (
-                          <Input
-                            type="email"
-                            value={profileFormData.email || ""}
-                            onChange={(e) => setProfileFormData({ ...profileFormData, email: e.target.value })}
-                          />
-                        ) : (
-                          <p className="font-medium">{profile.email}</p>
-                        )}
-                      </div>
-                      <div>
-                        <Label className="text-sm text-gray-600">Phone</Label>
-                        {isEditingProfile ? (
-                          <Input
-                            value={profileFormData.phone || ""}
-                            onChange={(e) => setProfileFormData({ ...profileFormData, phone: e.target.value })}
-                          />
-                        ) : (
-                          <p className="font-medium">{profile.phone}</p>
-                        )}
-                      </div>
+                    </div>
+                    
+                    {/* Address */}
+                    <div>
+                      <h3 className="text-lg font-semibold mb-4">Full Address</h3>
                       <div className="md:col-span-2">
                         <Label className="text-sm text-gray-600">Address</Label>
                         {isEditingProfile ? (
@@ -591,6 +765,88 @@ export default function DealerDashboard() {
                         )}
                       </div>
                     </div>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+          
+          <TabsContent value="users" className="mt-6">
+            <Card>
+              <CardHeader>
+                <div className="flex justify-between items-start">
+                  <div>
+                    <CardTitle>User Management</CardTitle>
+                    <CardDescription>
+                      Manage users who can access the dealer portal
+                    </CardDescription>
+                  </div>
+                  <Button
+                    onClick={() => setIsAddingUser(true)}
+                    size="sm"
+                  >
+                    <Plus className="w-4 h-4 mr-2" />
+                    Add User
+                  </Button>
+                </div>
+              </CardHeader>
+              <CardContent>
+                {users.length === 0 ? (
+                  <div className="text-center py-8 text-gray-500">
+                    <Users className="w-12 h-12 mx-auto mb-3 text-gray-300" />
+                    <p>No users found. Add your first user to get started.</p>
+                  </div>
+                ) : (
+                  <div className="overflow-x-auto">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Username</TableHead>
+                          <TableHead>Name</TableHead>
+                          <TableHead>Email</TableHead>
+                          <TableHead>Title</TableHead>
+                          <TableHead>Role</TableHead>
+                          <TableHead>Actions</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {users.map((user) => (
+                          <TableRow key={user.id}>
+                            <TableCell>{user.username}</TableCell>
+                            <TableCell>{user.firstName} {user.lastName}</TableCell>
+                            <TableCell>{user.email}</TableCell>
+                            <TableCell>{user.title || "-"}</TableCell>
+                            <TableCell>
+                              <span className={`px-2 py-1 text-xs rounded-full ${
+                                user.role === 'admin' 
+                                  ? 'bg-purple-100 text-purple-700'
+                                  : 'bg-gray-100 text-gray-700'
+                              }`}>
+                                {user.role === 'admin' ? 'Admin' : 'User'}
+                              </span>
+                            </TableCell>
+                            <TableCell>
+                              <div className="flex space-x-2">
+                                <Button
+                                  size="sm"
+                                  variant="ghost"
+                                  onClick={() => setEditingUser(user)}
+                                >
+                                  <Edit className="w-4 h-4" />
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  variant="ghost"
+                                  onClick={() => deleteUserMutation.mutate(user.id)}
+                                >
+                                  <Trash2 className="w-4 h-4" />
+                                </Button>
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
                   </div>
                 )}
               </CardContent>
@@ -837,6 +1093,201 @@ export default function DealerDashboard() {
               }}
             >
               Delete Order
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      
+      {/* Add User Dialog */}
+      <Dialog open={isAddingUser} onOpenChange={setIsAddingUser}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Add New User</DialogTitle>
+            <DialogDescription>
+              Create a new user who can access the dealer portal
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="username">Username</Label>
+                <Input
+                  id="username"
+                  value={newUserData.username}
+                  onChange={(e) => setNewUserData({ ...newUserData, username: e.target.value })}
+                  placeholder="Enter username"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="email">Email</Label>
+                <Input
+                  id="email"
+                  type="email"
+                  value={newUserData.email}
+                  onChange={(e) => setNewUserData({ ...newUserData, email: e.target.value })}
+                  placeholder="user@example.com"
+                />
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="firstName">First Name</Label>
+                <Input
+                  id="firstName"
+                  value={newUserData.firstName}
+                  onChange={(e) => setNewUserData({ ...newUserData, firstName: e.target.value })}
+                  placeholder="First name"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="lastName">Last Name</Label>
+                <Input
+                  id="lastName"
+                  value={newUserData.lastName}
+                  onChange={(e) => setNewUserData({ ...newUserData, lastName: e.target.value })}
+                  placeholder="Last name"
+                />
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="title">Title</Label>
+                <Input
+                  id="title"
+                  value={newUserData.title}
+                  onChange={(e) => setNewUserData({ ...newUserData, title: e.target.value })}
+                  placeholder="e.g. Sales Manager"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="password">Password</Label>
+                <Input
+                  id="password"
+                  type="password"
+                  value={newUserData.password}
+                  onChange={(e) => setNewUserData({ ...newUserData, password: e.target.value })}
+                  placeholder="Enter password"
+                />
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="role">Role</Label>
+              <Select
+                value={newUserData.role}
+                onValueChange={(value) => setNewUserData({ ...newUserData, role: value as 'admin' | 'user' })}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select a role" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="admin">Admin - Full access including user management</SelectItem>
+                  <SelectItem value="user">User - Can manage orders only</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsAddingUser(false)}>
+              Cancel
+            </Button>
+            <Button onClick={() => createUserMutation.mutate(newUserData)}>
+              Create User
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      
+      {/* Edit User Dialog */}
+      <Dialog open={!!editingUser} onOpenChange={(open) => !open && setEditingUser(null)}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Edit User</DialogTitle>
+            <DialogDescription>
+              Update user information and permissions
+            </DialogDescription>
+          </DialogHeader>
+          {editingUser && (
+            <div className="grid gap-4 py-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="edit-username">Username</Label>
+                  <Input
+                    id="edit-username"
+                    value={editingUser.username}
+                    disabled
+                    className="bg-gray-50"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="edit-email">Email</Label>
+                  <Input
+                    id="edit-email"
+                    type="email"
+                    value={editingUser.email}
+                    onChange={(e) => setEditingUser({ ...editingUser, email: e.target.value })}
+                  />
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="edit-firstName">First Name</Label>
+                  <Input
+                    id="edit-firstName"
+                    value={editingUser.firstName}
+                    onChange={(e) => setEditingUser({ ...editingUser, firstName: e.target.value })}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="edit-lastName">Last Name</Label>
+                  <Input
+                    id="edit-lastName"
+                    value={editingUser.lastName}
+                    onChange={(e) => setEditingUser({ ...editingUser, lastName: e.target.value })}
+                  />
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="edit-title">Title</Label>
+                  <Input
+                    id="edit-title"
+                    value={editingUser.title || ""}
+                    onChange={(e) => setEditingUser({ ...editingUser, title: e.target.value })}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="edit-role">Role</Label>
+                  <Select
+                    value={editingUser.role}
+                    onValueChange={(value) => setEditingUser({ ...editingUser, role: value as 'admin' | 'user' })}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="admin">Admin - Full access including user management</SelectItem>
+                      <SelectItem value="user">User - Can manage orders only</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setEditingUser(null)}>
+              Cancel
+            </Button>
+            <Button onClick={() => editingUser && updateUserMutation.mutate({ 
+              id: editingUser.id, 
+              updates: {
+                email: editingUser.email,
+                firstName: editingUser.firstName,
+                lastName: editingUser.lastName,
+                title: editingUser.title,
+                role: editingUser.role
+              }
+            })}>
+              Save Changes
             </Button>
           </DialogFooter>
         </DialogContent>

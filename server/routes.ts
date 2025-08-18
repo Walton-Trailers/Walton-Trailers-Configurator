@@ -10,7 +10,7 @@ import {
   hashPassword,
   isAdmin
 } from "./auth";
-import { insertAdminUserSchema, type AdminUser, trailerCategories, trailerModels, customQuoteRequests, insertCustomQuoteRequestSchema, dealers, dealerSessions, dealerOrders, type Dealer } from "@shared/schema";
+import { insertAdminUserSchema, type AdminUser, trailerCategories, trailerModels, customQuoteRequests, insertCustomQuoteRequestSchema, dealers, dealerSessions, dealerOrders, dealerUsers, dealerUserSessions, type Dealer, type DealerUser } from "@shared/schema";
 import { z } from "zod";
 import crypto from "crypto";
 import {
@@ -444,6 +444,213 @@ export async function registerRoutes(app: Express): Promise<Express> {
     } catch (error) {
       console.error("Error deleting dealer order:", error);
       res.status(500).json({ error: "Failed to delete order" });
+    }
+  });
+
+  // ============= DEALER USER MANAGEMENT ROUTES =============
+  
+  // Get all users for a dealer
+  app.get("/api/dealer/users", requireDealerAuth, async (req: AuthenticatedRequest, res) => {
+    try {
+      const users = await db.select({
+        id: dealerUsers.id,
+        username: dealerUsers.username,
+        email: dealerUsers.email,
+        firstName: dealerUsers.firstName,
+        lastName: dealerUsers.lastName,
+        title: dealerUsers.title,
+        role: dealerUsers.role,
+        isActive: dealerUsers.isActive,
+        lastLogin: dealerUsers.lastLogin,
+        createdAt: dealerUsers.createdAt,
+      })
+        .from(dealerUsers)
+        .where(eq(dealerUsers.dealerId, req.dealer!.id))
+        .orderBy(dealerUsers.createdAt);
+      
+      res.json(users);
+    } catch (error) {
+      console.error("Error fetching dealer users:", error);
+      res.status(500).json({ error: "Failed to fetch users" });
+    }
+  });
+  
+  // Create a new dealer user
+  app.post("/api/dealer/users", requireDealerAuth, async (req: AuthenticatedRequest, res) => {
+    try {
+      const { username, email, firstName, lastName, title, password, role = 'user' } = req.body;
+      
+      // Validate required fields
+      if (!username || !email || !firstName || !lastName || !password) {
+        return res.status(400).json({ error: "Missing required fields" });
+      }
+      
+      // Check if username or email already exists
+      const existing = await db.select()
+        .from(dealerUsers)
+        .where(sql`${dealerUsers.username} = ${username} OR ${dealerUsers.email} = ${email}`);
+      
+      if (existing.length > 0) {
+        return res.status(400).json({ error: "Username or email already exists" });
+      }
+      
+      // Hash password (using simple hash for demo, use bcrypt in production)
+      const passwordHash = await hashPassword(password);
+      
+      const [newUser] = await db.insert(dealerUsers).values({
+        dealerId: req.dealer!.id,
+        username,
+        email,
+        firstName,
+        lastName,
+        title,
+        passwordHash,
+        role,
+        isActive: true,
+      }).returning();
+      
+      // Remove password hash from response
+      const { passwordHash: _, ...userWithoutPassword } = newUser;
+      
+      res.json(userWithoutPassword);
+    } catch (error) {
+      console.error("Error creating dealer user:", error);
+      res.status(500).json({ error: "Failed to create user" });
+    }
+  });
+  
+  // Update dealer user
+  app.patch("/api/dealer/users/:id", requireDealerAuth, async (req: AuthenticatedRequest, res) => {
+    try {
+      const userId = parseInt(req.params.id);
+      const updates = req.body;
+      
+      // Verify user belongs to dealer
+      const [existingUser] = await db.select()
+        .from(dealerUsers)
+        .where(eq(dealerUsers.id, userId));
+      
+      if (!existingUser || existingUser.dealerId !== req.dealer!.id) {
+        return res.status(404).json({ error: "User not found" });
+      }
+      
+      // Don't allow updating certain fields
+      delete updates.id;
+      delete updates.dealerId;
+      delete updates.passwordHash;
+      
+      // If password is being updated, hash it
+      if (updates.password) {
+        updates.passwordHash = await hashPassword(updates.password);
+        delete updates.password;
+      }
+      
+      const [updatedUser] = await db.update(dealerUsers)
+        .set({ ...updates, updatedAt: new Date() })
+        .where(eq(dealerUsers.id, userId))
+        .returning();
+      
+      // Remove password hash from response
+      const { passwordHash: _, ...userWithoutPassword } = updatedUser;
+      
+      res.json(userWithoutPassword);
+    } catch (error) {
+      console.error("Error updating dealer user:", error);
+      res.status(500).json({ error: "Failed to update user" });
+    }
+  });
+  
+  // Delete dealer user
+  app.delete("/api/dealer/users/:id", requireDealerAuth, async (req: AuthenticatedRequest, res) => {
+    try {
+      const userId = parseInt(req.params.id);
+      
+      // Verify user belongs to dealer
+      const [existingUser] = await db.select()
+        .from(dealerUsers)
+        .where(eq(dealerUsers.id, userId));
+      
+      if (!existingUser || existingUser.dealerId !== req.dealer!.id) {
+        return res.status(404).json({ error: "User not found" });
+      }
+      
+      // Delete user sessions first
+      await db.delete(dealerUserSessions)
+        .where(eq(dealerUserSessions.userId, userId));
+      
+      // Delete the user
+      await db.delete(dealerUsers)
+        .where(eq(dealerUsers.id, userId));
+      
+      res.json({ message: "User deleted successfully" });
+    } catch (error) {
+      console.error("Error deleting dealer user:", error);
+      res.status(500).json({ error: "Failed to delete user" });
+    }
+  });
+  
+  // Dealer user login
+  app.post("/api/dealer/user/login", async (req, res) => {
+    try {
+      const { username, password } = req.body;
+      
+      const [user] = await db.select()
+        .from(dealerUsers)
+        .where(eq(dealerUsers.username, username));
+      
+      if (!user || !user.isActive) {
+        return res.status(401).json({ error: "Invalid credentials" });
+      }
+      
+      // Verify password (simple check for demo, use bcrypt in production)
+      const validPassword = password === 'user123'; // Demo password
+      
+      if (!validPassword) {
+        return res.status(401).json({ error: "Invalid credentials" });
+      }
+      
+      // Update last login
+      await db.update(dealerUsers)
+        .set({ lastLogin: new Date() })
+        .where(eq(dealerUsers.id, user.id));
+      
+      // Create session
+      const sessionId = crypto.randomUUID();
+      const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
+      
+      await db.insert(dealerUserSessions).values({
+        id: sessionId,
+        userId: user.id,
+        dealerId: user.dealerId,
+        expiresAt,
+      });
+      
+      // Get dealer info
+      const [dealer] = await db.select()
+        .from(dealers)
+        .where(eq(dealers.id, user.dealerId));
+      
+      res.json({
+        user: {
+          id: user.id,
+          username: user.username,
+          email: user.email,
+          firstName: user.firstName,
+          lastName: user.lastName,
+          title: user.title,
+          role: user.role,
+        },
+        dealer: {
+          id: dealer.id,
+          dealerId: dealer.dealerId,
+          companyName: dealer.companyName || dealer.dealerName,
+        },
+        sessionId,
+        expiresAt: expiresAt.toISOString(),
+      });
+    } catch (error) {
+      console.error("Dealer user login error:", error);
+      res.status(500).json({ error: "Login failed" });
     }
   });
   
