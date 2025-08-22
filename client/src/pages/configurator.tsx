@@ -1130,7 +1130,7 @@ Configuration Date: ${new Date().toLocaleDateString()}
                   <select
                     value={selectedOptions.length || (selectedModel.name.includes('FBH207') ? '16\'' : '22\'')}
                     onChange={(e) => setSelectedOptions(prev => ({ ...prev, length: e.target.value }))}
-                    className="w-full p-4 rounded-lg border-2 border-black text-black bg-white appearance-none cursor-pointer font-semibold text-lg"
+                    className="w-full py-2 px-3 rounded-lg border-2 border-black text-black bg-white appearance-none cursor-pointer font-medium text-base"
                   >
                     {selectedModel.name.includes('FBH207') && (
                       <>
@@ -1162,7 +1162,7 @@ Configuration Date: ${new Date().toLocaleDateString()}
                 <h3 className="text-lg font-semibold">Pull Options</h3>
                 <div className="bg-gray-100 p-1 rounded-lg flex">
                   <button
-                    className={`flex-1 py-2 px-3 rounded-md transition-all duration-300 text-center ${
+                    className={`flex-1 py-1.5 px-2 rounded-md transition-all duration-300 text-center ${
                       selectedOptions.pullOption === 'Bumper' || !selectedOptions.pullOption
                         ? 'text-black shadow-sm'
                         : 'text-gray-600 hover:text-black'
@@ -1174,11 +1174,11 @@ Configuration Date: ${new Date().toLocaleDateString()}
                     }
                     onClick={() => setSelectedOptions(prev => ({ ...prev, pullOption: 'Bumper' }))}
                   >
-                    <div className="font-semibold text-base">Bumper Pull</div>
-                    <div className="text-sm font-medium">$0</div>
+                    <div className="font-medium text-sm">Bumper Pull</div>
+                    <div className="text-xs font-medium">$0</div>
                   </button>
                   <button
-                    className={`flex-1 py-2 px-3 rounded-md transition-all duration-300 text-center ${
+                    className={`flex-1 py-1.5 px-2 rounded-md transition-all duration-300 text-center ${
                       selectedOptions.pullOption === 'Gooseneck'
                         ? 'text-black shadow-sm'
                         : 'text-gray-600 hover:text-black'
@@ -1190,8 +1190,8 @@ Configuration Date: ${new Date().toLocaleDateString()}
                     }
                     onClick={() => setSelectedOptions(prev => ({ ...prev, pullOption: 'Gooseneck' }))}
                   >
-                    <div className="font-semibold text-base">Gooseneck Pull</div>
-                    <div className="text-sm font-medium">+$2,500</div>
+                    <div className="font-medium text-sm">Gooseneck Pull</div>
+                    <div className="text-xs font-medium">+$2,500</div>
                   </button>
                 </div>
               </div>
