@@ -18,6 +18,26 @@ import { apiRequest, queryClient } from "@/lib/queryClient";
 import { getOptionInfo } from "@/lib/trailer-option-info";
 import waltonLogo from "@/assets/walton-logo.png";
 import { DealerSaveDialog } from "@/components/dealer-save-dialog";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+
+// Quote form schema
+const quoteFormSchema = z.object({
+  firstName: z.string().min(1, "First name is required"),
+  lastName: z.string().min(1, "Last name is required"),
+  zipCode: z.string().min(1, "Zip/postal code is required"),
+  mobile: z.string().min(1, "Mobile number is required"),
+  email: z.string().email("Please enter a valid email address"),
+  company: z.string().optional(),
+  comments: z.string().optional(),
+  optIn: z.boolean().default(false),
+  ageVerification: z.boolean().refine(val => val === true, "You must verify that you are over 16 years of age")
+});
+
+type QuoteFormData = z.infer<typeof quoteFormSchema>;
+
 // Import the response types that match our API
 interface TrailerCategory {
   id: number;
@@ -167,6 +187,23 @@ export default function Configurator() {
   const [isDealerLoggedIn, setIsDealerLoggedIn] = useState(false);
   const [showDealerSaveDialog, setShowDealerSaveDialog] = useState(false);
   const [showPricingModal, setShowPricingModal] = useState(false);
+  const [showQuoteModal, setShowQuoteModal] = useState(false);
+
+  // Quote form
+  const quoteForm = useForm<QuoteFormData>({
+    resolver: zodResolver(quoteFormSchema),
+    defaultValues: {
+      firstName: "",
+      lastName: "",
+      zipCode: "",
+      mobile: "",
+      email: "",
+      company: "",
+      comments: "",
+      optIn: false,
+      ageVerification: false
+    }
+  });
 
   const { data: categories, isLoading, error } = useQuery<TrailerCategory[]>({
     queryKey: ['/api/categories'],
@@ -376,6 +413,53 @@ Configuration Date: ${new Date().toLocaleDateString()}
       title: "PDF Downloaded",
       description: "Your trailer specification sheet has been downloaded.",
     });
+  };
+
+  const handleQuoteSubmit = async (data: QuoteFormData) => {
+    try {
+      setIsSubmittingQuote(true);
+      
+      const quoteData = {
+        ...data,
+        configuration: {
+          categoryId: selectedCategory?.id,
+          categoryName: selectedCategory?.name,
+          modelId: selectedModel?.modelId,
+          modelName: selectedModel?.name,
+          selectedOptions,
+          totalPrice,
+          trailerSpecs: selectedModel ? {
+            gvwr: selectedModel.gvwr,
+            payload: selectedModel.payload,
+            deckSize: selectedModel.deckSize,
+            axles: selectedModel.axles
+          } : null
+        }
+      };
+
+      await apiRequest('/api/quotes', {
+        method: 'POST',
+        body: JSON.stringify(quoteData)
+      });
+
+      toast({
+        title: "Quote Request Sent!",
+        description: "Thank you for your request. A dealer will contact you within 24 hours with your custom quote.",
+      });
+
+      setShowQuoteModal(false);
+      quoteForm.reset();
+      
+    } catch (error) {
+      console.error('Error submitting quote:', error);
+      toast({
+        title: "Error",
+        description: "There was an issue submitting your quote request. Please try again.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsSubmittingQuote(false);
+    }
   };
 
   const currentTrailerImage = selectedModel?.imageUrl || 
@@ -1045,12 +1129,7 @@ Configuration Date: ${new Date().toLocaleDateString()}
                       </button>
                     </div>
                     <Button 
-                      onClick={() => {
-                        toast({
-                          title: "Quote Request Sent",
-                          description: "A dealer will contact you within 24 hours.",
-                        });
-                      }}
+                      onClick={() => setShowQuoteModal(true)}
                       className="bg-blue-500 hover:bg-blue-600 text-white px-6 md:px-8 py-2 md:py-3 text-sm md:text-base"
                     >
                       Request A Quote
@@ -1194,6 +1273,195 @@ Configuration Date: ${new Date().toLocaleDateString()}
               </div>
             </div>
           )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Quote Request Modal */}
+      <Dialog open={showQuoteModal} onOpenChange={setShowQuoteModal}>
+        <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Request A Quote</DialogTitle>
+            <DialogDescription>
+              Get a personalized quote for your {selectedModel?.name} trailer configuration.
+            </DialogDescription>
+          </DialogHeader>
+          
+          <Form {...quoteForm}>
+            <form onSubmit={quoteForm.handleSubmit(handleQuoteSubmit)} className="space-y-4">
+              <div className="grid grid-cols-2 gap-3">
+                <FormField
+                  control={quoteForm.control}
+                  name="firstName"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>First Name</FormLabel>
+                      <FormControl>
+                        <Input placeholder="John" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={quoteForm.control}
+                  name="lastName"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Last Name</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Smith" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+
+              <FormField
+                control={quoteForm.control}
+                name="zipCode"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Zip/Postal Code</FormLabel>
+                    <FormControl>
+                      <Input placeholder="12345" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={quoteForm.control}
+                name="mobile"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Mobile</FormLabel>
+                    <FormControl>
+                      <Input placeholder="(555) 123-4567" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={quoteForm.control}
+                name="email"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Email</FormLabel>
+                    <FormControl>
+                      <Input placeholder="john@example.com" type="email" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={quoteForm.control}
+                name="company"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Company (Optional)</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Your Company" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={quoteForm.control}
+                name="comments"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Additional Comments or Requests</FormLabel>
+                    <FormControl>
+                      <Textarea 
+                        placeholder="Any special requirements or questions..."
+                        className="min-h-[80px]"
+                        {...field} 
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <div className="space-y-3 pt-2">
+                <FormField
+                  control={quoteForm.control}
+                  name="optIn"
+                  render={({ field }) => (
+                    <FormItem className="flex flex-row items-start space-x-3 space-y-0">
+                      <FormControl>
+                        <Checkbox
+                          checked={field.value}
+                          onCheckedChange={field.onChange}
+                        />
+                      </FormControl>
+                      <div className="space-y-1 leading-none">
+                        <FormLabel className="text-xs text-gray-600">
+                          <strong>Opt In:</strong> By providing your email address, you may receive future communications about updates, 
+                          incentives and special offers from Walton Trailers or its parent, subsidiary or affiliated companies 
+                          or one of their authorized dealers or representatives.
+                        </FormLabel>
+                      </div>
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={quoteForm.control}
+                  name="ageVerification"
+                  render={({ field }) => (
+                    <FormItem className="flex flex-row items-start space-x-3 space-y-0">
+                      <FormControl>
+                        <Checkbox
+                          checked={field.value}
+                          onCheckedChange={field.onChange}
+                        />
+                      </FormControl>
+                      <div className="space-y-1 leading-none">
+                        <FormLabel className="text-xs text-gray-600">
+                          By clicking on SUBMIT, you verify that you are over 16 years of age. *
+                        </FormLabel>
+                        <FormMessage />
+                      </div>
+                    </FormItem>
+                  )}
+                />
+
+                <div className="text-xs text-gray-500">
+                  <p>By submitting your mobile phone number, you also acknowledge that Walton Trailers or its parent, 
+                  subsidiary or affiliated companies or one of their authorized dealers or representatives may send you 
+                  commercial text messages. Such contact may use automated technology.</p>
+                  <p className="mt-2">You are not required to agree to this as a condition of purchasing any property, goods, or services.</p>
+                </div>
+              </div>
+
+              <div className="flex gap-3 pt-4">
+                <Button 
+                  type="button" 
+                  variant="outline" 
+                  onClick={() => setShowQuoteModal(false)}
+                  className="flex-1"
+                >
+                  Cancel
+                </Button>
+                <Button 
+                  type="submit" 
+                  disabled={isSubmittingQuote}
+                  className="flex-1 bg-blue-500 hover:bg-blue-600"
+                >
+                  {isSubmittingQuote ? "Submitting..." : "Submit Request"}
+                </Button>
+              </div>
+            </form>
+          </Form>
         </DialogContent>
       </Dialog>
     </div>
