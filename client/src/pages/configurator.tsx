@@ -965,7 +965,7 @@ Configuration Date: ${new Date().toLocaleDateString()}
               <div>
                 <h1 className="text-2xl md:text-3xl lg:text-4xl font-bold mb-4">
                   {selectedModel.name.includes('FBH') ? 'FBH Gooseneck' : 
-                   selectedModel.name.includes('FBX') ? 'FBX Gooseneck' : 
+                   selectedModel.name.includes('FBX') ? 'Flatbed Extreme' : 
                    selectedModel.name}
                 </h1>
                 {/* Dynamic specs for selected model */}
