@@ -1,5 +1,5 @@
 import { useState, useMemo } from "react";
-import { ArrowLeft, Edit, Save, X, DollarSign, Search, ChevronDown, Plus, Trash2, Archive, RotateCcw } from "lucide-react";
+import { ArrowLeft, Edit, Save, X, DollarSign, Search, ChevronDown, Plus, Trash2, Archive, RotateCcw, Upload } from "lucide-react";
 import { Link } from "wouter";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
@@ -15,6 +15,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { useAdminAuth } from "@/hooks/useAdminAuth";
+import { ObjectUploader } from "@/components/ObjectUploader";
 
 interface TrailerModel {
   id: number;
@@ -395,6 +396,62 @@ export default function PricingManagement() {
     });
   };
 
+  // Category image upload handlers
+  const handleGetCategoryUploadParameters = async () => {
+    const response = await apiRequest("/api/categories/upload-url", {
+      method: "POST",
+      headers: sessionId ? { Authorization: `Bearer ${sessionId}` } : {},
+    });
+    return {
+      method: "PUT" as const,
+      url: response.uploadURL,
+    };
+  };
+
+  const handleCategoryImageUploadComplete = async (categoryId: number, result: any) => {
+    try {
+      const uploadedFile = result.successful?.[0];
+      if (!uploadedFile) {
+        throw new Error("No file uploaded");
+      }
+
+      // Extract the object path from the upload URL
+      const uploadURL = uploadedFile.uploadURL;
+      const url = new URL(uploadURL);
+      const pathMatch = url.pathname.match(/\/([^/]+)$/);
+      
+      if (!pathMatch) {
+        throw new Error("Could not extract object ID from upload URL");
+      }
+      
+      // Construct the public URL for the uploaded image
+      const objectId = pathMatch[1];
+      const imageUrl = `/objects/models/${objectId}`;
+      
+      // Update the category with the new image URL
+      await apiRequest(`/api/categories/${categoryId}`, {
+        method: "PATCH",
+        body: { imageUrl },
+        headers: sessionId ? { Authorization: `Bearer ${sessionId}` } : {},
+      });
+
+      // Refresh the categories list
+      queryClient.invalidateQueries({ queryKey: ["/api/categories"] });
+      
+      toast({
+        title: "Success",
+        description: "Category image updated successfully",
+      });
+    } catch (error) {
+      console.error("Error updating category image:", error);
+      toast({
+        title: "Error",
+        description: "Failed to update category image",
+        variant: "destructive",
+      });
+    }
+  };
+
   // Filter options based on search query
   const filteredOptions = useMemo(() => {
     if (!options || !searchQuery.trim()) {
@@ -602,6 +659,7 @@ export default function PricingManagement() {
                   <Table>
                     <TableHeader>
                       <TableRow>
+                        <TableHead>Image</TableHead>
                         <TableHead>Slug</TableHead>
                         <TableHead>Name</TableHead>
                         <TableHead>Description</TableHead>
@@ -612,6 +670,32 @@ export default function PricingManagement() {
                     <TableBody>
                       {(trailerCategories as TrailerCategory[])?.map((category) => (
                         <TableRow key={category.id}>
+                          <TableCell>
+                            <ObjectUploader
+                              onGetUploadParameters={handleGetCategoryUploadParameters}
+                              onComplete={(result: any) => handleCategoryImageUploadComplete(category.id, result)}
+                              currentImageUrl={category.imageUrl}
+                              modelName={category.name}
+                            >
+                              {category.imageUrl ? (
+                                <div className="w-12 h-12 rounded-md overflow-hidden border border-gray-200 hover:border-gray-400 transition-colors cursor-pointer">
+                                  <img 
+                                    src={category.imageUrl} 
+                                    alt={category.name}
+                                    className="w-full h-full object-cover"
+                                    onError={(e: any) => {
+                                      e.target.onerror = null;
+                                      e.target.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="48" height="48" fill="none"%3E%3Crect width="48" height="48" fill="%23f3f4f6"/%3E%3Cpath stroke="%239ca3af" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M24 16v16m-8-8h16"/%3E%3C/svg%3E';
+                                    }}
+                                  />
+                                </div>
+                              ) : (
+                                <div className="w-12 h-12 rounded-md border-2 border-dashed border-gray-300 hover:border-gray-400 transition-colors cursor-pointer flex items-center justify-center bg-gray-50">
+                                  <Upload className="w-5 h-5 text-gray-400" />
+                                </div>
+                              )}
+                            </ObjectUploader>
+                          </TableCell>
                           <TableCell>
                             {editingCategory?.id === category.id ? (
                               <Input
@@ -712,8 +796,7 @@ export default function PricingManagement() {
                                         name: category.name,
                                         description: category.description,
                                         imageUrl: category.imageUrl,
-                                        startingPrice: category.startingPrice,
-                                        orderIndex: category.orderIndex
+                                        startingPrice: category.startingPrice
                                       }
                                     }));
                                   }}

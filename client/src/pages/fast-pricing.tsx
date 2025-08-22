@@ -265,7 +265,18 @@ export default function FastPricing() {
         throw new Error("No file uploaded");
       }
 
-      const imageUrl = uploadedFile.uploadURL;
+      // Extract the object path from the upload URL
+      const uploadURL = uploadedFile.uploadURL;
+      const url = new URL(uploadURL);
+      const pathMatch = url.pathname.match(/\/([^/]+)$/);
+      
+      if (!pathMatch) {
+        throw new Error("Could not extract object ID from upload URL");
+      }
+      
+      // Construct the public URL for the uploaded image
+      const objectId = pathMatch[1];
+      const imageUrl = `/objects/models/${objectId}`;
       
       // Update the category with the new image URL
       await apiRequest(`/api/categories/${categoryId}`, {
