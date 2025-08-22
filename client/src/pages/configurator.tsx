@@ -537,14 +537,14 @@ Configuration Date: ${new Date().toLocaleDateString()}
                   style={{ animationDelay: `${index * 150}ms` }}
                 >
                   <button
-                    className="w-full text-left group relative overflow-hidden rounded-3xl border border-gray-200 bg-white hover:border-gray-300 hover:shadow-xl transition-all duration-500 hover:scale-[1.02]"
+                    className="w-full text-left group relative overflow-hidden rounded-md border border-gray-200 bg-white hover:border-gray-300 hover:shadow-xl transition-all duration-500 hover:scale-[1.02]"
                     onClick={() => handleCategorySelect(category)}
                     onMouseEnter={() => setHoveredCategory(category)}
                     onMouseLeave={() => setHoveredCategory(null)}
                   >
                     <div className="flex flex-col">
                       {/* Top - Image */}
-                      <div className="w-full h-32 md:h-36 relative overflow-hidden rounded-t-3xl">
+                      <div className="w-full h-32 md:h-36 relative overflow-hidden rounded-t-md">
                         <img 
                           src={category.imageUrl}
                           alt={category.name}
