@@ -963,12 +963,19 @@ Configuration Date: ${new Date().toLocaleDateString()}
                    selectedModel.name}
                 </h1>
                 {/* Dynamic specs for selected model */}
-                <div className="flex flex-wrap items-center gap-2 md:gap-4 text-base md:text-lg text-gray-600 mb-8">
-                  <span className="font-medium">{selectedModel.gvwr}</span>
-                  <span className="hidden md:inline text-gray-400">•</span>
-                  <span className="font-medium">{selectedModel.payload}</span>
-                  <span className="hidden md:inline text-gray-400">•</span>
-                  <span className="font-medium">{selectedModel.deckSize}</span>
+                <div className="flex flex-wrap items-start gap-6 md:gap-8 text-base md:text-lg mb-8">
+                  <div className="text-center">
+                    <div className="font-medium text-gray-900">{selectedModel.gvwr}</div>
+                    <div className="text-xs text-gray-500 mt-1">GVWR</div>
+                  </div>
+                  <div className="text-center">
+                    <div className="font-medium text-gray-900">{selectedModel.payload}</div>
+                    <div className="text-xs text-gray-500 mt-1">Payload</div>
+                  </div>
+                  <div className="text-center">
+                    <div className="font-medium text-gray-900">{selectedModel.deckSize}</div>
+                    <div className="text-xs text-gray-500 mt-1">Deck Size</div>
+                  </div>
                 </div>
               </div>
 
@@ -990,17 +997,10 @@ Configuration Date: ${new Date().toLocaleDateString()}
                       }`}
                       onClick={() => handleModelSelect(model)}
                     >
-                      <div className="flex justify-between items-start">
-                        <div className="flex-1 pr-4">
-                          <div className="font-semibold text-lg mb-1">
+                      <div className="flex justify-between items-center">
+                        <div className="flex-1">
+                          <div className="font-semibold text-lg">
                             {model.name.replace(/^(FBH|FBX)\d+\s*-?\s*/, '')}
-                          </div>
-                          <div className="text-sm text-gray-600">
-                            {model.name.includes('14K') ? 'Heavy-duty trailer perfect for mid-weight hauling applications' :
-                             model.name.includes('16K') ? 'Maximum capacity trailer for the heaviest commercial loads' :
-                             model.name.includes('12K') ? 'Versatile trailer ideal for standard commercial applications' :
-                             model.name.includes('10K') ? 'Lightweight yet durable for everyday hauling needs' :
-                             'Professional-grade trailer designed for commercial use'}
                           </div>
                         </div>
                         <div className="text-right">
