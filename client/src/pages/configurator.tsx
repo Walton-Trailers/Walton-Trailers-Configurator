@@ -357,6 +357,12 @@ export default function Configurator() {
     setCurrentStep(3);
   };
 
+  const handleModelChange = (model: TrailerModel) => {
+    setSelectedModel(model);
+    // Don't change step, just update the model and clear options
+    setSelectedOptions({});
+  };
+
   const handleOptionChange = (category: string, optionId: number, isMultiSelect: boolean, checked: boolean) => {
     const newOptions = { ...selectedOptions };
     
@@ -995,7 +1001,7 @@ Configuration Date: ${new Date().toLocaleDateString()}
                           ? 'border-blue-500 bg-blue-50' 
                           : 'border-gray-200 hover:border-gray-300 bg-white'
                       }`}
-                      onClick={() => handleModelSelect(model)}
+                      onClick={() => handleModelChange(model)}
                     >
                       <div className="flex justify-between items-center">
                         <div className="flex-1">
