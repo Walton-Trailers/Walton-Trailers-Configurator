@@ -1038,7 +1038,9 @@ Configuration Date: ${new Date().toLocaleDateString()}
                   {/* Smooth Towing Experience */}
                   <div className="flex items-start space-x-4">
                     <div className="w-12 h-12 bg-orange-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                      <div className="w-6 h-6 bg-orange-500 rounded"></div>
+                      <svg className="w-6 h-6 text-orange-500" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z"/>
+                      </svg>
                     </div>
                     <div>
                       <h5 className="font-semibold text-gray-900 mb-2">Smooth Towing Experience</h5>
@@ -1051,7 +1053,9 @@ Configuration Date: ${new Date().toLocaleDateString()}
                   {/* Heavy-Duty Construction */}
                   <div className="flex items-start space-x-4">
                     <div className="w-12 h-12 bg-orange-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                      <div className="w-6 h-6 bg-orange-500 rounded"></div>
+                      <svg className="w-6 h-6 text-orange-500" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z"/>
+                      </svg>
                     </div>
                     <div>
                       <h5 className="font-semibold text-gray-900 mb-2">Heavy-Duty Construction</h5>
@@ -1064,7 +1068,9 @@ Configuration Date: ${new Date().toLocaleDateString()}
                   {/* Superior Load Capacity */}
                   <div className="flex items-start space-x-4">
                     <div className="w-12 h-12 bg-orange-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                      <div className="w-6 h-6 bg-orange-500 rounded"></div>
+                      <svg className="w-6 h-6 text-orange-500" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z"/>
+                      </svg>
                     </div>
                     <div>
                       <h5 className="font-semibold text-gray-900 mb-2">Superior Load Capacity</h5>
