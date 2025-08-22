@@ -990,10 +990,17 @@ Configuration Date: ${new Date().toLocaleDateString()}
                       }`}
                       onClick={() => handleModelSelect(model)}
                     >
-                      <div className="flex justify-between items-center">
-                        <div className="flex-1">
-                          <div className="font-semibold text-lg">
+                      <div className="flex justify-between items-start">
+                        <div className="flex-1 pr-4">
+                          <div className="font-semibold text-lg mb-1">
                             {model.name.replace(/^(FBH|FBX)\d+\s*-?\s*/, '')}
+                          </div>
+                          <div className="text-sm text-gray-600">
+                            {model.name.includes('14K') ? 'Heavy-duty trailer perfect for mid-weight hauling applications' :
+                             model.name.includes('16K') ? 'Maximum capacity trailer for the heaviest commercial loads' :
+                             model.name.includes('12K') ? 'Versatile trailer ideal for standard commercial applications' :
+                             model.name.includes('10K') ? 'Lightweight yet durable for everyday hauling needs' :
+                             'Professional-grade trailer designed for commercial use'}
                           </div>
                         </div>
                         <div className="text-right">
