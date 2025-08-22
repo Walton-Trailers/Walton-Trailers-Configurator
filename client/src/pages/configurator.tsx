@@ -1032,9 +1032,9 @@ Configuration Date: ${new Date().toLocaleDateString()}
 
       {/* Fixed Tesla-style pricing display - only show on step 4 */}
       {currentStep === 4 && selectedModel && (
-        <div className="fixed bottom-0 left-0 right-0 bg-white dark:bg-zinc-900 border-t border-zinc-200 dark:border-zinc-700 z-50">
-          <div className="container mx-auto px-4 py-4">
-            <div className="flex items-center justify-between">
+        <div className="fixed bottom-0 right-0 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-tl-lg shadow-lg z-50 m-4">
+          <div className="px-6 py-4">
+            <div className="flex items-center justify-between gap-6">
               <div className="flex items-center gap-2">
                 <div>
                   <div className="text-2xl md:text-3xl font-bold">
