@@ -1126,58 +1126,34 @@ Configuration Date: ${new Date().toLocaleDateString()}
               {/* Length Selector */}
               <div className="space-y-4">
                 <h3 className="text-lg font-semibold">Choose Length</h3>
-                <div className="space-y-3">
-                  {/* Length options based on selected model */}
-                  {selectedModel.name.includes('FBH207') && (
-                    <>
-                      {['16\'', '18\'', '20\'', '22\'', '24\'', '26\''].map((length) => (
-                        <button
-                          key={length}
-                          className={`w-full p-4 rounded-lg transition-all duration-300 text-left ${
-                            selectedOptions.length === length
-                              ? 'text-black border-0 outline-0' 
-                              : 'border-2 border-black text-black hover:border-gray-600 bg-white'
-                          }`}
-                          style={selectedOptions.length === length ? { backgroundColor: '#f8efdd' } : {}}
-                          onClick={() => setSelectedOptions(prev => ({ ...prev, length }))}
-                        >
-                          <div className="flex justify-between items-center">
-                            <div className="flex-1">
-                              <div className="font-semibold text-lg">{length} Length</div>
-                            </div>
-                            <div className="text-lg font-bold text-black">
-                              {length === '16\'' ? '$0' : `+$${(parseInt(length) - 16) * 500}`}
-                            </div>
-                          </div>
-                        </button>
-                      ))}
-                    </>
-                  )}
-                  {selectedModel.name.includes('FBH208') && (
-                    <>
-                      {['22\'', '24\''].map((length) => (
-                        <button
-                          key={length}
-                          className={`w-full p-4 rounded-lg transition-all duration-300 text-left ${
-                            selectedOptions.length === length
-                              ? 'text-black border-0 outline-0' 
-                              : 'border-2 border-black text-black hover:border-gray-600 bg-white'
-                          }`}
-                          style={selectedOptions.length === length ? { backgroundColor: '#f8efdd' } : {}}
-                          onClick={() => setSelectedOptions(prev => ({ ...prev, length }))}
-                        >
-                          <div className="flex justify-between items-center">
-                            <div className="flex-1">
-                              <div className="font-semibold text-lg">{length} Length</div>
-                            </div>
-                            <div className="text-lg font-bold text-black">
-                              {length === '22\'' ? '$0' : '+$1,000'}
-                            </div>
-                          </div>
-                        </button>
-                      ))}
-                    </>
-                  )}
+                <div className="relative">
+                  <select
+                    value={selectedOptions.length || (selectedModel.name.includes('FBH207') ? '16\'' : '22\'')}
+                    onChange={(e) => setSelectedOptions(prev => ({ ...prev, length: e.target.value }))}
+                    className="w-full p-4 rounded-lg border-2 border-black text-black bg-white appearance-none cursor-pointer font-semibold text-lg"
+                  >
+                    {selectedModel.name.includes('FBH207') && (
+                      <>
+                        <option value="16'">16' Length - $0</option>
+                        <option value="18'">18' Length - +$1,000</option>
+                        <option value="20'">20' Length - +$2,000</option>
+                        <option value="22'">22' Length - +$3,000</option>
+                        <option value="24'">24' Length - +$4,000</option>
+                        <option value="26'">26' Length - +$5,000</option>
+                      </>
+                    )}
+                    {selectedModel.name.includes('FBH208') && (
+                      <>
+                        <option value="22'">22' Length - $0</option>
+                        <option value="24'">24' Length - +$1,000</option>
+                      </>
+                    )}
+                  </select>
+                  <div className="absolute inset-y-0 right-0 flex items-center px-4 pointer-events-none">
+                    <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                    </svg>
+                  </div>
                 </div>
               </div>
 
