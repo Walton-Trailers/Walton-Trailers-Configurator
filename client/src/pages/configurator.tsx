@@ -166,6 +166,7 @@ export default function Configurator() {
   const [isSubmittingQuote, setIsSubmittingQuote] = useState(false);
   const [isDealerLoggedIn, setIsDealerLoggedIn] = useState(false);
   const [showDealerSaveDialog, setShowDealerSaveDialog] = useState(false);
+  const [showPricingModal, setShowPricingModal] = useState(false);
 
   const { data: categories, isLoading, error } = useQuery<TrailerCategory[]>({
     queryKey: ['/api/categories'],
@@ -1036,7 +1037,12 @@ Configuration Date: ${new Date().toLocaleDateString()}
                         </div>
                         <div className="text-xs md:text-sm text-zinc-500">Vehicle Price</div>
                       </div>
-                      <ChevronDown className="w-4 h-4 md:w-5 md:h-5 text-zinc-400 ml-1" />
+                      <button 
+                        onClick={() => setShowPricingModal(true)}
+                        className="ml-1 p-1 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded transition-colors"
+                      >
+                        <ChevronDown className="w-4 h-4 md:w-5 md:h-5 text-zinc-400" />
+                      </button>
                     </div>
                     <Button 
                       onClick={() => {
@@ -1089,6 +1095,107 @@ Configuration Date: ${new Date().toLocaleDateString()}
         onOpenChange={setShowDealerSaveDialog}
         onSave={handleDealerSaveConfiguration}
       />
+
+      {/* Pricing Configuration Modal */}
+      <Dialog open={showPricingModal} onOpenChange={setShowPricingModal}>
+        <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader className="pb-4">
+            <DialogTitle className="text-xl font-semibold">
+              Configuration Summary
+            </DialogTitle>
+          </DialogHeader>
+          
+          {selectedModel && (
+            <div className="space-y-6">
+              {/* Trailer Image */}
+              <div className="w-full h-48 bg-gray-50 rounded-lg flex items-center justify-center">
+                <img 
+                  src={currentTrailerImage}
+                  alt={selectedModel.name}
+                  className="max-w-full max-h-full object-contain"
+                />
+              </div>
+              
+              {/* Model Information */}
+              <div>
+                <h3 className="text-lg font-semibold mb-2">{selectedModel.name}</h3>
+                <div className="grid grid-cols-2 gap-4 text-sm text-zinc-600">
+                  <div>
+                    <span className="font-medium">GVWR:</span> {selectedModel.gvwr}
+                  </div>
+                  <div>
+                    <span className="font-medium">Payload:</span> {selectedModel.payload}
+                  </div>
+                  <div>
+                    <span className="font-medium">Deck Size:</span> {selectedModel.deckSize}
+                  </div>
+                  <div>
+                    <span className="font-medium">Axles:</span> {selectedModel.axles}
+                  </div>
+                </div>
+              </div>
+
+              {/* Selected Options */}
+              {Object.keys(selectedOptions).length > 0 && (
+                <div>
+                  <h4 className="text-base font-semibold mb-3">Selected Options</h4>
+                  <div className="space-y-2">
+                    {Object.entries(selectedOptions).map(([category, optionIds]) => {
+                      const categoryOptions = options?.filter(opt => opt.category === category) || [];
+                      const selectedCategoryOptions = Array.isArray(optionIds) 
+                        ? categoryOptions.filter(opt => optionIds.includes(opt.id))
+                        : categoryOptions.filter(opt => opt.id === optionIds);
+                      
+                      return selectedCategoryOptions.map(option => (
+                        <div key={option.id} className="flex justify-between py-1 text-sm">
+                          <span>{option.name}</span>
+                          <span className="font-medium">
+                            {option.price === 0 ? 'Included' : 
+                             option.price > 0 ? `+$${option.price.toLocaleString()}` : 
+                             `$${option.price.toLocaleString()}`}
+                          </span>
+                        </div>
+                      ));
+                    })}
+                  </div>
+                </div>
+              )}
+
+              {/* Pricing Breakdown */}
+              <div className="border-t pt-4">
+                <div className="flex justify-between items-center mb-2">
+                  <span className="text-sm">Base Price</span>
+                  <span className="text-sm">${selectedModel.basePrice.toLocaleString()}</span>
+                </div>
+                {Object.entries(selectedOptions).map(([category, optionIds]) => {
+                  const categoryOptions = options?.filter(opt => opt.category === category) || [];
+                  const selectedCategoryOptions = Array.isArray(optionIds) 
+                    ? categoryOptions.filter(opt => optionIds.includes(opt.id))
+                    : categoryOptions.filter(opt => opt.id === optionIds);
+                  
+                  return selectedCategoryOptions.map(option => (
+                    option.price !== 0 && (
+                      <div key={option.id} className="flex justify-between items-center mb-2">
+                        <span className="text-sm text-zinc-600">{option.name}</span>
+                        <span className="text-sm">
+                          {option.price > 0 ? `+$${option.price.toLocaleString()}` : 
+                           `$${option.price.toLocaleString()}`}
+                        </span>
+                      </div>
+                    )
+                  ));
+                })}
+                <div className="border-t pt-2 mt-4">
+                  <div className="flex justify-between items-center">
+                    <span className="text-lg font-semibold">Total MSRP</span>
+                    <span className="text-lg font-bold">${totalPrice.toLocaleString()}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
