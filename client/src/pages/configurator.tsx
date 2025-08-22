@@ -1162,7 +1162,7 @@ Configuration Date: ${new Date().toLocaleDateString()}
                 <h3 className="text-lg font-semibold">Pull Options</h3>
                 <div className="bg-gray-100 p-1 rounded-lg flex">
                   <button
-                    className={`flex-1 py-3 px-4 rounded-md transition-all duration-300 text-center ${
+                    className={`flex-1 py-2 px-3 rounded-md transition-all duration-300 text-center ${
                       selectedOptions.pullOption === 'Bumper' || !selectedOptions.pullOption
                         ? 'text-black shadow-sm'
                         : 'text-gray-600 hover:text-black'
@@ -1174,11 +1174,11 @@ Configuration Date: ${new Date().toLocaleDateString()}
                     }
                     onClick={() => setSelectedOptions(prev => ({ ...prev, pullOption: 'Bumper' }))}
                   >
-                    <div className="font-semibold">Bumper Pull</div>
+                    <div className="font-semibold text-base">Bumper Pull</div>
                     <div className="text-sm font-medium">$0</div>
                   </button>
                   <button
-                    className={`flex-1 py-3 px-4 rounded-md transition-all duration-300 text-center ${
+                    className={`flex-1 py-2 px-3 rounded-md transition-all duration-300 text-center ${
                       selectedOptions.pullOption === 'Gooseneck'
                         ? 'text-black shadow-sm'
                         : 'text-gray-600 hover:text-black'
@@ -1190,7 +1190,7 @@ Configuration Date: ${new Date().toLocaleDateString()}
                     }
                     onClick={() => setSelectedOptions(prev => ({ ...prev, pullOption: 'Gooseneck' }))}
                   >
-                    <div className="font-semibold">Gooseneck Pull</div>
+                    <div className="font-semibold text-base">Gooseneck Pull</div>
                     <div className="text-sm font-medium">+$2,500</div>
                   </button>
                 </div>
