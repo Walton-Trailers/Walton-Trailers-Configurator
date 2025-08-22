@@ -484,24 +484,24 @@ Configuration Date: ${new Date().toLocaleDateString()}
             
             {/* Mobile progress indicator - horizontal dots */}
             <div className="flex md:hidden items-center space-x-2">
-              <div className={`w-2 h-2 rounded-full transition-all duration-300`} style={currentStep >= 1 ? { backgroundColor: '#F8EFDD' } : { backgroundColor: '#6B7280' }} />
-              <div className={`w-2 h-2 rounded-full transition-all duration-300`} style={currentStep >= 2 ? { backgroundColor: '#F8EFDD' } : { backgroundColor: '#6B7280' }} />
-              <div className={`w-2 h-2 rounded-full transition-all duration-300`} style={currentStep >= 3 ? { backgroundColor: '#F8EFDD' } : { backgroundColor: '#6B7280' }} />
-              <div className={`w-2 h-2 rounded-full transition-all duration-300`} style={currentStep >= 4 ? { backgroundColor: '#F8EFDD' } : { backgroundColor: '#6B7280' }} />
+              <div className={`w-2 h-2 rounded-full transition-all duration-300`} style={currentStep >= 1 ? { backgroundColor: '#c1af89' } : { backgroundColor: '#6B7280' }} />
+              <div className={`w-2 h-2 rounded-full transition-all duration-300`} style={currentStep >= 2 ? { backgroundColor: '#c1af89' } : { backgroundColor: '#6B7280' }} />
+              <div className={`w-2 h-2 rounded-full transition-all duration-300`} style={currentStep >= 3 ? { backgroundColor: '#c1af89' } : { backgroundColor: '#6B7280' }} />
+              <div className={`w-2 h-2 rounded-full transition-all duration-300`} style={currentStep >= 4 ? { backgroundColor: '#c1af89' } : { backgroundColor: '#6B7280' }} />
             </div>
             
             {/* Desktop progress indicator */}
             <div className="hidden md:flex items-center space-x-6 text-sm uppercase font-normal" style={{ fontFamily: 'Oswald, sans-serif' }}>
-              <div className={`px-4 py-2 rounded-md transition-all duration-300 ${currentStep >= 1 ? 'text-gray-700' : 'bg-gray-100 text-gray-600'}`} style={currentStep >= 1 ? { backgroundColor: '#F8EFDD' } : {}}>
+              <div className={`px-4 py-2 rounded-md transition-all duration-300 ${currentStep >= 1 ? 'text-gray-700' : 'bg-gray-100 text-gray-600'}`} style={currentStep >= 1 ? { backgroundColor: '#c1af89' } : {}}>
                 Category
               </div>
-              <div className={`px-4 py-2 rounded-md transition-all duration-300 ${currentStep >= 2 ? 'text-gray-700' : 'bg-gray-100 text-gray-600'}`} style={currentStep >= 2 ? { backgroundColor: '#F8EFDD' } : {}}>
+              <div className={`px-4 py-2 rounded-md transition-all duration-300 ${currentStep >= 2 ? 'text-gray-700' : 'bg-gray-100 text-gray-600'}`} style={currentStep >= 2 ? { backgroundColor: '#c1af89' } : {}}>
                 Model
               </div>
-              <div className={`px-4 py-2 rounded-md transition-all duration-300 ${currentStep >= 3 ? 'text-gray-700' : 'bg-gray-100 text-gray-600'}`} style={currentStep >= 3 ? { backgroundColor: '#F8EFDD' } : {}}>
+              <div className={`px-4 py-2 rounded-md transition-all duration-300 ${currentStep >= 3 ? 'text-gray-700' : 'bg-gray-100 text-gray-600'}`} style={currentStep >= 3 ? { backgroundColor: '#c1af89' } : {}}>
                 Options
               </div>
-              <div className={`px-4 py-2 rounded-md transition-all duration-300 ${currentStep >= 4 ? 'text-gray-700' : 'bg-gray-100 text-gray-600'}`} style={currentStep >= 4 ? { backgroundColor: '#F8EFDD' } : {}}>
+              <div className={`px-4 py-2 rounded-md transition-all duration-300 ${currentStep >= 4 ? 'text-gray-700' : 'bg-gray-100 text-gray-600'}`} style={currentStep >= 4 ? { backgroundColor: '#c1af89' } : {}}>
                 Order
               </div>
             </div>
