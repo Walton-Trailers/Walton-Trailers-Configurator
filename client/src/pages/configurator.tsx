@@ -1053,7 +1053,7 @@ Configuration Date: ${new Date().toLocaleDateString()}
                       }}
                       className="bg-blue-500 hover:bg-blue-600 text-white px-6 md:px-8 py-2 md:py-3 text-sm md:text-base"
                     >
-                      Order Now
+                      Request A Quote
                     </Button>
                   </div>
                 </div>
