@@ -963,11 +963,14 @@ Configuration Date: ${new Date().toLocaleDateString()}
               </div>
               
               <div>
-                <h1 className="text-2xl md:text-3xl lg:text-4xl font-bold mb-4">
+                <h1 className="text-2xl md:text-3xl lg:text-4xl font-bold mb-2">
                   {selectedModel.name.includes('FBH') ? 'FBH Gooseneck' : 
                    selectedModel.name.includes('FBX') ? 'Flatbed Extreme' : 
                    selectedModel.name}
                 </h1>
+                {selectedModel.name.includes('FBX') && (
+                  <p className="text-lg text-gray-600 mb-4">FBX Offers Ultimate Strength and Flexibility</p>
+                )}
                 {/* Dynamic specs for selected model */}
                 <div className="flex flex-wrap items-start gap-6 md:gap-8 text-base md:text-lg mb-8">
                   <div className="text-center">
