@@ -855,6 +855,7 @@ export default function PricingManagement() {
                   <Table>
                     <TableHeader>
                       <TableRow>
+                        <TableHead>Image</TableHead>
                         <TableHead>Model ID</TableHead>
                         <TableHead>Model Name</TableHead>
                         <TableHead>Category</TableHead>
@@ -868,6 +869,86 @@ export default function PricingManagement() {
                     <TableBody>
                       {filteredModels.map((model: TrailerModel) => (
                         <TableRow key={model.id}>
+                          <TableCell>
+                            {model.imageUrl ? (
+                              <ObjectUploader
+                                maxNumberOfFiles={1}
+                                maxFileSize={10485760}
+                                onGetUploadParameters={async () => {
+                                  const response = await apiRequest("/api/models/upload-url", {
+                                    method: "POST",
+                                    headers: sessionId ? { Authorization: `Bearer ${sessionId}` } : {},
+                                  });
+                                  return {
+                                    method: "PUT" as const,
+                                    url: response.uploadURL
+                                  };
+                                }}
+                                onComplete={async (result) => {
+                                  // Update model image with uploaded URL
+                                  const uploadedFile = result.successful[0];
+                                  if (uploadedFile) {
+                                    await apiRequest(`/api/models/${model.id}/image`, {
+                                      method: "PATCH",
+                                      body: { imageUrl: uploadedFile.uploadURL },
+                                      headers: sessionId ? { Authorization: `Bearer ${sessionId}` } : {},
+                                    });
+                                  }
+                                  // Refresh the data to show the new image
+                                  queryClient.invalidateQueries({ queryKey: ["/api/models/all"] });
+                                  toast({
+                                    title: "Success",
+                                    description: "Model image updated successfully",
+                                  });
+                                }}
+                                currentImageUrl={model.imageUrl}
+                                modelName={model.name}
+                              >
+                                <img
+                                  src={model.imageUrl}
+                                  alt={model.name}
+                                  className="w-12 h-12 object-cover rounded cursor-pointer hover:opacity-80"
+                                />
+                              </ObjectUploader>
+                            ) : (
+                              <ObjectUploader
+                                maxNumberOfFiles={1}
+                                maxFileSize={10485760}
+                                onGetUploadParameters={async () => {
+                                  const response = await apiRequest("/api/models/upload-url", {
+                                    method: "POST",
+                                    headers: sessionId ? { Authorization: `Bearer ${sessionId}` } : {},
+                                  });
+                                  return {
+                                    method: "PUT" as const,
+                                    url: response.uploadURL
+                                  };
+                                }}
+                                onComplete={async (result) => {
+                                  // Update model image with uploaded URL
+                                  const uploadedFile = result.successful[0];
+                                  if (uploadedFile) {
+                                    await apiRequest(`/api/models/${model.id}/image`, {
+                                      method: "PATCH",
+                                      body: { imageUrl: uploadedFile.uploadURL },
+                                      headers: sessionId ? { Authorization: `Bearer ${sessionId}` } : {},
+                                    });
+                                  }
+                                  // Refresh the data to show the new image
+                                  queryClient.invalidateQueries({ queryKey: ["/api/models/all"] });
+                                  toast({
+                                    title: "Success",
+                                    description: "Model image uploaded successfully",
+                                  });
+                                }}
+                                modelName={model.name}
+                              >
+                                <div className="w-12 h-12 bg-gray-100 rounded flex items-center justify-center cursor-pointer hover:bg-gray-200">
+                                  <Upload className="w-4 h-4 text-gray-500" />
+                                </div>
+                              </ObjectUploader>
+                            )}
+                          </TableCell>
                           <TableCell className="font-medium">
                             {editingModel?.id === model.id ? (
                               <Input
