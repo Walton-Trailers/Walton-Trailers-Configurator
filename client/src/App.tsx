@@ -19,6 +19,7 @@ function Router() {
   return (
     <Switch>
       <Route path="/" component={Configurator} />
+      <Route path="/configurator/:category" component={Configurator} />
       <Route path="/admin/login" component={AdminLogin} />
       <Route path="/admin" component={AdminDashboard} />
       <Route path="/admin/pricing" component={FastPricing} />
