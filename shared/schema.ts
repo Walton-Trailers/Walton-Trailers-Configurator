@@ -11,7 +11,6 @@ export const trailerCategories = pgTable("trailer_categories", {
   description: text("description").notNull(),
   imageUrl: text("image_url").notNull(),
   startingPrice: integer("starting_price").notNull(),
-  orderIndex: integer("order_index").default(0),
 });
 
 // Trailer Models - represents model series (e.g., DHV207, FBH208)
@@ -27,7 +26,6 @@ export const trailerModels = pgTable("trailer_models", {
   lengthRange: text("length_range"), // e.g., "14 - 16'"
   imageUrl: text("image_url").notNull(),
   standardFeatures: json("standard_features").$type<string[]>().notNull(),
-  orderIndex: integer("order_index").default(0),
 });
 
 // Model Variants - specific configurations (e.g., DHV207-14B)
@@ -46,7 +44,6 @@ export const modelVariants = pgTable("model_variants", {
   bedSize: text("bed_size"),
   overallSize: text("overall_size"),
   capacity: text("capacity"), // cubic yards for dump trailers
-  orderIndex: integer("order_index").default(0),
 });
 
 // Trailer Options - now includes TRAC codes and categories
@@ -62,7 +59,6 @@ export const trailerOptions = pgTable("trailer_options", {
   imageUrl: text("image_url"),
   isDefault: boolean("is_default").default(false),
   applicableModels: json("applicable_models").$type<string[]>(), // which model series this applies to
-  orderIndex: integer("order_index").default(0),
 });
 
 // User Configurations (for saving)

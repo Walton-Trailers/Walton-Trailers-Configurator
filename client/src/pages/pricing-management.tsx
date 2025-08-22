@@ -11,7 +11,7 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { useAdminAuth } from "@/hooks/useAdminAuth";
@@ -49,7 +49,6 @@ interface TrailerCategory {
   description: string;
   imageUrl: string;
   startingPrice: number;
-  orderIndex?: number;
 }
 
 export default function PricingManagement() {
@@ -75,8 +74,7 @@ export default function PricingManagement() {
     name: "",
     description: "",
     imageUrl: "",
-    startingPrice: 0,
-    orderIndex: 0
+    startingPrice: 0
   });
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -290,7 +288,7 @@ export default function PricingManagement() {
 
   // Category mutations
   const updateCategoryMutation = useMutation({
-    mutationFn: (data: { id: number; slug?: string; name?: string; description?: string; imageUrl?: string; startingPrice?: number; orderIndex?: number }) =>
+    mutationFn: (data: { id: number; slug?: string; name?: string; description?: string; imageUrl?: string; startingPrice?: number }) =>
       apiRequest(`/api/categories/${data.id}`, {
         method: "PATCH",
         body: { 
@@ -298,8 +296,7 @@ export default function PricingManagement() {
           name: data.name,
           description: data.description,
           imageUrl: data.imageUrl,
-          startingPrice: data.startingPrice,
-          orderIndex: data.orderIndex
+          startingPrice: data.startingPrice
         },
         headers: sessionId ? { Authorization: `Bearer ${sessionId}` } : {},
       }),
@@ -336,8 +333,7 @@ export default function PricingManagement() {
         name: "",
         description: "",
         imageUrl: "",
-        startingPrice: 0,
-        orderIndex: 0
+        startingPrice: 0
       });
       toast({
         title: "Success",
@@ -589,16 +585,7 @@ export default function PricingManagement() {
                             />
                           </div>
                         </div>
-                        <div className="space-y-2">
-                          <Label htmlFor="new-orderIndex">Order Index</Label>
-                          <Input
-                            id="new-orderIndex"
-                            type="number"
-                            placeholder="0"
-                            value={newCategoryData.orderIndex}
-                            onChange={(e) => setNewCategoryData({ ...newCategoryData, orderIndex: parseInt(e.target.value) || 0 })}
-                          />
-                        </div>
+
                       </div>
                       <DialogFooter>
                         <Button variant="outline" onClick={() => setShowAddCategory(false)}>Cancel</Button>
@@ -615,7 +602,6 @@ export default function PricingManagement() {
                   <Table>
                     <TableHeader>
                       <TableRow>
-                        <TableHead className="w-[100px]">Order</TableHead>
                         <TableHead>Slug</TableHead>
                         <TableHead>Name</TableHead>
                         <TableHead>Description</TableHead>
@@ -626,21 +612,6 @@ export default function PricingManagement() {
                     <TableBody>
                       {(trailerCategories as TrailerCategory[])?.map((category) => (
                         <TableRow key={category.id}>
-                          <TableCell>
-                            {editingCategory?.id === category.id ? (
-                              <Input
-                                type="number"
-                                value={editData[category.id]?.orderIndex ?? category.orderIndex ?? 0}
-                                onChange={(e) => setEditData(prev => ({
-                                  ...prev,
-                                  [category.id]: { ...prev[category.id], orderIndex: parseInt(e.target.value) || 0 }
-                                }))}
-                                className="w-20"
-                              />
-                            ) : (
-                              category.orderIndex ?? 0
-                            )}
-                          </TableCell>
                           <TableCell>
                             {editingCategory?.id === category.id ? (
                               <Input
