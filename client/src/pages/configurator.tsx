@@ -11,7 +11,7 @@ import { Separator } from "@/components/ui/separator";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { ArrowLeft, ArrowRight, Download, Mail, MapPin, RotateCcw, Info, X, Users, Phone, Building, Building2, Save } from "lucide-react";
+import { ArrowLeft, ArrowRight, Download, Mail, MapPin, RotateCcw, Info, X, Users, Phone, Building, Building2, Save, ChevronDown } from "lucide-react";
 import { Link } from "wouter";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
@@ -988,29 +988,38 @@ Configuration Date: ${new Date().toLocaleDateString()}
                       <span className="font-medium">{selectedModel.axles}</span>
                     </div>
                   </div>
-                  
-                  <Separator className="my-6" />
-                  
-                  <div className="flex justify-between items-center text-xl font-bold">
-                    <span>Total MSRP</span>
-                    <span>${totalPrice.toLocaleString()}</span>
+                </CardContent>
+              </Card>
+
+              {/* Tesla-style pricing display */}
+              <Card className="border border-zinc-200 dark:border-zinc-700">
+                <CardContent className="p-6">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <div>
+                        <div className="text-3xl md:text-4xl font-bold">
+                          ${totalPrice.toLocaleString()}
+                        </div>
+                        <div className="text-sm text-zinc-500 mt-1">Vehicle Price</div>
+                      </div>
+                      <ChevronDown className="w-5 h-5 text-zinc-400 ml-1" />
+                    </div>
+                    <Button 
+                      onClick={() => {
+                        toast({
+                          title: "Quote Request Sent",
+                          description: "A dealer will contact you within 24 hours.",
+                        });
+                      }}
+                      className="bg-blue-500 hover:bg-blue-600 text-white px-8 py-3 text-base"
+                    >
+                      Order Now
+                    </Button>
                   </div>
                 </CardContent>
               </Card>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <Button 
-                  onClick={() => {
-                    toast({
-                      title: "Quote Request Sent",
-                      description: "A dealer will contact you within 24 hours.",
-                    });
-                  }}
-                  className="bg-blue-500 hover:bg-blue-600 text-white py-4 md:py-6 text-sm md:text-base min-h-[48px]"
-                >
-                  <Mail className="w-4 h-4 md:w-5 md:h-5 mr-2" />
-                  Request Quote
-                </Button>
                 <Button 
                   variant="outline"
                   onClick={handleDownloadPDF}
@@ -1018,6 +1027,16 @@ Configuration Date: ${new Date().toLocaleDateString()}
                 >
                   <Download className="w-4 h-4 md:w-5 md:h-5 mr-2" />
                   Spec Sheet
+                </Button>
+                <Button 
+                  variant="outline"
+                  onClick={() => {
+                    setLocation("/dealer/login");
+                  }}
+                  className="py-4 md:py-6 text-sm md:text-base min-h-[48px]"
+                >
+                  <Building2 className="w-4 h-4 md:w-5 md:h-5 mr-2" />
+                  Find Dealer
                 </Button>
               </div>
 

@@ -39,6 +39,8 @@ This is a Tesla-style trailer configurator application for Walton Trailers, desi
 ### UI Updates (August 22, 2025)
 - Changed "Order Now" button text to "Proceed" in the configurator for clearer user flow
 - Shortened "Download Spec Sheet" button text to "Spec Sheet" for better mobile display
+- Replaced Total MSRP section with Tesla-style pricing display featuring large price, "Vehicle Price" label, dropdown indicator, and prominent "Order Now" button
+- Added "Find Dealer" button alongside "Spec Sheet" button for improved dealer discovery
 - Button appears when moving from model configuration to the summary step
 
 ### Configurations Overview Tab (August 18, 2025)
