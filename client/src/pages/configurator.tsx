@@ -964,7 +964,7 @@ Configuration Date: ${new Date().toLocaleDateString()}
               
               <div>
                 <h1 className="text-2xl md:text-3xl lg:text-4xl font-bold mb-2">
-                  {selectedModel.name.includes('FBH') ? 'FBH Gooseneck' : 
+                  {selectedModel.name.includes('FBH') ? 'Flatbed Heavy-Duty' : 
                    selectedModel.name.includes('FBX') ? 'Flatbed Extreme' : 
                    selectedModel.name}
                 </h1>
