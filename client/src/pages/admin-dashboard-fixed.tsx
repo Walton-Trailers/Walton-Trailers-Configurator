@@ -128,6 +128,17 @@ export default function AdminDashboard() {
     enabled: !!user && user.role === "admin" && !!sessionId,
   });
 
+  const { data: configQuoteRequests = [] } = useQuery({
+    queryKey: ["/api/quotes"],
+    queryFn: () =>
+      apiRequest("/api/quotes", {
+        headers: {
+          Authorization: `Bearer ${sessionId}`,
+        },
+      }),
+    enabled: !!user && user.role === "admin" && !!sessionId,
+  });
+
   // Always call useMutation hooks
   const createUserMutation = useMutation({
     mutationFn: (userData: CreateUserForm) =>
@@ -475,8 +486,9 @@ export default function AdminDashboard() {
             <TabsTrigger value="products">Product Management</TabsTrigger>
             {isAdmin && <TabsTrigger value="users">User Management</TabsTrigger>}
             {isAdmin && <TabsTrigger value="integrations">Integrations</TabsTrigger>}
-            <TabsTrigger value="quotes">Custom Requests</TabsTrigger>
-            {isAdmin && <TabsTrigger value="configurations">Configurations</TabsTrigger>}
+            <TabsTrigger value="custom-quotes">Custom Requests</TabsTrigger>
+            {isAdmin && <TabsTrigger value="configurations">Saved Configurations</TabsTrigger>}
+            {isAdmin && <TabsTrigger value="quote-requests">Quote Requests</TabsTrigger>}
           </TabsList>
 
           <TabsContent value="products" className="space-y-6">
@@ -508,7 +520,7 @@ export default function AdminDashboard() {
             </div>
           </TabsContent>
 
-          <TabsContent value="quotes" className="space-y-6">
+          <TabsContent value="custom-quotes" className="space-y-6">
             <div className="flex justify-between items-center">
               <div>
                 <h3 className="text-lg font-medium">Custom Requests</h3>
@@ -1381,6 +1393,130 @@ ${quote.notes ? `\nAdmin Notes: ${quote.notes}` : ''}`;
                         )}
                       </tbody>
                     </table>
+                  </div>
+                </CardContent>
+              </Card>
+            </TabsContent>
+          )}
+
+          {/* Quote Requests Tab */}
+          {isAdmin && (
+            <TabsContent value="quote-requests" className="space-y-6">
+              <div className="flex justify-between items-center">
+                <div>
+                  <h3 className="text-lg font-medium">Quote Requests</h3>
+                  <p className="text-sm text-gray-600">Manage quote requests from the configurator</p>
+                </div>
+                <div className="flex gap-2 items-center">
+                  <Badge variant="secondary">
+                    {configQuoteRequests.length} Total Requests
+                  </Badge>
+                </div>
+              </div>
+
+              <Card>
+                <CardContent className="p-6">
+                  <div className="space-y-4">
+                    {configQuoteRequests.length > 0 ? (
+                      <div className="overflow-x-auto">
+                        <table className="w-full text-sm">
+                          <thead>
+                            <tr className="border-b">
+                              <th className="text-left p-2">Date</th>
+                              <th className="text-left p-2">Customer</th>
+                              <th className="text-left p-2">Contact</th>
+                              <th className="text-left p-2">Configuration</th>
+                              <th className="text-left p-2">Price</th>
+                              <th className="text-left p-2">Status</th>
+                              <th className="text-left p-2">Actions</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {configQuoteRequests.map((request: any) => (
+                              <tr key={request.id} className="border-b hover:bg-gray-50">
+                                <td className="p-2">
+                                  {new Date(request.createdAt).toLocaleDateString()}
+                                </td>
+                                <td className="p-2">
+                                  <div>
+                                    <div className="font-medium">
+                                      {request.firstName} {request.lastName}
+                                    </div>
+                                    {request.company && (
+                                      <div className="text-xs text-gray-500">{request.company}</div>
+                                    )}
+                                  </div>
+                                </td>
+                                <td className="p-2">
+                                  <div className="text-xs">
+                                    <div>{request.email}</div>
+                                    <div>{request.mobile}</div>
+                                    <div>{request.zipCode}</div>
+                                  </div>
+                                </td>
+                                <td className="p-2">
+                                  <div className="text-xs">
+                                    <div className="font-medium">{request.modelName}</div>
+                                    <div className="text-gray-500">{request.categoryName}</div>
+                                    {request.trailerSpecs && (
+                                      <div className="text-gray-400 text-xs">
+                                        GVWR: {request.trailerSpecs.gvwr} | {request.trailerSpecs.deckSize}
+                                      </div>
+                                    )}
+                                  </div>
+                                </td>
+                                <td className="p-2">
+                                  {request.totalPrice ? (
+                                    <div className="font-medium">
+                                      ${request.totalPrice.toLocaleString()}
+                                    </div>
+                                  ) : (
+                                    <span className="text-gray-400">N/A</span>
+                                  )}
+                                </td>
+                                <td className="p-2">
+                                  <Badge
+                                    variant={
+                                      request.status === "pending"
+                                        ? "secondary"
+                                        : request.status === "contacted"
+                                        ? "default"
+                                        : request.status === "quoted"
+                                        ? "outline"
+                                        : "destructive"
+                                    }
+                                  >
+                                    {request.status}
+                                  </Badge>
+                                </td>
+                                <td className="p-2">
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => {
+                                      toast({
+                                        title: "Quote Details",
+                                        description: `Quote request from ${request.firstName} ${request.lastName}`,
+                                      });
+                                    }}
+                                  >
+                                    View
+                                  </Button>
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    ) : (
+                      <div className="text-center py-8">
+                        <MessageSquare className="mx-auto h-12 w-12 text-gray-400" />
+                        <h3 className="mt-2 text-sm font-medium text-gray-900">No quote requests yet</h3>
+                        <p className="mt-1 text-sm text-gray-500">
+                          Quote requests from the configurator will appear here.
+                        </p>
+                      </div>
+                    )}
                   </div>
                 </CardContent>
               </Card>
