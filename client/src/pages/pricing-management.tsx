@@ -784,16 +784,21 @@ export default function PricingManagement() {
                                 <Button
                                   size="sm"
                                   variant="outline"
-                                  onClick={() => {
+                                  onClick={async () => {
+                                    // Fetch fresh data before editing to avoid stale cache issues
+                                    await refetchCategories();
+                                    const freshCategories = await apiRequest("/api/categories");
+                                    const freshCategory = freshCategories.find((c: any) => c.id === category.id);
+                                    
                                     setEditingCategory(category);
                                     setEditData(prev => ({
                                       ...prev,
                                       [category.id]: {
-                                        slug: category.slug,
-                                        name: category.name,
-                                        description: category.description,
-                                        imageUrl: category.imageUrl,
-                                        startingPrice: category.startingPrice
+                                        slug: freshCategory?.slug || category.slug,
+                                        name: freshCategory?.name || category.name,
+                                        description: freshCategory?.description || category.description,
+                                        imageUrl: freshCategory?.imageUrl || category.imageUrl,
+                                        startingPrice: freshCategory?.startingPrice || category.startingPrice
                                       }
                                     }));
                                   }}
