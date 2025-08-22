@@ -1245,38 +1245,71 @@ Configuration Date: ${new Date().toLocaleDateString()}
                         ))}
                       </div>
                     ) : (
-                      <RadioGroup
-                        value={selectedOptions[category]?.toString() || categoryOptions[0]?.id.toString()}
-                        onValueChange={(value) => 
-                          handleOptionChange(category, parseInt(value), false, true)
-                        }
-                      >
-                        <div className="space-y-1">
-                          {categoryOptions.map((option) => (
-                            <div key={option.id} className="flex items-center justify-between py-1">
-                              <div className="flex items-center space-x-2">
-                                <RadioGroupItem
-                                  value={option.id.toString()}
-                                  id={`option-${option.id}`}
-                                />
-                                <div className="flex items-center">
-                                  <Label htmlFor={`option-${option.id}`} className="text-sm cursor-pointer">
-                                    {option.name}
-                                  </Label>
-                                  <OptionInfoModal optionName={option.name}>
-                                    <div />
-                                  </OptionInfoModal>
+                      // Check if this category should use toggle design (Jack, Ramp Options, Tire Options)
+                      ['Jack', 'Ramp Options', 'Tire Options'].includes(category) && categoryOptions.length === 2 ? (
+                        <div className="bg-gray-100 p-1 rounded-lg flex">
+                          {categoryOptions.map((option, index) => {
+                            const isSelected = selectedOptions[category]?.toString() === option.id.toString() || 
+                                             (!selectedOptions[category] && index === 0);
+                            return (
+                              <button
+                                key={option.id}
+                                className={`flex-1 py-1.5 px-2 rounded-md transition-all duration-300 text-center ${
+                                  isSelected
+                                    ? 'text-black shadow-sm'
+                                    : 'text-black hover:text-black'
+                                }`}
+                                style={
+                                  isSelected
+                                    ? { backgroundColor: '#f8efdd' }
+                                    : {}
+                                }
+                                onClick={() => handleOptionChange(category, option.id, false, true)}
+                              >
+                                <div className="font-medium text-sm">{option.name}</div>
+                                <div className="text-xs font-medium">
+                                  {option.price === 0 ? 'Included' : 
+                                   option.price > 0 ? `+$${option.price.toLocaleString()}` : 
+                                   `$${option.price.toLocaleString()}`}
                                 </div>
-                              </div>
-                              <span className="text-sm">
-                                {option.price === 0 ? 'Included' : 
-                                 option.price > 0 ? `+$${option.price.toLocaleString()}` : 
-                                 `$${option.price.toLocaleString()}`}
-                              </span>
-                            </div>
-                          ))}
+                              </button>
+                            );
+                          })}
                         </div>
-                      </RadioGroup>
+                      ) : (
+                        <RadioGroup
+                          value={selectedOptions[category]?.toString() || categoryOptions[0]?.id.toString()}
+                          onValueChange={(value) => 
+                            handleOptionChange(category, parseInt(value), false, true)
+                          }
+                        >
+                          <div className="space-y-1">
+                            {categoryOptions.map((option) => (
+                              <div key={option.id} className="flex items-center justify-between py-1">
+                                <div className="flex items-center space-x-2">
+                                  <RadioGroupItem
+                                    value={option.id.toString()}
+                                    id={`option-${option.id}`}
+                                  />
+                                  <div className="flex items-center">
+                                    <Label htmlFor={`option-${option.id}`} className="text-sm cursor-pointer">
+                                      {option.name}
+                                    </Label>
+                                    <OptionInfoModal optionName={option.name}>
+                                      <div />
+                                    </OptionInfoModal>
+                                  </div>
+                                </div>
+                                <span className="text-sm">
+                                  {option.price === 0 ? 'Included' : 
+                                   option.price > 0 ? `+$${option.price.toLocaleString()}` : 
+                                   `$${option.price.toLocaleString()}`}
+                                </span>
+                              </div>
+                            ))}
+                          </div>
+                        </RadioGroup>
+                      )
                     )}
                 </div>
               ))}
