@@ -29,6 +29,13 @@ This is a Tesla-style trailer configurator application for Walton Trailers, desi
 - Included helpful links to Airtable Developer Hub for token generation
 - Prepared foundation for data sync operations between Airtable and database
 
+### Category Image Upload Fix (August 22, 2025)
+- Fixed critical image upload issue where images weren't being saved correctly
+- Created dedicated `/api/categories/:id/image` endpoint for proper image handling
+- Backend now properly normalizes upload URLs and sets public ACL policies
+- Removed problematic orderIndex field from schema that was causing database errors
+- Image uploads now work consistently across both pricing management and fast pricing pages
+
 ### Configurations Overview Tab (August 18, 2025)
 - Added new Configurations tab to admin dashboard for viewing all saved trailer configurations
 - Displays comprehensive feed of configurations from both dealers and public users
