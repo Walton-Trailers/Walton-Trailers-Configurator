@@ -1005,7 +1005,7 @@ Configuration Date: ${new Date().toLocaleDateString()}
                       className={`w-full p-4 rounded-lg transition-all duration-300 text-left ${
                         selectedModel.id === model.id 
                           ? 'text-black border-0 outline-0' 
-                          : 'border-2 border-gray-200 hover:border-gray-300 bg-white'
+                          : 'border-2 border-black text-black hover:border-gray-600 bg-white'
                       }`}
                       style={selectedModel.id === model.id ? { backgroundColor: '#f8efdd' } : {}}
                       onClick={() => handleModelChange(model)}
@@ -1017,7 +1017,7 @@ Configuration Date: ${new Date().toLocaleDateString()}
                           </div>
                         </div>
                         <div className="text-right">
-                          <div className={`text-lg font-bold ${selectedModel.id === model.id ? 'text-black' : 'text-blue-600'}`}>
+                          <div className="text-lg font-bold text-black">
                             ${model.basePrice.toLocaleString()}
                           </div>
                         </div>
