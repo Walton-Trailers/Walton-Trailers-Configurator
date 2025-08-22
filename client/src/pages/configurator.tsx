@@ -957,17 +957,18 @@ Configuration Date: ${new Date().toLocaleDateString()}
               </div>
               
               <div>
-                <h1 className="text-2xl md:text-3xl lg:text-4xl font-bold mb-2">
+                <h1 className="text-2xl md:text-3xl lg:text-4xl font-bold mb-4">
                   {selectedModel.name.includes('FBH') ? 'FBH Gooseneck' : 
                    selectedModel.name.includes('FBX') ? 'FBX Gooseneck' : 
                    selectedModel.name}
                 </h1>
-                <div className="flex flex-wrap items-center gap-2 md:gap-4 text-xs md:text-sm text-zinc-600 dark:text-zinc-400">
-                  <span>{selectedModel.gvwr}</span>
-                  <span className="hidden md:inline">•</span>
-                  <span>{selectedModel.payload}</span>
-                  <span className="hidden md:inline">•</span>
-                  <span>{selectedModel.deckSize}</span>
+                {/* Dynamic specs for selected model */}
+                <div className="flex flex-wrap items-center gap-2 md:gap-4 text-base md:text-lg text-gray-600 mb-8">
+                  <span className="font-medium">{selectedModel.gvwr}</span>
+                  <span className="hidden md:inline text-gray-400">•</span>
+                  <span className="font-medium">{selectedModel.payload}</span>
+                  <span className="hidden md:inline text-gray-400">•</span>
+                  <span className="font-medium">{selectedModel.deckSize}</span>
                 </div>
               </div>
 
@@ -991,11 +992,8 @@ Configuration Date: ${new Date().toLocaleDateString()}
                     >
                       <div className="flex justify-between items-center">
                         <div className="flex-1">
-                          <div className="font-semibold text-lg mb-1">
+                          <div className="font-semibold text-lg">
                             {model.name.replace(/^(FBH|FBX)\d+\s*-?\s*/, '')}
-                          </div>
-                          <div className="text-sm text-gray-600 mb-2">
-                            GVWR: {model.gvwr} • Payload: {model.payload} • Deck: {model.deckSize}
                           </div>
                         </div>
                         <div className="text-right">
