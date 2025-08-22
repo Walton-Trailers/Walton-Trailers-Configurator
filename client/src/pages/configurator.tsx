@@ -1021,9 +1021,7 @@ Configuration Date: ${new Date().toLocaleDateString()}
                       <div>
                         <h5 className="font-semibold text-gray-900 mb-2">Heavy-Duty Construction</h5>
                         <p className="text-sm text-gray-600 leading-relaxed">
-                          Built with high-quality materials, our flatbed deckover trailers feature robust steel frames and 
-                          reinforced decks, ensuring they can handle the heaviest loads. Designed for durability, these 
-                          trailers are ready to withstand the demands of everyday use.
+                          Reinforced steel frames and decks built to handle the toughest loads.
                         </p>
                       </div>
                     </div>
