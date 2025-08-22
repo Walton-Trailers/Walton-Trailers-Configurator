@@ -854,8 +854,7 @@ Configuration Date: ${new Date().toLocaleDateString()}
                   return acc;
                 }, {} as Record<string, TrailerOption[]>)
               ).map(([category, categoryOptions]) => (
-                <Card key={category} className="border border-zinc-200 dark:border-zinc-700">
-                  <CardContent className="p-4 md:p-6">
+                <div key={category} className="py-4 md:py-6">
                     <h3 className="text-base md:text-lg font-semibold mb-3 md:mb-4 capitalize">
                       {category === 'tires' ? 'Tire Options' : 
                        category === 'ramps' ? 'Ramp Options' : 
@@ -929,8 +928,7 @@ Configuration Date: ${new Date().toLocaleDateString()}
                         </div>
                       </RadioGroup>
                     )}
-                  </CardContent>
-                </Card>
+                </div>
               ))}
 
               {/* Add padding for fixed pricing display */}
