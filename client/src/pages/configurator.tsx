@@ -493,16 +493,16 @@ Configuration Date: ${new Date().toLocaleDateString()}
             
             {/* Desktop progress indicator */}
             <div className="hidden md:flex items-center space-x-6 text-sm">
-              <div className={`px-4 py-2 rounded-full transition-all duration-300 ${currentStep >= 1 ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-600'}`}>
+              <div className={`px-4 py-2 rounded-full transition-all duration-300 ${currentStep >= 1 ? 'bg-amber-700 text-white' : 'bg-gray-100 text-gray-600'}`}>
                 Category
               </div>
-              <div className={`px-4 py-2 rounded-full transition-all duration-300 ${currentStep >= 2 ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-600'}`}>
+              <div className={`px-4 py-2 rounded-full transition-all duration-300 ${currentStep >= 2 ? 'bg-amber-700 text-white' : 'bg-gray-100 text-gray-600'}`}>
                 Model
               </div>
-              <div className={`px-4 py-2 rounded-full transition-all duration-300 ${currentStep >= 3 ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-600'}`}>
+              <div className={`px-4 py-2 rounded-full transition-all duration-300 ${currentStep >= 3 ? 'bg-amber-700 text-white' : 'bg-gray-100 text-gray-600'}`}>
                 Options
               </div>
-              <div className={`px-4 py-2 rounded-full transition-all duration-300 ${currentStep >= 4 ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-600'}`}>
+              <div className={`px-4 py-2 rounded-full transition-all duration-300 ${currentStep >= 4 ? 'bg-amber-700 text-white' : 'bg-gray-100 text-gray-600'}`}>
                 Order
               </div>
             </div>
