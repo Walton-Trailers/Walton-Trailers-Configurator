@@ -492,16 +492,16 @@ Configuration Date: ${new Date().toLocaleDateString()}
             
             {/* Desktop progress indicator */}
             <div className="hidden md:flex items-center space-x-6 text-sm uppercase font-normal" style={{ fontFamily: 'Oswald, sans-serif' }}>
-              <div className={`px-4 py-2 rounded-full transition-all duration-300 ${currentStep >= 1 ? 'text-gray-700' : 'bg-gray-100 text-gray-600'}`} style={currentStep >= 1 ? { backgroundColor: '#F8EFDD' } : {}}>
+              <div className={`px-4 py-2 rounded-md transition-all duration-300 ${currentStep >= 1 ? 'text-gray-700' : 'bg-gray-100 text-gray-600'}`} style={currentStep >= 1 ? { backgroundColor: '#F8EFDD' } : {}}>
                 Category
               </div>
-              <div className={`px-4 py-2 rounded-full transition-all duration-300 ${currentStep >= 2 ? 'text-gray-700' : 'bg-gray-100 text-gray-600'}`} style={currentStep >= 2 ? { backgroundColor: '#F8EFDD' } : {}}>
+              <div className={`px-4 py-2 rounded-md transition-all duration-300 ${currentStep >= 2 ? 'text-gray-700' : 'bg-gray-100 text-gray-600'}`} style={currentStep >= 2 ? { backgroundColor: '#F8EFDD' } : {}}>
                 Model
               </div>
-              <div className={`px-4 py-2 rounded-full transition-all duration-300 ${currentStep >= 3 ? 'text-gray-700' : 'bg-gray-100 text-gray-600'}`} style={currentStep >= 3 ? { backgroundColor: '#F8EFDD' } : {}}>
+              <div className={`px-4 py-2 rounded-md transition-all duration-300 ${currentStep >= 3 ? 'text-gray-700' : 'bg-gray-100 text-gray-600'}`} style={currentStep >= 3 ? { backgroundColor: '#F8EFDD' } : {}}>
                 Options
               </div>
-              <div className={`px-4 py-2 rounded-full transition-all duration-300 ${currentStep >= 4 ? 'text-gray-700' : 'bg-gray-100 text-gray-600'}`} style={currentStep >= 4 ? { backgroundColor: '#F8EFDD' } : {}}>
+              <div className={`px-4 py-2 rounded-md transition-all duration-300 ${currentStep >= 4 ? 'text-gray-700' : 'bg-gray-100 text-gray-600'}`} style={currentStep >= 4 ? { backgroundColor: '#F8EFDD' } : {}}>
                 Order
               </div>
             </div>
