@@ -1034,10 +1034,7 @@ Configuration Date: ${new Date().toLocaleDateString()}
                       <div>
                         <h5 className="font-semibold text-gray-900 mb-2">Superior Load Capacity</h5>
                         <p className="text-sm text-gray-600 leading-relaxed">
-                          Available in a range of sizes and weight capacities, our trailers are equipped to carry anything 
-                          from construction materials and machinery to vehicles and oversized equipment. Whether you 
-                          need a compact trailer for light-duty tasks or a larger model for heavy-duty applications, we have 
-                          the right option for you.
+                          From light-duty to oversized equipment, trailers sized for every job.
                         </p>
                       </div>
                     </div>
