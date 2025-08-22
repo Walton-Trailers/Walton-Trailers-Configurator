@@ -36,6 +36,10 @@ This is a Tesla-style trailer configurator application for Walton Trailers, desi
 - Removed problematic orderIndex field from schema that was causing database errors
 - Image uploads now work consistently across both pricing management and fast pricing pages
 
+### UI Updates (August 22, 2025)
+- Changed "Order Now" button text to "Proceed" in the configurator for clearer user flow
+- Button appears when moving from model configuration to the summary step
+
 ### Configurations Overview Tab (August 18, 2025)
 - Added new Configurations tab to admin dashboard for viewing all saved trailer configurations
 - Displays comprehensive feed of configurations from both dealers and public users

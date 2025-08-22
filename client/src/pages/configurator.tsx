@@ -831,7 +831,7 @@ Configuration Date: ${new Date().toLocaleDateString()}
                   onClick={() => setCurrentStep(4)}
                   className="bg-blue-500 hover:bg-blue-600 text-white px-8"
                 >
-                  Order Now
+                  Proceed
                 </Button>
               </div>
               
