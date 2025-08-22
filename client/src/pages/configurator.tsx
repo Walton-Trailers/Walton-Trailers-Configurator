@@ -1025,31 +1025,29 @@ Configuration Date: ${new Date().toLocaleDateString()}
 
       {/* Fixed Tesla-style pricing display - show on steps 3 and 4 */}
       {(currentStep === 3 || currentStep === 4) && selectedModel && (
-        <div className="fixed bottom-0 left-0 right-0 bg-white dark:bg-zinc-900 border-t border-zinc-200 dark:border-zinc-700 z-50">
-          <div className="lg:ml-[65%] lg:w-[35%] w-full">
-            <div className="max-w-lg mx-auto px-4 md:px-6 py-4">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <div>
-                    <div className="text-2xl md:text-3xl font-bold">
-                      ${totalPrice.toLocaleString()}
-                    </div>
-                    <div className="text-xs md:text-sm text-zinc-500">Vehicle Price</div>
+        <div className="fixed bottom-4 right-4 lg:right-8 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-lg shadow-lg z-50 lg:w-96 w-80">
+          <div className="px-6 py-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <div>
+                  <div className="text-2xl md:text-3xl font-bold">
+                    ${totalPrice.toLocaleString()}
                   </div>
-                  <ChevronDown className="w-4 h-4 md:w-5 md:h-5 text-zinc-400 ml-1" />
+                  <div className="text-xs md:text-sm text-zinc-500">Vehicle Price</div>
                 </div>
-                <Button 
-                  onClick={() => {
-                    toast({
-                      title: "Quote Request Sent",
-                      description: "A dealer will contact you within 24 hours.",
-                    });
-                  }}
-                  className="bg-blue-500 hover:bg-blue-600 text-white px-6 md:px-8 py-2 md:py-3 text-sm md:text-base"
-                >
-                  Order Now
-                </Button>
+                <ChevronDown className="w-4 h-4 md:w-5 md:h-5 text-zinc-400 ml-1" />
               </div>
+              <Button 
+                onClick={() => {
+                  toast({
+                    title: "Quote Request Sent",
+                    description: "A dealer will contact you within 24 hours.",
+                  });
+                }}
+                className="bg-blue-500 hover:bg-blue-600 text-white px-6 md:px-8 py-2 md:py-3 text-sm md:text-base"
+              >
+                Order Now
+              </Button>
             </div>
           </div>
         </div>
