@@ -1083,6 +1083,92 @@ Configuration Date: ${new Date().toLocaleDateString()}
                 </div>
               </div>
 
+              {/* Length Selector */}
+              <div className="space-y-4">
+                <h3 className="text-lg font-semibold">Choose Length</h3>
+                <div className="space-y-3">
+                  {/* Length options based on selected model */}
+                  {selectedModel.name === 'FBH207' && (
+                    <>
+                      {['16\'', '18\'', '20\'', '22\'', '24\'', '26\''].map((length) => (
+                        <button
+                          key={length}
+                          className={`w-full p-4 rounded-lg transition-all duration-300 text-left ${
+                            selectedOptions.length === length
+                              ? 'text-black border-0 outline-0' 
+                              : 'border-2 border-black text-black hover:border-gray-600 bg-white'
+                          }`}
+                          style={selectedOptions.length === length ? { backgroundColor: '#f8efdd' } : {}}
+                          onClick={() => setSelectedOptions(prev => ({ ...prev, length }))}
+                        >
+                          <div className="flex justify-between items-center">
+                            <div className="flex-1">
+                              <div className="font-semibold text-lg">{length} Length</div>
+                            </div>
+                            <div className="text-lg font-bold text-black">
+                              {length === '16\'' ? '$0' : `+$${(parseInt(length) - 16) * 500}`}
+                            </div>
+                          </div>
+                        </button>
+                      ))}
+                    </>
+                  )}
+                  {selectedModel.name === 'FBH208' && (
+                    <>
+                      {['22\'', '24\''].map((length) => (
+                        <button
+                          key={length}
+                          className={`w-full p-4 rounded-lg transition-all duration-300 text-left ${
+                            selectedOptions.length === length
+                              ? 'text-black border-0 outline-0' 
+                              : 'border-2 border-black text-black hover:border-gray-600 bg-white'
+                          }`}
+                          style={selectedOptions.length === length ? { backgroundColor: '#f8efdd' } : {}}
+                          onClick={() => setSelectedOptions(prev => ({ ...prev, length }))}
+                        >
+                          <div className="flex justify-between items-center">
+                            <div className="flex-1">
+                              <div className="font-semibold text-lg">{length} Length</div>
+                            </div>
+                            <div className="text-lg font-bold text-black">
+                              {length === '22\'' ? '$0' : '+$1,000'}
+                            </div>
+                          </div>
+                        </button>
+                      ))}
+                    </>
+                  )}
+                </div>
+              </div>
+
+              {/* Pull Options Selector */}
+              <div className="space-y-4">
+                <h3 className="text-lg font-semibold">Pull Options</h3>
+                <div className="space-y-3">
+                  {['Bumper', 'Gooseneck'].map((pullOption) => (
+                    <button
+                      key={pullOption}
+                      className={`w-full p-4 rounded-lg transition-all duration-300 text-left ${
+                        selectedOptions.pullOption === pullOption
+                          ? 'text-black border-0 outline-0' 
+                          : 'border-2 border-black text-black hover:border-gray-600 bg-white'
+                      }`}
+                      style={selectedOptions.pullOption === pullOption ? { backgroundColor: '#f8efdd' } : {}}
+                      onClick={() => setSelectedOptions(prev => ({ ...prev, pullOption }))}
+                    >
+                      <div className="flex justify-between items-center">
+                        <div className="flex-1">
+                          <div className="font-semibold text-lg">{pullOption} Pull</div>
+                        </div>
+                        <div className="text-lg font-bold text-black">
+                          {pullOption === 'Bumper' ? '$0' : '+$2,500'}
+                        </div>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
               {/* Options grouped by category */}
               {Object.entries(
                 options.reduce((acc, option) => {
