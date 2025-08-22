@@ -296,16 +296,31 @@ export default function Configurator() {
     
     if (options && Object.keys(selectedOptions).length > 0) {
       Object.entries(selectedOptions).forEach(([category, selected]) => {
-        const categoryOptions = options.filter(opt => opt.category === category);
-        
-        if (Array.isArray(selected)) {
-          selected.forEach((optionId: number) => {
-            const option = categoryOptions.find(opt => opt.id === optionId);
+        // Handle custom length and pull options
+        if (category === 'length' && selected) {
+          // Calculate length pricing based on model
+          if (selectedModel.name.includes('FBH207') && selected !== '16\'') {
+            const lengthFeet = parseInt(selected);
+            price += (lengthFeet - 16) * 500;
+          } else if (selectedModel.name.includes('FBH208') && selected !== '22\'') {
+            const lengthFeet = parseInt(selected);
+            price += (lengthFeet - 22) * 500;
+          }
+        } else if (category === 'pullOption' && selected === 'Gooseneck') {
+          price += 2500;
+        } else {
+          // Handle database options
+          const categoryOptions = options.filter(opt => opt.category === category);
+          
+          if (Array.isArray(selected)) {
+            selected.forEach((optionId: number) => {
+              const option = categoryOptions.find(opt => opt.id === optionId);
+              if (option) price += option.price;
+            });
+          } else if (selected !== undefined) {
+            const option = categoryOptions.find(opt => opt.id === selected);
             if (option) price += option.price;
-          });
-        } else if (selected !== undefined) {
-          const option = categoryOptions.find(opt => opt.id === selected);
-          if (option) price += option.price;
+          }
         }
       });
     }
@@ -353,14 +368,39 @@ export default function Configurator() {
 
   const handleModelSelect = (model: TrailerModel) => {
     setSelectedModel(model);
-    setSelectedOptions({});
+    // Initialize with default values for length and pull options
+    const defaultOptions: Record<string, any> = {};
+    
+    // Set default length based on model
+    if (model.name.includes('FBH207')) {
+      defaultOptions.length = '16\'';
+    } else if (model.name.includes('FBH208')) {
+      defaultOptions.length = '22\'';
+    }
+    
+    // Set default pull option
+    defaultOptions.pullOption = 'Bumper';
+    
+    setSelectedOptions(defaultOptions);
     setCurrentStep(3);
   };
 
   const handleModelChange = (model: TrailerModel) => {
     setSelectedModel(model);
-    // Don't change step, just update the model and clear options
-    setSelectedOptions({});
+    // Initialize with default values for length and pull options
+    const defaultOptions: Record<string, any> = {};
+    
+    // Set default length based on model
+    if (model.name.includes('FBH207')) {
+      defaultOptions.length = '16\'';
+    } else if (model.name.includes('FBH208')) {
+      defaultOptions.length = '22\'';
+    }
+    
+    // Set default pull option
+    defaultOptions.pullOption = 'Bumper';
+    
+    setSelectedOptions(defaultOptions);
   };
 
   const handleOptionChange = (category: string, optionId: number, isMultiSelect: boolean, checked: boolean) => {
@@ -1088,7 +1128,7 @@ Configuration Date: ${new Date().toLocaleDateString()}
                 <h3 className="text-lg font-semibold">Choose Length</h3>
                 <div className="space-y-3">
                   {/* Length options based on selected model */}
-                  {selectedModel.name === 'FBH207' && (
+                  {selectedModel.name.includes('FBH207') && (
                     <>
                       {['16\'', '18\'', '20\'', '22\'', '24\'', '26\''].map((length) => (
                         <button
@@ -1113,7 +1153,7 @@ Configuration Date: ${new Date().toLocaleDateString()}
                       ))}
                     </>
                   )}
-                  {selectedModel.name === 'FBH208' && (
+                  {selectedModel.name.includes('FBH208') && (
                     <>
                       {['22\'', '24\''].map((length) => (
                         <button
