@@ -1134,18 +1134,18 @@ Configuration Date: ${new Date().toLocaleDateString()}
                   >
                     {selectedModel.name.includes('FBH207') && (
                       <>
-                        <option value="16'">16' Length - $0</option>
-                        <option value="18'">18' Length - +$1,000</option>
-                        <option value="20'">20' Length - +$2,000</option>
-                        <option value="22'">22' Length - +$3,000</option>
-                        <option value="24'">24' Length - +$4,000</option>
-                        <option value="26'">26' Length - +$5,000</option>
+                        <option value="16'">16' Length (Base Price)</option>
+                        <option value="18'">18' Length (Add $1,000)</option>
+                        <option value="20'">20' Length (Add $2,000)</option>
+                        <option value="22'">22' Length (Add $3,000)</option>
+                        <option value="24'">24' Length (Add $4,000)</option>
+                        <option value="26'">26' Length (Add $5,000)</option>
                       </>
                     )}
                     {selectedModel.name.includes('FBH208') && (
                       <>
-                        <option value="22'">22' Length - $0</option>
-                        <option value="24'">24' Length - +$1,000</option>
+                        <option value="22'">22' Length (Base Price)</option>
+                        <option value="24'">24' Length (Add $1,000)</option>
                       </>
                     )}
                   </select>
