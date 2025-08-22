@@ -40,6 +40,7 @@ interface TrailerOption {
   price: number;
   category: string;
   description?: string;
+  imageUrl?: string;
   isArchived?: boolean;
 }
 
@@ -886,7 +887,7 @@ export default function PricingManagement() {
                                 }}
                                 onComplete={async (result) => {
                                   // Update model image with uploaded URL
-                                  const uploadedFile = result.successful[0];
+                                  const uploadedFile = result.successful?.[0];
                                   if (uploadedFile) {
                                     await apiRequest(`/api/models/${model.id}/image`, {
                                       method: "PATCH",
@@ -926,7 +927,7 @@ export default function PricingManagement() {
                                 }}
                                 onComplete={async (result) => {
                                   // Update model image with uploaded URL
-                                  const uploadedFile = result.successful[0];
+                                  const uploadedFile = result.successful?.[0];
                                   if (uploadedFile) {
                                     await apiRequest(`/api/models/${model.id}/image`, {
                                       method: "PATCH",
@@ -1211,6 +1212,7 @@ export default function PricingManagement() {
                   <Table>
                     <TableHeader>
                       <TableRow>
+                        <TableHead>Image</TableHead>
                         <TableHead>Category</TableHead>
                         <TableHead>Option Name</TableHead>
                         <TableHead>Model</TableHead>
@@ -1222,6 +1224,86 @@ export default function PricingManagement() {
                     <TableBody>
                       {filteredOptions.map((option: TrailerOption) => (
                         <TableRow key={option.id}>
+                          <TableCell>
+                            {option.imageUrl ? (
+                              <ObjectUploader
+                                maxNumberOfFiles={1}
+                                maxFileSize={10485760}
+                                onGetUploadParameters={async () => {
+                                  const response = await apiRequest("/api/options/upload-url", {
+                                    method: "POST",
+                                    headers: sessionId ? { Authorization: `Bearer ${sessionId}` } : {},
+                                  });
+                                  return {
+                                    method: "PUT" as const,
+                                    url: response.uploadURL
+                                  };
+                                }}
+                                onComplete={async (result) => {
+                                  // Update option image with uploaded URL
+                                  const uploadedFile = result.successful?.[0];
+                                  if (uploadedFile) {
+                                    await apiRequest(`/api/options/${option.id}/image`, {
+                                      method: "PATCH",
+                                      body: { imageUrl: uploadedFile.uploadURL },
+                                      headers: sessionId ? { Authorization: `Bearer ${sessionId}` } : {},
+                                    });
+                                  }
+                                  // Refresh the data to show the new image
+                                  queryClient.invalidateQueries({ queryKey: ["/api/options/all"] });
+                                  toast({
+                                    title: "Success",
+                                    description: "Option image updated successfully",
+                                  });
+                                }}
+                                currentImageUrl={option.imageUrl}
+                                modelName={option.name}
+                              >
+                                <img
+                                  src={option.imageUrl}
+                                  alt={option.name}
+                                  className="w-12 h-12 object-cover rounded cursor-pointer hover:opacity-80"
+                                />
+                              </ObjectUploader>
+                            ) : (
+                              <ObjectUploader
+                                maxNumberOfFiles={1}
+                                maxFileSize={10485760}
+                                onGetUploadParameters={async () => {
+                                  const response = await apiRequest("/api/options/upload-url", {
+                                    method: "POST",
+                                    headers: sessionId ? { Authorization: `Bearer ${sessionId}` } : {},
+                                  });
+                                  return {
+                                    method: "PUT" as const,
+                                    url: response.uploadURL
+                                  };
+                                }}
+                                onComplete={async (result) => {
+                                  // Update option image with uploaded URL
+                                  const uploadedFile = result.successful?.[0];
+                                  if (uploadedFile) {
+                                    await apiRequest(`/api/options/${option.id}/image`, {
+                                      method: "PATCH",
+                                      body: { imageUrl: uploadedFile.uploadURL },
+                                      headers: sessionId ? { Authorization: `Bearer ${sessionId}` } : {},
+                                    });
+                                  }
+                                  // Refresh the data to show the new image
+                                  queryClient.invalidateQueries({ queryKey: ["/api/options/all"] });
+                                  toast({
+                                    title: "Success",
+                                    description: "Option image uploaded successfully",
+                                  });
+                                }}
+                                modelName={option.name}
+                              >
+                                <div className="w-12 h-12 bg-gray-100 rounded flex items-center justify-center cursor-pointer hover:bg-gray-200">
+                                  <Upload className="w-4 h-4 text-gray-500" />
+                                </div>
+                              </ObjectUploader>
+                            )}
+                          </TableCell>
                           <TableCell className="font-medium">
                             {editingOption?.id === option.id ? (
                               <Select
