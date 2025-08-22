@@ -1017,7 +1017,7 @@ Configuration Date: ${new Date().toLocaleDateString()}
                           </div>
                         </div>
                         <div className="text-right">
-                          <div className="text-lg font-bold text-blue-600">
+                          <div className={`text-lg font-bold ${selectedModel.id === model.id ? 'text-black' : 'text-blue-600'}`}>
                             ${model.basePrice.toLocaleString()}
                           </div>
                         </div>
