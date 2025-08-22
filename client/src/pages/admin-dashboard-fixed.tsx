@@ -53,6 +53,8 @@ export default function AdminDashboard() {
   const [showCreateUser, setShowCreateUser] = useState(false);
   const [editingUser, setEditingUser] = useState<AdminUser | null>(null);
   const [editData, setEditData] = useState<Partial<AdminUser>>({});
+  const [changingPasswordUser, setChangingPasswordUser] = useState<AdminUser | null>(null);
+  const [newPassword, setNewPassword] = useState("");
   const [showAirtableConfig, setShowAirtableConfig] = useState(false);
   const [airtableToken, setAirtableToken] = useState("");
   const [airtableBaseId, setAirtableBaseId] = useState("");
@@ -201,6 +203,33 @@ export default function AdminDashboard() {
       toast({
         title: "Error",
         description: error.message || "Failed to update user",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const changePasswordMutation = useMutation({
+    mutationFn: ({ userId, password }: { userId: number; password: string }) =>
+      apiRequest(`/api/admin/users/${userId}`, {
+        method: "PATCH",
+        body: { password },
+        headers: {
+          Authorization: `Bearer ${sessionId}`,
+        },
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/users"] });
+      setChangingPasswordUser(null);
+      setNewPassword("");
+      toast({
+        title: "Success",
+        description: "Password changed successfully",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to change password",
         variant: "destructive",
       });
     },
@@ -877,8 +906,22 @@ ${quote.notes ? `\nAdmin Notes: ${quote.notes}` : ''}`;
                                           setEditData({});
                                         }}
                                         className="h-8"
+                                        title="Edit"
                                       >
                                         <Edit className="w-4 h-4" />
+                                      </Button>
+                                      
+                                      <Button
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={() => {
+                                          setChangingPasswordUser(adminUser);
+                                          setNewPassword("");
+                                        }}
+                                        className="h-8 text-blue-600 border-blue-300 hover:bg-blue-50"
+                                        title="Change Password"
+                                      >
+                                        <Key className="w-4 h-4" />
                                       </Button>
                                       
                                       {adminUser.isActive && adminUser.id !== user.id && (
@@ -904,6 +947,62 @@ ${quote.notes ? `\nAdmin Notes: ${quote.notes}` : ''}`;
                   )}
                 </CardContent>
               </Card>
+
+              {/* Password Change Dialog */}
+              <Dialog open={!!changingPasswordUser} onOpenChange={(open) => !open && setChangingPasswordUser(null)}>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle>Change Password</DialogTitle>
+                    <DialogDescription>
+                      Change password for {changingPasswordUser?.firstName} {changingPasswordUser?.lastName} ({changingPasswordUser?.username})
+                    </DialogDescription>
+                  </DialogHeader>
+                  
+                  <div className="space-y-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="new-password">New Password</Label>
+                      <Input
+                        id="new-password"
+                        type="password"
+                        value={newPassword}
+                        onChange={(e) => setNewPassword(e.target.value)}
+                        placeholder="Enter new password (minimum 8 characters)"
+                      />
+                      {newPassword && newPassword.length < 8 && (
+                        <p className="text-sm text-red-600">
+                          Password must be at least 8 characters
+                        </p>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="flex justify-end space-x-2 mt-4">
+                    <Button 
+                      type="button" 
+                      variant="outline" 
+                      onClick={() => {
+                        setChangingPasswordUser(null);
+                        setNewPassword("");
+                      }}
+                    >
+                      Cancel
+                    </Button>
+                    <Button 
+                      onClick={() => {
+                        if (changingPasswordUser && newPassword.length >= 8) {
+                          changePasswordMutation.mutate({
+                            userId: changingPasswordUser.id,
+                            password: newPassword
+                          });
+                        }
+                      }}
+                      disabled={!newPassword || newPassword.length < 8 || changePasswordMutation.isPending}
+                    >
+                      {changePasswordMutation.isPending ? "Changing..." : "Change Password"}
+                    </Button>
+                  </div>
+                </DialogContent>
+              </Dialog>
             </TabsContent>
           )}
 
