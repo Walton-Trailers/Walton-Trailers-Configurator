@@ -1141,31 +1141,42 @@ Configuration Date: ${new Date().toLocaleDateString()}
                 </div>
               </div>
 
-              {/* Pull Options Selector */}
+              {/* Pull Options Toggle */}
               <div className="space-y-4">
                 <h3 className="text-lg font-semibold">Pull Options</h3>
-                <div className="space-y-3">
-                  {['Bumper', 'Gooseneck'].map((pullOption) => (
-                    <button
-                      key={pullOption}
-                      className={`w-full p-4 rounded-lg transition-all duration-300 text-left ${
-                        selectedOptions.pullOption === pullOption
-                          ? 'text-black border-0 outline-0' 
-                          : 'border-2 border-black text-black hover:border-gray-600 bg-white'
-                      }`}
-                      style={selectedOptions.pullOption === pullOption ? { backgroundColor: '#f8efdd' } : {}}
-                      onClick={() => setSelectedOptions(prev => ({ ...prev, pullOption }))}
-                    >
-                      <div className="flex justify-between items-center">
-                        <div className="flex-1">
-                          <div className="font-semibold text-lg">{pullOption} Pull</div>
-                        </div>
-                        <div className="text-lg font-bold text-black">
-                          {pullOption === 'Bumper' ? '$0' : '+$2,500'}
-                        </div>
-                      </div>
-                    </button>
-                  ))}
+                <div className="bg-gray-100 p-1 rounded-lg flex">
+                  <button
+                    className={`flex-1 py-3 px-4 rounded-md transition-all duration-300 text-center ${
+                      selectedOptions.pullOption === 'Bumper' || !selectedOptions.pullOption
+                        ? 'text-black shadow-sm'
+                        : 'text-gray-600 hover:text-black'
+                    }`}
+                    style={
+                      selectedOptions.pullOption === 'Bumper' || !selectedOptions.pullOption
+                        ? { backgroundColor: '#f8efdd' }
+                        : {}
+                    }
+                    onClick={() => setSelectedOptions(prev => ({ ...prev, pullOption: 'Bumper' }))}
+                  >
+                    <div className="font-semibold">Bumper Pull</div>
+                    <div className="text-sm font-medium">$0</div>
+                  </button>
+                  <button
+                    className={`flex-1 py-3 px-4 rounded-md transition-all duration-300 text-center ${
+                      selectedOptions.pullOption === 'Gooseneck'
+                        ? 'text-black shadow-sm'
+                        : 'text-gray-600 hover:text-black'
+                    }`}
+                    style={
+                      selectedOptions.pullOption === 'Gooseneck'
+                        ? { backgroundColor: '#f8efdd' }
+                        : {}
+                    }
+                    onClick={() => setSelectedOptions(prev => ({ ...prev, pullOption: 'Gooseneck' }))}
+                  >
+                    <div className="font-semibold">Gooseneck Pull</div>
+                    <div className="text-sm font-medium">+$2,500</div>
+                  </button>
                 </div>
               </div>
 
