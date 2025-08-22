@@ -502,7 +502,7 @@ Configuration Date: ${new Date().toLocaleDateString()}
                 Category
               </div>
               <div className={`px-4 py-2 rounded-md transition-all duration-300 ${currentStep >= 2 ? 'text-white' : 'bg-gray-100 text-black'}`} style={currentStep >= 2 ? { backgroundColor: '#c1af89' } : {}}>
-                Model
+                Series
               </div>
               <div className={`px-4 py-2 rounded-md transition-all duration-300 ${currentStep >= 3 ? 'text-white' : 'bg-gray-100 text-black'}`} style={currentStep >= 3 ? { backgroundColor: '#c1af89' } : {}}>
                 Configure
