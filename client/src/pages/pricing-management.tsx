@@ -115,6 +115,8 @@ export default function PricingManagement() {
   const { data: trailerCategories, isLoading: categoriesLoading } = useQuery({
     queryKey: ["/api/categories"],
     queryFn: () => apiRequest("/api/categories"),
+    staleTime: 0, // Always refetch to ensure fresh data
+    cacheTime: 0, // Don't cache results
   });
 
 
@@ -302,6 +304,7 @@ export default function PricingManagement() {
         headers: sessionId ? { Authorization: `Bearer ${sessionId}` } : {},
       }),
     onSuccess: () => {
+      // Invalidate categories to trigger immediate refetch
       queryClient.invalidateQueries({ queryKey: ["/api/categories"] });
       setEditingCategory(null);
       setEditData({});
