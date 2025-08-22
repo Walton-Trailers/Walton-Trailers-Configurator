@@ -949,7 +949,8 @@ Configuration Date: ${new Date().toLocaleDateString()}
                   variant="ghost" 
                   size="sm"
                   onClick={() => setCurrentStep(2)}
-                  className="text-blue-500 hover:text-blue-600"
+                  className="hover:bg-gray-100"
+                  style={{ color: '#C1AF89' }}
                 >
                   <ArrowLeft className="w-4 h-4 mr-2" />
                   Back
@@ -1180,7 +1181,8 @@ Configuration Date: ${new Date().toLocaleDateString()}
                   variant="ghost" 
                   size="sm"
                   onClick={() => setCurrentStep(3)}
-                  className="text-blue-500 hover:text-blue-600"
+                  className="hover:bg-gray-100"
+                  style={{ color: '#C1AF89' }}
                 >
                   <ArrowLeft className="w-4 h-4 mr-2" />
                   Back
