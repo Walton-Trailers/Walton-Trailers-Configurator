@@ -933,15 +933,8 @@ Configuration Date: ${new Date().toLocaleDateString()}
                 </Card>
               ))}
 
-              {/* Price Summary */}
-              <Card className="bg-zinc-50 dark:bg-zinc-800 border-zinc-200 dark:border-zinc-700">
-                <CardContent className="p-6">
-                  <div className="flex justify-between items-center">
-                    <span className="text-lg">Total MSRP</span>
-                    <span className="text-2xl font-bold">${totalPrice.toLocaleString()}</span>
-                  </div>
-                </CardContent>
-              </Card>
+              {/* Add padding for fixed pricing display */}
+              <div className="pb-20"></div>
             </div>
           )}
 
@@ -1030,8 +1023,8 @@ Configuration Date: ${new Date().toLocaleDateString()}
         )}
       </div>
 
-      {/* Fixed Tesla-style pricing display - only show on step 4 */}
-      {currentStep === 4 && selectedModel && (
+      {/* Fixed Tesla-style pricing display - show on steps 3 and 4 */}
+      {(currentStep === 3 || currentStep === 4) && selectedModel && (
         <div className="fixed bottom-0 left-0 right-0 bg-white dark:bg-zinc-900 border-t border-zinc-200 dark:border-zinc-700 z-50">
           <div className="lg:ml-[65%] lg:w-[35%] w-full">
             <div className="max-w-lg mx-auto px-4 md:px-6 py-4">
