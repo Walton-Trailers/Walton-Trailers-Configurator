@@ -201,6 +201,37 @@ export const customQuoteRequests = pgTable("custom_quote_requests", {
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
+// Quote Requests - From configurator modal
+export const quoteRequests = pgTable("quote_requests", {
+  id: serial("id").primaryKey(),
+  firstName: varchar("first_name", { length: 100 }).notNull(),
+  lastName: varchar("last_name", { length: 100 }).notNull(),
+  zipCode: varchar("zip_code", { length: 10 }).notNull(),
+  mobile: varchar("mobile", { length: 20 }).notNull(),
+  email: varchar("email", { length: 200 }).notNull(),
+  company: varchar("company", { length: 200 }),
+  comments: text("comments"),
+  optIn: boolean("opt_in").notNull().default(false),
+  ageVerification: boolean("age_verification").notNull().default(false),
+  // Configuration details
+  categoryId: integer("category_id"),
+  categoryName: varchar("category_name", { length: 100 }),
+  modelId: varchar("model_id", { length: 50 }),
+  modelName: varchar("model_name", { length: 200 }),
+  selectedOptions: json("selected_options").$type<Record<string, any>>(),
+  totalPrice: integer("total_price"),
+  trailerSpecs: json("trailer_specs").$type<{
+    gvwr?: string;
+    payload?: string;
+    deckSize?: string;
+    axles?: string;
+  }>(),
+  status: varchar("status", { length: 20 }).notNull().default("pending"), // pending, contacted, quoted, closed
+  notes: text("notes"), // Admin notes
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
 // Insert schemas
 export const insertDealerSchema = createInsertSchema(dealers).omit({ 
   id: true,
@@ -250,6 +281,13 @@ export const insertCustomQuoteRequestSchema = createInsertSchema(customQuoteRequ
   createdAt: true,
   updatedAt: true,
 });
+export const insertQuoteRequestSchema = createInsertSchema(quoteRequests).omit({
+  id: true,
+  status: true,
+  notes: true,
+  createdAt: true,
+  updatedAt: true,
+});
 
 // Types
 export type Dealer = typeof dealers.$inferSelect;
@@ -270,6 +308,7 @@ export type UserConfiguration = typeof userConfigurations.$inferSelect;
 export type AdminUser = typeof adminUsers.$inferSelect;
 export type AdminSession = typeof adminSessions.$inferSelect;
 export type CustomQuoteRequest = typeof customQuoteRequests.$inferSelect;
+export type QuoteRequest = typeof quoteRequests.$inferSelect;
 export type InsertTrailerCategory = z.infer<typeof insertTrailerCategorySchema>;
 export type InsertTrailerModel = z.infer<typeof insertTrailerModelSchema>;
 export type InsertModelVariant = z.infer<typeof insertModelVariantSchema>;
@@ -278,6 +317,7 @@ export type InsertUserConfiguration = z.infer<typeof insertUserConfigurationSche
 export type InsertAdminUser = z.infer<typeof insertAdminUserSchema>;
 export type InsertAdminSession = z.infer<typeof insertAdminSessionSchema>;
 export type InsertCustomQuoteRequest = z.infer<typeof insertCustomQuoteRequestSchema>;
+export type InsertQuoteRequest = z.infer<typeof insertQuoteRequestSchema>;
 
 // Relations
 export const trailerCategoriesRelations = relations(trailerCategories, ({ many }) => ({
