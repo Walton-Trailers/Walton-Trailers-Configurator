@@ -1158,7 +1158,7 @@ Configuration Date: ${new Date().toLocaleDateString()}
               </div>
 
               {/* Pull Options Toggle */}
-              <div className="space-y-4">
+              <div className="space-y-2">
                 <h3 className="text-lg font-semibold">Pull Options</h3>
                 <div className="bg-gray-100 p-1 rounded-lg flex">
                   <button
@@ -1204,8 +1204,8 @@ Configuration Date: ${new Date().toLocaleDateString()}
                   return acc;
                 }, {} as Record<string, TrailerOption[]>)
               ).map(([category, categoryOptions]) => (
-                <div key={category} className="py-2 md:py-3">
-                    <h3 className="text-sm md:text-base font-semibold mb-2 md:mb-3 capitalize">
+                <div key={category} className="py-1 md:py-2">
+                    <h3 className="text-sm md:text-base font-semibold mb-1 md:mb-2 capitalize">
                       {category === 'tires' ? 'Tire Options' : 
                        category === 'ramps' ? 'Ramp Options' : 
                        category === 'color' ? 'Color Options' : 
