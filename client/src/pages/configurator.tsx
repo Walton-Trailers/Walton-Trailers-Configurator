@@ -508,7 +508,7 @@ Configuration Date: ${new Date().toLocaleDateString()}
                 Configure
               </div>
               <div className={`px-4 py-2 rounded-md transition-all duration-300 ${currentStep >= 4 ? 'text-white' : 'bg-gray-100 text-black'}`} style={currentStep >= 4 ? { backgroundColor: '#c1af89' } : {}}>
-                Order
+                Summary
               </div>
             </div>
             
