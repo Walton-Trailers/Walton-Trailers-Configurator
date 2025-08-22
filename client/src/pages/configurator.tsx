@@ -16,7 +16,7 @@ import { Link } from "wouter";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { getOptionInfo } from "@/lib/trailer-option-info";
-import waltonLogo from "@/assets/walton-logo.png";
+import waltonLogo from "@/assets/walton-logo-white.png";
 import { DealerSaveDialog } from "@/components/dealer-save-dialog";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { useForm } from "react-hook-form";
@@ -471,7 +471,7 @@ Configuration Date: ${new Date().toLocaleDateString()}
   return (
     <div className="min-h-screen bg-white text-gray-900 font-medium">
       {/* Tesla-style Header */}
-      <header className="fixed top-0 left-0 right-0 bg-white/95 backdrop-blur-xl z-50 border-b border-gray-200">
+      <header className="fixed top-0 left-0 right-0 bg-black z-50 border-b border-gray-800">
         <div className="max-w-7xl mx-auto px-4 md:px-8">
           <div className="flex items-center justify-between h-16 md:h-20">
             <div className="flex items-center">
@@ -479,16 +479,15 @@ Configuration Date: ${new Date().toLocaleDateString()}
                 src={waltonLogo} 
                 alt="Walton Trailers" 
                 className="h-6 md:h-8 lg:h-10 w-auto object-contain max-w-[120px] md:max-w-[150px] lg:max-w-[180px]"
-                style={{ filter: 'brightness(0) saturate(100%)' }}
               />
             </div>
             
             {/* Mobile progress indicator - horizontal dots */}
             <div className="flex md:hidden items-center space-x-2">
-              <div className={`w-2 h-2 rounded-full transition-all duration-300 ${currentStep >= 1 ? 'bg-blue-600' : 'bg-gray-300'}`} />
-              <div className={`w-2 h-2 rounded-full transition-all duration-300 ${currentStep >= 2 ? 'bg-blue-600' : 'bg-gray-300'}`} />
-              <div className={`w-2 h-2 rounded-full transition-all duration-300 ${currentStep >= 3 ? 'bg-blue-600' : 'bg-gray-300'}`} />
-              <div className={`w-2 h-2 rounded-full transition-all duration-300 ${currentStep >= 4 ? 'bg-blue-600' : 'bg-gray-300'}`} />
+              <div className={`w-2 h-2 rounded-full transition-all duration-300`} style={currentStep >= 1 ? { backgroundColor: '#F8EFDD' } : { backgroundColor: '#6B7280' }} />
+              <div className={`w-2 h-2 rounded-full transition-all duration-300`} style={currentStep >= 2 ? { backgroundColor: '#F8EFDD' } : { backgroundColor: '#6B7280' }} />
+              <div className={`w-2 h-2 rounded-full transition-all duration-300`} style={currentStep >= 3 ? { backgroundColor: '#F8EFDD' } : { backgroundColor: '#6B7280' }} />
+              <div className={`w-2 h-2 rounded-full transition-all duration-300`} style={currentStep >= 4 ? { backgroundColor: '#F8EFDD' } : { backgroundColor: '#6B7280' }} />
             </div>
             
             {/* Desktop progress indicator */}
@@ -508,8 +507,8 @@ Configuration Date: ${new Date().toLocaleDateString()}
             </div>
             
             <div className="text-right">
-              <div className="text-xs md:text-sm text-gray-500 font-normal">Est. Price</div>
-              <div className="text-lg md:text-2xl font-semibold text-blue-600 transition-all duration-500">
+              <div className="text-xs md:text-sm text-gray-400 font-normal">Est. Price</div>
+              <div className="text-lg md:text-2xl font-semibold text-white transition-all duration-500">
                 ${totalPrice.toLocaleString()}
               </div>
             </div>
