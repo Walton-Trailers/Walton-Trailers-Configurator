@@ -30,6 +30,7 @@ interface TrailerModel {
   imageUrl: string;
   features: string[];
   categoryName: string;
+  categorySubType?: string;
   isArchived?: boolean;
 }
 
@@ -141,7 +142,7 @@ export default function PricingManagement() {
 
   // Update model mutation
   const updateModelMutation = useMutation({
-    mutationFn: (data: { id: number; basePrice?: number; name?: string; modelId?: string; gvwr?: string; payload?: string; deckSize?: string; categoryId?: number; isArchived?: boolean }) =>
+    mutationFn: (data: { id: number; basePrice?: number; name?: string; modelId?: string; gvwr?: string; payload?: string; deckSize?: string; categoryId?: number; categorySubType?: string; isArchived?: boolean }) =>
       apiRequest(`/api/models/${data.id}`, {
         method: "PATCH",
         body: { 
@@ -152,6 +153,7 @@ export default function PricingManagement() {
           payload: data.payload, 
           deckSize: data.deckSize,
           categoryId: data.categoryId,
+          categorySubType: data.categorySubType,
           isArchived: data.isArchived
         },
         headers: sessionId ? { Authorization: `Bearer ${sessionId}` } : {},
@@ -403,6 +405,8 @@ export default function PricingManagement() {
       gvwr: data.gvwr !== undefined ? data.gvwr : model.gvwr,
       payload: data.payload !== undefined ? data.payload : model.payload,
       deckSize: data.deckSize !== undefined ? data.deckSize : model.deckSize,
+      categoryId: data.categoryId !== undefined ? data.categoryId : model.categoryId,
+      categorySubType: data.categorySubType !== undefined ? data.categorySubType : model.categorySubType,
     });
   };
 
@@ -860,6 +864,7 @@ export default function PricingManagement() {
                         <TableHead>Model ID</TableHead>
                         <TableHead>Model Name</TableHead>
                         <TableHead>Category</TableHead>
+                        <TableHead>Category Sub Type</TableHead>
                         <TableHead>GVWR</TableHead>
                         <TableHead>Payload</TableHead>
                         <TableHead>Deck Size</TableHead>
@@ -1004,6 +1009,30 @@ export default function PricingManagement() {
                           </TableCell>
                           <TableCell>
                             {editingModel?.id === model.id ? (
+                              <Select 
+                                value={editData[model.id]?.categorySubType ?? model.categorySubType ?? ''}
+                                onValueChange={(value) => setEditData(prev => ({
+                                  ...prev,
+                                  [model.id]: { ...prev[model.id], categorySubType: value }
+                                }))}
+                              >
+                                <SelectTrigger className="w-36">
+                                  <SelectValue placeholder="Select sub type" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="Standard">Standard</SelectItem>
+                                  <SelectItem value="Heavy Duty">Heavy Duty</SelectItem>
+                                  <SelectItem value="Commercial">Commercial</SelectItem>
+                                  <SelectItem value="Extreme">Extreme</SelectItem>
+                                  <SelectItem value="Professional">Professional</SelectItem>
+                                </SelectContent>
+                              </Select>
+                            ) : (
+                              <span className="text-sm text-gray-600">{model.categorySubType || 'Not Set'}</span>
+                            )}
+                          </TableCell>
+                          <TableCell>
+                            {editingModel?.id === model.id ? (
                               <Input
                                 value={editData[model.id]?.gvwr ?? model.gvwr}
                                 onChange={(e) => setEditData(prev => ({
@@ -1107,7 +1136,8 @@ export default function PricingManagement() {
                                     gvwr: model.gvwr,
                                     payload: model.payload,
                                     deckSize: model.deckSize,
-                                    categoryId: model.categoryId
+                                    categoryId: model.categoryId,
+                                    categorySubType: model.categorySubType
                                   } });
                                 }}
                               >

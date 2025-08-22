@@ -37,6 +37,7 @@ export interface TrailerModelResponse {
   imageUrl: string;
   features: string[];
   categoryName?: string;
+  categorySubType?: string;
   isArchived?: boolean;
 }
 
@@ -719,7 +720,7 @@ export class DatabaseStorage implements IStorage {
       const result = await db.execute(sql`
         SELECT m.id, m.category_id, m.model_id, m.name, m.gvwr, m.payload,
                m.deck_size, m.axles, m.base_price, m.image_url, m.features,
-               m.is_archived, c.name as category_name
+               m.is_archived, m.category_sub_type, c.name as category_name
         FROM trailer_models m
         JOIN trailer_categories c ON m.category_id = c.id
         ORDER BY c.name, m.id
@@ -740,6 +741,7 @@ export class DatabaseStorage implements IStorage {
         imageUrl: model.image_url,
         features: model.features || [],
         categoryName: model.category_name,
+        categorySubType: model.category_sub_type,
         isArchived: model.is_archived || false,
       }));
     } catch (error) {
@@ -826,6 +828,13 @@ export class DatabaseStorage implements IStorage {
           WHERE id = ${id}
         `);
       }
+      if (updates.categorySubType !== undefined) {
+        await db.execute(sql`
+          UPDATE trailer_models 
+          SET category_sub_type = ${updates.categorySubType}
+          WHERE id = ${id}
+        `);
+      }
       if (updates.isArchived !== undefined) {
         await db.execute(sql`
           UPDATE trailer_models 
@@ -844,7 +853,7 @@ export class DatabaseStorage implements IStorage {
       // Get the updated record
       const result = await db.execute(sql`
         SELECT id, category_id, model_id, name, gvwr, payload,
-               deck_size, axles, base_price, image_url, features, is_archived
+               deck_size, axles, base_price, image_url, features, is_archived, category_sub_type
         FROM trailer_models WHERE id = ${id}
       `);
       
@@ -865,6 +874,7 @@ export class DatabaseStorage implements IStorage {
         basePrice: updatedModel.base_price,
         imageUrl: updatedModel.image_url,
         features: updatedModel.features || [],
+        categorySubType: updatedModel.category_sub_type,
         isArchived: updatedModel.is_archived || false,
       };
     } catch (error) {
