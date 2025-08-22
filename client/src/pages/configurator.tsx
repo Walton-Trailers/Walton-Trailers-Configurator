@@ -1000,7 +1000,6 @@ Configuration Date: ${new Date().toLocaleDateString()}
                           <div className="text-lg font-bold text-blue-600">
                             ${model.basePrice.toLocaleString()}
                           </div>
-                          <div className="text-xs text-gray-500">/base price</div>
                         </div>
                       </div>
                     </button>
