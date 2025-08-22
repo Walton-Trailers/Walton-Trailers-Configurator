@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { ArrowLeft, Edit, Save, X, DollarSign, Search, ChevronDown, Plus, Trash2, Archive, RotateCcw, Upload } from "lucide-react";
 import { Link } from "wouter";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -111,13 +111,30 @@ export default function PricingManagement() {
       }),
   });
 
-  // Fetch all trailer categories for the dropdown and management
-  const { data: trailerCategories, isLoading: categoriesLoading, refetch: refetchCategories } = useQuery({
-    queryKey: ["/api/categories"],
-    queryFn: () => apiRequest("/api/categories"),
-    staleTime: 0, // Always refetch to ensure fresh data
-    gcTime: 0, // Don't cache results
-  });
+  // State for categories to force re-renders
+  const [categoriesData, setCategoriesData] = useState<TrailerCategory[]>([]);
+  const [categoriesLoading, setCategoriesLoading] = useState(true);
+
+  // Fetch categories function
+  const fetchCategories = async () => {
+    try {
+      setCategoriesLoading(true);
+      const data = await apiRequest("/api/categories");
+      setCategoriesData(data);
+    } catch (error) {
+      console.error("Failed to fetch categories:", error);
+    } finally {
+      setCategoriesLoading(false);
+    }
+  };
+
+  // Load categories on mount
+  useEffect(() => {
+    fetchCategories();
+  }, []);
+
+  // Use state data instead of query
+  const trailerCategories = categoriesData;
 
 
 
@@ -303,9 +320,15 @@ export default function PricingManagement() {
         },
         headers: sessionId ? { Authorization: `Bearer ${sessionId}` } : {},
       }),
-    onSuccess: () => {
-      // Force page reload to completely bypass cache issues
-      window.location.reload();
+    onSuccess: async () => {
+      // Fetch fresh data and update state
+      await fetchCategories();
+      setEditingCategory(null);
+      setEditData({});
+      toast({
+        title: "Success",
+        description: "Category updated successfully",
+      });
     },
     onError: (error: any) => {
       toast({
