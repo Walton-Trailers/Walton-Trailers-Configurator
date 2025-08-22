@@ -957,13 +957,56 @@ Configuration Date: ${new Date().toLocaleDateString()}
               </div>
               
               <div>
-                <h1 className="text-2xl md:text-3xl lg:text-4xl font-bold mb-2">{selectedModel.name}</h1>
+                <h1 className="text-2xl md:text-3xl lg:text-4xl font-bold mb-2">
+                  {selectedModel.name.includes('FBH') ? 'FBH Gooseneck' : 
+                   selectedModel.name.includes('FBX') ? 'FBX Gooseneck' : 
+                   selectedModel.name}
+                </h1>
                 <div className="flex flex-wrap items-center gap-2 md:gap-4 text-xs md:text-sm text-zinc-600 dark:text-zinc-400">
                   <span>{selectedModel.gvwr}</span>
                   <span className="hidden md:inline">•</span>
                   <span>{selectedModel.payload}</span>
                   <span className="hidden md:inline">•</span>
                   <span>{selectedModel.deckSize}</span>
+                </div>
+              </div>
+
+              {/* Tesla-style Model Selector */}
+              <div className="space-y-4">
+                <h3 className="text-lg font-semibold">Choose Your Model</h3>
+                <div className="space-y-3">
+                  {models?.filter(model => 
+                    selectedModel.name.includes('FBH') ? model.name.includes('FBH') : 
+                    selectedModel.name.includes('FBX') ? model.name.includes('FBX') : 
+                    true
+                  ).map((model) => (
+                    <button
+                      key={model.id}
+                      className={`w-full p-4 rounded-lg border-2 transition-all duration-300 text-left ${
+                        selectedModel.id === model.id 
+                          ? 'border-blue-500 bg-blue-50' 
+                          : 'border-gray-200 hover:border-gray-300 bg-white'
+                      }`}
+                      onClick={() => handleModelSelect(model)}
+                    >
+                      <div className="flex justify-between items-center">
+                        <div className="flex-1">
+                          <div className="font-semibold text-lg mb-1">
+                            {model.name.replace(/^(FBH|FBX)\d+\s*-?\s*/, '')}
+                          </div>
+                          <div className="text-sm text-gray-600 mb-2">
+                            GVWR: {model.gvwr} • Payload: {model.payload} • Deck: {model.deckSize}
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <div className="text-lg font-bold text-blue-600">
+                            ${model.basePrice.toLocaleString()}
+                          </div>
+                          <div className="text-xs text-gray-500">/base price</div>
+                        </div>
+                      </div>
+                    </button>
+                  ))}
                 </div>
               </div>
 
