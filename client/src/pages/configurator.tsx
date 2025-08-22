@@ -798,8 +798,116 @@ Configuration Date: ${new Date().toLocaleDateString()}
           </div>
         )}
 
-        {/* Steps 2+ - Responsive Layout */}
-        {currentStep > 1 && (
+        {/* Step 2: Model Type Selection - Full Width Layout */}
+        {currentStep === 2 && selectedCategory && (
+          <div className="max-w-7xl mx-auto px-4 md:px-8 py-6 md:py-8">
+            <div className="flex items-center justify-between mb-6 md:mb-8">
+              <button 
+                onClick={() => setCurrentStep(1)}
+                className="flex items-center text-blue-600 hover:text-blue-700 transition-colors duration-300 font-medium"
+              >
+                <ArrowLeft className="w-5 h-5 mr-2" />
+                Back to Categories
+              </button>
+            </div>
+            
+            <div className="text-center mb-6 md:mb-8">
+              <h1 className="text-2xl md:text-4xl font-bold text-gray-900 mb-3 md:mb-4 tracking-tight">
+                {selectedCategory.name}
+              </h1>
+              <p className="text-base md:text-lg text-gray-600 max-w-2xl mx-auto leading-relaxed px-4 md:px-0">
+                Choose between our professional model lines
+              </p>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-4xl mx-auto">
+              {/* FBH Models Card */}
+              <div className="animate-in slide-in-from-bottom duration-700">
+                <button
+                  className="w-full text-left group relative overflow-hidden rounded-md border border-gray-200 bg-white hover:border-gray-300 hover:shadow-xl transition-all duration-500 hover:scale-[1.02]"
+                  onClick={() => {
+                    // Find the first FBH model to use as representative
+                    const fbhModel = models?.find(model => model.name.includes('FBH'));
+                    if (fbhModel) {
+                      handleModelSelect(fbhModel);
+                    }
+                  }}
+                >
+                  <div className="flex flex-col">
+                    {/* Top - Image */}
+                    <div className="w-full h-48 md:h-56 relative overflow-hidden rounded-t-md bg-orange-500 flex items-center justify-center">
+                      <div className="text-white text-2xl md:text-3xl font-bold tracking-wider">
+                        FBH SERIES
+                      </div>
+                    </div>
+                    
+                    {/* Bottom - Content */}
+                    <div className="w-full p-6 md:p-8">
+                      <div className="flex items-center justify-between mb-3 md:mb-4">
+                        <h3 className="text-xl md:text-2xl font-semibold text-gray-900 group-hover:text-blue-600 transition-colors duration-300">
+                          FBH Models
+                        </h3>
+                        <ArrowRight className="w-5 h-5 text-gray-400 group-hover:text-blue-500 group-hover:translate-x-1 transition-all duration-300" />
+                      </div>
+                      
+                      <p className="text-gray-600 mb-4 md:mb-6 leading-relaxed">
+                        Heavy-duty flatbed trailers with superior stability and higher payload capacity for demanding commercial applications.
+                      </p>
+                      
+                      <div className="text-lg md:text-xl font-semibold text-blue-600">
+                        Starting at ${models?.find(m => m.name.includes('FBH'))?.basePrice.toLocaleString() || '12,345'}
+                      </div>
+                    </div>
+                  </div>
+                </button>
+              </div>
+
+              {/* FBX Models Card */}
+              <div className="animate-in slide-in-from-bottom duration-700" style={{ animationDelay: '150ms' }}>
+                <button
+                  className="w-full text-left group relative overflow-hidden rounded-md border border-gray-200 bg-white hover:border-gray-300 hover:shadow-xl transition-all duration-500 hover:scale-[1.02]"
+                  onClick={() => {
+                    // Find the first FBX model to use as representative
+                    const fbxModel = models?.find(model => model.name.includes('FBX'));
+                    if (fbxModel) {
+                      handleModelSelect(fbxModel);
+                    }
+                  }}
+                >
+                  <div className="flex flex-col">
+                    {/* Top - Image */}
+                    <div className="w-full h-48 md:h-56 relative overflow-hidden rounded-t-md bg-orange-500 flex items-center justify-center">
+                      <div className="text-white text-2xl md:text-3xl font-bold tracking-wider">
+                        FBX SERIES
+                      </div>
+                    </div>
+                    
+                    {/* Bottom - Content */}
+                    <div className="w-full p-6 md:p-8">
+                      <div className="flex items-center justify-between mb-3 md:mb-4">
+                        <h3 className="text-xl md:text-2xl font-semibold text-gray-900 group-hover:text-blue-600 transition-colors duration-300">
+                          FBX Models
+                        </h3>
+                        <ArrowRight className="w-5 h-5 text-gray-400 group-hover:text-blue-500 group-hover:translate-x-1 transition-all duration-300" />
+                      </div>
+                      
+                      <p className="text-gray-600 mb-4 md:mb-6 leading-relaxed">
+                        Versatile flatbed trailers designed for enhanced performance and reliability across diverse hauling needs.
+                      </p>
+                      
+                      <div className="text-lg md:text-xl font-semibold text-blue-600">
+                        Starting at ${models?.find(m => m.name.includes('FBX'))?.basePrice.toLocaleString() || '15,450'}
+                      </div>
+                    </div>
+                  </div>
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Steps 3+ - Responsive Layout */}
+        {currentStep > 2 && (
           <div className="flex flex-col lg:flex-row min-h-screen">
             {/* Mobile/Tablet Image - Sticky Top */}
             <div className="lg:hidden sticky top-16 md:top-20 z-10 bg-gray-50 h-48 md:h-64">
@@ -826,77 +934,6 @@ Configuration Date: ${new Date().toLocaleDateString()}
             {/* Configuration Panel - Responsive */}
             <div className="flex-1 lg:ml-[65%] lg:w-[35%] bg-white">
               <div className="max-w-md mx-auto py-6 md:py-8 lg:py-12 px-4 md:px-6">
-
-          {/* Step 2: Model Selection */}
-          {currentStep === 2 && selectedCategory && (
-            <div className="space-y-12 animate-in fade-in duration-500">
-              <div className="flex items-center justify-between">
-                <button 
-                  onClick={() => setCurrentStep(1)}
-                  className="flex items-center text-blue-600 hover:text-blue-700 transition-colors duration-300 font-medium"
-                >
-                  <ArrowLeft className="w-5 h-5 mr-2" />
-                  Back to Categories
-                </button>
-              </div>
-              
-              <div>
-                <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold text-gray-900 mb-3 md:mb-6 tracking-tight leading-tight">
-                  {selectedCategory.name}
-                </h1>
-                <p className="text-gray-600 text-base md:text-lg lg:text-xl leading-relaxed">
-                  Choose the perfect model for your specific requirements
-                </p>
-              </div>
-
-              <div className="space-y-4">
-                {models?.map((model, index) => (
-                  <div
-                    key={model.id}
-                    className="animate-in slide-in-from-right duration-500"
-                    style={{ animationDelay: `${index * 150}ms` }}
-                  >
-                    <button
-                      className={`w-full text-left p-4 md:p-6 rounded-2xl border-2 transition-all duration-300 hover:shadow-lg hover:scale-[1.02] active:scale-[0.98] ${
-                        selectedModel?.id === model.id 
-                          ? 'border-blue-500 bg-blue-50 shadow-lg' 
-                          : 'border-gray-200 hover:border-gray-300 bg-white'
-                      }`}
-                      onClick={() => handleModelSelect(model)}
-                      onMouseEnter={() => setHoveredModel(model)}
-                      onMouseLeave={() => setHoveredModel(null)}
-                    >
-                      <div className="flex justify-between items-start">
-                        <div className="flex-1">
-                          <h3 className="text-lg md:text-xl lg:text-2xl font-semibold mb-3 md:mb-4 text-gray-900">{model.name}</h3>
-                          <div className="grid grid-cols-2 gap-3 md:gap-6 text-sm md:text-base mb-4 md:mb-6">
-                            <div className="space-y-1 md:space-y-2">
-                              <div className="text-gray-500 text-xs md:text-sm font-medium uppercase tracking-wide">GVWR</div>
-                              <div className="font-semibold text-gray-900">{model.gvwr}</div>
-                            </div>
-                            <div className="space-y-1 md:space-y-2">
-                              <div className="text-gray-500 text-xs md:text-sm font-medium uppercase tracking-wide">Payload</div>
-                              <div className="font-semibold text-gray-900">{model.payload}</div>
-                            </div>
-                            <div className="space-y-1 md:space-y-2">
-                              <div className="text-gray-500 text-xs md:text-sm font-medium uppercase tracking-wide">Deck Size</div>
-                              <div className="font-semibold text-gray-900">{model.deckSize}</div>
-                            </div>
-                            <div className="space-y-1 md:space-y-2">
-                              <div className="text-gray-500 text-xs md:text-sm font-medium uppercase tracking-wide">Axles</div>
-                              <div className="font-semibold text-gray-900">{model.axles}</div>
-                            </div>
-                          </div>
-                          <div className="text-lg md:text-xl lg:text-2xl font-bold text-blue-600">${model.basePrice.toLocaleString()}</div>
-                        </div>
-                        <ArrowRight className="w-5 h-5 md:w-6 md:h-6 text-gray-400 ml-3 md:ml-6 transition-transform duration-300 group-hover:translate-x-1 flex-shrink-0" />
-                      </div>
-                    </button>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
 
           {/* Step 3: Configuration */}
           {currentStep === 3 && selectedModel && options && (
