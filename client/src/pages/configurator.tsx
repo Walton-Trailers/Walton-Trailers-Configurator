@@ -1002,11 +1002,12 @@ Configuration Date: ${new Date().toLocaleDateString()}
                   ).map((model) => (
                     <button
                       key={model.id}
-                      className={`w-full p-4 rounded-lg border-2 transition-all duration-300 text-left ${
+                      className={`w-full p-4 rounded-lg transition-all duration-300 text-left ${
                         selectedModel.id === model.id 
-                          ? 'border-blue-500 bg-blue-50' 
-                          : 'border-gray-200 hover:border-gray-300 bg-white'
+                          ? 'text-black border-0 outline-0' 
+                          : 'border-2 border-gray-200 hover:border-gray-300 bg-white'
                       }`}
+                      style={selectedModel.id === model.id ? { backgroundColor: '#f8efdd' } : {}}
                       onClick={() => handleModelChange(model)}
                     >
                       <div className="flex justify-between items-center">
