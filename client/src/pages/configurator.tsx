@@ -741,7 +741,7 @@ Configuration Date: ${new Date().toLocaleDateString()}
 
             {/* Configuration Panel - Responsive */}
             <div className="flex-1 lg:ml-[65%] lg:w-[35%] bg-white">
-              <div className="max-w-lg mx-auto py-6 md:py-8 lg:py-12 px-4 md:px-6">
+              <div className="max-w-md mx-auto py-6 md:py-8 lg:py-12 px-4 md:px-6">
 
           {/* Step 2: Model Selection */}
           {currentStep === 2 && selectedCategory && (
@@ -854,8 +854,8 @@ Configuration Date: ${new Date().toLocaleDateString()}
                   return acc;
                 }, {} as Record<string, TrailerOption[]>)
               ).map(([category, categoryOptions]) => (
-                <div key={category} className="py-4 md:py-6">
-                    <h3 className="text-base md:text-lg font-semibold mb-3 md:mb-4 capitalize">
+                <div key={category} className="py-2 md:py-3">
+                    <h3 className="text-sm md:text-base font-semibold mb-2 md:mb-3 capitalize">
                       {category === 'tires' ? 'Tire Options' : 
                        category === 'ramps' ? 'Ramp Options' : 
                        category === 'color' ? 'Color Options' : 
@@ -866,10 +866,10 @@ Configuration Date: ${new Date().toLocaleDateString()}
                     </h3>
                     
                     {categoryOptions[0]?.isMultiSelect ? (
-                      <div className="space-y-3">
+                      <div className="space-y-1">
                         {categoryOptions.map((option) => (
-                          <div key={option.id} className="flex items-center justify-between py-2">
-                            <div className="flex items-center space-x-3">
+                          <div key={option.id} className="flex items-center justify-between py-1">
+                            <div className="flex items-center space-x-2">
                               <Checkbox
                                 id={`option-${option.id}`}
                                 checked={selectedOptions[category]?.includes(option.id) || false}
@@ -878,7 +878,7 @@ Configuration Date: ${new Date().toLocaleDateString()}
                                 }
                               />
                               <div className="flex items-center">
-                                <Label htmlFor={`option-${option.id}`} className="font-medium cursor-pointer">
+                                <Label htmlFor={`option-${option.id}`} className="text-sm cursor-pointer">
                                   {option.name}
                                 </Label>
                                 <OptionInfoModal optionName={option.name}>
@@ -886,7 +886,7 @@ Configuration Date: ${new Date().toLocaleDateString()}
                                 </OptionInfoModal>
                               </div>
                             </div>
-                            <span className="font-medium">
+                            <span className="text-sm">
                               {option.price === 0 ? 'Included' : 
                                option.price > 0 ? `+$${option.price.toLocaleString()}` : 
                                `$${option.price.toLocaleString()}`}
@@ -901,16 +901,16 @@ Configuration Date: ${new Date().toLocaleDateString()}
                           handleOptionChange(category, parseInt(value), false, true)
                         }
                       >
-                        <div className="space-y-3">
+                        <div className="space-y-1">
                           {categoryOptions.map((option) => (
-                            <div key={option.id} className="flex items-center justify-between py-2">
-                              <div className="flex items-center space-x-3">
+                            <div key={option.id} className="flex items-center justify-between py-1">
+                              <div className="flex items-center space-x-2">
                                 <RadioGroupItem
                                   value={option.id.toString()}
                                   id={`option-${option.id}`}
                                 />
                                 <div className="flex items-center">
-                                  <Label htmlFor={`option-${option.id}`} className="font-medium cursor-pointer">
+                                  <Label htmlFor={`option-${option.id}`} className="text-sm cursor-pointer">
                                     {option.name}
                                   </Label>
                                   <OptionInfoModal optionName={option.name}>
@@ -918,7 +918,7 @@ Configuration Date: ${new Date().toLocaleDateString()}
                                   </OptionInfoModal>
                                 </div>
                               </div>
-                              <span className="font-medium">
+                              <span className="text-sm">
                                 {option.price === 0 ? 'Included' : 
                                  option.price > 0 ? `+$${option.price.toLocaleString()}` : 
                                  `$${option.price.toLocaleString()}`}
@@ -1025,7 +1025,7 @@ Configuration Date: ${new Date().toLocaleDateString()}
       {(currentStep === 3 || currentStep === 4) && selectedModel && (
         <div className="fixed bottom-0 left-0 right-0 z-50">
           <div className="lg:ml-[65%] lg:w-[35%] w-full">
-            <div className="max-w-lg mx-auto px-4 md:px-6">
+            <div className="max-w-md mx-auto px-4 md:px-6">
               <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-t-lg shadow-lg">
                 <div className="px-6 py-4">
                   <div className="flex items-center justify-between">
