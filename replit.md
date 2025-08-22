@@ -38,6 +38,7 @@ This is a Tesla-style trailer configurator application for Walton Trailers, desi
 
 ### UI Updates (August 22, 2025)
 - Changed "Order Now" button text to "Proceed" in the configurator for clearer user flow
+- Shortened "Download Spec Sheet" button text to "Spec Sheet" for better mobile display
 - Button appears when moving from model configuration to the summary step
 
 ### Configurations Overview Tab (August 18, 2025)

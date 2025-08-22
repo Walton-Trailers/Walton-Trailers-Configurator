@@ -1017,7 +1017,7 @@ Configuration Date: ${new Date().toLocaleDateString()}
                   className="py-4 md:py-6 text-sm md:text-base min-h-[48px]"
                 >
                   <Download className="w-4 h-4 md:w-5 md:h-5 mr-2" />
-                  Download Spec Sheet
+                  Spec Sheet
                 </Button>
               </div>
 
