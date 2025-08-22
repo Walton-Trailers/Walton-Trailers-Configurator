@@ -1165,7 +1165,7 @@ Configuration Date: ${new Date().toLocaleDateString()}
                     className={`flex-1 py-1.5 px-2 rounded-md transition-all duration-300 text-center ${
                       selectedOptions.pullOption === 'Bumper' || !selectedOptions.pullOption
                         ? 'text-black shadow-sm'
-                        : 'text-gray-600 hover:text-black'
+                        : 'text-black hover:text-black'
                     }`}
                     style={
                       selectedOptions.pullOption === 'Bumper' || !selectedOptions.pullOption
@@ -1181,7 +1181,7 @@ Configuration Date: ${new Date().toLocaleDateString()}
                     className={`flex-1 py-1.5 px-2 rounded-md transition-all duration-300 text-center ${
                       selectedOptions.pullOption === 'Gooseneck'
                         ? 'text-black shadow-sm'
-                        : 'text-gray-600 hover:text-black'
+                        : 'text-black hover:text-black'
                     }`}
                     style={
                       selectedOptions.pullOption === 'Gooseneck'
