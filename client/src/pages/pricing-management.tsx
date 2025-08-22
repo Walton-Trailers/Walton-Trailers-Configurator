@@ -303,18 +303,9 @@ export default function PricingManagement() {
         },
         headers: sessionId ? { Authorization: `Bearer ${sessionId}` } : {},
       }),
-    onSuccess: async () => {
-      // Force complete cache clearing and refetch
-      queryClient.removeQueries({ queryKey: ["/api/categories"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/categories"] });
-      // Force manual refetch
-      await refetchCategories();
-      setEditingCategory(null);
-      setEditData({});
-      toast({
-        title: "Success",
-        description: "Category updated successfully",
-      });
+    onSuccess: () => {
+      // Force page reload to completely bypass cache issues
+      window.location.reload();
     },
     onError: (error: any) => {
       toast({
@@ -756,10 +747,12 @@ export default function PricingManagement() {
                                 <Button
                                   size="sm"
                                   onClick={() => {
-                                    updateCategoryMutation.mutate({
+                                    const updatePayload = {
                                       id: category.id,
                                       ...editData[category.id]
-                                    });
+                                    };
+                                    console.log('🚀 Frontend sending update:', JSON.stringify(updatePayload, null, 2));
+                                    updateCategoryMutation.mutate(updatePayload);
                                   }}
                                 >
                                   <Save className="w-4 h-4" />
@@ -784,21 +777,17 @@ export default function PricingManagement() {
                                 <Button
                                   size="sm"
                                   variant="outline"
-                                  onClick={async () => {
-                                    // Fetch fresh data before editing to avoid stale cache issues
-                                    await refetchCategories();
-                                    const freshCategories = await apiRequest("/api/categories");
-                                    const freshCategory = freshCategories.find((c: any) => c.id === category.id);
-                                    
+                                  onClick={() => {
                                     setEditingCategory(category);
+                                    // Use current database values directly without any cache
                                     setEditData(prev => ({
                                       ...prev,
                                       [category.id]: {
-                                        slug: freshCategory?.slug || category.slug,
-                                        name: freshCategory?.name || category.name,
-                                        description: freshCategory?.description || category.description,
-                                        imageUrl: freshCategory?.imageUrl || category.imageUrl,
-                                        startingPrice: freshCategory?.startingPrice || category.startingPrice
+                                        slug: category.slug,
+                                        name: category.name,
+                                        description: category.description,
+                                        imageUrl: category.imageUrl,
+                                        startingPrice: category.startingPrice
                                       }
                                     }));
                                   }}

@@ -145,12 +145,17 @@ export async function registerRoutes(app: Express): Promise<Express> {
       const categoryId = parseInt(req.params.id);
       const { slug, name, description, imageUrl, startingPrice } = req.body;
       
+      console.log(`🔍 UPDATE REQUEST - Category ID: ${categoryId}`);
+      console.log(`📨 Request Body:`, JSON.stringify(req.body, null, 2));
+      
       const updateData: any = {};
       if (slug !== undefined) updateData.slug = slug;
       if (name !== undefined) updateData.name = name;
       if (description !== undefined) updateData.description = description;
       if (imageUrl !== undefined) updateData.imageUrl = imageUrl;
       if (startingPrice !== undefined) updateData.startingPrice = startingPrice;
+      
+      console.log(`📝 Update Data:`, JSON.stringify(updateData, null, 2));
       
       const result = await db.update(trailerCategories)
         .set(updateData)
@@ -161,9 +166,10 @@ export async function registerRoutes(app: Express): Promise<Express> {
         return res.status(404).json({ message: "Category not found" });
       }
       
+      console.log(`✅ Update Result:`, JSON.stringify(result[0], null, 2));
       res.json(result[0]);
     } catch (error) {
-      console.error("Error updating category:", error);
+      console.error("❌ Error updating category:", error);
       res.status(500).json({ message: "Failed to update category" });
     }
   });
