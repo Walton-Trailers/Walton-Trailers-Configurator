@@ -143,7 +143,7 @@ export async function registerRoutes(app: Express): Promise<Express> {
   app.patch("/api/categories/:id", requireAuth, async (req, res) => {
     try {
       const categoryId = parseInt(req.params.id);
-      const { slug, name, description, imageUrl, startingPrice, orderIndex } = req.body;
+      const { slug, name, description, imageUrl, startingPrice } = req.body;
       
       const updateData: any = {};
       if (slug !== undefined) updateData.slug = slug;
@@ -151,7 +151,6 @@ export async function registerRoutes(app: Express): Promise<Express> {
       if (description !== undefined) updateData.description = description;
       if (imageUrl !== undefined) updateData.imageUrl = imageUrl;
       if (startingPrice !== undefined) updateData.startingPrice = startingPrice;
-      if (orderIndex !== undefined) updateData.orderIndex = orderIndex;
       
       const result = await db.update(trailerCategories)
         .set(updateData)
@@ -1054,13 +1053,13 @@ export async function registerRoutes(app: Express): Promise<Express> {
         customerPhone: sql<string>`NULL`,
         categorySlug: userConfigurations.categorySlug,
         categoryName: sql<string>`NULL`,
-        modelId: sql<string>`cast(${userConfigurations.modelId} as text)`,
+        modelId: userConfigurations.modelId,
         modelName: sql<string>`NULL`,
-        variantId: userConfigurations.variantId,
+        variantId: sql<number>`NULL`,
         selectedOptions: userConfigurations.selectedOptions,
         totalPrice: userConfigurations.totalPrice,
         status: sql<string>`'saved'`,
-        notes: userConfigurations.notes,
+        notes: sql<string>`NULL`,
         createdAt: userConfigurations.createdAt,
         sessionId: userConfigurations.sessionId
       })
