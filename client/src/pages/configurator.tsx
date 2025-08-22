@@ -491,7 +491,7 @@ Configuration Date: ${new Date().toLocaleDateString()}
             </div>
             
             {/* Desktop progress indicator */}
-            <div className="hidden md:flex items-center space-x-6 text-sm">
+            <div className="hidden md:flex items-center space-x-6 text-sm" style={{ fontFamily: 'Oswald, sans-serif' }}>
               <div className={`px-4 py-2 rounded-full transition-all duration-300 ${currentStep >= 1 ? 'text-gray-700' : 'bg-gray-100 text-gray-600'}`} style={currentStep >= 1 ? { backgroundColor: '#F8EFDD' } : {}}>
                 Category
               </div>
