@@ -991,6 +991,63 @@ Configuration Date: ${new Date().toLocaleDateString()}
               {/* Tesla-style Model Selector */}
               <div className="space-y-4">
                 <h3 className="text-lg font-semibold">Choose Your Model</h3>
+                
+                {/* Features that apply to all models */}
+                <div className="bg-gray-50 rounded-lg p-6 mb-6">
+                  <div className="text-center mb-4">
+                    <p className="text-sm text-gray-500 uppercase tracking-wide mb-2">Included</p>
+                    <h4 className="text-xl font-semibold text-gray-900">Standard Features</h4>
+                  </div>
+                  
+                  <div className="space-y-6">
+                    {/* Smooth Towing Experience */}
+                    <div className="flex items-start space-x-4">
+                      <div className="w-12 h-12 bg-orange-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                        <div className="w-6 h-6 bg-orange-500 rounded"></div>
+                      </div>
+                      <div>
+                        <h5 className="font-semibold text-gray-900 mb-2">Smooth Towing Experience</h5>
+                        <p className="text-sm text-gray-600 leading-relaxed">
+                          Engineered for stability and ease of towing, our trailers feature advanced suspension systems, 
+                          balanced weight distribution, and reliable braking systems. This ensures a smooth ride, even 
+                          when carrying heavy or uneven loads.
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* Heavy-Duty Construction */}
+                    <div className="flex items-start space-x-4">
+                      <div className="w-12 h-12 bg-orange-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                        <div className="w-6 h-6 bg-orange-500 rounded"></div>
+                      </div>
+                      <div>
+                        <h5 className="font-semibold text-gray-900 mb-2">Heavy-Duty Construction</h5>
+                        <p className="text-sm text-gray-600 leading-relaxed">
+                          Built with high-quality materials, our flatbed deckover trailers feature robust steel frames and 
+                          reinforced decks, ensuring they can handle the heaviest loads. Designed for durability, these 
+                          trailers are ready to withstand the demands of everyday use.
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* Superior Load Capacity */}
+                    <div className="flex items-start space-x-4">
+                      <div className="w-12 h-12 bg-orange-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                        <div className="w-6 h-6 bg-orange-500 rounded"></div>
+                      </div>
+                      <div>
+                        <h5 className="font-semibold text-gray-900 mb-2">Superior Load Capacity</h5>
+                        <p className="text-sm text-gray-600 leading-relaxed">
+                          Available in a range of sizes and weight capacities, our trailers are equipped to carry anything 
+                          from construction materials and machinery to vehicles and oversized equipment. Whether you 
+                          need a compact trailer for light-duty tasks or a larger model for heavy-duty applications, we have 
+                          the right option for you.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                
                 <div className="space-y-3">
                   {models?.filter(model => 
                     selectedModel.name.includes('FBH') ? model.name.includes('FBH') : 
