@@ -487,7 +487,7 @@ export default function AdminDashboard() {
             {isAdmin && <TabsTrigger value="users">User Management</TabsTrigger>}
             {isAdmin && <TabsTrigger value="integrations">Integrations</TabsTrigger>}
             <TabsTrigger value="custom-quotes">Custom Requests</TabsTrigger>
-            {isAdmin && <TabsTrigger value="configurations">Saved Configurations</TabsTrigger>}
+            {isAdmin && <TabsTrigger value="configurations">Dealer Configurations</TabsTrigger>}
             {isAdmin && <TabsTrigger value="quote-requests">Quote Requests</TabsTrigger>}
           </TabsList>
 
