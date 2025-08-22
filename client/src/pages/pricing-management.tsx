@@ -112,11 +112,11 @@ export default function PricingManagement() {
   });
 
   // Fetch all trailer categories for the dropdown and management
-  const { data: trailerCategories, isLoading: categoriesLoading } = useQuery({
+  const { data: trailerCategories, isLoading: categoriesLoading, refetch: refetchCategories } = useQuery({
     queryKey: ["/api/categories"],
     queryFn: () => apiRequest("/api/categories"),
     staleTime: 0, // Always refetch to ensure fresh data
-    cacheTime: 0, // Don't cache results
+    gcTime: 0, // Don't cache results
   });
 
 
@@ -303,9 +303,12 @@ export default function PricingManagement() {
         },
         headers: sessionId ? { Authorization: `Bearer ${sessionId}` } : {},
       }),
-    onSuccess: () => {
-      // Invalidate categories to trigger immediate refetch
+    onSuccess: async () => {
+      // Force complete cache clearing and refetch
+      queryClient.removeQueries({ queryKey: ["/api/categories"] });
       queryClient.invalidateQueries({ queryKey: ["/api/categories"] });
+      // Force manual refetch
+      await refetchCategories();
       setEditingCategory(null);
       setEditData({});
       toast({
@@ -663,7 +666,7 @@ export default function PricingManagement() {
                     </TableHeader>
                     <TableBody>
                       {(trailerCategories as TrailerCategory[])?.map((category) => (
-                        <TableRow key={category.id}>
+                        <TableRow key={`${category.id}-${category.name}-${category.slug}`}>
                           <TableCell>
                             <ObjectUploader
                               onGetUploadParameters={handleGetCategoryUploadParameters}
