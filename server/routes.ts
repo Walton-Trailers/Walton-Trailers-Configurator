@@ -1260,6 +1260,51 @@ export async function registerRoutes(app: Express): Promise<Express> {
     }
   });
 
+  app.patch("/api/categories/:id/image", requireAuth, async (req, res) => {
+    try {
+      const categoryId = parseInt(req.params.id);
+      const { imageUrl } = req.body;
+
+      console.log(`Updating image for category ${categoryId}, new URL: ${imageUrl}`);
+
+      if (!imageUrl) {
+        return res.status(400).json({ error: "imageUrl is required" });
+      }
+
+      const objectStorageService = new ObjectStorageService();
+      const objectPath = await objectStorageService.trySetObjectEntityAclPolicy(
+        imageUrl,
+        {
+          owner: "admin",
+          visibility: "public", // Category images should be public for customers to see
+        }
+      );
+
+      console.log(`Object path after ACL policy: ${objectPath}`);
+
+      // Update the category with the normalized image URL
+      const result = await db.update(trailerCategories)
+        .set({ imageUrl: objectPath })
+        .where(eq(trailerCategories.id, categoryId))
+        .returning();
+
+      if (result.length === 0) {
+        return res.status(404).json({ message: "Category not found" });
+      }
+
+      console.log(`Updated category result:`, result[0]);
+
+      res.json({
+        success: true,
+        imageUrl: objectPath,
+        category: result[0],
+      });
+    } catch (error) {
+      console.error("Error updating category image:", error);
+      res.status(500).json({ error: "Failed to update category image" });
+    }
+  });
+
   // Model image upload routes
   app.post("/api/models/upload-url", requireAuth, async (req, res) => {
     try {
