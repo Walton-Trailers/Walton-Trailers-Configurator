@@ -1008,9 +1008,7 @@ Configuration Date: ${new Date().toLocaleDateString()}
                       <div>
                         <h5 className="font-semibold text-gray-900 mb-2">Smooth Towing Experience</h5>
                         <p className="text-sm text-gray-600 leading-relaxed">
-                          Engineered for stability and ease of towing, our trailers feature advanced suspension systems, 
-                          balanced weight distribution, and reliable braking systems. This ensures a smooth ride, even 
-                          when carrying heavy or uneven loads.
+                          Advanced suspension, balanced weight, and reliable brakes for a stable, easy tow.
                         </p>
                       </div>
                     </div>
