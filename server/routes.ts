@@ -179,17 +179,26 @@ export async function registerRoutes(app: Express): Promise<Express> {
     try {
       const categoryId = parseInt(req.params.id);
       
-      // Check if category has any models
-      const models = await db.select().from(trailerModels).where(eq(trailerModels.categoryId, categoryId));
-      if (models.length > 0) {
+      // Check if category has any models using raw SQL to match actual database structure
+      const modelsResult = await db.execute(sql`
+        SELECT COUNT(*) as count 
+        FROM trailer_models 
+        WHERE category_id = ${categoryId}
+      `);
+      
+      const modelsCount = (modelsResult.rows[0] as any).count;
+      if (modelsCount > 0) {
         return res.status(400).json({ message: "Cannot delete category with existing models" });
       }
       
-      const result = await db.delete(trailerCategories)
-        .where(eq(trailerCategories.id, categoryId))
-        .returning();
+      // Delete category using raw SQL
+      const result = await db.execute(sql`
+        DELETE FROM trailer_categories 
+        WHERE id = ${categoryId}
+        RETURNING id
+      `);
       
-      if (result.length === 0) {
+      if (result.rows.length === 0) {
         return res.status(404).json({ message: "Category not found" });
       }
       
