@@ -968,6 +968,9 @@ Configuration Date: ${new Date().toLocaleDateString()}
                    selectedModel.name.includes('FBX') ? 'Flatbed Extreme' : 
                    selectedModel.name}
                 </h1>
+                {selectedModel.name.includes('FBH') && (
+                  <p className="text-lg text-gray-600 mb-4">Versatility and Heavy-Duty Performance</p>
+                )}
                 {selectedModel.name.includes('FBX') && (
                   <p className="text-lg text-gray-600 mb-4">FBX Offers Ultimate Strength and Flexibility</p>
                 )}
