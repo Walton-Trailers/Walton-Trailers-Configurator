@@ -791,6 +791,7 @@ export default function PricingManagement() {
                         <TableHead>Description</TableHead>
                         <TableHead className="text-right">Starting Price</TableHead>
                         <TableHead className="text-right">Actions</TableHead>
+                        <TableHead className="text-right">Delete</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -974,6 +975,28 @@ export default function PricingManagement() {
                                 </button>
                               </div>
                             )}
+                          </TableCell>
+                          <TableCell className="text-right">
+                            <button
+                              style={{ 
+                                backgroundColor: '#dc2626', 
+                                color: 'white', 
+                                padding: '12px 20px',
+                                borderRadius: '6px',
+                                border: 'none',
+                                cursor: 'pointer',
+                                fontSize: '14px',
+                                fontWeight: 'bold'
+                              }}
+                              onClick={() => {
+                                if (confirm(`Are you sure you want to delete the "${category.name}" category?`)) {
+                                  deleteCategoryMutation.mutate(category.id);
+                                  setEditingCategory(null);
+                                }
+                              }}
+                            >
+                              DELETE
+                            </button>
                           </TableCell>
                         </TableRow>
                       ))}
