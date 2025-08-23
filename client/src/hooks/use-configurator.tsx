@@ -14,7 +14,9 @@ export function useConfigurator() {
       return;
     }
 
-    let price = selectedModel.basePrice;
+    // Note: TrailerModel from schema doesn't have basePrice property
+    // Using a default starting price for now
+    let price = 10000; // Default base price
     
     // This would need to be implemented with actual option prices
     // For now, we'll use a simplified calculation
@@ -29,14 +31,17 @@ export function useConfigurator() {
     const config = {
       sessionId,
       categorySlug: selectedCategory.slug,
-      modelId: selectedModel.modelId,
+      modelId: selectedModel.id, // Use id instead of modelId
       selectedOptions,
       totalPrice,
       createdAt: new Date().toISOString()
     };
 
     try {
-      await apiRequest('POST', '/api/configurations', config);
+      await apiRequest('/api/configurations', {
+        method: 'POST',
+        body: config
+      });
       localStorage.setItem('walton_trailer_config', JSON.stringify(config));
     } catch (error) {
       console.error('Failed to save configuration:', error);
