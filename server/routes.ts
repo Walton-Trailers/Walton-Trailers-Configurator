@@ -1558,89 +1558,108 @@ export async function registerRoutes(app: Express): Promise<Express> {
       let insertedCount = 0;
       let skippedCount = 0;
 
-      // Get all categories with images
-      const categories = await db.select().from(trailerCategories).where(sql`image_url IS NOT NULL AND image_url != ''`);
+      console.log("Starting media library backfill...");
+
+      // Process categories
+      const categoryQuery = `SELECT id, name, slug, image_url FROM trailer_categories WHERE image_url IS NOT NULL AND image_url != ''`;
+      const categoryResult = await db.execute(sql.raw(categoryQuery));
       
-      for (const category of categories) {
-        // Check if already exists in media library
-        const [existing] = await db.select().from(mediaFiles).where(eq(mediaFiles.objectPath, category.imageUrl));
-        
-        if (!existing) {
-          const filename = category.imageUrl.split('/').pop() || 'unknown';
-          await db.insert(mediaFiles).values({
-            filename,
-            originalName: `${category.name}_category_image`,
-            objectPath: category.imageUrl,
-            mimeType: 'image/jpeg',
-            fileSize: 0,
-            altText: `${category.name} category image`,
-            description: `Category image for ${category.name}`,
-            tags: ['category', category.slug],
-            uploadedBy: (req as AuthenticatedRequest).user?.id,
-            usageCount: 1,
-          });
-          insertedCount++;
-          console.log(`Backfilled category image: ${category.name}`);
-        } else {
-          skippedCount++;
+      for (const row of categoryResult.rows) {
+        const category = row as any;
+        try {
+          const [existing] = await db.select().from(mediaFiles).where(eq(mediaFiles.objectPath, category.image_url));
+          
+          if (!existing) {
+            const filename = category.image_url.split('/').pop() || 'unknown';
+            await db.insert(mediaFiles).values({
+              filename,
+              originalName: `${category.name}_category_image`,
+              objectPath: category.image_url,
+              mimeType: 'image/jpeg',
+              fileSize: 0,
+              altText: `${category.name} category image`,
+              description: `Category image for ${category.name}`,
+              tags: ['category', category.slug],
+              uploadedBy: (req as AuthenticatedRequest).user?.id,
+              usageCount: 1,
+            });
+            insertedCount++;
+            console.log(`✓ Category: ${category.name}`);
+          } else {
+            skippedCount++;
+          }
+        } catch (err) {
+          console.error(`Error processing category ${category.name}:`, err);
         }
       }
 
-      // Get all models with images using direct database query
-      const models = await db.execute(sql`SELECT id, name, model_id, image_url FROM trailer_models WHERE image_url IS NOT NULL AND image_url != ''`);
+      // Process models
+      const modelQuery = `SELECT id, name, model_id, image_url FROM trailer_models WHERE image_url IS NOT NULL AND image_url != ''`;
+      const modelResult = await db.execute(sql.raw(modelQuery));
       
-      for (const modelRow of models.rows) {
-        const model = modelRow as any;
-        const [existing] = await db.select().from(mediaFiles).where(eq(mediaFiles.objectPath, model.image_url));
-        
-        if (!existing) {
-          const filename = model.image_url.split('/').pop() || 'unknown';
-          await db.insert(mediaFiles).values({
-            filename,
-            originalName: `${model.name}_model_image`,
-            objectPath: model.image_url,
-            mimeType: 'image/jpeg',
-            fileSize: 0,
-            altText: `${model.name} model image`,
-            description: `Model image for ${model.name}`,
-            tags: ['model', model.model_id || 'unknown'],
-            uploadedBy: (req as AuthenticatedRequest).user?.id,
-            usageCount: 1,
-          });
-          insertedCount++;
-          console.log(`Backfilled model image: ${model.name}`);
-        } else {
-          skippedCount++;
+      for (const row of modelResult.rows) {
+        const model = row as any;
+        try {
+          const [existing] = await db.select().from(mediaFiles).where(eq(mediaFiles.objectPath, model.image_url));
+          
+          if (!existing) {
+            const filename = model.image_url.split('/').pop() || 'unknown';
+            await db.insert(mediaFiles).values({
+              filename,
+              originalName: `${model.name}_model_image`,
+              objectPath: model.image_url,
+              mimeType: 'image/jpeg',
+              fileSize: 0,
+              altText: `${model.name} model image`,
+              description: `Model image for ${model.name}`,
+              tags: ['model', model.model_id || 'unknown'],
+              uploadedBy: (req as AuthenticatedRequest).user?.id,
+              usageCount: 1,
+            });
+            insertedCount++;
+            console.log(`✓ Model: ${model.name}`);
+          } else {
+            skippedCount++;
+          }
+        } catch (err) {
+          console.error(`Error processing model ${model.name}:`, err);
         }
       }
 
-      // Get all options with images using direct database query
-      const options = await db.execute(sql`SELECT id, name, model_id, category, image_url FROM trailer_options WHERE image_url IS NOT NULL AND image_url != ''`);
+      // Process options
+      const optionQuery = `SELECT id, name, model_id, category, image_url FROM trailer_options WHERE image_url IS NOT NULL AND image_url != ''`;
+      const optionResult = await db.execute(sql.raw(optionQuery));
       
-      for (const optionRow of options.rows) {
-        const option = optionRow as any;
-        const [existing] = await db.select().from(mediaFiles).where(eq(mediaFiles.objectPath, option.image_url));
-        
-        if (!existing) {
-          const filename = option.image_url.split('/').pop() || 'unknown';
-          await db.insert(mediaFiles).values({
-            filename,
-            originalName: `${option.name}_option_image`,
-            objectPath: option.image_url,
-            mimeType: 'image/jpeg',
-            fileSize: 0,
-            altText: `${option.name} option image`,
-            description: `Option image for ${option.name}`,
-            tags: ['option', option.category || 'unknown'],
-            uploadedBy: (req as AuthenticatedRequest).user?.id,
-            usageCount: 1,
-          });
-          insertedCount++;
-          console.log(`Backfilled option image: ${option.name}`);
-        } else {
-          skippedCount++;
+      for (const row of optionResult.rows) {
+        const option = row as any;
+        try {
+          const [existing] = await db.select().from(mediaFiles).where(eq(mediaFiles.objectPath, option.image_url));
+          
+          if (!existing) {
+            const filename = option.image_url.split('/').pop() || 'unknown';
+            await db.insert(mediaFiles).values({
+              filename,
+              originalName: `${option.name}_option_image`,
+              objectPath: option.image_url,
+              mimeType: 'image/jpeg',
+              fileSize: 0,
+              altText: `${option.name} option image`,
+              description: `Option image for ${option.name}`,
+              tags: ['option', option.category || 'unknown'],
+              uploadedBy: (req as AuthenticatedRequest).user?.id,
+              usageCount: 1,
+            });
+            insertedCount++;
+            console.log(`✓ Option: ${option.name}`);
+          } else {
+            skippedCount++;
+          }
+        } catch (err) {
+          console.error(`Error processing option ${option.name}:`, err);
         }
       }
+
+      console.log(`Backfill completed: ${insertedCount} inserted, ${skippedCount} skipped`);
 
       res.json({
         success: true,
