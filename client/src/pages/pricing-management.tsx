@@ -936,6 +936,7 @@ export default function PricingManagement() {
                                 <Button
                                   size="sm"
                                   variant="destructive"
+                                  className="bg-red-600 hover:bg-red-700 text-white"
                                   data-testid={`button-delete-category-${category.id}`}
                                   onClick={() => {
                                     if (confirm(`Are you sure you want to delete the "${category.name}" category?`)) {
