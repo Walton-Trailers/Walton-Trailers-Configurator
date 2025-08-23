@@ -1561,6 +1561,11 @@ export async function registerRoutes(app: Express): Promise<Express> {
       console.log("Starting media library backfill...");
 
       const userId = (req as AuthenticatedRequest).user?.id;
+      
+      // Validate user ID exists
+      if (!userId) {
+        return res.status(401).json({ error: "User not authenticated" });
+      }
 
       // Process categories - using direct SQL with template literals to avoid ORM issues
       const categories = await db.execute(sql`SELECT id, name, slug, image_url FROM trailer_categories WHERE image_url IS NOT NULL AND image_url != ''`);
@@ -1568,12 +1573,21 @@ export async function registerRoutes(app: Express): Promise<Express> {
       for (const row of categories.rows) {
         const category = row as any;
         try {
+          // Validate required fields
+          if (!category.image_url || !category.name) {
+            console.log(`Skipping category with missing data: ${JSON.stringify(category)}`);
+            skippedCount++;
+            continue;
+          }
+
           // Check if media file already exists
           const existing = await db.execute(sql`SELECT id FROM media_files WHERE object_path = ${category.image_url} LIMIT 1`);
           
           if (existing.rows.length === 0) {
-            const filename = category.image_url.split('/').pop() || 'unknown';
-            const tags = JSON.stringify(['category', category.slug]);
+            const filename = category.image_url.includes('/') ? category.image_url.split('/').pop() || 'unknown' : 'unknown';
+            const safeName = category.name || 'Unknown Category';
+            const safeSlug = category.slug || 'unknown';
+            const tags = JSON.stringify(['category', safeSlug]);
             
             await db.execute(sql`
               INSERT INTO media_files (
@@ -1581,12 +1595,12 @@ export async function registerRoutes(app: Express): Promise<Express> {
                 alt_text, description, tags, uploaded_by, usage_count, is_active
               ) VALUES (
                 ${filename}, 
-                ${category.name + '_category_image'}, 
+                ${safeName + '_category_image'}, 
                 ${category.image_url}, 
                 ${'image/jpeg'}, 
                 ${0}, 
-                ${category.name + ' category image'}, 
-                ${'Category image for ' + category.name}, 
+                ${safeName + ' category image'}, 
+                ${'Category image for ' + safeName}, 
                 ${tags}, 
                 ${userId}, 
                 ${1}, 
@@ -1595,12 +1609,14 @@ export async function registerRoutes(app: Express): Promise<Express> {
             `);
             
             insertedCount++;
-            console.log(`✓ Category: ${category.name}`);
+            console.log(`✓ Category: ${safeName}`);
           } else {
             skippedCount++;
+            console.log(`- Skipped existing: ${category.name}`);
           }
         } catch (err) {
-          console.error(`Error processing category ${category.name}:`, err);
+          console.error(`Error processing category ${category.name || 'unknown'}:`, err);
+          skippedCount++;
         }
       }
 
@@ -1610,11 +1626,20 @@ export async function registerRoutes(app: Express): Promise<Express> {
       for (const row of models.rows) {
         const model = row as any;
         try {
+          // Validate required fields
+          if (!model.image_url || !model.name) {
+            console.log(`Skipping model with missing data: ${JSON.stringify(model)}`);
+            skippedCount++;
+            continue;
+          }
+
           const existing = await db.execute(sql`SELECT id FROM media_files WHERE object_path = ${model.image_url} LIMIT 1`);
           
           if (existing.rows.length === 0) {
-            const filename = model.image_url.split('/').pop() || 'unknown';
-            const tags = JSON.stringify(['model', model.model_id || 'unknown']);
+            const filename = model.image_url.includes('/') ? model.image_url.split('/').pop() || 'unknown' : 'unknown';
+            const safeName = model.name || 'Unknown Model';
+            const safeModelId = model.model_id || 'unknown';
+            const tags = JSON.stringify(['model', safeModelId]);
             
             await db.execute(sql`
               INSERT INTO media_files (
@@ -1622,12 +1647,12 @@ export async function registerRoutes(app: Express): Promise<Express> {
                 alt_text, description, tags, uploaded_by, usage_count, is_active
               ) VALUES (
                 ${filename}, 
-                ${model.name + '_model_image'}, 
+                ${safeName + '_model_image'}, 
                 ${model.image_url}, 
                 ${'image/jpeg'}, 
                 ${0}, 
-                ${model.name + ' model image'}, 
-                ${'Model image for ' + model.name}, 
+                ${safeName + ' model image'}, 
+                ${'Model image for ' + safeName}, 
                 ${tags}, 
                 ${userId}, 
                 ${1}, 
@@ -1636,12 +1661,14 @@ export async function registerRoutes(app: Express): Promise<Express> {
             `);
             
             insertedCount++;
-            console.log(`✓ Model: ${model.name}`);
+            console.log(`✓ Model: ${safeName}`);
           } else {
             skippedCount++;
+            console.log(`- Skipped existing: ${model.name}`);
           }
         } catch (err) {
-          console.error(`Error processing model ${model.name}:`, err);
+          console.error(`Error processing model ${model.name || 'unknown'}:`, err);
+          skippedCount++;
         }
       }
 
@@ -1651,11 +1678,20 @@ export async function registerRoutes(app: Express): Promise<Express> {
       for (const row of options.rows) {
         const option = row as any;
         try {
+          // Validate required fields
+          if (!option.image_url || !option.name) {
+            console.log(`Skipping option with missing data: ${JSON.stringify(option)}`);
+            skippedCount++;
+            continue;
+          }
+
           const existing = await db.execute(sql`SELECT id FROM media_files WHERE object_path = ${option.image_url} LIMIT 1`);
           
           if (existing.rows.length === 0) {
-            const filename = option.image_url.split('/').pop() || 'unknown';
-            const tags = JSON.stringify(['option', option.category || 'unknown']);
+            const filename = option.image_url.includes('/') ? option.image_url.split('/').pop() || 'unknown' : 'unknown';
+            const safeName = option.name || 'Unknown Option';
+            const safeCategory = option.category || 'unknown';
+            const tags = JSON.stringify(['option', safeCategory]);
             
             await db.execute(sql`
               INSERT INTO media_files (
@@ -1663,12 +1699,12 @@ export async function registerRoutes(app: Express): Promise<Express> {
                 alt_text, description, tags, uploaded_by, usage_count, is_active
               ) VALUES (
                 ${filename}, 
-                ${option.name + '_option_image'}, 
+                ${safeName + '_option_image'}, 
                 ${option.image_url}, 
                 ${'image/jpeg'}, 
                 ${0}, 
-                ${option.name + ' option image'}, 
-                ${'Option image for ' + option.name}, 
+                ${safeName + ' option image'}, 
+                ${'Option image for ' + safeName}, 
                 ${tags}, 
                 ${userId}, 
                 ${1}, 
@@ -1677,12 +1713,14 @@ export async function registerRoutes(app: Express): Promise<Express> {
             `);
             
             insertedCount++;
-            console.log(`✓ Option: ${option.name}`);
+            console.log(`✓ Option: ${safeName}`);
           } else {
             skippedCount++;
+            console.log(`- Skipped existing: ${option.name}`);
           }
         } catch (err) {
-          console.error(`Error processing option ${option.name}:`, err);
+          console.error(`Error processing option ${option.name || 'unknown'}:`, err);
+          skippedCount++;
         }
       }
 
