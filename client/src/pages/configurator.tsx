@@ -1183,6 +1183,54 @@ Configuration Date: ${new Date().toLocaleDateString()}
                 </div>
               </div>
             )}
+
+            {/* Landscape Trailers Series Selection */}
+            {selectedCategory.slug === 'landscape' && (
+              <div className="grid grid-cols-1 gap-6 max-w-2xl mx-auto">
+                {/* MowPr */}
+                <div className="animate-in slide-in-from-bottom duration-700">
+                  <button
+                    className="w-full h-full text-left group relative overflow-hidden rounded-md border border-gray-200 bg-white hover:border-gray-300 hover:shadow-xl transition-all duration-500 hover:scale-[1.02]"
+                    onClick={() => {
+                      // Find the first MowPr model
+                      const mowPrModel = models?.find(model => model.name.toLowerCase().includes('mowpr') || model.name.toLowerCase().includes('mow'));
+                      if (mowPrModel) {
+                        handleModelSelect(mowPrModel);
+                      }
+                    }}
+                  >
+                    <div className="flex flex-col h-full">
+                      {/* Top - Image */}
+                      <div className="w-full h-48 md:h-56 relative overflow-hidden rounded-t-md bg-orange-500 flex items-center justify-center">
+                        <div className="text-white text-2xl md:text-3xl font-bold tracking-wider text-center">
+                          MOWPR
+                        </div>
+                      </div>
+                      
+                      {/* Bottom - Content */}
+                      <div className="w-full p-6 md:p-8 flex-1 flex flex-col justify-between">
+                        <div>
+                          <div className="flex items-center justify-between mb-3 md:mb-4">
+                            <h3 className="text-xl md:text-2xl font-semibold text-gray-900 group-hover:text-blue-600 transition-colors duration-300">
+                              MowPr
+                            </h3>
+                            <ArrowRight className="w-5 h-5 text-gray-400 group-hover:text-blue-500 group-hover:translate-x-1 transition-all duration-300" />
+                          </div>
+                          
+                          <p className="text-gray-600 mb-4 md:mb-6 leading-relaxed">
+                            Professional landscape trailers designed for lawn care and landscaping professionals with optimal equipment transport solutions.
+                          </p>
+                        </div>
+                        
+                        <div className="text-lg md:text-xl font-semibold text-blue-600">
+                          Starting at ${models?.find(m => m.name.toLowerCase().includes('mowpr') || m.name.toLowerCase().includes('mow'))?.basePrice.toLocaleString() || '12,995'}
+                        </div>
+                      </div>
+                    </div>
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         )}
 
