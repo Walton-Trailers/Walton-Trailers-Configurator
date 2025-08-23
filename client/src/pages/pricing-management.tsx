@@ -895,6 +895,27 @@ export default function PricingManagement() {
                                 >
                                   <Save className="w-4 h-4" />
                                 </Button>
+                                <button
+                                  style={{ 
+                                    backgroundColor: '#dc2626', 
+                                    color: 'white', 
+                                    padding: '8px 12px',
+                                    borderRadius: '6px',
+                                    border: 'none',
+                                    cursor: 'pointer',
+                                    display: 'inline-flex',
+                                    alignItems: 'center',
+                                    fontSize: '14px'
+                                  }}
+                                  onClick={() => {
+                                    if (confirm(`Are you sure you want to delete the "${category.name}" category?`)) {
+                                      deleteCategoryMutation.mutate(category.id);
+                                      setEditingCategory(null);
+                                    }
+                                  }}
+                                >
+                                  Delete
+                                </button>
                                 <Button
                                   size="sm"
                                   variant="outline"
