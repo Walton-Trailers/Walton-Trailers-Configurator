@@ -1562,38 +1562,37 @@ export async function registerRoutes(app: Express): Promise<Express> {
 
       const userId = (req as AuthenticatedRequest).user?.id;
 
-      // Process categories
-      const categoryQuery = `SELECT id, name, slug, image_url FROM trailer_categories WHERE image_url IS NOT NULL AND image_url != ''`;
-      const categoryResult = await db.execute(sql.raw(categoryQuery));
+      // Process categories - using direct SQL with template literals to avoid ORM issues
+      const categories = await db.execute(sql`SELECT id, name, slug, image_url FROM trailer_categories WHERE image_url IS NOT NULL AND image_url != ''`);
       
-      for (const row of categoryResult.rows) {
+      for (const row of categories.rows) {
         const category = row as any;
         try {
           // Check if media file already exists
-          const existingCheck = await db.execute(sql.raw(`SELECT id FROM media_files WHERE object_path = $1 LIMIT 1`, [category.image_url]));
+          const existing = await db.execute(sql`SELECT id FROM media_files WHERE object_path = ${category.image_url} LIMIT 1`);
           
-          if (existingCheck.rows.length === 0) {
+          if (existing.rows.length === 0) {
             const filename = category.image_url.split('/').pop() || 'unknown';
+            const tags = JSON.stringify(['category', category.slug]);
             
-            // Insert using raw SQL to avoid any ORM issues
-            await db.execute(sql.raw(`
+            await db.execute(sql`
               INSERT INTO media_files (
                 filename, original_name, object_path, mime_type, file_size, 
                 alt_text, description, tags, uploaded_by, usage_count, is_active
-              ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
-            `, [
-              filename,
-              `${category.name}_category_image`,
-              category.image_url,
-              'image/jpeg',
-              0,
-              `${category.name} category image`,
-              `Category image for ${category.name}`,
-              JSON.stringify(['category', category.slug]),
-              userId,
-              1,
-              true
-            ]));
+              ) VALUES (
+                ${filename}, 
+                ${category.name + '_category_image'}, 
+                ${category.image_url}, 
+                ${'image/jpeg'}, 
+                ${0}, 
+                ${category.name + ' category image'}, 
+                ${'Category image for ' + category.name}, 
+                ${tags}, 
+                ${userId}, 
+                ${1}, 
+                ${true}
+              )
+            `);
             
             insertedCount++;
             console.log(`✓ Category: ${category.name}`);
@@ -1606,37 +1605,35 @@ export async function registerRoutes(app: Express): Promise<Express> {
       }
 
       // Process models
-      const modelQuery = `SELECT id, name, model_id, image_url FROM trailer_models WHERE image_url IS NOT NULL AND image_url != ''`;
-      const modelResult = await db.execute(sql.raw(modelQuery));
+      const models = await db.execute(sql`SELECT id, name, model_id, image_url FROM trailer_models WHERE image_url IS NOT NULL AND image_url != ''`);
       
-      for (const row of modelResult.rows) {
+      for (const row of models.rows) {
         const model = row as any;
         try {
-          // Check if media file already exists
-          const existingCheck = await db.execute(sql.raw(`SELECT id FROM media_files WHERE object_path = $1 LIMIT 1`, [model.image_url]));
+          const existing = await db.execute(sql`SELECT id FROM media_files WHERE object_path = ${model.image_url} LIMIT 1`);
           
-          if (existingCheck.rows.length === 0) {
+          if (existing.rows.length === 0) {
             const filename = model.image_url.split('/').pop() || 'unknown';
+            const tags = JSON.stringify(['model', model.model_id || 'unknown']);
             
-            // Insert using raw SQL to avoid any ORM issues
-            await db.execute(sql.raw(`
+            await db.execute(sql`
               INSERT INTO media_files (
                 filename, original_name, object_path, mime_type, file_size, 
                 alt_text, description, tags, uploaded_by, usage_count, is_active
-              ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
-            `, [
-              filename,
-              `${model.name}_model_image`,
-              model.image_url,
-              'image/jpeg',
-              0,
-              `${model.name} model image`,
-              `Model image for ${model.name}`,
-              JSON.stringify(['model', model.model_id || 'unknown']),
-              userId,
-              1,
-              true
-            ]));
+              ) VALUES (
+                ${filename}, 
+                ${model.name + '_model_image'}, 
+                ${model.image_url}, 
+                ${'image/jpeg'}, 
+                ${0}, 
+                ${model.name + ' model image'}, 
+                ${'Model image for ' + model.name}, 
+                ${tags}, 
+                ${userId}, 
+                ${1}, 
+                ${true}
+              )
+            `);
             
             insertedCount++;
             console.log(`✓ Model: ${model.name}`);
@@ -1649,37 +1646,35 @@ export async function registerRoutes(app: Express): Promise<Express> {
       }
 
       // Process options
-      const optionQuery = `SELECT id, name, model_id, category, image_url FROM trailer_options WHERE image_url IS NOT NULL AND image_url != ''`;
-      const optionResult = await db.execute(sql.raw(optionQuery));
+      const options = await db.execute(sql`SELECT id, name, model_id, category, image_url FROM trailer_options WHERE image_url IS NOT NULL AND image_url != ''`);
       
-      for (const row of optionResult.rows) {
+      for (const row of options.rows) {
         const option = row as any;
         try {
-          // Check if media file already exists
-          const existingCheck = await db.execute(sql.raw(`SELECT id FROM media_files WHERE object_path = $1 LIMIT 1`, [option.image_url]));
+          const existing = await db.execute(sql`SELECT id FROM media_files WHERE object_path = ${option.image_url} LIMIT 1`);
           
-          if (existingCheck.rows.length === 0) {
+          if (existing.rows.length === 0) {
             const filename = option.image_url.split('/').pop() || 'unknown';
+            const tags = JSON.stringify(['option', option.category || 'unknown']);
             
-            // Insert using raw SQL to avoid any ORM issues
-            await db.execute(sql.raw(`
+            await db.execute(sql`
               INSERT INTO media_files (
                 filename, original_name, object_path, mime_type, file_size, 
                 alt_text, description, tags, uploaded_by, usage_count, is_active
-              ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
-            `, [
-              filename,
-              `${option.name}_option_image`,
-              option.image_url,
-              'image/jpeg',
-              0,
-              `${option.name} option image`,
-              `Option image for ${option.name}`,
-              JSON.stringify(['option', option.category || 'unknown']),
-              userId,
-              1,
-              true
-            ]));
+              ) VALUES (
+                ${filename}, 
+                ${option.name + '_option_image'}, 
+                ${option.image_url}, 
+                ${'image/jpeg'}, 
+                ${0}, 
+                ${option.name + ' option image'}, 
+                ${'Option image for ' + option.name}, 
+                ${tags}, 
+                ${userId}, 
+                ${1}, 
+                ${true}
+              )
+            `);
             
             insertedCount++;
             console.log(`✓ Option: ${option.name}`);
