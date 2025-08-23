@@ -1086,6 +1086,103 @@ Configuration Date: ${new Date().toLocaleDateString()}
                 </div>
               </div>
             )}
+
+            {/* Dump Trailers Series Selection */}
+            {selectedCategory.slug === 'dump' && (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-4xl mx-auto">
+                {/* Dump Heavy-Duty */}
+                <div className="animate-in slide-in-from-bottom duration-700">
+                  <button
+                    className="w-full h-full text-left group relative overflow-hidden rounded-md border border-gray-200 bg-white hover:border-gray-300 hover:shadow-xl transition-all duration-500 hover:scale-[1.02]"
+                    onClick={() => {
+                      // Find the first Heavy-Duty dump model
+                      const heavyDutyModel = models?.find(model => model.name.toLowerCase().includes('heavy'));
+                      if (heavyDutyModel) {
+                        handleModelSelect(heavyDutyModel);
+                      }
+                    }}
+                  >
+                    <div className="flex flex-col h-full">
+                      {/* Top - Image */}
+                      <div className="w-full h-48 md:h-56 relative overflow-hidden rounded-t-md bg-orange-500 flex items-center justify-center">
+                        <div className="text-white text-2xl md:text-3xl font-bold tracking-wider text-center">
+                          HEAVY-DUTY
+                        </div>
+                      </div>
+                      
+                      {/* Bottom - Content */}
+                      <div className="w-full p-6 md:p-8 flex-1 flex flex-col justify-between">
+                        <div>
+                          <div className="flex items-center justify-between mb-3 md:mb-4">
+                            <h3 className="text-xl md:text-2xl font-semibold text-gray-900 group-hover:text-blue-600 transition-colors duration-300">
+                              Dump Heavy-Duty
+                            </h3>
+                            <ArrowRight className="w-5 h-5 text-gray-400 group-hover:text-blue-500 group-hover:translate-x-1 transition-all duration-300" />
+                          </div>
+                          
+                          <p className="text-gray-600 mb-4 md:mb-6 leading-relaxed">
+                            Heavy-duty dump trailers built for demanding commercial applications with superior durability and higher payload capacity.
+                          </p>
+                        </div>
+                        
+                        <div className="text-lg md:text-xl font-semibold text-blue-600">
+                          Starting at ${models?.find(m => m.name.toLowerCase().includes('heavy'))?.basePrice.toLocaleString() || '24,500'}
+                        </div>
+                      </div>
+                    </div>
+                  </button>
+                </div>
+
+                {/* Dump Standard Duty */}
+                <div className="animate-in slide-in-from-bottom duration-700" style={{ animationDelay: '150ms' }}>
+                  <button
+                    className="w-full h-full text-left group relative overflow-hidden rounded-md border border-gray-200 bg-white hover:border-gray-300 hover:shadow-xl transition-all duration-500 hover:scale-[1.02]"
+                    onClick={() => {
+                      // Find the first Standard duty dump model
+                      const standardDutyModel = models?.find(model => 
+                        model.name.toLowerCase().includes('standard') || 
+                        (!model.name.toLowerCase().includes('heavy') && model.categoryId === selectedCategory.id)
+                      );
+                      if (standardDutyModel) {
+                        handleModelSelect(standardDutyModel);
+                      }
+                    }}
+                  >
+                    <div className="flex flex-col h-full">
+                      {/* Top - Image */}
+                      <div className="w-full h-48 md:h-56 relative overflow-hidden rounded-t-md bg-orange-500 flex items-center justify-center">
+                        <div className="text-white text-2xl md:text-3xl font-bold tracking-wider text-center">
+                          STANDARD DUTY
+                        </div>
+                      </div>
+                      
+                      {/* Bottom - Content */}
+                      <div className="w-full p-6 md:p-8 flex-1 flex flex-col justify-between">
+                        <div>
+                          <div className="flex items-center justify-between mb-3 md:mb-4">
+                            <h3 className="text-xl md:text-2xl font-semibold text-gray-900 group-hover:text-blue-600 transition-colors duration-300">
+                              Dump Standard Duty
+                            </h3>
+                            <ArrowRight className="w-5 h-5 text-gray-400 group-hover:text-blue-500 group-hover:translate-x-1 transition-all duration-300" />
+                          </div>
+                          
+                          <p className="text-gray-600 mb-4 md:mb-6 leading-relaxed">
+                            Reliable standard duty dump trailers perfect for regular hauling needs with excellent value and performance.
+                          </p>
+                        </div>
+                        
+                        <div className="text-lg md:text-xl font-semibold text-blue-600">
+                          Starting at ${models?.find(m => 
+                            m.name.toLowerCase().includes('standard') || 
+                            (!m.name.toLowerCase().includes('heavy') && m.categoryId === selectedCategory.id)
+                          )?.basePrice.toLocaleString() || '18,750'}
+                        </div>
+                      </div>
+                    </div>
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         )}
 
