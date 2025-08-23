@@ -518,7 +518,11 @@ export default function PricingManagement() {
         headers: sessionId ? { Authorization: `Bearer ${sessionId}` } : {},
       }),
     onSuccess: () => {
+      // Invalidate all category-related queries
       queryClient.invalidateQueries({ queryKey: ["/api/categories"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/categories/options"] });
+      // Also manually refresh categories data
+      fetchCategories();
       toast({
         title: "Success",
         description: "Category deleted successfully",
