@@ -866,89 +866,226 @@ Configuration Date: ${new Date().toLocaleDateString()}
               </p>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-4xl mx-auto">
-              {/* FBH Models Card */}
-              <div className="animate-in slide-in-from-bottom duration-700">
-                <button
-                  className="w-full text-left group relative overflow-hidden rounded-md border border-gray-200 bg-white hover:border-gray-300 hover:shadow-xl transition-all duration-500 hover:scale-[1.02]"
-                  onClick={() => {
-                    // Find the first FBH model to use as representative
-                    const fbhModel = models?.find(model => model.name.includes('FBH'));
-                    if (fbhModel) {
-                      handleModelSelect(fbhModel);
-                    }
-                  }}
-                >
-                  <div className="flex flex-col">
-                    {/* Top - Image */}
-                    <div className="w-full h-48 md:h-56 relative overflow-hidden rounded-t-md bg-orange-500 flex items-center justify-center">
-                      <div className="text-white text-2xl md:text-3xl font-bold tracking-wider">
-                        FBH SERIES
-                      </div>
-                    </div>
-                    
-                    {/* Bottom - Content */}
-                    <div className="w-full p-6 md:p-8">
-                      <div className="flex items-center justify-between mb-3 md:mb-4">
-                        <h3 className="text-xl md:text-2xl font-semibold text-gray-900 group-hover:text-blue-600 transition-colors duration-300">
-                          FBH Models
-                        </h3>
-                        <ArrowRight className="w-5 h-5 text-gray-400 group-hover:text-blue-500 group-hover:translate-x-1 transition-all duration-300" />
+            {/* Conditional Series Selection based on Category */}
+            {selectedCategory.slug === 'flatbed' && (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-4xl mx-auto">
+                {/* FBH Models Card */}
+                <div className="animate-in slide-in-from-bottom duration-700">
+                  <button
+                    className="w-full text-left group relative overflow-hidden rounded-md border border-gray-200 bg-white hover:border-gray-300 hover:shadow-xl transition-all duration-500 hover:scale-[1.02]"
+                    onClick={() => {
+                      // Find the first FBH model to use as representative
+                      const fbhModel = models?.find(model => model.name.includes('FBH'));
+                      if (fbhModel) {
+                        handleModelSelect(fbhModel);
+                      }
+                    }}
+                  >
+                    <div className="flex flex-col">
+                      {/* Top - Image */}
+                      <div className="w-full h-48 md:h-56 relative overflow-hidden rounded-t-md bg-orange-500 flex items-center justify-center">
+                        <div className="text-white text-2xl md:text-3xl font-bold tracking-wider">
+                          FBH SERIES
+                        </div>
                       </div>
                       
-                      <p className="text-gray-600 mb-4 md:mb-6 leading-relaxed">
-                        Heavy-duty flatbed trailers with superior stability and higher payload capacity for demanding commercial applications.
-                      </p>
-                      
-                      <div className="text-lg md:text-xl font-semibold text-blue-600">
-                        Starting at ${models?.find(m => m.name.includes('FBH'))?.basePrice.toLocaleString() || '12,345'}
+                      {/* Bottom - Content */}
+                      <div className="w-full p-6 md:p-8">
+                        <div className="flex items-center justify-between mb-3 md:mb-4">
+                          <h3 className="text-xl md:text-2xl font-semibold text-gray-900 group-hover:text-blue-600 transition-colors duration-300">
+                            FBH Models
+                          </h3>
+                          <ArrowRight className="w-5 h-5 text-gray-400 group-hover:text-blue-500 group-hover:translate-x-1 transition-all duration-300" />
+                        </div>
+                        
+                        <p className="text-gray-600 mb-4 md:mb-6 leading-relaxed">
+                          Heavy-duty flatbed trailers with superior stability and higher payload capacity for demanding commercial applications.
+                        </p>
+                        
+                        <div className="text-lg md:text-xl font-semibold text-blue-600">
+                          Starting at ${models?.find(m => m.name.includes('FBH'))?.basePrice.toLocaleString() || '12,345'}
+                        </div>
                       </div>
                     </div>
-                  </div>
-                </button>
-              </div>
+                  </button>
+                </div>
 
-              {/* FBX Models Card */}
-              <div className="animate-in slide-in-from-bottom duration-700" style={{ animationDelay: '150ms' }}>
-                <button
-                  className="w-full text-left group relative overflow-hidden rounded-md border border-gray-200 bg-white hover:border-gray-300 hover:shadow-xl transition-all duration-500 hover:scale-[1.02]"
-                  onClick={() => {
-                    // Find the first FBX model to use as representative
-                    const fbxModel = models?.find(model => model.name.includes('FBX'));
-                    if (fbxModel) {
-                      handleModelSelect(fbxModel);
-                    }
-                  }}
-                >
-                  <div className="flex flex-col">
-                    {/* Top - Image */}
-                    <div className="w-full h-48 md:h-56 relative overflow-hidden rounded-t-md bg-orange-500 flex items-center justify-center">
-                      <div className="text-white text-2xl md:text-3xl font-bold tracking-wider">
-                        FBX SERIES
-                      </div>
-                    </div>
-                    
-                    {/* Bottom - Content */}
-                    <div className="w-full p-6 md:p-8">
-                      <div className="flex items-center justify-between mb-3 md:mb-4">
-                        <h3 className="text-xl md:text-2xl font-semibold text-gray-900 group-hover:text-blue-600 transition-colors duration-300">
-                          FBX Models
-                        </h3>
-                        <ArrowRight className="w-5 h-5 text-gray-400 group-hover:text-blue-500 group-hover:translate-x-1 transition-all duration-300" />
+                {/* FBX Models Card */}
+                <div className="animate-in slide-in-from-bottom duration-700" style={{ animationDelay: '150ms' }}>
+                  <button
+                    className="w-full text-left group relative overflow-hidden rounded-md border border-gray-200 bg-white hover:border-gray-300 hover:shadow-xl transition-all duration-500 hover:scale-[1.02]"
+                    onClick={() => {
+                      // Find the first FBX model to use as representative
+                      const fbxModel = models?.find(model => model.name.includes('FBX'));
+                      if (fbxModel) {
+                        handleModelSelect(fbxModel);
+                      }
+                    }}
+                  >
+                    <div className="flex flex-col">
+                      {/* Top - Image */}
+                      <div className="w-full h-48 md:h-56 relative overflow-hidden rounded-t-md bg-orange-500 flex items-center justify-center">
+                        <div className="text-white text-2xl md:text-3xl font-bold tracking-wider">
+                          FBX SERIES
+                        </div>
                       </div>
                       
-                      <p className="text-gray-600 mb-4 md:mb-6 leading-relaxed">
-                        Versatile flatbed trailers designed for enhanced performance and reliability across diverse hauling needs.
-                      </p>
-                      
-                      <div className="text-lg md:text-xl font-semibold text-blue-600">
-                        Starting at ${models?.find(m => m.name.includes('FBX'))?.basePrice.toLocaleString() || '15,450'}
+                      {/* Bottom - Content */}
+                      <div className="w-full p-6 md:p-8">
+                        <div className="flex items-center justify-between mb-3 md:mb-4">
+                          <h3 className="text-xl md:text-2xl font-semibold text-gray-900 group-hover:text-blue-600 transition-colors duration-300">
+                            FBX Models
+                          </h3>
+                          <ArrowRight className="w-5 h-5 text-gray-400 group-hover:text-blue-500 group-hover:translate-x-1 transition-all duration-300" />
+                        </div>
+                        
+                        <p className="text-gray-600 mb-4 md:mb-6 leading-relaxed">
+                          Versatile flatbed trailers designed for enhanced performance and reliability across diverse hauling needs.
+                        </p>
+                        
+                        <div className="text-lg md:text-xl font-semibold text-blue-600">
+                          Starting at ${models?.find(m => m.name.includes('FBX'))?.basePrice.toLocaleString() || '15,450'}
+                        </div>
                       </div>
                     </div>
-                  </div>
-                </button>
+                  </button>
+                </div>
               </div>
-            </div>
+            )}
+
+            {/* Equipment & Tilt Trailers Series Selection */}
+            {selectedCategory.slug === 'equipment-tilt' && (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-6xl mx-auto">
+                {/* Skid-Steer Tilt */}
+                <div className="animate-in slide-in-from-bottom duration-700">
+                  <button
+                    className="w-full h-full text-left group relative overflow-hidden rounded-md border border-gray-200 bg-white hover:border-gray-300 hover:shadow-xl transition-all duration-500 hover:scale-[1.02]"
+                    onClick={() => {
+                      // Find the first Skid-Steer model
+                      const skidSteerModel = models?.find(model => model.name.toLowerCase().includes('skid'));
+                      if (skidSteerModel) {
+                        handleModelSelect(skidSteerModel);
+                      }
+                    }}
+                  >
+                    <div className="flex flex-col h-full">
+                      {/* Top - Image */}
+                      <div className="w-full h-48 md:h-56 relative overflow-hidden rounded-t-md bg-orange-500 flex items-center justify-center">
+                        <div className="text-white text-xl md:text-2xl font-bold tracking-wider text-center">
+                          SKID-STEER TILT
+                        </div>
+                      </div>
+                      
+                      {/* Bottom - Content */}
+                      <div className="w-full p-6 md:p-8 flex-1 flex flex-col justify-between">
+                        <div>
+                          <div className="flex items-center justify-between mb-3 md:mb-4">
+                            <h3 className="text-lg md:text-xl font-semibold text-gray-900 group-hover:text-blue-600 transition-colors duration-300">
+                              Skid-Steer Tilt
+                            </h3>
+                            <ArrowRight className="w-5 h-5 text-gray-400 group-hover:text-blue-500 group-hover:translate-x-1 transition-all duration-300" />
+                          </div>
+                          
+                          <p className="text-gray-600 mb-4 md:mb-6 leading-relaxed">
+                            Compact tilt trailers designed for easy loading and transport of skid-steer loaders and compact equipment.
+                          </p>
+                        </div>
+                        
+                        <div className="text-lg md:text-xl font-semibold text-blue-600">
+                          Starting at $9,479
+                        </div>
+                      </div>
+                    </div>
+                  </button>
+                </div>
+
+                {/* Tilt Heavy Deckover Equipment Hauler */}
+                <div className="animate-in slide-in-from-bottom duration-700" style={{ animationDelay: '150ms' }}>
+                  <button
+                    className="w-full h-full text-left group relative overflow-hidden rounded-md border border-gray-200 bg-white hover:border-gray-300 hover:shadow-xl transition-all duration-500 hover:scale-[1.02]"
+                    onClick={() => {
+                      // Find the first Heavy Deckover model
+                      const heavyDeckoverModel = models?.find(model => model.name.toLowerCase().includes('heavy'));
+                      if (heavyDeckoverModel) {
+                        handleModelSelect(heavyDeckoverModel);
+                      }
+                    }}
+                  >
+                    <div className="flex flex-col h-full">
+                      {/* Top - Image */}
+                      <div className="w-full h-48 md:h-56 relative overflow-hidden rounded-t-md bg-orange-500 flex items-center justify-center">
+                        <div className="text-white text-xl md:text-2xl font-bold tracking-wider text-center">
+                          HEAVY DECKOVER
+                        </div>
+                      </div>
+                      
+                      {/* Bottom - Content */}
+                      <div className="w-full p-6 md:p-8 flex-1 flex flex-col justify-between">
+                        <div>
+                          <div className="flex items-center justify-between mb-3 md:mb-4">
+                            <h3 className="text-lg md:text-xl font-semibold text-gray-900 group-hover:text-blue-600 transition-colors duration-300">
+                              Tilt Heavy Deckover Equipment Hauler
+                            </h3>
+                            <ArrowRight className="w-5 h-5 text-gray-400 group-hover:text-blue-500 group-hover:translate-x-1 transition-all duration-300" />
+                          </div>
+                          
+                          <p className="text-gray-600 mb-4 md:mb-6 leading-relaxed">
+                            Heavy-duty tilt trailers with deckover design for hauling larger equipment and machinery with ease.
+                          </p>
+                        </div>
+                        
+                        <div className="text-lg md:text-xl font-semibold text-blue-600">
+                          Starting at $18,250
+                        </div>
+                      </div>
+                    </div>
+                  </button>
+                </div>
+
+                {/* Mini-Tilt Equipment Trailer */}
+                <div className="animate-in slide-in-from-bottom duration-700" style={{ animationDelay: '300ms' }}>
+                  <button
+                    className="w-full h-full text-left group relative overflow-hidden rounded-md border border-gray-200 bg-white hover:border-gray-300 hover:shadow-xl transition-all duration-500 hover:scale-[1.02]"
+                    onClick={() => {
+                      // Find the first Mini-Tilt model
+                      const miniTiltModel = models?.find(model => model.name.toLowerCase().includes('mini'));
+                      if (miniTiltModel) {
+                        handleModelSelect(miniTiltModel);
+                      }
+                    }}
+                  >
+                    <div className="flex flex-col h-full">
+                      {/* Top - Image */}
+                      <div className="w-full h-48 md:h-56 relative overflow-hidden rounded-t-md bg-orange-500 flex items-center justify-center">
+                        <div className="text-white text-xl md:text-2xl font-bold tracking-wider text-center">
+                          MINI-TILT
+                        </div>
+                      </div>
+                      
+                      {/* Bottom - Content */}
+                      <div className="w-full p-6 md:p-8 flex-1 flex flex-col justify-between">
+                        <div>
+                          <div className="flex items-center justify-between mb-3 md:mb-4">
+                            <h3 className="text-lg md:text-xl font-semibold text-gray-900 group-hover:text-blue-600 transition-colors duration-300">
+                              Mini-Tilt Equipment Trailer
+                            </h3>
+                            <ArrowRight className="w-5 h-5 text-gray-400 group-hover:text-blue-500 group-hover:translate-x-1 transition-all duration-300" />
+                          </div>
+                          
+                          <p className="text-gray-600 mb-4 md:mb-6 leading-relaxed">
+                            Lightweight and maneuverable tilt trailers perfect for compact equipment and small machinery transport.
+                          </p>
+                        </div>
+                        
+                        <div className="text-lg md:text-xl font-semibold text-blue-600">
+                          Starting at $7,850
+                        </div>
+                      </div>
+                    </div>
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         )}
 
