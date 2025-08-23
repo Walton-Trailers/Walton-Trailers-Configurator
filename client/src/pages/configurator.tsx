@@ -166,6 +166,7 @@ export default function Configurator() {
   const { toast } = useToast();
   const [currentStep, setCurrentStep] = useState(1);
   const [selectedCategory, setSelectedCategory] = useState<TrailerCategory | null>(null);
+  const [selectedSeries, setSelectedSeries] = useState<string | null>(null);
   const [selectedModel, setSelectedModel] = useState<TrailerModel | null>(null);
   const [selectedOptions, setSelectedOptions] = useState<Record<string, any>>({});
   const [totalPrice, setTotalPrice] = useState(0);
@@ -366,6 +367,11 @@ export default function Configurator() {
     setCurrentStep(2);
   };
 
+  const handleSeriesSelect = (seriesName: string) => {
+    setSelectedSeries(seriesName);
+    setCurrentStep(3); // New step for product listing
+  };
+
   const handleModelSelect = (model: TrailerModel) => {
     setSelectedModel(model);
     // Initialize with default values for length and pull options
@@ -382,7 +388,7 @@ export default function Configurator() {
     defaultOptions.pullOption = 'Bumper';
     
     setSelectedOptions(defaultOptions);
-    setCurrentStep(3);
+    setCurrentStep(4);
   };
 
   const handleModelChange = (model: TrailerModel) => {
@@ -873,13 +879,7 @@ Configuration Date: ${new Date().toLocaleDateString()}
                 <div className="animate-in slide-in-from-bottom duration-700">
                   <button
                     className="w-full text-left group relative overflow-hidden rounded-md border border-gray-200 bg-white hover:border-gray-300 hover:shadow-xl transition-all duration-500 hover:scale-[1.02]"
-                    onClick={() => {
-                      // Find the first FBH model to use as representative
-                      const fbhModel = models?.find(model => model.name.includes('FBH'));
-                      if (fbhModel) {
-                        handleModelSelect(fbhModel);
-                      }
-                    }}
+                    onClick={() => handleSeriesSelect('FBH')}
                   >
                     <div className="flex flex-col">
                       {/* Top - Image */}
@@ -914,13 +914,7 @@ Configuration Date: ${new Date().toLocaleDateString()}
                 <div className="animate-in slide-in-from-bottom duration-700" style={{ animationDelay: '150ms' }}>
                   <button
                     className="w-full text-left group relative overflow-hidden rounded-md border border-gray-200 bg-white hover:border-gray-300 hover:shadow-xl transition-all duration-500 hover:scale-[1.02]"
-                    onClick={() => {
-                      // Find the first FBX model to use as representative
-                      const fbxModel = models?.find(model => model.name.includes('FBX'));
-                      if (fbxModel) {
-                        handleModelSelect(fbxModel);
-                      }
-                    }}
+                    onClick={() => handleSeriesSelect('FBX')}
                   >
                     <div className="flex flex-col">
                       {/* Top - Image */}
@@ -960,13 +954,7 @@ Configuration Date: ${new Date().toLocaleDateString()}
                 <div className="animate-in slide-in-from-bottom duration-700">
                   <button
                     className="w-full h-full text-left group relative overflow-hidden rounded-md border border-gray-200 bg-white hover:border-gray-300 hover:shadow-xl transition-all duration-500 hover:scale-[1.02]"
-                    onClick={() => {
-                      // Find the first Skid-Steer model
-                      const skidSteerModel = models?.find(model => model.name.toLowerCase().includes('skid'));
-                      if (skidSteerModel) {
-                        handleModelSelect(skidSteerModel);
-                      }
-                    }}
+                    onClick={() => handleSeriesSelect('Skid-Steer Tilt')}
                   >
                     <div className="flex flex-col h-full">
                       {/* Top - Image */}
@@ -1003,13 +991,7 @@ Configuration Date: ${new Date().toLocaleDateString()}
                 <div className="animate-in slide-in-from-bottom duration-700" style={{ animationDelay: '150ms' }}>
                   <button
                     className="w-full h-full text-left group relative overflow-hidden rounded-md border border-gray-200 bg-white hover:border-gray-300 hover:shadow-xl transition-all duration-500 hover:scale-[1.02]"
-                    onClick={() => {
-                      // Find the first Heavy Deckover model
-                      const heavyDeckoverModel = models?.find(model => model.name.toLowerCase().includes('heavy'));
-                      if (heavyDeckoverModel) {
-                        handleModelSelect(heavyDeckoverModel);
-                      }
-                    }}
+                    onClick={() => handleSeriesSelect('Tilt Heavy Deckover Equipment Hauler')}
                   >
                     <div className="flex flex-col h-full">
                       {/* Top - Image */}
@@ -1046,13 +1028,7 @@ Configuration Date: ${new Date().toLocaleDateString()}
                 <div className="animate-in slide-in-from-bottom duration-700" style={{ animationDelay: '300ms' }}>
                   <button
                     className="w-full h-full text-left group relative overflow-hidden rounded-md border border-gray-200 bg-white hover:border-gray-300 hover:shadow-xl transition-all duration-500 hover:scale-[1.02]"
-                    onClick={() => {
-                      // Find the first Mini-Tilt model
-                      const miniTiltModel = models?.find(model => model.name.toLowerCase().includes('mini'));
-                      if (miniTiltModel) {
-                        handleModelSelect(miniTiltModel);
-                      }
-                    }}
+                    onClick={() => handleSeriesSelect('Mini-Tilt Equipment Trailer')}
                   >
                     <div className="flex flex-col h-full">
                       {/* Top - Image */}
@@ -1094,13 +1070,7 @@ Configuration Date: ${new Date().toLocaleDateString()}
                 <div className="animate-in slide-in-from-bottom duration-700">
                   <button
                     className="w-full h-full text-left group relative overflow-hidden rounded-md border border-gray-200 bg-white hover:border-gray-300 hover:shadow-xl transition-all duration-500 hover:scale-[1.02]"
-                    onClick={() => {
-                      // Find the first Heavy-Duty dump model
-                      const heavyDutyModel = models?.find(model => model.name.toLowerCase().includes('heavy'));
-                      if (heavyDutyModel) {
-                        handleModelSelect(heavyDutyModel);
-                      }
-                    }}
+                    onClick={() => handleSeriesSelect('Dump Heavy-Duty')}
                   >
                     <div className="flex flex-col h-full">
                       {/* Top - Image */}
@@ -1137,16 +1107,7 @@ Configuration Date: ${new Date().toLocaleDateString()}
                 <div className="animate-in slide-in-from-bottom duration-700" style={{ animationDelay: '150ms' }}>
                   <button
                     className="w-full h-full text-left group relative overflow-hidden rounded-md border border-gray-200 bg-white hover:border-gray-300 hover:shadow-xl transition-all duration-500 hover:scale-[1.02]"
-                    onClick={() => {
-                      // Find the first Standard duty dump model
-                      const standardDutyModel = models?.find(model => 
-                        model.name.toLowerCase().includes('standard') || 
-                        (!model.name.toLowerCase().includes('heavy') && model.categoryId === selectedCategory.id)
-                      );
-                      if (standardDutyModel) {
-                        handleModelSelect(standardDutyModel);
-                      }
-                    }}
+                    onClick={() => handleSeriesSelect('Dump Standard Duty')}
                   >
                     <div className="flex flex-col h-full">
                       {/* Top - Image */}
@@ -1191,13 +1152,7 @@ Configuration Date: ${new Date().toLocaleDateString()}
                 <div className="animate-in slide-in-from-bottom duration-700">
                   <button
                     className="w-full h-full text-left group relative overflow-hidden rounded-md border border-gray-200 bg-white hover:border-gray-300 hover:shadow-xl transition-all duration-500 hover:scale-[1.02]"
-                    onClick={() => {
-                      // Find the first MowPr model
-                      const mowPrModel = models?.find(model => model.name.toLowerCase().includes('mowpr') || model.name.toLowerCase().includes('mow'));
-                      if (mowPrModel) {
-                        handleModelSelect(mowPrModel);
-                      }
-                    }}
+                    onClick={() => handleSeriesSelect('MowPr')}
                   >
                     <div className="flex flex-col h-full">
                       {/* Top - Image */}
@@ -1234,8 +1189,143 @@ Configuration Date: ${new Date().toLocaleDateString()}
           </div>
         )}
 
-        {/* Steps 3+ - Responsive Layout */}
-        {currentStep > 2 && (
+        {/* Step 3: Product Listing - Selected Series Models */}
+        {currentStep === 3 && selectedCategory && selectedSeries && (
+          <div className="flex flex-col lg:flex-row min-h-screen">
+            {/* Mobile/Tablet Image - Sticky Top */}
+            <div className="lg:hidden sticky top-16 md:top-20 z-10 bg-gray-100 h-48 md:h-64">
+              <div className="relative w-full h-full p-4 flex items-center justify-center">
+                <div className="text-4xl font-bold text-gray-600 tracking-wider">
+                  MODEL TEST
+                </div>
+              </div>
+            </div>
+
+            {/* Desktop Image Panel - Fixed */}
+            <div className="hidden lg:block lg:fixed left-0 top-20 w-[65%] h-[calc(100vh-5rem)] flex items-center justify-center overflow-hidden z-10 bg-gray-100">
+              <div className="relative w-full h-full max-w-5xl max-h-[80vh] mx-auto my-auto p-8 flex items-center justify-center">
+                <div className="text-6xl font-bold text-gray-600 tracking-wider">
+                  MODEL TEST
+                </div>
+              </div>
+            </div>
+
+            {/* Product Details Panel - Responsive */}
+            <div className="flex-1 lg:ml-[65%] lg:w-[35%] bg-white">
+              <div className="max-w-md mx-auto py-6 md:py-8 lg:py-12 px-4 md:px-6">
+                
+                {/* Back Button */}
+                <div className="flex items-center justify-between mb-6">
+                  <Button 
+                    variant="ghost" 
+                    size="sm"
+                    onClick={() => setCurrentStep(2)}
+                    className="hover:bg-gray-100 text-amber-600"
+                  >
+                    <ArrowLeft className="w-4 h-4 mr-2" />
+                    Back
+                  </Button>
+                  <Button
+                    onClick={() => setCurrentStep(4)}
+                    className="bg-black text-white hover:bg-gray-800 px-6"
+                    disabled={!selectedModel}
+                  >
+                    Proceed
+                  </Button>
+                </div>
+
+                {/* Product Title */}
+                <div className="mb-6">
+                  <h1 className="text-2xl lg:text-3xl font-bold text-gray-900 mb-2">
+                    {selectedSeries.includes('FBH') ? 'Flatbed Heavy-Duty' : 
+                     selectedSeries.includes('FBX') ? 'Flatbed Extreme' :
+                     selectedSeries}
+                  </h1>
+                  <p className="text-gray-600 text-base">
+                    {selectedSeries.includes('FBH') ? 'FBH Offers Superior Stability and Payload' :
+                     selectedSeries.includes('FBX') ? 'FBX Offers Ultimate Strength and Flexibility' :
+                     'Professional grade trailers for your needs'}
+                  </p>
+                </div>
+
+                {/* Key Specs */}
+                {models && models.length > 0 && (
+                  <div className="grid grid-cols-3 gap-4 mb-6">
+                    <div className="text-center">
+                      <div className="text-lg font-bold text-gray-900">24,000 lbs</div>
+                      <div className="text-sm text-gray-500">GVWR</div>
+                    </div>
+                    <div className="text-center">
+                      <div className="text-lg font-bold text-gray-900">18,700 lbs</div>
+                      <div className="text-sm text-gray-500">Payload</div>
+                    </div>
+                    <div className="text-center">
+                      <div className="text-lg font-bold text-gray-900">96.5" x 24-28'</div>
+                      <div className="text-sm text-gray-500">Deck Size</div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Choose Your Model */}
+                <div className="mb-6">
+                  <h2 className="text-lg font-semibold text-gray-900 mb-4">Choose Your Model</h2>
+                  
+                  {/* Filter models by series */}
+                  {models?.filter(model => {
+                    if (selectedSeries === 'FBH') return model.name.includes('FBH');
+                    if (selectedSeries === 'FBX') return model.name.includes('FBX');
+                    if (selectedSeries === 'Skid-Steer Tilt') return model.name.toLowerCase().includes('skid');
+                    if (selectedSeries === 'Tilt Heavy Deckover Equipment Hauler') return model.name.toLowerCase().includes('heavy');
+                    if (selectedSeries === 'Mini-Tilt Equipment Trailer') return model.name.toLowerCase().includes('mini');
+                    if (selectedSeries === 'Dump Heavy-Duty') return model.name.toLowerCase().includes('heavy');
+                    if (selectedSeries === 'Dump Standard Duty') return !model.name.toLowerCase().includes('heavy');
+                    if (selectedSeries === 'MowPr') return model.name.toLowerCase().includes('mow');
+                    return false;
+                  })?.map((model, index) => (
+                    <button
+                      key={model.id}
+                      onClick={() => setSelectedModel(model)}
+                      className={`w-full p-4 rounded-lg border text-left transition-all duration-200 mb-3 ${
+                        selectedModel?.id === model.id
+                          ? 'border-gray-900 bg-gray-50'
+                          : 'border-gray-200 hover:border-gray-300'
+                      }`}
+                    >
+                      <div className="flex justify-between items-center">
+                        <div className="font-medium text-gray-900">{model.name}</div>
+                        <div className="font-bold text-gray-900">
+                          ${model.basePrice?.toLocaleString() || '0'}
+                        </div>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+
+                {/* Standard Features */}
+                <div className="mb-6">
+                  <div className="text-xs text-gray-500 mb-2">INCLUDED</div>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-4">Standard Features</h3>
+                  
+                  {/* Price Display */}
+                  <div className="flex items-center justify-between border-t pt-4">
+                    <div>
+                      <div className="text-2xl font-bold text-gray-900">
+                        ${selectedModel?.basePrice?.toLocaleString() || '0'}
+                      </div>
+                      <div className="text-sm text-gray-500">Vehicle Price</div>
+                    </div>
+                    <Button className="bg-blue-500 hover:bg-blue-600 text-white">
+                      Request A Quote
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Steps 4+ - Responsive Layout */}
+        {currentStep > 3 && (
           <div className="flex flex-col lg:flex-row min-h-screen">
             {/* Mobile/Tablet Image - Sticky Top */}
             <div className="lg:hidden sticky top-16 md:top-20 z-10 bg-gray-50 h-48 md:h-64">
@@ -1263,14 +1353,14 @@ Configuration Date: ${new Date().toLocaleDateString()}
             <div className="flex-1 lg:ml-[65%] lg:w-[35%] bg-white">
               <div className="max-w-md mx-auto py-6 md:py-8 lg:py-12 px-4 md:px-6">
 
-          {/* Step 3: Configuration */}
-          {currentStep === 3 && selectedModel && options && (
+          {/* Step 4: Configuration */}
+          {currentStep === 4 && selectedModel && options && (
             <div className="space-y-8">
               <div className="flex items-center justify-between">
                 <Button 
                   variant="ghost" 
                   size="sm"
-                  onClick={() => setCurrentStep(2)}
+                  onClick={() => setCurrentStep(3)}
                   className="hover:bg-gray-100"
                   style={{ color: '#C1AF89' }}
                 >
