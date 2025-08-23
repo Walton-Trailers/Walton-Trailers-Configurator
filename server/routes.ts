@@ -1560,6 +1560,8 @@ export async function registerRoutes(app: Express): Promise<Express> {
 
       console.log("Starting media library backfill...");
 
+      const userId = (req as AuthenticatedRequest).user?.id;
+
       // Process categories
       const categoryQuery = `SELECT id, name, slug, image_url FROM trailer_categories WHERE image_url IS NOT NULL AND image_url != ''`;
       const categoryResult = await db.execute(sql.raw(categoryQuery));
@@ -1567,22 +1569,32 @@ export async function registerRoutes(app: Express): Promise<Express> {
       for (const row of categoryResult.rows) {
         const category = row as any;
         try {
-          const [existing] = await db.select().from(mediaFiles).where(eq(mediaFiles.objectPath, category.image_url));
+          // Check if media file already exists
+          const existingCheck = await db.execute(sql.raw(`SELECT id FROM media_files WHERE object_path = $1 LIMIT 1`, [category.image_url]));
           
-          if (!existing) {
+          if (existingCheck.rows.length === 0) {
             const filename = category.image_url.split('/').pop() || 'unknown';
-            await db.insert(mediaFiles).values({
+            
+            // Insert using raw SQL to avoid any ORM issues
+            await db.execute(sql.raw(`
+              INSERT INTO media_files (
+                filename, original_name, object_path, mime_type, file_size, 
+                alt_text, description, tags, uploaded_by, usage_count, is_active
+              ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+            `, [
               filename,
-              originalName: `${category.name}_category_image`,
-              objectPath: category.image_url,
-              mimeType: 'image/jpeg',
-              fileSize: 0,
-              altText: `${category.name} category image`,
-              description: `Category image for ${category.name}`,
-              tags: ['category', category.slug],
-              uploadedBy: (req as AuthenticatedRequest).user?.id,
-              usageCount: 1,
-            });
+              `${category.name}_category_image`,
+              category.image_url,
+              'image/jpeg',
+              0,
+              `${category.name} category image`,
+              `Category image for ${category.name}`,
+              JSON.stringify(['category', category.slug]),
+              userId,
+              1,
+              true
+            ]));
+            
             insertedCount++;
             console.log(`✓ Category: ${category.name}`);
           } else {
@@ -1600,22 +1612,32 @@ export async function registerRoutes(app: Express): Promise<Express> {
       for (const row of modelResult.rows) {
         const model = row as any;
         try {
-          const [existing] = await db.select().from(mediaFiles).where(eq(mediaFiles.objectPath, model.image_url));
+          // Check if media file already exists
+          const existingCheck = await db.execute(sql.raw(`SELECT id FROM media_files WHERE object_path = $1 LIMIT 1`, [model.image_url]));
           
-          if (!existing) {
+          if (existingCheck.rows.length === 0) {
             const filename = model.image_url.split('/').pop() || 'unknown';
-            await db.insert(mediaFiles).values({
+            
+            // Insert using raw SQL to avoid any ORM issues
+            await db.execute(sql.raw(`
+              INSERT INTO media_files (
+                filename, original_name, object_path, mime_type, file_size, 
+                alt_text, description, tags, uploaded_by, usage_count, is_active
+              ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+            `, [
               filename,
-              originalName: `${model.name}_model_image`,
-              objectPath: model.image_url,
-              mimeType: 'image/jpeg',
-              fileSize: 0,
-              altText: `${model.name} model image`,
-              description: `Model image for ${model.name}`,
-              tags: ['model', model.model_id || 'unknown'],
-              uploadedBy: (req as AuthenticatedRequest).user?.id,
-              usageCount: 1,
-            });
+              `${model.name}_model_image`,
+              model.image_url,
+              'image/jpeg',
+              0,
+              `${model.name} model image`,
+              `Model image for ${model.name}`,
+              JSON.stringify(['model', model.model_id || 'unknown']),
+              userId,
+              1,
+              true
+            ]));
+            
             insertedCount++;
             console.log(`✓ Model: ${model.name}`);
           } else {
@@ -1633,22 +1655,32 @@ export async function registerRoutes(app: Express): Promise<Express> {
       for (const row of optionResult.rows) {
         const option = row as any;
         try {
-          const [existing] = await db.select().from(mediaFiles).where(eq(mediaFiles.objectPath, option.image_url));
+          // Check if media file already exists
+          const existingCheck = await db.execute(sql.raw(`SELECT id FROM media_files WHERE object_path = $1 LIMIT 1`, [option.image_url]));
           
-          if (!existing) {
+          if (existingCheck.rows.length === 0) {
             const filename = option.image_url.split('/').pop() || 'unknown';
-            await db.insert(mediaFiles).values({
+            
+            // Insert using raw SQL to avoid any ORM issues
+            await db.execute(sql.raw(`
+              INSERT INTO media_files (
+                filename, original_name, object_path, mime_type, file_size, 
+                alt_text, description, tags, uploaded_by, usage_count, is_active
+              ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+            `, [
               filename,
-              originalName: `${option.name}_option_image`,
-              objectPath: option.image_url,
-              mimeType: 'image/jpeg',
-              fileSize: 0,
-              altText: `${option.name} option image`,
-              description: `Option image for ${option.name}`,
-              tags: ['option', option.category || 'unknown'],
-              uploadedBy: (req as AuthenticatedRequest).user?.id,
-              usageCount: 1,
-            });
+              `${option.name}_option_image`,
+              option.image_url,
+              'image/jpeg',
+              0,
+              `${option.name} option image`,
+              `Option image for ${option.name}`,
+              JSON.stringify(['option', option.category || 'unknown']),
+              userId,
+              1,
+              true
+            ]));
+            
             insertedCount++;
             console.log(`✓ Option: ${option.name}`);
           } else {
@@ -1663,7 +1695,7 @@ export async function registerRoutes(app: Express): Promise<Express> {
 
       res.json({
         success: true,
-        message: `Media library backfill completed`,
+        message: `Successfully imported ${insertedCount} images to media library`,
         insertedCount,
         skippedCount,
         totalProcessed: insertedCount + skippedCount
