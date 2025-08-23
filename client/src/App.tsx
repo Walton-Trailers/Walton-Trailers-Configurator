@@ -23,7 +23,7 @@ function Router() {
       <Route path="/admin/login" component={AdminLogin} />
       <Route path="/admin" component={AdminDashboard} />
       <Route path="/admin/pricing" component={FastPricing} />
-      <Route path="/pricing-management" component={PricingManagement} />
+      <Route path="/admin/pricing-management" component={PricingManagement} />
       <Route path="/admin/account" component={AccountManagement} />
       <Route path="/admin/dealers" component={AdminDealers} />
       <Route path="/dealer/login" component={DealerLogin} />
