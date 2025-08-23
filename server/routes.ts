@@ -1586,61 +1586,59 @@ export async function registerRoutes(app: Express): Promise<Express> {
         }
       }
 
-      // Get all models with images
-      const models = await storage.getAllModels();
+      // Get all models with images using direct database query
+      const models = await db.execute(sql`SELECT id, name, model_id, image_url FROM trailer_models WHERE image_url IS NOT NULL AND image_url != ''`);
       
-      for (const model of models) {
-        if (model.imageUrl) {
-          const [existing] = await db.select().from(mediaFiles).where(eq(mediaFiles.objectPath, model.imageUrl));
-          
-          if (!existing) {
-            const filename = model.imageUrl.split('/').pop() || 'unknown';
-            await db.insert(mediaFiles).values({
-              filename,
-              originalName: `${model.name}_model_image`,
-              objectPath: model.imageUrl,
-              mimeType: 'image/jpeg',
-              fileSize: 0,
-              altText: `${model.name} model image`,
-              description: `Model image for ${model.name}`,
-              tags: ['model', model.modelId || 'unknown'],
-              uploadedBy: (req as AuthenticatedRequest).user?.id,
-              usageCount: 1,
-            });
-            insertedCount++;
-            console.log(`Backfilled model image: ${model.name}`);
-          } else {
-            skippedCount++;
-          }
+      for (const modelRow of models.rows) {
+        const model = modelRow as any;
+        const [existing] = await db.select().from(mediaFiles).where(eq(mediaFiles.objectPath, model.image_url));
+        
+        if (!existing) {
+          const filename = model.image_url.split('/').pop() || 'unknown';
+          await db.insert(mediaFiles).values({
+            filename,
+            originalName: `${model.name}_model_image`,
+            objectPath: model.image_url,
+            mimeType: 'image/jpeg',
+            fileSize: 0,
+            altText: `${model.name} model image`,
+            description: `Model image for ${model.name}`,
+            tags: ['model', model.model_id || 'unknown'],
+            uploadedBy: (req as AuthenticatedRequest).user?.id,
+            usageCount: 1,
+          });
+          insertedCount++;
+          console.log(`Backfilled model image: ${model.name}`);
+        } else {
+          skippedCount++;
         }
       }
 
-      // Get all options with images
-      const options = await storage.getAllOptions();
+      // Get all options with images using direct database query
+      const options = await db.execute(sql`SELECT id, name, model_id, category, image_url FROM trailer_options WHERE image_url IS NOT NULL AND image_url != ''`);
       
-      for (const option of options) {
-        if (option.imageUrl) {
-          const [existing] = await db.select().from(mediaFiles).where(eq(mediaFiles.objectPath, option.imageUrl));
-          
-          if (!existing) {
-            const filename = option.imageUrl.split('/').pop() || 'unknown';
-            await db.insert(mediaFiles).values({
-              filename,
-              originalName: `${option.name}_option_image`,
-              objectPath: option.imageUrl,
-              mimeType: 'image/jpeg',
-              fileSize: 0,
-              altText: `${option.name} option image`,
-              description: `Option image for ${option.name}`,
-              tags: ['option', option.category || 'unknown'],
-              uploadedBy: (req as AuthenticatedRequest).user?.id,
-              usageCount: 1,
-            });
-            insertedCount++;
-            console.log(`Backfilled option image: ${option.name}`);
-          } else {
-            skippedCount++;
-          }
+      for (const optionRow of options.rows) {
+        const option = optionRow as any;
+        const [existing] = await db.select().from(mediaFiles).where(eq(mediaFiles.objectPath, option.image_url));
+        
+        if (!existing) {
+          const filename = option.image_url.split('/').pop() || 'unknown';
+          await db.insert(mediaFiles).values({
+            filename,
+            originalName: `${option.name}_option_image`,
+            objectPath: option.image_url,
+            mimeType: 'image/jpeg',
+            fileSize: 0,
+            altText: `${option.name} option image`,
+            description: `Option image for ${option.name}`,
+            tags: ['option', option.category || 'unknown'],
+            uploadedBy: (req as AuthenticatedRequest).user?.id,
+            usageCount: 1,
+          });
+          insertedCount++;
+          console.log(`Backfilled option image: ${option.name}`);
+        } else {
+          skippedCount++;
         }
       }
 
