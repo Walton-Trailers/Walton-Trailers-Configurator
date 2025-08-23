@@ -232,6 +232,26 @@ export const quoteRequests = pgTable("quote_requests", {
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
+// Media Files - For storing uploaded image metadata
+export const mediaFiles = pgTable("media_files", {
+  id: serial("id").primaryKey(),
+  filename: varchar("filename", { length: 255 }).notNull(),
+  originalName: varchar("original_name", { length: 255 }).notNull(),
+  objectPath: text("object_path").notNull().unique(), // The normalized object storage path
+  mimeType: varchar("mime_type", { length: 100 }).notNull(),
+  fileSize: integer("file_size").notNull(), // in bytes
+  width: integer("width"), // image width in pixels
+  height: integer("height"), // image height in pixels
+  altText: text("alt_text"),
+  description: text("description"),
+  tags: json("tags").$type<string[]>().default([]),
+  uploadedBy: integer("uploaded_by"), // admin user ID who uploaded
+  usageCount: integer("usage_count").default(0), // how many times this image is used
+  isActive: boolean("is_active").notNull().default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
 // Insert schemas
 export const insertDealerSchema = createInsertSchema(dealers).omit({ 
   id: true,
@@ -288,6 +308,11 @@ export const insertQuoteRequestSchema = createInsertSchema(quoteRequests).omit({
   createdAt: true,
   updatedAt: true,
 });
+export const insertMediaFileSchema = createInsertSchema(mediaFiles).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
 
 // Types
 export type Dealer = typeof dealers.$inferSelect;
@@ -309,6 +334,7 @@ export type AdminUser = typeof adminUsers.$inferSelect;
 export type AdminSession = typeof adminSessions.$inferSelect;
 export type CustomQuoteRequest = typeof customQuoteRequests.$inferSelect;
 export type QuoteRequest = typeof quoteRequests.$inferSelect;
+export type MediaFile = typeof mediaFiles.$inferSelect;
 export type InsertTrailerCategory = z.infer<typeof insertTrailerCategorySchema>;
 export type InsertTrailerModel = z.infer<typeof insertTrailerModelSchema>;
 export type InsertModelVariant = z.infer<typeof insertModelVariantSchema>;
@@ -318,6 +344,7 @@ export type InsertAdminUser = z.infer<typeof insertAdminUserSchema>;
 export type InsertAdminSession = z.infer<typeof insertAdminSessionSchema>;
 export type InsertCustomQuoteRequest = z.infer<typeof insertCustomQuoteRequestSchema>;
 export type InsertQuoteRequest = z.infer<typeof insertQuoteRequestSchema>;
+export type InsertMediaFile = z.infer<typeof insertMediaFileSchema>;
 
 // Relations
 export const trailerCategoriesRelations = relations(trailerCategories, ({ many }) => ({
@@ -398,5 +425,12 @@ export const dealerOrdersRelations = relations(dealerOrders, ({ one }) => ({
   dealer: one(dealers, {
     fields: [dealerOrders.dealerId],
     references: [dealers.id],
+  }),
+}));
+
+export const mediaFilesRelations = relations(mediaFiles, ({ one }) => ({
+  uploadedByUser: one(adminUsers, {
+    fields: [mediaFiles.uploadedBy],
+    references: [adminUsers.id],
   }),
 }));

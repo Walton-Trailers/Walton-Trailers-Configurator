@@ -10,7 +10,7 @@ import {
   hashPassword,
   isAdmin
 } from "./auth";
-import { insertAdminUserSchema, type AdminUser, trailerCategories, trailerModels, customQuoteRequests, insertCustomQuoteRequestSchema, quoteRequests, insertQuoteRequestSchema, dealers, dealerSessions, dealerOrders, dealerUsers, dealerUserSessions, userConfigurations, type Dealer, type DealerUser } from "@shared/schema";
+import { insertAdminUserSchema, type AdminUser, trailerCategories, trailerModels, customQuoteRequests, insertCustomQuoteRequestSchema, quoteRequests, insertQuoteRequestSchema, dealers, dealerSessions, dealerOrders, dealerUsers, dealerUserSessions, userConfigurations, mediaFiles, type Dealer, type DealerUser, type MediaFile } from "@shared/schema";
 import { z } from "zod";
 import crypto from "crypto";
 import {
@@ -1772,7 +1772,195 @@ export async function registerRoutes(app: Express): Promise<Express> {
     }
   });
 
+  // Media Library API endpoints
+  
+  // Get all media files with optional filtering
+  app.get("/api/media", requireAuth, async (req, res) => {
+    try {
+      const { tags, search, sortBy = 'created_at', order = 'desc' } = req.query;
+      
+      let query = db.select().from(mediaFiles).where(eq(mediaFiles.isActive, true));
+      
+      // Add search filter
+      if (search && typeof search === 'string') {
+        query = query.where(
+          sql`(${mediaFiles.filename} ILIKE ${`%${search}%`} OR 
+               ${mediaFiles.originalName} ILIKE ${`%${search}%`} OR 
+               ${mediaFiles.altText} ILIKE ${`%${search}%`} OR 
+               ${mediaFiles.description} ILIKE ${`%${search}%`})`
+        );
+      }
+      
+      // Add tag filter
+      if (tags && typeof tags === 'string') {
+        const tagArray = tags.split(',').map(tag => tag.trim());
+        query = query.where(
+          sql`${mediaFiles.tags} ?| ${tagArray}`
+        );
+      }
+      
+      // Add sorting
+      const orderDirection = order === 'asc' ? sql`ASC` : sql`DESC`;
+      if (sortBy === 'filename') {
+        query = query.orderBy(sql`${mediaFiles.filename} ${orderDirection}`);
+      } else if (sortBy === 'file_size') {
+        query = query.orderBy(sql`${mediaFiles.fileSize} ${orderDirection}`);
+      } else if (sortBy === 'updated_at') {
+        query = query.orderBy(sql`${mediaFiles.updatedAt} ${orderDirection}`);
+      } else {
+        query = query.orderBy(sql`${mediaFiles.createdAt} ${orderDirection}`);
+      }
+      
+      const files = await query;
+      
+      // Convert object paths to accessible URLs
+      const filesWithUrls = files.map((file: any) => ({
+        ...file,
+        accessUrl: file.objectPath.startsWith('/objects/') ? file.objectPath : `/public-objects${file.objectPath.replace(/^\/[^/]+/, '')}`,
+        tags: Array.isArray(file.tags) ? file.tags : []
+      }));
+      
+      res.json(filesWithUrls);
+    } catch (error) {
+      console.error("Error fetching media files:", error);
+      res.status(500).json({ message: "Failed to fetch media files" });
+    }
+  });
+  
+  // Update media file metadata
+  app.patch("/api/media/:id", requireAuth, async (req, res) => {
+    try {
+      const fileId = parseInt(req.params.id);
+      const { altText, description, tags } = req.body;
+      
+      const updateData: any = {
+        updatedAt: new Date()
+      };
+      
+      if (altText !== undefined) updateData.altText = altText;
+      if (description !== undefined) updateData.description = description;
+      if (tags !== undefined) updateData.tags = Array.isArray(tags) ? tags : [];
+      
+      const result = await db.update(mediaFiles)
+        .set(updateData)
+        .where(eq(mediaFiles.id, fileId))
+        .returning();
+      
+      if (result.length === 0) {
+        return res.status(404).json({ message: "Media file not found" });
+      }
+      
+      const updatedFile = {
+        ...result[0],
+        accessUrl: result[0].objectPath.startsWith('/objects/') ? result[0].objectPath : `/public-objects${result[0].objectPath.replace(/^\/[^/]+/, '')}`,
+        tags: Array.isArray(result[0].tags) ? result[0].tags : []
+      };
+      
+      res.json(updatedFile);
+    } catch (error) {
+      console.error("Error updating media file:", error);
+      res.status(500).json({ message: "Failed to update media file" });
+    }
+  });
+  
+  // Delete media file (soft delete)
+  app.delete("/api/media/:id", requireAuth, async (req, res) => {
+    try {
+      const fileId = parseInt(req.params.id);
+      
+      const result = await db.update(mediaFiles)
+        .set({ 
+          isActive: false,
+          updatedAt: new Date()
+        })
+        .where(eq(mediaFiles.id, fileId))
+        .returning();
+      
+      if (result.length === 0) {
+        return res.status(404).json({ message: "Media file not found" });
+      }
+      
+      res.json({ message: "Media file deleted successfully" });
+    } catch (error) {
+      console.error("Error deleting media file:", error);
+      res.status(500).json({ message: "Failed to delete media file" });
+    }
+  });
+  
+  // Get all unique tags
+  app.get("/api/media/tags", requireAuth, async (req, res) => {
+    try {
+      const result = await db.execute(sql`
+        SELECT DISTINCT jsonb_array_elements_text(tags) as tag
+        FROM media_files 
+        WHERE is_active = true AND tags IS NOT NULL
+        ORDER BY tag
+      `);
+      
+      const tags = result.rows.map((row: any) => row.tag).filter(Boolean);
+      res.json(tags);
+    } catch (error) {
+      console.error("Error fetching tags:", error);
+      res.status(500).json({ message: "Failed to fetch tags" });
+    }
+  });
+  
+  // Track image upload and store metadata
+  app.post("/api/media/register", requireAuth, async (req: AuthenticatedRequest, res) => {
+    try {
+      const { filename, originalName, objectPath, mimeType, fileSize, width, height } = req.body;
+      const userId = req.user?.id;
+      
+      const result = await db.insert(mediaFiles).values({
+        filename,
+        originalName,
+        objectPath,
+        mimeType,
+        fileSize,
+        width,
+        height,
+        uploadedBy: userId,
+        tags: []
+      }).returning();
+      
+      const newFile = {
+        ...result[0],
+        accessUrl: result[0].objectPath.startsWith('/objects/') ? result[0].objectPath : `/public-objects${result[0].objectPath.replace(/^\/[^/]+/, '')}`,
+        tags: []
+      };
+      
+      res.json(newFile);
+    } catch (error) {
+      console.error("Error registering media file:", error);
+      res.status(500).json({ message: "Failed to register media file" });
+    }
+  });
 
+  // Get media usage statistics
+  app.get("/api/media/stats", requireAuth, async (req, res) => {
+    try {
+      const stats = await db.execute(sql`
+        SELECT 
+          COUNT(*) as total_files,
+          SUM(file_size) as total_size,
+          COUNT(CASE WHEN width IS NOT NULL THEN 1 END) as images_count,
+          AVG(file_size) as avg_file_size
+        FROM media_files 
+        WHERE is_active = true
+      `);
+      
+      const result = stats.rows[0] as any;
+      res.json({
+        totalFiles: parseInt(result.total_files),
+        totalSize: parseInt(result.total_size || 0),
+        imagesCount: parseInt(result.images_count),
+        avgFileSize: parseFloat(result.avg_file_size || 0)
+      });
+    } catch (error) {
+      console.error("Error fetching media stats:", error);
+      res.status(500).json({ message: "Failed to fetch media statistics" });
+    }
+  });
 
   return app;
 }

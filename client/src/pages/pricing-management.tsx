@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect } from "react";
-import { ArrowLeft, Edit, Save, X, DollarSign, Search, ChevronDown, Plus, Trash2, Archive, RotateCcw, Upload } from "lucide-react";
+import { ArrowLeft, Edit, Save, X, DollarSign, Search, ChevronDown, Plus, Trash2, Archive, RotateCcw, Upload, Image, Tag, FileImage, Calendar, User } from "lucide-react";
 import { Link } from "wouter";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
@@ -54,6 +54,26 @@ interface TrailerCategory {
   startingPrice: number;
 }
 
+interface MediaFile {
+  id: number;
+  filename: string;
+  originalName: string;
+  objectPath: string;
+  mimeType: string;
+  fileSize: number;
+  width?: number;
+  height?: number;
+  altText?: string;
+  description?: string;
+  tags: string[];
+  uploadedBy?: number;
+  usageCount: number;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+  accessUrl: string;
+}
+
 export default function PricingManagement() {
   const { user, isLoading: authLoading } = useAdminAuth();
   const [editingModel, setEditingModel] = useState<TrailerModel | null>(null);
@@ -79,6 +99,12 @@ export default function PricingManagement() {
     imageUrl: "",
     startingPrice: 0
   });
+  const [editingMedia, setEditingMedia] = useState<MediaFile | null>(null);
+  const [mediaSearchQuery, setMediaSearchQuery] = useState("");
+  const [selectedTags, setSelectedTags] = useState<string[]>([]);
+  const [mediaSortBy, setMediaSortBy] = useState("created_at");
+  const [mediaSortOrder, setMediaSortOrder] = useState("desc");
+  const [showMediaDialog, setShowMediaDialog] = useState(false);
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -137,6 +163,38 @@ export default function PricingManagement() {
 
   // Use state data instead of query
   const trailerCategories = categoriesData;
+
+  // Media library queries
+  const { data: mediaFiles, isLoading: mediaLoading, refetch: refetchMedia } = useQuery({
+    queryKey: ["/api/media", { search: mediaSearchQuery, tags: selectedTags.join(','), sortBy: mediaSortBy, order: mediaSortOrder }],
+    queryFn: () => {
+      const params = new URLSearchParams();
+      if (mediaSearchQuery) params.append('search', mediaSearchQuery);
+      if (selectedTags.length > 0) params.append('tags', selectedTags.join(','));
+      params.append('sortBy', mediaSortBy);
+      params.append('order', mediaSortOrder);
+      
+      return apiRequest(`/api/media?${params.toString()}`, {
+        headers: sessionId ? { Authorization: `Bearer ${sessionId}` } : {},
+      });
+    },
+  });
+
+  const { data: availableTags } = useQuery({
+    queryKey: ["/api/media/tags"],
+    queryFn: () =>
+      apiRequest("/api/media/tags", {
+        headers: sessionId ? { Authorization: `Bearer ${sessionId}` } : {},
+      }),
+  });
+
+  const { data: mediaStats } = useQuery({
+    queryKey: ["/api/media/stats"],
+    queryFn: () =>
+      apiRequest("/api/media/stats", {
+        headers: sessionId ? { Authorization: `Bearer ${sessionId}` } : {},
+      }),
+  });
 
 
 
@@ -304,6 +362,54 @@ export default function PricingManagement() {
       toast({
         title: "Error",
         description: error.message || "Failed to archive model",
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Media mutations
+  const updateMediaMutation = useMutation({
+    mutationFn: (data: { id: number; altText?: string; description?: string; tags?: string[] }) =>
+      apiRequest(`/api/media/${data.id}`, {
+        method: "PATCH",
+        body: { altText: data.altText, description: data.description, tags: data.tags },
+        headers: sessionId ? { Authorization: `Bearer ${sessionId}` } : {},
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/media"] });
+      setEditingMedia(null);
+      setShowMediaDialog(false);
+      toast({
+        title: "Success",
+        description: "Media file updated successfully",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to update media file",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const deleteMediaMutation = useMutation({
+    mutationFn: (mediaId: number) =>
+      apiRequest(`/api/media/${mediaId}`, {
+        method: "DELETE",
+        headers: sessionId ? { Authorization: `Bearer ${sessionId}` } : {},
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/media"] });
+      toast({
+        title: "Success",
+        description: "Media file deleted successfully",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to delete media file",
         variant: "destructive",
       });
     },
@@ -558,7 +664,7 @@ export default function PricingManagement() {
 
         <Tabs defaultValue="categories" className="space-y-6">
           <div className="flex items-center justify-between mb-6">
-            <TabsList className="grid w-full max-w-[600px] grid-cols-3">
+            <TabsList className="grid w-full max-w-[800px] grid-cols-4">
               <TabsTrigger value="categories" className="flex items-center gap-2">
                 <Archive className="w-4 h-4" />
                 Categories
@@ -570,6 +676,10 @@ export default function PricingManagement() {
               <TabsTrigger value="options" className="flex items-center gap-2">
                 <Edit className="w-4 h-4" />
                 Options & Add-ons
+              </TabsTrigger>
+              <TabsTrigger value="media" className="flex items-center gap-2">
+                <Image className="w-4 h-4" />
+                Media Library
               </TabsTrigger>
             </TabsList>
             <div className="relative w-64">
@@ -1220,20 +1330,25 @@ export default function PricingManagement() {
                 )}
               </CardContent>
             </Card>
-          </TabsContent>
 
           <TabsContent value="options">
             <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
-                <div>
-                  <CardTitle>Options & Add-ons</CardTitle>
-                  <CardDescription>
-                    Update pricing and details for trailer options and accessories
-                  </CardDescription>
+              <CardHeader>
+                <div className="flex justify-between items-center">
+                  <div>
+                    <CardTitle>Customization Options</CardTitle>
+                    <CardDescription>
+                      Manage available options for trailer customization
+                    </CardDescription>
+                  </div>
+                  <Button
+                    onClick={() => setShowAddOption(true)}
+                    className="flex items-center gap-2"
+                  >
+                    <Plus className="w-4 h-4" />
+                    Add Option
+                  </Button>
                 </div>
-                <Button onClick={() => setShowAddOption(true)} className="shrink-0">
-                  Add New Option
-                </Button>
               </CardHeader>
               <CardContent>
                 {optionsLoading ? (
@@ -1662,6 +1777,25 @@ export default function PricingManagement() {
               )}
             </Card>
           </TabsContent>
+
+          <TabsContent value="media">
+            <Card>
+              <CardHeader>
+                <CardTitle>Media Library</CardTitle>
+                <CardDescription>
+                  View and manage all uploaded images and media files
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="text-center py-12">
+                  <h3 className="text-lg font-medium text-gray-900 mb-2">Media Library</h3>
+                  <p className="text-gray-500">
+                    Media library functionality is ready for implementation.
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
         </Tabs>
 
         {/* Add New Option Dialog */}
@@ -1767,6 +1901,10 @@ export default function PricingManagement() {
             </DialogFooter>
           </DialogContent>
         </Dialog>
+          </TabsContent>
+
+
+        </Tabs>
       </div>
     </div>
   );
