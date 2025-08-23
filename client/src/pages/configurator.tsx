@@ -579,16 +579,16 @@ Configuration Date: ${new Date().toLocaleDateString()}
               {categories?.map((category, index) => (
                 <div
                   key={category.id}
-                  className="animate-in slide-in-from-bottom duration-700"
+                  className="animate-in slide-in-from-bottom duration-700 h-full"
                   style={{ animationDelay: `${index * 150}ms` }}
                 >
                   <button
-                    className="w-full text-left group relative overflow-hidden rounded-md border border-gray-200 bg-white hover:border-gray-300 hover:shadow-xl transition-all duration-500 hover:scale-[1.02]"
+                    className="w-full h-full text-left group relative overflow-hidden rounded-md border border-gray-200 bg-white hover:border-gray-300 hover:shadow-xl transition-all duration-500 hover:scale-[1.02]"
                     onClick={() => handleCategorySelect(category)}
                     onMouseEnter={() => setHoveredCategory(category)}
                     onMouseLeave={() => setHoveredCategory(null)}
                   >
-                    <div className="flex flex-col">
+                    <div className="flex flex-col h-full">
                       {/* Top - Image */}
                       <div className="w-full h-32 md:h-36 relative overflow-hidden rounded-t-md">
                         <img 
@@ -600,7 +600,7 @@ Configuration Date: ${new Date().toLocaleDateString()}
                       </div>
                       
                       {/* Bottom - Content */}
-                      <div className="w-full p-4 md:p-5">
+                      <div className="w-full p-4 md:p-5 flex-1 flex flex-col justify-between">
                         <div className="flex items-center justify-between mb-2 md:mb-3">
                           <h3 className="text-lg md:text-xl font-semibold text-gray-900 group-hover:text-blue-600 transition-colors duration-300">
                             {category.name}
