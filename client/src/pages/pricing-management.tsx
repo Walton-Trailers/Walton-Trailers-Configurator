@@ -161,6 +161,14 @@ export default function PricingManagement() {
   useEffect(() => {
     fetchCategories();
   }, []);
+  
+  // Force refresh on component mount to ensure fresh data
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      fetchCategories();
+    }, 100);
+    return () => clearTimeout(timer);
+  }, []);
 
   // Use state data instead of query
   const trailerCategories = categoriesData;
