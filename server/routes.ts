@@ -1370,6 +1370,29 @@ export async function registerRoutes(app: Express): Promise<Express> {
         return res.status(404).json({ message: "Category not found" });
       }
 
+      // Save image metadata to media library
+      try {
+        const category = result[0];
+        const filename = objectPath.split('/').pop() || 'unknown';
+        
+        await db.insert(mediaFiles).values({
+          filename,
+          originalName: `${category.name}_category_image`,
+          objectPath,
+          mimeType: 'image/jpeg', // Default, could be improved to detect actual type
+          fileSize: 0, // Could be improved to get actual file size
+          altText: `${category.name} category image`,
+          description: `Category image for ${category.name}`,
+          tags: ['category', category.slug],
+          uploadedBy: (req as AuthenticatedRequest).user?.id,
+          usageCount: 1,
+        });
+        console.log(`Saved category image to media library: ${objectPath}`);
+      } catch (mediaError) {
+        console.error("Error saving to media library:", mediaError);
+        // Don't fail the request if media library save fails
+      }
+
       console.log(`Updated category result:`, result[0]);
 
       res.json({
@@ -1422,6 +1445,27 @@ export async function registerRoutes(app: Express): Promise<Express> {
         imageUrl: objectPath,
       });
 
+      // Save image metadata to media library
+      try {
+        const filename = objectPath.split('/').pop() || 'unknown';
+        
+        await db.insert(mediaFiles).values({
+          filename,
+          originalName: `${updatedModel.name}_model_image`,
+          objectPath,
+          mimeType: 'image/jpeg',
+          fileSize: 0,
+          altText: `${updatedModel.name} model image`,
+          description: `Model image for ${updatedModel.name}`,
+          tags: ['model', updatedModel.modelId || 'unknown'],
+          uploadedBy: (req as AuthenticatedRequest).user?.id,
+          usageCount: 1,
+        });
+        console.log(`Saved model image to media library: ${objectPath}`);
+      } catch (mediaError) {
+        console.error("Error saving model image to media library:", mediaError);
+      }
+
       console.log(`Updated model result:`, updatedModel);
 
       res.json({
@@ -1473,6 +1517,27 @@ export async function registerRoutes(app: Express): Promise<Express> {
       const updatedOption = await storage.updateOption(optionId, {
         imageUrl: objectPath,
       });
+
+      // Save image metadata to media library
+      try {
+        const filename = objectPath.split('/').pop() || 'unknown';
+        
+        await db.insert(mediaFiles).values({
+          filename,
+          originalName: `${updatedOption.name}_option_image`,
+          objectPath,
+          mimeType: 'image/jpeg',
+          fileSize: 0,
+          altText: `${updatedOption.name} option image`,
+          description: `Option image for ${updatedOption.name}`,
+          tags: ['option', updatedOption.category || 'unknown'],
+          uploadedBy: (req as AuthenticatedRequest).user?.id,
+          usageCount: 1,
+        });
+        console.log(`Saved option image to media library: ${objectPath}`);
+      } catch (mediaError) {
+        console.error("Error saving option image to media library:", mediaError);
+      }
 
       console.log(`Updated option result:`, updatedOption);
 
