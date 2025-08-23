@@ -52,6 +52,7 @@ interface TrailerCategory {
   description: string;
   imageUrl: string;
   startingPrice: number;
+  isArchived?: boolean;
 }
 
 interface MediaFile {
@@ -85,6 +86,7 @@ export default function PricingManagement() {
   const [showAddCategory, setShowAddCategory] = useState(false);
   const [showArchivedOptions, setShowArchivedOptions] = useState(false);
   const [showArchivedModels, setShowArchivedModels] = useState(false);
+  const [showArchivedCategories, setShowArchivedCategories] = useState(false);
   const [newOptionData, setNewOptionData] = useState({
     name: "",
     price: 0,
@@ -161,8 +163,19 @@ export default function PricingManagement() {
     fetchCategories();
   }, []);
 
-  // Use state data instead of query
-  const trailerCategories = categoriesData;
+  // Filter active and archived categories
+  const activeCategories = useMemo(() => {
+    if (!categoriesData) return [];
+    return categoriesData.filter(category => !category.isArchived);
+  }, [categoriesData]);
+
+  const archivedCategories = useMemo(() => {
+    if (!categoriesData) return [];
+    return categoriesData.filter(category => category.isArchived);
+  }, [categoriesData]);
+
+  // Use active categories for main view
+  const trailerCategories = activeCategories;
 
   // Media library queries
   const { data: mediaFiles, isLoading: mediaLoading, refetch: refetchMedia } = useQuery({
@@ -501,6 +514,54 @@ export default function PricingManagement() {
     },
   });
 
+  // Archive category mutation
+  const archiveCategoryMutation = useMutation({
+    mutationFn: (categoryId: number) =>
+      apiRequest(`/api/categories/${categoryId}`, {
+        method: "PATCH",
+        body: { isArchived: true },
+        headers: sessionId ? { Authorization: `Bearer ${sessionId}` } : {},
+      }),
+    onSuccess: async () => {
+      await fetchCategories();
+      toast({
+        title: "Success",
+        description: "Category archived successfully",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to archive category",
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Restore category mutation
+  const restoreCategoryMutation = useMutation({
+    mutationFn: (categoryId: number) =>
+      apiRequest(`/api/categories/${categoryId}`, {
+        method: "PATCH",
+        body: { isArchived: false },
+        headers: sessionId ? { Authorization: `Bearer ${sessionId}` } : {},
+      }),
+    onSuccess: async () => {
+      await fetchCategories();
+      toast({
+        title: "Success",
+        description: "Category restored successfully",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to restore category",
+        variant: "destructive",
+      });
+    },
+  });
+
   const handleModelPriceUpdate = (model: TrailerModel) => {
     const data = editData[model.id] || {};
     updateModelMutation.mutate({
@@ -791,7 +852,7 @@ export default function PricingManagement() {
                         <TableHead>Description</TableHead>
                         <TableHead className="text-right">Starting Price</TableHead>
                         <TableHead className="text-right">Actions</TableHead>
-                        <TableHead className="text-right">Delete</TableHead>
+                        <TableHead className="text-right">Archive</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -977,31 +1038,91 @@ export default function PricingManagement() {
                             )}
                           </TableCell>
                           <TableCell className="text-right">
-                            <button
-                              style={{ 
-                                backgroundColor: '#dc2626', 
-                                color: 'white', 
-                                padding: '12px 20px',
-                                borderRadius: '6px',
-                                border: 'none',
-                                cursor: 'pointer',
-                                fontSize: '14px',
-                                fontWeight: 'bold'
-                              }}
-                              onClick={() => {
-                                if (confirm(`Are you sure you want to delete the "${category.name}" category?`)) {
-                                  deleteCategoryMutation.mutate(category.id);
-                                  setEditingCategory(null);
-                                }
-                              }}
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => archiveCategoryMutation.mutate(category.id)}
+                              disabled={archiveCategoryMutation.isPending}
+                              title="Archive category"
                             >
-                              DELETE
-                            </button>
+                              <Archive className="w-4 h-4" />
+                            </Button>
                           </TableCell>
                         </TableRow>
                       ))}
                     </TableBody>
                   </Table>
+                )}
+
+                {/* Archived Categories Section */}
+                {archivedCategories.length > 0 && (
+                  <div className="mt-8">
+                    <div className="flex items-center gap-2 mb-4">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => setShowArchivedCategories(!showArchivedCategories)}
+                        className="text-gray-600 hover:text-gray-800"
+                      >
+                        <Archive className="w-4 h-4 mr-2" />
+                        {showArchivedCategories ? 'Hide' : 'Show'} Archived Categories ({archivedCategories.length})
+                      </Button>
+                    </div>
+                    
+                    {showArchivedCategories && (
+                      <div className="border rounded-lg p-4 bg-gray-50">
+                        <h4 className="text-sm font-medium text-gray-700 mb-3">Archived Categories</h4>
+                        <Table>
+                          <TableHeader>
+                            <TableRow>
+                              <TableHead>Image</TableHead>
+                              <TableHead>Slug</TableHead>
+                              <TableHead>Name</TableHead>
+                              <TableHead>Description</TableHead>
+                              <TableHead className="text-right">Starting Price</TableHead>
+                              <TableHead className="text-right">Actions</TableHead>
+                            </TableRow>
+                          </TableHeader>
+                          <TableBody>
+                            {archivedCategories.map((category: TrailerCategory) => (
+                              <TableRow key={category.id} className="opacity-60">
+                                <TableCell>
+                                  {category.imageUrl ? (
+                                    <div className="w-12 h-12 rounded-md overflow-hidden border border-gray-200">
+                                      <img 
+                                        src={category.imageUrl} 
+                                        alt={category.name}
+                                        className="w-full h-full object-cover"
+                                      />
+                                    </div>
+                                  ) : (
+                                    <div className="w-12 h-12 rounded-md border-2 border-dashed border-gray-300 flex items-center justify-center bg-gray-50">
+                                      <Upload className="w-5 h-5 text-gray-400" />
+                                    </div>
+                                  )}
+                                </TableCell>
+                                <TableCell className="font-medium">{category.slug}</TableCell>
+                                <TableCell>{category.name}</TableCell>
+                                <TableCell className="text-sm text-gray-600">{category.description}</TableCell>
+                                <TableCell className="text-right">${category.startingPrice?.toLocaleString()}</TableCell>
+                                <TableCell className="text-right">
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    onClick={() => restoreCategoryMutation.mutate(category.id)}
+                                    disabled={restoreCategoryMutation.isPending}
+                                    title="Restore category"
+                                  >
+                                    <RotateCcw className="w-4 h-4" />
+                                  </Button>
+                                </TableCell>
+                              </TableRow>
+                            ))}
+                          </TableBody>
+                        </Table>
+                      </div>
+                    )}
+                  </div>
                 )}
               </CardContent>
             </Card>
