@@ -916,6 +916,7 @@ export default function PricingManagement() {
                                   size="sm"
                                   variant="outline"
                                   data-testid={`button-edit-category-${category.id}`}
+                                  title="Edit category"
                                   onClick={() => {
                                     setEditingCategory(category);
                                     // Use current database values directly without any cache
@@ -933,11 +934,10 @@ export default function PricingManagement() {
                                 >
                                   <Edit className="w-4 h-4" />
                                 </Button>
-                                <Button
-                                  size="sm"
-                                  variant="destructive"
-                                  className="bg-red-600 hover:bg-red-700 text-white"
+                                <button
+                                  className="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 h-9 px-3 bg-red-600 hover:bg-red-700 text-white"
                                   data-testid={`button-delete-category-${category.id}`}
+                                  title="Delete category"
                                   onClick={() => {
                                     if (confirm(`Are you sure you want to delete the "${category.name}" category?`)) {
                                       deleteCategoryMutation.mutate(category.id);
@@ -945,7 +945,7 @@ export default function PricingManagement() {
                                   }}
                                 >
                                   <Trash2 className="w-4 h-4" />
-                                </Button>
+                                </button>
                               </div>
                             )}
                           </TableCell>
