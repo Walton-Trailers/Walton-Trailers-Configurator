@@ -1330,6 +1330,7 @@ export default function PricingManagement() {
                 )}
               </CardContent>
             </Card>
+          </TabsContent>
 
           <TabsContent value="options">
             <Card>
@@ -1901,10 +1902,6 @@ export default function PricingManagement() {
             </DialogFooter>
           </DialogContent>
         </Dialog>
-          </TabsContent>
-
-
-        </Tabs>
       </div>
     </div>
   );
