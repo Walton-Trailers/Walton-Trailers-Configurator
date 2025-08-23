@@ -915,6 +915,7 @@ export default function PricingManagement() {
                                 <Button
                                   size="sm"
                                   variant="outline"
+                                  data-testid={`button-edit-category-${category.id}`}
                                   onClick={() => {
                                     setEditingCategory(category);
                                     // Use current database values directly without any cache
@@ -935,6 +936,7 @@ export default function PricingManagement() {
                                 <Button
                                   size="sm"
                                   variant="destructive"
+                                  data-testid={`button-delete-category-${category.id}`}
                                   onClick={() => {
                                     if (confirm(`Are you sure you want to delete the "${category.name}" category?`)) {
                                       deleteCategoryMutation.mutate(category.id);
