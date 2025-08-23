@@ -915,11 +915,8 @@ export default function PricingManagement() {
                                 <Button
                                   size="sm"
                                   variant="outline"
-                                  data-testid={`button-edit-category-${category.id}`}
-                                  title="Edit category"
                                   onClick={() => {
                                     setEditingCategory(category);
-                                    // Use current database values directly without any cache
                                     setEditData(prev => ({
                                       ...prev,
                                       [category.id]: {
@@ -935,16 +932,24 @@ export default function PricingManagement() {
                                   <Edit className="w-4 h-4" />
                                 </Button>
                                 <button
-                                  className="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 h-9 px-3 bg-red-600 hover:bg-red-700 text-white"
-                                  data-testid={`button-delete-category-${category.id}`}
-                                  title="Delete category"
+                                  style={{ 
+                                    backgroundColor: '#dc2626', 
+                                    color: 'white', 
+                                    padding: '8px 12px',
+                                    borderRadius: '6px',
+                                    border: 'none',
+                                    cursor: 'pointer',
+                                    display: 'inline-flex',
+                                    alignItems: 'center',
+                                    fontSize: '14px'
+                                  }}
                                   onClick={() => {
                                     if (confirm(`Are you sure you want to delete the "${category.name}" category?`)) {
                                       deleteCategoryMutation.mutate(category.id);
                                     }
                                   }}
                                 >
-                                  <Trash2 className="w-4 h-4" />
+                                  Delete
                                 </button>
                               </div>
                             )}
