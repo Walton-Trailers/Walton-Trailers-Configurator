@@ -1552,6 +1552,112 @@ export async function registerRoutes(app: Express): Promise<Express> {
     }
   });
 
+  // Backfill media library with existing images (one-time operation)
+  app.post("/api/admin/backfill-media", requireAuth, requireAdmin, async (req, res) => {
+    try {
+      let insertedCount = 0;
+      let skippedCount = 0;
+
+      // Get all categories with images
+      const categories = await db.select().from(trailerCategories).where(sql`image_url IS NOT NULL AND image_url != ''`);
+      
+      for (const category of categories) {
+        // Check if already exists in media library
+        const [existing] = await db.select().from(mediaFiles).where(eq(mediaFiles.objectPath, category.imageUrl));
+        
+        if (!existing) {
+          const filename = category.imageUrl.split('/').pop() || 'unknown';
+          await db.insert(mediaFiles).values({
+            filename,
+            originalName: `${category.name}_category_image`,
+            objectPath: category.imageUrl,
+            mimeType: 'image/jpeg',
+            fileSize: 0,
+            altText: `${category.name} category image`,
+            description: `Category image for ${category.name}`,
+            tags: ['category', category.slug],
+            uploadedBy: (req as AuthenticatedRequest).user?.id,
+            usageCount: 1,
+          });
+          insertedCount++;
+          console.log(`Backfilled category image: ${category.name}`);
+        } else {
+          skippedCount++;
+        }
+      }
+
+      // Get all models with images
+      const models = await storage.getAllModels();
+      
+      for (const model of models) {
+        if (model.imageUrl) {
+          const [existing] = await db.select().from(mediaFiles).where(eq(mediaFiles.objectPath, model.imageUrl));
+          
+          if (!existing) {
+            const filename = model.imageUrl.split('/').pop() || 'unknown';
+            await db.insert(mediaFiles).values({
+              filename,
+              originalName: `${model.name}_model_image`,
+              objectPath: model.imageUrl,
+              mimeType: 'image/jpeg',
+              fileSize: 0,
+              altText: `${model.name} model image`,
+              description: `Model image for ${model.name}`,
+              tags: ['model', model.modelId || 'unknown'],
+              uploadedBy: (req as AuthenticatedRequest).user?.id,
+              usageCount: 1,
+            });
+            insertedCount++;
+            console.log(`Backfilled model image: ${model.name}`);
+          } else {
+            skippedCount++;
+          }
+        }
+      }
+
+      // Get all options with images
+      const options = await storage.getAllOptions();
+      
+      for (const option of options) {
+        if (option.imageUrl) {
+          const [existing] = await db.select().from(mediaFiles).where(eq(mediaFiles.objectPath, option.imageUrl));
+          
+          if (!existing) {
+            const filename = option.imageUrl.split('/').pop() || 'unknown';
+            await db.insert(mediaFiles).values({
+              filename,
+              originalName: `${option.name}_option_image`,
+              objectPath: option.imageUrl,
+              mimeType: 'image/jpeg',
+              fileSize: 0,
+              altText: `${option.name} option image`,
+              description: `Option image for ${option.name}`,
+              tags: ['option', option.category || 'unknown'],
+              uploadedBy: (req as AuthenticatedRequest).user?.id,
+              usageCount: 1,
+            });
+            insertedCount++;
+            console.log(`Backfilled option image: ${option.name}`);
+          } else {
+            skippedCount++;
+          }
+        }
+      }
+
+      res.json({
+        success: true,
+        message: `Media library backfill completed`,
+        insertedCount,
+        skippedCount,
+        totalProcessed: insertedCount + skippedCount
+      });
+
+    } catch (error) {
+      console.error("Error during media library backfill:", error);
+      res.status(500).json({ error: "Failed to backfill media library" });
+    }
+  });
+
   // Serve model and option images
   app.get("/objects/:objectPath(*)", async (req, res) => {
     const objectStorageService = new ObjectStorageService();

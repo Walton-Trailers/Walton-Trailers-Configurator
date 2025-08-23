@@ -424,6 +424,29 @@ export default function PricingManagement() {
     },
   });
 
+  // Backfill media library mutation
+  const backfillMediaMutation = useMutation({
+    mutationFn: () =>
+      apiRequest("/api/admin/backfill-media", {
+        method: "POST",
+        headers: sessionId ? { Authorization: `Bearer ${sessionId}` } : {},
+      }),
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ["/api/media"] });
+      toast({
+        title: "Success",
+        description: `Backfill completed! Added ${data.insertedCount} images to media library`,
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to backfill media library",
+        variant: "destructive",
+      });
+    },
+  });
+
   // Category mutations
   const updateCategoryMutation = useMutation({
     mutationFn: (data: { id: number; slug?: string; name?: string; description?: string; imageUrl?: string; startingPrice?: number }) =>
@@ -1828,12 +1851,70 @@ export default function PricingManagement() {
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="text-center py-12">
-                  <h3 className="text-lg font-medium text-gray-900 mb-2">Media Library</h3>
-                  <p className="text-gray-500">
-                    Media library functionality is ready for implementation.
+                {/* Backfill Section */}
+                <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                  <h4 className="text-sm font-medium text-blue-900 mb-2">Import Existing Images</h4>
+                  <p className="text-sm text-blue-700 mb-3">
+                    Import all existing category, model, and option images into the media library.
                   </p>
+                  <Button
+                    onClick={() => backfillMediaMutation.mutate()}
+                    disabled={backfillMediaMutation.isPending}
+                    size="sm"
+                    className="bg-blue-600 hover:bg-blue-700"
+                  >
+                    {backfillMediaMutation.isPending ? 'Importing...' : 'Import Existing Images'}
+                  </Button>
                 </div>
+
+                {/* Media Files Display */}
+                {mediaLoading ? (
+                  <div className="text-center py-8">Loading media files...</div>
+                ) : mediaFiles && mediaFiles.length > 0 ? (
+                  <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                    {mediaFiles.map((file: any) => (
+                      <div key={file.id} className="border rounded-lg p-3 bg-white shadow-sm">
+                        <div className="aspect-square bg-gray-100 rounded-md mb-2 overflow-hidden">
+                          <img 
+                            src={file.objectPath} 
+                            alt={file.altText || file.originalName}
+                            className="w-full h-full object-cover"
+                            onError={(e: any) => {
+                              e.target.onerror = null;
+                              e.target.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="100" height="100" fill="none"%3E%3Crect width="100" height="100" fill="%23f3f4f6"/%3E%3Cpath stroke="%239ca3af" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M50 30v40m-20-20h40"/%3E%3C/svg%3E';
+                            }}
+                          />
+                        </div>
+                        <h5 className="text-xs font-medium text-gray-900 truncate">{file.originalName}</h5>
+                        <p className="text-xs text-gray-500 mt-1">
+                          {file.tags && file.tags.length > 0 ? file.tags.join(', ') : 'No tags'}
+                        </p>
+                        <div className="flex justify-between items-center mt-2">
+                          <span className="text-xs text-gray-400">
+                            {new Date(file.createdAt).toLocaleDateString()}
+                          </span>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => deleteMediaMutation.mutate(file.id)}
+                            disabled={deleteMediaMutation.isPending}
+                            className="p-1 h-auto text-red-600 hover:text-red-700"
+                          >
+                            <Trash2 className="w-3 h-3" />
+                          </Button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-12">
+                    <Image className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                    <h3 className="text-lg font-medium text-gray-900 mb-2">No media files found</h3>
+                    <p className="text-gray-500">
+                      Use the "Import Existing Images" button above to populate the media library.
+                    </p>
+                  </div>
+                )}
               </CardContent>
             </Card>
           </TabsContent>
