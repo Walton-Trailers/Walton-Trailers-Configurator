@@ -110,6 +110,12 @@ export interface IStorage {
   restoreModel(id: number): Promise<TrailerModelResponse>;
   getOptionCategories(): Promise<string[]>;
   
+  // Series management operations
+  getAllSeries(): Promise<any[]>;
+  createSeries(data: { categoryId: number; name: string; description: string; slug: string; basePrice: number }): Promise<any>;
+  updateSeries(id: number, updates: any): Promise<any>;
+  deleteSeries(id: number): Promise<void>;
+  
   // Integration operations
   saveAirtableConfig(config: { accessToken: string; baseId: string }): Promise<void>;
   getAirtableConfig(): Promise<{ accessToken: string; baseId: string } | null>;
@@ -463,6 +469,33 @@ export class MemStorage implements IStorage {
   isAdminSession(sessionId: string): boolean {
     // In development, consider all sessions as admin sessions for testing
     return true;
+  }
+
+  // Series management operations
+  async getAllSeries(): Promise<any[]> {
+    // Return empty array for mem storage
+    return [];
+  }
+
+  async createSeries(data: { categoryId: number; name: string; description: string; slug: string; basePrice: number }): Promise<any> {
+    // Basic implementation for mem storage
+    const series = {
+      id: this.currentId++,
+      ...data,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
+    return series;
+  }
+
+  async updateSeries(id: number, updates: any): Promise<any> {
+    // Basic implementation for mem storage
+    return { id, ...updates };
+  }
+
+  async deleteSeries(id: number): Promise<void> {
+    // Basic implementation for mem storage
+    return;
   }
 }
 
@@ -1096,6 +1129,145 @@ export class DatabaseStorage implements IStorage {
     // For now, we'll trust the sessionId if it exists
     // In production, this would check a cached session store
     return !!sessionId;
+  }
+
+  // Series management operations
+  async getAllSeries(): Promise<any[]> {
+    try {
+      const result = await db.execute(sql`
+        SELECT s.id, s.category_id, s.name, s.description, s.slug, s.base_price,
+               s.created_at, s.updated_at, c.name as category_name
+        FROM trailer_series s
+        JOIN trailer_categories c ON s.category_id = c.id
+        ORDER BY c.name, s.name
+      `);
+      
+      return result.rows.map((series: any) => ({
+        id: series.id,
+        categoryId: series.category_id,
+        name: series.name,
+        description: series.description,
+        slug: series.slug,
+        basePrice: series.base_price,
+        categoryName: series.category_name,
+        createdAt: series.created_at,
+        updatedAt: series.updated_at,
+      }));
+    } catch (error) {
+      console.error('Error fetching all series:', error);
+      throw error;
+    }
+  }
+
+  async createSeries(data: { categoryId: number; name: string; description: string; slug: string; basePrice: number }): Promise<any> {
+    try {
+      const result = await db.execute(sql`
+        INSERT INTO trailer_series (category_id, name, description, slug, base_price)
+        VALUES (${data.categoryId}, ${data.name}, ${data.description}, ${data.slug}, ${data.basePrice})
+        RETURNING id, category_id, name, description, slug, base_price, created_at, updated_at
+      `);
+      
+      const series = result.rows[0] as any;
+      return {
+        id: series.id,
+        categoryId: series.category_id,
+        name: series.name,
+        description: series.description,
+        slug: series.slug,
+        basePrice: series.base_price,
+        createdAt: series.created_at,
+        updatedAt: series.updated_at,
+      };
+    } catch (error) {
+      console.error('Error creating series:', error);
+      throw error;
+    }
+  }
+
+  async updateSeries(id: number, updates: any): Promise<any> {
+    try {
+      // Use individual SQL statements to avoid parameter issues
+      if (updates.categoryId !== undefined) {
+        await db.execute(sql`
+          UPDATE trailer_series 
+          SET category_id = ${updates.categoryId}
+          WHERE id = ${id}
+        `);
+      }
+      if (updates.name !== undefined) {
+        await db.execute(sql`
+          UPDATE trailer_series 
+          SET name = ${updates.name}
+          WHERE id = ${id}
+        `);
+      }
+      if (updates.description !== undefined) {
+        await db.execute(sql`
+          UPDATE trailer_series 
+          SET description = ${updates.description}
+          WHERE id = ${id}
+        `);
+      }
+      if (updates.slug !== undefined) {
+        await db.execute(sql`
+          UPDATE trailer_series 
+          SET slug = ${updates.slug}
+          WHERE id = ${id}
+        `);
+      }
+      if (updates.basePrice !== undefined) {
+        await db.execute(sql`
+          UPDATE trailer_series 
+          SET base_price = ${updates.basePrice}
+          WHERE id = ${id}
+        `);
+      }
+      
+      // Get the updated record
+      const result = await db.execute(sql`
+        SELECT id, category_id, name, description, slug, base_price, created_at, updated_at
+        FROM trailer_series WHERE id = ${id}
+      `);
+      
+      const series = result.rows[0] as any;
+      return {
+        id: series.id,
+        categoryId: series.category_id,
+        name: series.name,
+        description: series.description,
+        slug: series.slug,
+        basePrice: series.base_price,
+        createdAt: series.created_at,
+        updatedAt: series.updated_at,
+      };
+    } catch (error) {
+      console.error('Error updating series:', error);
+      throw error;
+    }
+  }
+
+  async deleteSeries(id: number): Promise<void> {
+    try {
+      // Check if series has any models
+      const modelsResult = await db.execute(sql`
+        SELECT COUNT(*) as count 
+        FROM trailer_models 
+        WHERE series_id = ${id}
+      `);
+      
+      const modelsCount = (modelsResult.rows[0] as any).count;
+      if (modelsCount > 0) {
+        throw new Error("Cannot delete series with existing models");
+      }
+      
+      await db.execute(sql`
+        DELETE FROM trailer_series 
+        WHERE id = ${id}
+      `);
+    } catch (error) {
+      console.error('Error deleting series:', error);
+      throw error;
+    }
   }
 }
 

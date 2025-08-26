@@ -55,6 +55,17 @@ interface TrailerCategory {
   isArchived?: boolean;
 }
 
+interface TrailerSeries {
+  id: number;
+  categoryId: number;
+  name: string;
+  description: string;
+  slug: string;
+  basePrice: number;
+  categoryName?: string;
+  isArchived?: boolean;
+}
+
 interface MediaFile {
   id: number;
   filename: string;
@@ -100,6 +111,15 @@ export default function PricingManagement() {
     imageUrl: "",
     startingPrice: 0
   });
+  const [showAddSeries, setShowAddSeries] = useState(false);
+  const [editingSeries, setEditingSeries] = useState<TrailerSeries | null>(null);
+  const [newSeriesData, setNewSeriesData] = useState({
+    categoryId: 0,
+    name: "",
+    description: "",
+    slug: "",
+    basePrice: 0
+  });
   const [editingMedia, setEditingMedia] = useState<MediaFile | null>(null);
   const [mediaSearchQuery, setMediaSearchQuery] = useState("");
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
@@ -143,6 +163,8 @@ export default function PricingManagement() {
   // State for categories to force re-renders
   const [categoriesData, setCategoriesData] = useState<TrailerCategory[]>([]);
   const [categoriesLoading, setCategoriesLoading] = useState(true);
+  const [seriesData, setSeriesData] = useState<TrailerSeries[]>([]);
+  const [seriesLoading, setSeriesLoading] = useState(true);
 
   // Fetch categories function
   const fetchCategories = async () => {
@@ -157,15 +179,30 @@ export default function PricingManagement() {
     }
   };
 
+  // Fetch series function
+  const fetchSeries = async () => {
+    try {
+      setSeriesLoading(true);
+      const data = await apiRequest("/api/series/all");
+      setSeriesData(data);
+    } catch (error) {
+      console.error("Failed to fetch series:", error);
+    } finally {
+      setSeriesLoading(false);
+    }
+  };
+
   // Load categories on mount
   useEffect(() => {
     fetchCategories();
+    fetchSeries();
   }, []);
   
   // Force refresh on component mount to ensure fresh data
   useEffect(() => {
     const timer = setTimeout(() => {
       fetchCategories();
+      fetchSeries();
     }, 100);
     return () => clearTimeout(timer);
   }, []);
@@ -701,10 +738,14 @@ export default function PricingManagement() {
 
         <Tabs defaultValue="categories" className="space-y-6">
           <div className="flex items-center justify-between mb-6">
-            <TabsList className="grid w-full max-w-[800px] grid-cols-4">
+            <TabsList className="grid w-full max-w-[1000px] grid-cols-5">
               <TabsTrigger value="categories" className="flex items-center gap-2">
                 <Archive className="w-4 h-4" />
                 Categories
+              </TabsTrigger>
+              <TabsTrigger value="series" className="flex items-center gap-2">
+                <Tag className="w-4 h-4" />
+                Series
               </TabsTrigger>
               <TabsTrigger value="models" className="flex items-center gap-2">
                 <DollarSign className="w-4 h-4" />
@@ -1018,6 +1059,330 @@ export default function PricingManagement() {
                   </Table>
                 )}
 
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="series">
+            <Card>
+              <CardHeader>
+                <div className="flex justify-between items-center">
+                  <div>
+                    <CardTitle>Trailer Series</CardTitle>
+                    <CardDescription>
+                      Manage trailer series for different categories
+                    </CardDescription>
+                  </div>
+                  <Dialog open={showAddSeries} onOpenChange={setShowAddSeries}>
+                    <DialogTrigger asChild>
+                      <Button>
+                        <Plus className="w-4 h-4 mr-2" />
+                        Add Series
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent className="max-w-2xl">
+                      <DialogHeader>
+                        <DialogTitle>Add New Series</DialogTitle>
+                        <DialogDescription>
+                          Create a new trailer series for a category
+                        </DialogDescription>
+                      </DialogHeader>
+                      <div className="grid gap-4 py-4">
+                        <div className="grid grid-cols-2 gap-4">
+                          <div className="space-y-2">
+                            <Label htmlFor="new-series-category">Category</Label>
+                            <Select
+                              value={newSeriesData.categoryId.toString()}
+                              onValueChange={(value) => setNewSeriesData({ ...newSeriesData, categoryId: parseInt(value) })}
+                            >
+                              <SelectTrigger>
+                                <SelectValue placeholder="Select category" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {categoriesData.map((category) => (
+                                  <SelectItem key={category.id} value={category.id.toString()}>
+                                    {category.name}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </div>
+                          <div className="space-y-2">
+                            <Label htmlFor="new-series-slug">Slug (URL)</Label>
+                            <Input
+                              id="new-series-slug"
+                              placeholder="e.g., fbh-series"
+                              value={newSeriesData.slug}
+                              onChange={(e) => setNewSeriesData({ ...newSeriesData, slug: e.target.value })}
+                            />
+                          </div>
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="new-series-name">Series Name</Label>
+                          <Input
+                            id="new-series-name"
+                            placeholder="e.g., FBH Heavy Duty Series"
+                            value={newSeriesData.name}
+                            onChange={(e) => setNewSeriesData({ ...newSeriesData, name: e.target.value })}
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="new-series-description">Description</Label>
+                          <Input
+                            id="new-series-description"
+                            placeholder="Series description"
+                            value={newSeriesData.description}
+                            onChange={(e) => setNewSeriesData({ ...newSeriesData, description: e.target.value })}
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="new-series-basePrice">Base Price</Label>
+                          <Input
+                            id="new-series-basePrice"
+                            type="number"
+                            placeholder="0"
+                            value={newSeriesData.basePrice}
+                            onChange={(e) => setNewSeriesData({ ...newSeriesData, basePrice: parseInt(e.target.value) || 0 })}
+                          />
+                        </div>
+                      </div>
+                      <DialogFooter>
+                        <Button variant="outline" onClick={() => setShowAddSeries(false)}>
+                          Cancel
+                        </Button>
+                        <Button onClick={async () => {
+                          try {
+                            await apiRequest("/api/series", {
+                              method: "POST",
+                              body: newSeriesData,
+                              headers: sessionId ? { Authorization: `Bearer ${sessionId}` } : {},
+                            });
+                            await fetchSeries();
+                            setNewSeriesData({
+                              categoryId: 0,
+                              name: "",
+                              description: "",
+                              slug: "",
+                              basePrice: 0
+                            });
+                            setShowAddSeries(false);
+                            toast({
+                              title: "Success",
+                              description: "Series added successfully",
+                            });
+                          } catch (error) {
+                            toast({
+                              title: "Error",
+                              description: "Failed to add series",
+                              variant: "destructive",
+                            });
+                          }
+                        }}>
+                          Add Series
+                        </Button>
+                      </DialogFooter>
+                    </DialogContent>
+                  </Dialog>
+                </div>
+              </CardHeader>
+              <CardContent>
+                {seriesLoading ? (
+                  <div className="text-center py-8">Loading series...</div>
+                ) : seriesData && seriesData.length > 0 ? (
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Series Name</TableHead>
+                        <TableHead>Category</TableHead>
+                        <TableHead>Slug</TableHead>
+                        <TableHead>Description</TableHead>
+                        <TableHead>Base Price</TableHead>
+                        <TableHead>Actions</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {seriesData.map((series) => (
+                        <TableRow key={series.id}>
+                          <TableCell className="font-medium">
+                            {editingSeries?.id === series.id ? (
+                              <Input
+                                value={editData[series.id]?.name ?? series.name}
+                                onChange={(e) => setEditData(prev => ({
+                                  ...prev,
+                                  [series.id]: { ...prev[series.id], name: e.target.value }
+                                }))}
+                                className="w-48"
+                              />
+                            ) : (
+                              series.name
+                            )}
+                          </TableCell>
+                          <TableCell>
+                            {editingSeries?.id === series.id ? (
+                              <Select 
+                                value={editData[series.id]?.categoryId?.toString() ?? series.categoryId.toString()}
+                                onValueChange={(value) => setEditData(prev => ({
+                                  ...prev,
+                                  [series.id]: { ...prev[series.id], categoryId: parseInt(value) }
+                                }))}
+                              >
+                                <SelectTrigger className="w-40">
+                                  <SelectValue placeholder="Select category" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  {categoriesData.map((category) => (
+                                    <SelectItem key={category.id} value={category.id.toString()}>
+                                      {category.name}
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                            ) : (
+                              series.categoryName || "Unknown Category"
+                            )}
+                          </TableCell>
+                          <TableCell>
+                            {editingSeries?.id === series.id ? (
+                              <Input
+                                value={editData[series.id]?.slug ?? series.slug}
+                                onChange={(e) => setEditData(prev => ({
+                                  ...prev,
+                                  [series.id]: { ...prev[series.id], slug: e.target.value }
+                                }))}
+                                className="w-32"
+                              />
+                            ) : (
+                              series.slug
+                            )}
+                          </TableCell>
+                          <TableCell>
+                            {editingSeries?.id === series.id ? (
+                              <Input
+                                value={editData[series.id]?.description ?? series.description}
+                                onChange={(e) => setEditData(prev => ({
+                                  ...prev,
+                                  [series.id]: { ...prev[series.id], description: e.target.value }
+                                }))}
+                                className="w-48"
+                              />
+                            ) : (
+                              series.description
+                            )}
+                          </TableCell>
+                          <TableCell>
+                            {editingSeries?.id === series.id ? (
+                              <Input
+                                type="number"
+                                value={editData[series.id]?.basePrice ?? series.basePrice}
+                                onChange={(e) => setEditData(prev => ({
+                                  ...prev,
+                                  [series.id]: { ...prev[series.id], basePrice: parseInt(e.target.value) || 0 }
+                                }))}
+                                className="w-24"
+                              />
+                            ) : (
+                              `$${series.basePrice.toLocaleString()}`
+                            )}
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex space-x-2">
+                              {editingSeries?.id === series.id ? (
+                                <>
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    onClick={async () => {
+                                      try {
+                                        const updatedData = editData[series.id] || {};
+                                        await apiRequest(`/api/series/${series.id}`, {
+                                          method: "PATCH",
+                                          body: updatedData,
+                                          headers: sessionId ? { Authorization: `Bearer ${sessionId}` } : {},
+                                        });
+                                        await fetchSeries();
+                                        setEditingSeries(null);
+                                        setEditData(prev => {
+                                          const { [series.id]: _, ...rest } = prev;
+                                          return rest;
+                                        });
+                                        toast({
+                                          title: "Success",
+                                          description: "Series updated successfully",
+                                        });
+                                      } catch (error) {
+                                        toast({
+                                          title: "Error",
+                                          description: "Failed to update series",
+                                          variant: "destructive",
+                                        });
+                                      }
+                                    }}
+                                  >
+                                    <Save className="w-4 h-4" />
+                                  </Button>
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    onClick={() => {
+                                      setEditingSeries(null);
+                                      setEditData(prev => {
+                                        const { [series.id]: _, ...rest } = prev;
+                                        return rest;
+                                      });
+                                    }}
+                                  >
+                                    <X className="w-4 h-4" />
+                                  </Button>
+                                </>
+                              ) : (
+                                <>
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    onClick={() => setEditingSeries(series)}
+                                  >
+                                    <Edit className="w-4 h-4" />
+                                  </Button>
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    onClick={async () => {
+                                      if (confirm("Are you sure you want to delete this series?")) {
+                                        try {
+                                          await apiRequest(`/api/series/${series.id}`, {
+                                            method: "DELETE",
+                                            headers: sessionId ? { Authorization: `Bearer ${sessionId}` } : {},
+                                          });
+                                          await fetchSeries();
+                                          toast({
+                                            title: "Success",
+                                            description: "Series deleted successfully",
+                                          });
+                                        } catch (error) {
+                                          toast({
+                                            title: "Error",
+                                            description: "Failed to delete series",
+                                            variant: "destructive",
+                                          });
+                                        }
+                                      }
+                                    }}
+                                  >
+                                    <Trash2 className="w-4 h-4" />
+                                  </Button>
+                                </>
+                              )}
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                ) : (
+                  <div className="text-center py-8 text-muted-foreground">
+                    No series found. Create your first series to get started.
+                  </div>
+                )}
               </CardContent>
             </Card>
           </TabsContent>

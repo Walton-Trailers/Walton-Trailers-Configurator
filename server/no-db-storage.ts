@@ -195,4 +195,21 @@ export class NoDatabaseStorage implements IStorage {
   isAdminSession(sessionId: string): boolean {
     return this.adminSessions.has(sessionId);
   }
+
+  // Series management operations
+  async getAllSeries(): Promise<any[]> {
+    return [];
+  }
+
+  async createSeries(data: { categoryId: number; name: string; description: string; slug: string; basePrice: number }): Promise<any> {
+    throw new Error("Database not available");
+  }
+
+  async updateSeries(id: number, updates: any): Promise<any> {
+    throw new Error("Database not available");
+  }
+
+  async deleteSeries(id: number): Promise<void> {
+    throw new Error("Database not available");
+  }
 }

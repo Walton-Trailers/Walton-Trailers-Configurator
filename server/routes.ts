@@ -209,6 +209,73 @@ export async function registerRoutes(app: Express): Promise<Express> {
     }
   });
 
+  // Series management routes
+  // Get all series
+  app.get("/api/series/all", async (req, res) => {
+    try {
+      const series = await storage.getAllSeries();
+      res.json(series);
+    } catch (error) {
+      console.error("Error in /api/series/all:", error);
+      res.status(500).json({ message: "Failed to fetch series" });
+    }
+  });
+
+  // Create a new series
+  app.post("/api/series", requireAuth, async (req, res) => {
+    try {
+      const { categoryId, name, description, slug, basePrice } = req.body;
+      const result = await storage.createSeries({
+        categoryId,
+        name,
+        description,
+        slug,
+        basePrice,
+      });
+      res.json(result);
+    } catch (error) {
+      console.error("Error creating series:", error);
+      res.status(500).json({ message: "Failed to create series" });
+    }
+  });
+
+  // Update a series
+  app.patch("/api/series/:id", requireAuth, async (req, res) => {
+    try {
+      const seriesId = parseInt(req.params.id);
+      const { categoryId, name, description, slug, basePrice } = req.body;
+      
+      const updateData: any = {};
+      if (categoryId !== undefined) updateData.categoryId = categoryId;
+      if (name !== undefined) updateData.name = name;
+      if (description !== undefined) updateData.description = description;
+      if (slug !== undefined) updateData.slug = slug;
+      if (basePrice !== undefined) updateData.basePrice = basePrice;
+      
+      const result = await storage.updateSeries(seriesId, updateData);
+      res.json(result);
+    } catch (error) {
+      console.error("Error updating series:", error);
+      res.status(500).json({ message: "Failed to update series" });
+    }
+  });
+
+  // Delete a series
+  app.delete("/api/series/:id", requireAuth, async (req, res) => {
+    try {
+      const seriesId = parseInt(req.params.id);
+      await storage.deleteSeries(seriesId);
+      res.json({ message: "Series deleted successfully" });
+    } catch (error) {
+      console.error("Error deleting series:", error);
+      if (error instanceof Error && error.message.includes("Cannot delete")) {
+        res.status(400).json({ message: error.message });
+      } else {
+        res.status(500).json({ message: "Failed to delete series" });
+      }
+    }
+  });
+
   // Get models by category
   app.get("/api/categories/:categorySlug/models", async (req, res) => {
     try {

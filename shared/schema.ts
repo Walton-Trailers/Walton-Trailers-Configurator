@@ -18,6 +18,7 @@ export const trailerCategories = pgTable("trailer_categories", {
 export const trailerModels = pgTable("trailer_models", {
   id: serial("id").primaryKey(),
   categoryId: integer("category_id").notNull(),
+  seriesId: integer("series_id"), // links to trailerSeries table
   modelSeries: text("model_series").notNull(), // e.g., DHV207, FBH208
   name: text("name").notNull(),
   pullType: text("pull_type"), // 'bumper', 'gooseneck', 'both'
@@ -45,6 +46,21 @@ export const modelVariants = pgTable("model_variants", {
   bedSize: text("bed_size"),
   overallSize: text("overall_size"),
   capacity: text("capacity"), // cubic yards for dump trailers
+});
+
+// Trailer Series - defines series like FBH, FBX, Skid-Steer Tilt, etc.
+export const trailerSeries = pgTable("trailer_series", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull().unique(), // e.g., "FBH", "FBX", "Skid-Steer Tilt"
+  displayName: text("display_name").notNull(), // e.g., "FBH Series", "Heavy-Duty Equipment"
+  description: text("description").notNull(),
+  categoryId: integer("category_id").notNull(), // which category this series belongs to
+  imageUrl: text("image_url"),
+  startingPrice: integer("starting_price"),
+  isActive: boolean("is_active").default(true),
+  displayOrder: integer("display_order").default(0),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
 });
 
 // Trailer Options - now includes TRAC codes and categories
@@ -278,6 +294,11 @@ export const insertDealerOrderSchema = createInsertSchema(dealerOrders).omit({
   updatedAt: true,
 });
 export const insertTrailerCategorySchema = createInsertSchema(trailerCategories).omit({ id: true });
+export const insertTrailerSeriesSchema = createInsertSchema(trailerSeries).omit({ 
+  id: true, 
+  createdAt: true, 
+  updatedAt: true 
+});
 export const insertTrailerModelSchema = createInsertSchema(trailerModels).omit({ id: true });
 export const insertModelVariantSchema = createInsertSchema(modelVariants).omit({ id: true });
 export const insertTrailerOptionSchema = createInsertSchema(trailerOptions).omit({ id: true });
@@ -327,6 +348,7 @@ export type InsertDealerSession = z.infer<typeof insertDealerSessionSchema>;
 export type InsertDealerUserSession = z.infer<typeof insertDealerUserSessionSchema>;
 export type InsertDealerOrder = z.infer<typeof insertDealerOrderSchema>;
 export type TrailerCategory = typeof trailerCategories.$inferSelect;
+export type TrailerSeries = typeof trailerSeries.$inferSelect;
 export type TrailerModel = typeof trailerModels.$inferSelect;
 export type ModelVariant = typeof modelVariants.$inferSelect;
 export type TrailerOption = typeof trailerOptions.$inferSelect;
@@ -337,6 +359,7 @@ export type CustomQuoteRequest = typeof customQuoteRequests.$inferSelect;
 export type QuoteRequest = typeof quoteRequests.$inferSelect;
 export type MediaFile = typeof mediaFiles.$inferSelect;
 export type InsertTrailerCategory = z.infer<typeof insertTrailerCategorySchema>;
+export type InsertTrailerSeries = z.infer<typeof insertTrailerSeriesSchema>;
 export type InsertTrailerModel = z.infer<typeof insertTrailerModelSchema>;
 export type InsertModelVariant = z.infer<typeof insertModelVariantSchema>;
 export type InsertTrailerOption = z.infer<typeof insertTrailerOptionSchema>;
@@ -350,12 +373,25 @@ export type InsertMediaFile = z.infer<typeof insertMediaFileSchema>;
 // Relations
 export const trailerCategoriesRelations = relations(trailerCategories, ({ many }) => ({
   models: many(trailerModels),
+  series: many(trailerSeries),
+}));
+
+export const trailerSeriesRelations = relations(trailerSeries, ({ one, many }) => ({
+  category: one(trailerCategories, {
+    fields: [trailerSeries.categoryId],
+    references: [trailerCategories.id],
+  }),
+  models: many(trailerModels),
 }));
 
 export const trailerModelsRelations = relations(trailerModels, ({ one, many }) => ({
   category: one(trailerCategories, {
     fields: [trailerModels.categoryId],
     references: [trailerCategories.id],
+  }),
+  series: one(trailerSeries, {
+    fields: [trailerModels.seriesId],
+    references: [trailerSeries.id],
   }),
   variants: many(modelVariants),
   configurations: many(userConfigurations),
