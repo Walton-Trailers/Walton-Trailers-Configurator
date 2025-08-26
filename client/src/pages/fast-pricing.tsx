@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import { ArrowLeft, Edit, Save, X, Archive, RotateCcw, Upload, Image } from "lucide-react";
 import { Link } from "wouter";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
@@ -91,6 +91,16 @@ export default function FastPricing() {
     startingPrice: 0,
     orderIndex: 0
   });
+  const [editingSeries, setEditingSeries] = useState<any>(null);
+  const [seriesData, setSeriesData] = useState<any[]>([]);
+  const [showAddSeries, setShowAddSeries] = useState(false);
+  const [newSeriesData, setNewSeriesData] = useState({
+    categoryId: 0,
+    name: "",
+    description: "",
+    slug: "",
+    basePrice: 0
+  });
 
   const sessionId = localStorage.getItem("admin_session");
   const queryClient = useQueryClient();
@@ -99,6 +109,71 @@ export default function FastPricing() {
   const { data: models = [], isLoading, error: modelsError } = useFastQuery.allModels(sessionId);
   const { data: options = [], error: optionsError } = useFastQuery.allOptions(sessionId);
   const { data: categories = [] } = useFastQuery.categories();
+
+  // Fetch series data
+  const fetchSeries = async () => {
+    try {
+      const response = await fetch('/api/series/all');
+      const data = await response.json();
+      setSeriesData(data);
+    } catch (error) {
+      console.error('Failed to fetch series:', error);
+    }
+  };
+
+  // Load series on mount and when tab changes
+  useEffect(() => {
+    if (activeTab === 'series') {
+      fetchSeries();
+    }
+  }, [activeTab]);
+
+  // Series mutations
+  const addSeriesMutation = useMutation({
+    mutationFn: (data: any) => fastMutate('/api/series', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${sessionId}`,
+      },
+      body: JSON.stringify(data),
+    }),
+    onSuccess: () => {
+      fetchSeries();
+      setShowAddSeries(false);
+      setNewSeriesData({ categoryId: 0, name: "", description: "", slug: "", basePrice: 0 });
+      toast({ title: "Success", description: "Series added successfully" });
+    },
+  });
+
+  const updateSeriesMutation = useMutation({
+    mutationFn: ({ id, ...data }: any) => fastMutate(`/api/series/${id}`, {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${sessionId}`,
+      },
+      body: JSON.stringify(data),
+    }),
+    onSuccess: () => {
+      fetchSeries();
+      setEditingSeries(null);
+      toast({ title: "Success", description: "Series updated successfully" });
+    },
+  });
+
+  const deleteSeriesMutation = useMutation({
+    mutationFn: (id: number) => fastMutate(`/api/series/${id}`, {
+      method: 'DELETE',
+      headers: {
+        Authorization: `Bearer ${sessionId}`,
+      },
+    }),
+    onSuccess: () => {
+      fetchSeries();
+      toast({ title: "Success", description: "Series deleted successfully" });
+    },
+  });
 
   // Fast filtering with memoization
   const { activeModels, archivedModels } = useMemo(() => {
@@ -387,6 +462,16 @@ export default function FastPricing() {
                 }`}
               >
                 Categories
+              </button>
+              <button
+                onClick={() => setActiveTab("series")}
+                className={`py-2 px-1 border-b-2 font-medium text-sm ${
+                  activeTab === "series"
+                    ? "border-blue-500 text-blue-600"
+                    : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+                }`}
+              >
+                Series
               </button>
               <button
                 onClick={() => setActiveTab("models")}
@@ -727,6 +812,225 @@ export default function FastPricing() {
                       </TableRow>
                     ))
                   }
+                </TableBody>
+              </Table>
+            </div>
+          </Card>
+        )}
+
+        {/* Series Tab */}
+        {activeTab === "series" && (
+          <Card>
+            <div className="p-6">
+              <div className="flex justify-between items-center mb-4">
+                <h2 className="text-lg font-semibold">Series ({seriesData.length})</h2>
+                <Button onClick={() => setShowAddSeries(true)} size="sm">
+                  Add Series
+                </Button>
+              </div>
+              
+              {/* Add Series Dialog */}
+              {showAddSeries && (
+                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+                  <div className="bg-white rounded-lg p-6 max-w-2xl w-full">
+                    <h3 className="text-lg font-semibold mb-4">Add New Series</h3>
+                    <div className="space-y-4">
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <label className="block text-sm font-medium mb-1">Category</label>
+                          <Select
+                            value={newSeriesData.categoryId > 0 ? newSeriesData.categoryId.toString() : ""}
+                            onValueChange={(value) => setNewSeriesData({ ...newSeriesData, categoryId: parseInt(value) })}
+                          >
+                            <option value="">Select category</option>
+                            {categories.map((category: any) => (
+                              <option key={category.id} value={category.id}>
+                                {category.name}
+                              </option>
+                            ))}
+                          </Select>
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium mb-1">Slug (URL)</label>
+                          <Input
+                            placeholder="e.g., fbh-series"
+                            value={newSeriesData.slug}
+                            onChange={(e: any) => setNewSeriesData({ ...newSeriesData, slug: e.target.value })}
+                          />
+                        </div>
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium mb-1">Series Name</label>
+                        <Input
+                          placeholder="e.g., FBH Heavy Duty Series"
+                          value={newSeriesData.name}
+                          onChange={(e: any) => setNewSeriesData({ ...newSeriesData, name: e.target.value })}
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium mb-1">Description</label>
+                        <Input
+                          placeholder="Series description"
+                          value={newSeriesData.description}
+                          onChange={(e: any) => setNewSeriesData({ ...newSeriesData, description: e.target.value })}
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium mb-1">Base Price</label>
+                        <Input
+                          type="number"
+                          placeholder="0"
+                          value={newSeriesData.basePrice}
+                          onChange={(e: any) => setNewSeriesData({ ...newSeriesData, basePrice: parseFloat(e.target.value) || 0 })}
+                        />
+                      </div>
+                    </div>
+                    <div className="flex justify-end gap-3 mt-6">
+                      <Button variant="outline" onClick={() => setShowAddSeries(false)}>
+                        Cancel
+                      </Button>
+                      <Button 
+                        onClick={() => addSeriesMutation.mutate(newSeriesData)}
+                        disabled={addSeriesMutation.isPending || !newSeriesData.name || !newSeriesData.categoryId}
+                      >
+                        Add Series
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Name</TableHead>
+                    <TableHead>Category</TableHead>
+                    <TableHead>Slug</TableHead>
+                    <TableHead>Base Price</TableHead>
+                    <TableHead>Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {seriesData.map((series: any) => (
+                    <TableRow key={series.id}>
+                      <TableCell>
+                        {editingSeries?.id === series.id ? (
+                          <Input
+                            value={editData[series.id]?.name ?? series.name}
+                            onChange={(e: any) => setEditData({
+                              ...editData,
+                              [series.id]: { ...editData[series.id], name: e.target.value }
+                            })}
+                          />
+                        ) : (
+                          series.name
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        {editingSeries?.id === series.id ? (
+                          <Select
+                            value={editData[series.id]?.categoryId?.toString() ?? series.categoryId?.toString()}
+                            onValueChange={(value: string) => setEditData({
+                              ...editData,
+                              [series.id]: { ...editData[series.id], categoryId: parseInt(value) }
+                            })}
+                          >
+                            {categories.map((category: any) => (
+                              <option key={category.id} value={category.id}>
+                                {category.name}
+                              </option>
+                            ))}
+                          </Select>
+                        ) : (
+                          series.categoryName || 'Unknown'
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        {editingSeries?.id === series.id ? (
+                          <Input
+                            value={editData[series.id]?.slug ?? series.slug}
+                            onChange={(e: any) => setEditData({
+                              ...editData,
+                              [series.id]: { ...editData[series.id], slug: e.target.value }
+                            })}
+                          />
+                        ) : (
+                          series.slug
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        {editingSeries?.id === series.id ? (
+                          <Input
+                            type="number"
+                            value={editData[series.id]?.basePrice ?? series.basePrice}
+                            onChange={(e: any) => setEditData({
+                              ...editData,
+                              [series.id]: { ...editData[series.id], basePrice: parseFloat(e.target.value) || 0 }
+                            })}
+                          />
+                        ) : (
+                          `$${series.basePrice?.toLocaleString()}`
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex gap-2">
+                          {editingSeries?.id === series.id ? (
+                            <>
+                              <Button
+                                size="sm"
+                                onClick={() => {
+                                  const data = editData[series.id] || {};
+                                  updateSeriesMutation.mutate({
+                                    id: series.id,
+                                    name: data.name ?? series.name,
+                                    categoryId: data.categoryId ?? series.categoryId,
+                                    slug: data.slug ?? series.slug,
+                                    basePrice: data.basePrice ?? series.basePrice,
+                                    description: data.description ?? series.description,
+                                  });
+                                }}
+                                disabled={updateSeriesMutation.isPending}
+                              >
+                                <Save className="w-4 h-4" />
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => {
+                                  setEditingSeries(null);
+                                  setEditData({});
+                                }}
+                              >
+                                <X className="w-4 h-4" />
+                              </Button>
+                            </>
+                          ) : (
+                            <>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => setEditingSeries(series)}
+                              >
+                                <Edit className="w-4 h-4" />
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => {
+                                  if (confirm('Are you sure you want to delete this series?')) {
+                                    deleteSeriesMutation.mutate(series.id);
+                                  }
+                                }}
+                                disabled={deleteSeriesMutation.isPending}
+                              >
+                                <X className="w-4 h-4" />
+                              </Button>
+                            </>
+                          )}
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
                 </TableBody>
               </Table>
             </div>
