@@ -1092,7 +1092,7 @@ export default function PricingManagement() {
                           <div className="space-y-2">
                             <Label htmlFor="new-series-category">Category</Label>
                             <Select
-                              value={newSeriesData.categoryId.toString()}
+                              value={newSeriesData.categoryId > 0 ? newSeriesData.categoryId.toString() : ""}
                               onValueChange={(value) => setNewSeriesData({ ...newSeriesData, categoryId: parseInt(value) })}
                             >
                               <SelectTrigger>
