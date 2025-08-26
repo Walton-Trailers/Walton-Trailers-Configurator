@@ -1,7 +1,7 @@
 import type { Express, Request, Response, NextFunction } from "express";
 import { storage } from "./storage";
 import { db } from "./db";
-import { sql, eq } from "drizzle-orm";
+import { sql, eq, inArray } from "drizzle-orm";
 import { 
   authenticateUser, 
   createSession, 
@@ -273,6 +273,31 @@ export async function registerRoutes(app: Express): Promise<Express> {
       } else {
         res.status(500).json({ message: "Failed to delete series" });
       }
+    }
+  });
+
+  // Update model assignments for a series
+  app.patch("/api/series/:id/models", requireAuth, async (req, res) => {
+    try {
+      const seriesId = parseInt(req.params.id);
+      const { modelIds } = req.body; // Array of model IDs to assign to this series
+      
+      // First, remove all existing assignments for this series
+      await db.update(trailerModels)
+        .set({ seriesId: null })
+        .where(eq(trailerModels.seriesId, seriesId));
+      
+      // Then assign the new models
+      if (modelIds && modelIds.length > 0) {
+        await db.update(trailerModels)
+          .set({ seriesId })
+          .where(inArray(trailerModels.id, modelIds));
+      }
+      
+      res.json({ message: "Model assignments updated successfully" });
+    } catch (error) {
+      console.error("Error updating series models:", error);
+      res.status(500).json({ message: "Failed to update model assignments" });
     }
   });
 
