@@ -590,7 +590,7 @@ Configuration Date: ${new Date().toLocaleDateString()}
             </div>
             
             {/* Desktop progress indicator */}
-            <div className="hidden md:flex items-center space-x-6 text-sm uppercase" style={{ fontFamily: 'Source Sans Pro, sans-serif', fontWeight: 700 }}>
+            <div className="hidden md:flex items-center space-x-6 text-sm uppercase" style={{ fontFamily: 'Oswald, sans-serif', fontWeight: 700 }}>
               <button 
                 className={`px-4 py-2 rounded-md transition-all duration-300 ${currentStep >= 1 ? 'text-white' : 'bg-gray-100 text-black'} ${currentStep > 1 ? 'cursor-pointer hover:opacity-80' : ''}`} 
                 style={currentStep >= 1 ? { backgroundColor: '#c1af89' } : {}}
@@ -1469,7 +1469,7 @@ Configuration Date: ${new Date().toLocaleDateString()}
                    selectedModel.name}
                 </h1>
                 {selectedModel.name.includes('FBH') && (
-                  <p className="text-lg mb-4" style={{ fontFamily: 'Source Sans Pro, sans-serif', fontWeight: 700, color: '#c1af89' }}>Versatility and Heavy-Duty Performance</p>
+                  <p className="text-lg mb-4" style={{ fontFamily: 'Oswald, sans-serif', fontWeight: 700, color: '#c1af89' }}>Versatility and Heavy-Duty Performance</p>
                 )}
                 {selectedModel.name.includes('FBX') && (
                   <p className="text-lg text-gray-600 mb-4">FBX Offers Ultimate Strength and Flexibility</p>
