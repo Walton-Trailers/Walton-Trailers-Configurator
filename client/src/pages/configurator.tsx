@@ -527,11 +527,18 @@ Configuration Date: ${new Date().toLocaleDateString()}
         <div className="max-w-7xl mx-auto px-4 md:px-8">
           <div className="flex items-center justify-between h-16 md:h-20">
             <div className="flex items-center">
-              <img 
-                src={waltonLogo} 
-                alt="Walton Trailers" 
-                className="h-6 md:h-8 lg:h-10 w-auto object-contain max-w-[120px] md:max-w-[150px] lg:max-w-[180px]"
-              />
+              <a 
+                href="https://waltontrailers.com/" 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="hover:opacity-80 transition-opacity duration-200"
+              >
+                <img 
+                  src={waltonLogo} 
+                  alt="Walton Trailers" 
+                  className="h-6 md:h-8 lg:h-10 w-auto object-contain max-w-[120px] md:max-w-[150px] lg:max-w-[180px]"
+                />
+              </a>
             </div>
             
             {/* Mobile progress indicator - horizontal dots */}
