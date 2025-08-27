@@ -536,26 +536,106 @@ Configuration Date: ${new Date().toLocaleDateString()}
             
             {/* Mobile progress indicator - horizontal dots */}
             <div className="flex md:hidden items-center space-x-2">
-              <div className={`w-2 h-2 rounded-full transition-all duration-300`} style={currentStep >= 1 ? { backgroundColor: '#c1af89' } : { backgroundColor: '#6B7280' }} />
-              <div className={`w-2 h-2 rounded-full transition-all duration-300`} style={currentStep >= 2 ? { backgroundColor: '#c1af89' } : { backgroundColor: '#6B7280' }} />
-              <div className={`w-2 h-2 rounded-full transition-all duration-300`} style={currentStep >= 3 ? { backgroundColor: '#c1af89' } : { backgroundColor: '#6B7280' }} />
-              <div className={`w-2 h-2 rounded-full transition-all duration-300`} style={currentStep >= 4 ? { backgroundColor: '#c1af89' } : { backgroundColor: '#6B7280' }} />
+              <button 
+                className={`w-3 h-3 rounded-full transition-all duration-300 ${currentStep > 1 ? 'cursor-pointer hover:scale-110' : ''}`} 
+                style={currentStep >= 1 ? { backgroundColor: '#c1af89' } : { backgroundColor: '#6B7280' }}
+                onClick={() => {
+                  if (currentStep > 1) {
+                    setCurrentStep(1);
+                    setSelectedCategory(null);
+                    setSelectedSeries('');
+                    setSelectedModel(null);
+                    setSelectedOptions({});
+                  }
+                }}
+                disabled={currentStep === 1}
+              />
+              <button 
+                className={`w-3 h-3 rounded-full transition-all duration-300 ${currentStep > 2 ? 'cursor-pointer hover:scale-110' : ''}`} 
+                style={currentStep >= 2 ? { backgroundColor: '#c1af89' } : { backgroundColor: '#6B7280' }}
+                onClick={() => {
+                  if (currentStep > 2 && selectedCategory) {
+                    setCurrentStep(2);
+                    setSelectedSeries('');
+                    setSelectedModel(null);
+                    setSelectedOptions({});
+                  }
+                }}
+                disabled={currentStep <= 2 || !selectedCategory}
+              />
+              <button 
+                className={`w-3 h-3 rounded-full transition-all duration-300 ${currentStep > 3 ? 'cursor-pointer hover:scale-110' : ''}`} 
+                style={currentStep >= 3 ? { backgroundColor: '#c1af89' } : { backgroundColor: '#6B7280' }}
+                onClick={() => {
+                  if (currentStep > 3 && selectedCategory && selectedSeries) {
+                    setCurrentStep(3);
+                    setSelectedModel(null);
+                    setSelectedOptions({});
+                  }
+                }}
+                disabled={currentStep <= 3 || !selectedCategory || !selectedSeries}
+              />
+              <button 
+                className={`w-3 h-3 rounded-full transition-all duration-300`} 
+                style={currentStep >= 4 ? { backgroundColor: '#c1af89' } : { backgroundColor: '#6B7280' }}
+                disabled={true}
+              />
             </div>
             
             {/* Desktop progress indicator */}
             <div className="hidden md:flex items-center space-x-6 text-sm uppercase" style={{ fontFamily: 'Source Sans Pro, sans-serif', fontWeight: 700 }}>
-              <div className={`px-4 py-2 rounded-md transition-all duration-300 ${currentStep >= 1 ? 'text-white' : 'bg-gray-100 text-black'}`} style={currentStep >= 1 ? { backgroundColor: '#c1af89' } : {}}>
+              <button 
+                className={`px-4 py-2 rounded-md transition-all duration-300 ${currentStep >= 1 ? 'text-white' : 'bg-gray-100 text-black'} ${currentStep > 1 ? 'cursor-pointer hover:opacity-80' : ''}`} 
+                style={currentStep >= 1 ? { backgroundColor: '#c1af89' } : {}}
+                onClick={() => {
+                  if (currentStep > 1) {
+                    setCurrentStep(1);
+                    setSelectedCategory(null);
+                    setSelectedSeries('');
+                    setSelectedModel(null);
+                    setSelectedOptions({});
+                  }
+                }}
+                disabled={currentStep === 1}
+              >
                 Category
-              </div>
-              <div className={`px-4 py-2 rounded-md transition-all duration-300 ${currentStep >= 2 ? 'text-white' : 'bg-gray-100 text-black'}`} style={currentStep >= 2 ? { backgroundColor: '#c1af89' } : {}}>
+              </button>
+              <button 
+                className={`px-4 py-2 rounded-md transition-all duration-300 ${currentStep >= 2 ? 'text-white' : 'bg-gray-100 text-black'} ${currentStep > 2 ? 'cursor-pointer hover:opacity-80' : ''}`} 
+                style={currentStep >= 2 ? { backgroundColor: '#c1af89' } : {}}
+                onClick={() => {
+                  if (currentStep > 2 && selectedCategory) {
+                    setCurrentStep(2);
+                    setSelectedSeries('');
+                    setSelectedModel(null);
+                    setSelectedOptions({});
+                  }
+                }}
+                disabled={currentStep <= 2 || !selectedCategory}
+              >
                 Series
-              </div>
-              <div className={`px-4 py-2 rounded-md transition-all duration-300 ${currentStep >= 3 ? 'text-white' : 'bg-gray-100 text-black'}`} style={currentStep >= 3 ? { backgroundColor: '#c1af89' } : {}}>
+              </button>
+              <button 
+                className={`px-4 py-2 rounded-md transition-all duration-300 ${currentStep >= 3 ? 'text-white' : 'bg-gray-100 text-black'} ${currentStep > 3 ? 'cursor-pointer hover:opacity-80' : ''}`} 
+                style={currentStep >= 3 ? { backgroundColor: '#c1af89' } : {}}
+                onClick={() => {
+                  if (currentStep > 3 && selectedCategory && selectedSeries) {
+                    setCurrentStep(3);
+                    setSelectedModel(null);
+                    setSelectedOptions({});
+                  }
+                }}
+                disabled={currentStep <= 3 || !selectedCategory || !selectedSeries}
+              >
                 Configure
-              </div>
-              <div className={`px-4 py-2 rounded-md transition-all duration-300 ${currentStep >= 4 ? 'text-white' : 'bg-gray-100 text-black'}`} style={currentStep >= 4 ? { backgroundColor: '#c1af89' } : {}}>
+              </button>
+              <button 
+                className={`px-4 py-2 rounded-md transition-all duration-300 ${currentStep >= 4 ? 'text-white' : 'bg-gray-100 text-black'}`} 
+                style={currentStep >= 4 ? { backgroundColor: '#c1af89' } : {}}
+                disabled={true}
+              >
                 Summary
-              </div>
+              </button>
             </div>
             
             <div className="text-right">
