@@ -1480,7 +1480,7 @@ Configuration Date: ${new Date().toLocaleDateString()}
                           ) : (
                             <RadioGroup 
                               value={selectedOptions[category]?.toString() || categoryOptions[0]?.id.toString()}
-                              onValueChange={(value) => handleOptionChange(category, parseInt(value), false)}
+                              onValueChange={(value) => handleOptionChange(category, parseInt(value), false, true)}
                             >
                               {categoryOptions.map((option) => (
                                 <div key={option.id} className="flex items-center justify-between">
