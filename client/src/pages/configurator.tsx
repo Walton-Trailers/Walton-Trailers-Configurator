@@ -316,7 +316,15 @@ export default function Configurator() {
           if (Array.isArray(selected)) {
             selected.forEach((optionId: number) => {
               const option = categoryOptions.find(opt => opt.id === optionId);
-              if (option) price += option.price;
+              if (option) {
+                // Check if this is D-Rings option and multiply by quantity
+                if (option.name.includes('D-Rings')) {
+                  const quantity = selectedOptions[`${category}_${optionId}_qty`] || 1;
+                  price += option.price * quantity;
+                } else {
+                  price += option.price;
+                }
+              }
             });
           } else if (selected !== undefined) {
             const option = categoryOptions.find(opt => opt.id === selected);
@@ -1468,9 +1476,30 @@ Configuration Date: ${new Date().toLocaleDateString()}
                                     <Label htmlFor={`option-${option.id}`} className="text-sm cursor-pointer">
                                       {option.name}
                                     </Label>
+                                    
+                                    {/* D-Rings Quantity Selector */}
+                                    {option.name.includes('D-Rings') && (selectedOptions[category]?.includes(option.id)) && (
+                                      <select
+                                        className="ml-2 px-2 py-1 text-xs border border-gray-300 rounded"
+                                        value={selectedOptions[`${category}_${option.id}_qty`] || 1}
+                                        onChange={(e) => {
+                                          const quantity = parseInt(e.target.value);
+                                          setSelectedOptions(prev => ({
+                                            ...prev,
+                                            [`${category}_${option.id}_qty`]: quantity
+                                          }));
+                                        }}
+                                      >
+                                        {Array.from({ length: 20 }, (_, i) => i + 1).map(num => (
+                                          <option key={num} value={num}>{num}</option>
+                                        ))}
+                                      </select>
+                                    )}
                                   </div>
                                   <span className="text-sm text-gray-600">
                                     {option.price === 0 ? 'Included' : 
+                                     option.name.includes('D-Rings') && (selectedOptions[category]?.includes(option.id)) ? 
+                                       `+$${(option.price * (selectedOptions[`${category}_${option.id}_qty`] || 1)).toLocaleString()}` :
                                      option.price > 0 ? `+$${option.price.toLocaleString()}` : 
                                      `$${option.price.toLocaleString()}`}
                                   </span>
