@@ -1431,6 +1431,78 @@ Configuration Date: ${new Date().toLocaleDateString()}
                       </div>
                     </div>
                   </div>
+
+                  {/* Additional Options */}
+                  {options && options.length > 0 && (
+                    <div className="mt-6">
+                      {Object.entries(
+                        options.reduce((acc, option) => {
+                          if (!acc[option.category]) acc[option.category] = [];
+                          acc[option.category].push(option);
+                          return acc;
+                        }, {} as Record<string, TrailerOption[]>)
+                      ).map(([category, categoryOptions]) => (
+                        <div key={category} className="mb-4">
+                          <h4 className="text-sm font-medium text-gray-900 mb-2">
+                            {category === 'tires' ? 'Tire Options' : 
+                             category === 'ramps' ? 'Ramp Options' : 
+                             category === 'color' ? 'Color Options' : 
+                             category === 'extras' ? 'Additional Options' : 
+                             category === 'deck' ? 'Deck Length' : 
+                             category === 'walls' ? 'Wall Height' : 
+                             category === 'winch' ? 'Winch Options' : category}
+                          </h4>
+                          
+                          {categoryOptions[0]?.isMultiSelect ? (
+                            <div className="space-y-2">
+                              {categoryOptions.map((option) => (
+                                <div key={option.id} className="flex items-center justify-between">
+                                  <div className="flex items-center space-x-2">
+                                    <Checkbox
+                                      id={`option-${option.id}`}
+                                      checked={selectedOptions[category]?.includes(option.id) || false}
+                                      onCheckedChange={(checked) => 
+                                        handleOptionChange(category, option.id, true, checked as boolean)
+                                      }
+                                    />
+                                    <Label htmlFor={`option-${option.id}`} className="text-sm cursor-pointer">
+                                      {option.name}
+                                    </Label>
+                                  </div>
+                                  <span className="text-sm text-gray-600">
+                                    {option.price === 0 ? 'Included' : 
+                                     option.price > 0 ? `+$${option.price.toLocaleString()}` : 
+                                     `$${option.price.toLocaleString()}`}
+                                  </span>
+                                </div>
+                              ))}
+                            </div>
+                          ) : (
+                            <RadioGroup 
+                              value={selectedOptions[category]?.toString() || categoryOptions[0]?.id.toString()}
+                              onValueChange={(value) => handleOptionChange(category, parseInt(value), false)}
+                            >
+                              {categoryOptions.map((option) => (
+                                <div key={option.id} className="flex items-center justify-between">
+                                  <div className="flex items-center space-x-2">
+                                    <RadioGroupItem value={option.id.toString()} id={`radio-${option.id}`} />
+                                    <Label htmlFor={`radio-${option.id}`} className="text-sm cursor-pointer">
+                                      {option.name}
+                                    </Label>
+                                  </div>
+                                  <span className="text-sm text-gray-600">
+                                    {option.price === 0 ? 'Included' : 
+                                     option.price > 0 ? `+$${option.price.toLocaleString()}` : 
+                                     `$${option.price.toLocaleString()}`}
+                                  </span>
+                                </div>
+                              ))}
+                            </RadioGroup>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  )}
                   
                   {/* Price Display */}
                   <div className="flex items-center justify-between border-t pt-4">
