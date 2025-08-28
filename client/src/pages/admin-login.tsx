@@ -171,7 +171,7 @@ export default function AdminLogin() {
           <div className="text-center">
             <button
               className="text-sm text-blue-600 hover:text-blue-800 underline"
-              onClick={() => setLocation("/dealer-login")}
+              onClick={() => setLocation("/dealer/login")}
             >
               Dealer Portal Login
             </button>
