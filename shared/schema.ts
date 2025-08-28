@@ -115,6 +115,17 @@ export const adminSessions = pgTable("admin_sessions", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
+// Password Reset Tokens
+export const passwordResetTokens = pgTable("password_reset_tokens", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull(),
+  token: varchar("token", { length: 255 }).notNull().unique(),
+  email: varchar("email", { length: 100 }).notNull(),
+  expiresAt: timestamp("expires_at").notNull(),
+  isUsed: boolean("is_used").notNull().default(false),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
 // Dealers - Updated with new fields
 export const dealers = pgTable("dealers", {
   id: serial("id").primaryKey(),
@@ -316,6 +327,10 @@ export const insertAdminUserSchema = createInsertSchema(adminUsers).omit({
 export const insertAdminSessionSchema = createInsertSchema(adminSessions).omit({
   createdAt: true,
 });
+export const insertPasswordResetTokenSchema = createInsertSchema(passwordResetTokens).omit({
+  id: true,
+  createdAt: true,
+});
 export const insertCustomQuoteRequestSchema = createInsertSchema(customQuoteRequests).omit({
   id: true,
   status: true,
@@ -355,6 +370,7 @@ export type TrailerOption = typeof trailerOptions.$inferSelect;
 export type UserConfiguration = typeof userConfigurations.$inferSelect;
 export type AdminUser = typeof adminUsers.$inferSelect;
 export type AdminSession = typeof adminSessions.$inferSelect;
+export type PasswordResetToken = typeof passwordResetTokens.$inferSelect;
 export type CustomQuoteRequest = typeof customQuoteRequests.$inferSelect;
 export type QuoteRequest = typeof quoteRequests.$inferSelect;
 export type MediaFile = typeof mediaFiles.$inferSelect;
@@ -366,6 +382,7 @@ export type InsertTrailerOption = z.infer<typeof insertTrailerOptionSchema>;
 export type InsertUserConfiguration = z.infer<typeof insertUserConfigurationSchema>;
 export type InsertAdminUser = z.infer<typeof insertAdminUserSchema>;
 export type InsertAdminSession = z.infer<typeof insertAdminSessionSchema>;
+export type InsertPasswordResetToken = z.infer<typeof insertPasswordResetTokenSchema>;
 export type InsertCustomQuoteRequest = z.infer<typeof insertCustomQuoteRequestSchema>;
 export type InsertQuoteRequest = z.infer<typeof insertQuoteRequestSchema>;
 export type InsertMediaFile = z.infer<typeof insertMediaFileSchema>;
@@ -422,6 +439,13 @@ export const adminUsersRelations = relations(adminUsers, ({ many }) => ({
 export const adminSessionsRelations = relations(adminSessions, ({ one }) => ({
   user: one(adminUsers, {
     fields: [adminSessions.userId],
+    references: [adminUsers.id],
+  }),
+}));
+
+export const passwordResetTokensRelations = relations(passwordResetTokens, ({ one }) => ({
+  user: one(adminUsers, {
+    fields: [passwordResetTokens.userId],
     references: [adminUsers.id],
   }),
 }));

@@ -7,10 +7,13 @@ import { sql, eq } from "drizzle-orm";
 import { 
   adminUsers, 
   adminSessions, 
+  passwordResetTokens,
   type AdminUser, 
   type AdminSession, 
+  type PasswordResetToken,
   type InsertAdminUser, 
-  type InsertAdminSession 
+  type InsertAdminSession,
+  type InsertPasswordResetToken
 } from "@shared/schema";
 
 // Simple interfaces that match the frontend expectations
@@ -97,6 +100,12 @@ export interface IStorage {
   getAdminSession(sessionId: string): Promise<AdminSession | undefined>;
   deleteAdminSession(sessionId: string): Promise<void>;
   deleteExpiredSessions(): Promise<void>;
+  
+  // Password reset token operations
+  createPasswordResetToken(token: InsertPasswordResetToken): Promise<PasswordResetToken>;
+  getPasswordResetToken(token: string): Promise<PasswordResetToken | undefined>;
+  markPasswordResetTokenAsUsed(token: string): Promise<void>;
+  deleteExpiredResetTokens(): Promise<void>;
   
   // Pricing management operations
   getAllModels(): Promise<TrailerModelResponse[]>;
@@ -371,6 +380,23 @@ export class MemStorage implements IStorage {
 
   async deleteExpiredSessions(): Promise<void> {
     throw new Error("Admin operations not supported in memory storage");
+  }
+
+  // Password reset token operations (not supported in memory storage)
+  async createPasswordResetToken(token: InsertPasswordResetToken): Promise<PasswordResetToken> {
+    throw new Error("Password reset operations not supported in memory storage");
+  }
+
+  async getPasswordResetToken(token: string): Promise<PasswordResetToken | undefined> {
+    throw new Error("Password reset operations not supported in memory storage");
+  }
+
+  async markPasswordResetTokenAsUsed(token: string): Promise<void> {
+    throw new Error("Password reset operations not supported in memory storage");
+  }
+
+  async deleteExpiredResetTokens(): Promise<void> {
+    throw new Error("Password reset operations not supported in memory storage");
   }
 
   // Pricing management operations
@@ -743,6 +769,48 @@ export class DatabaseStorage implements IStorage {
       await db.delete(adminSessions).where(sql`expires_at < NOW()`);
     } catch (error) {
       console.error('Error deleting expired sessions:', error);
+      throw error;
+    }
+  }
+
+  // Password Reset Token Operations
+  async createPasswordResetToken(token: InsertPasswordResetToken): Promise<PasswordResetToken> {
+    try {
+      const [newToken] = await db.insert(passwordResetTokens).values(token).returning();
+      return newToken;
+    } catch (error) {
+      console.error('Error creating password reset token:', error);
+      throw error;
+    }
+  }
+
+  async getPasswordResetToken(token: string): Promise<PasswordResetToken | undefined> {
+    try {
+      const [resetToken] = await db.select().from(passwordResetTokens)
+        .where(eq(passwordResetTokens.token, token));
+      return resetToken;
+    } catch (error) {
+      console.error('Error fetching password reset token:', error);
+      throw error;
+    }
+  }
+
+  async markPasswordResetTokenAsUsed(token: string): Promise<void> {
+    try {
+      await db.update(passwordResetTokens)
+        .set({ isUsed: true })
+        .where(eq(passwordResetTokens.token, token));
+    } catch (error) {
+      console.error('Error marking password reset token as used:', error);
+      throw error;
+    }
+  }
+
+  async deleteExpiredResetTokens(): Promise<void> {
+    try {
+      await db.delete(passwordResetTokens).where(sql`expires_at < NOW() OR is_used = true`);
+    } catch (error) {
+      console.error('Error deleting expired password reset tokens:', error);
       throw error;
     }
   }

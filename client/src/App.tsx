@@ -13,6 +13,8 @@ import AccountManagement from "@/pages/account-management";
 import DealerLogin from "@/pages/dealer-login";
 import DealerDashboard from "@/pages/dealer-dashboard";
 import AdminDealers from "@/pages/admin-dealers";
+import ForgotPassword from "@/pages/forgot-password";
+import ResetPassword from "@/pages/reset-password";
 import { ClearDealerSession } from "@/components/clear-dealer-session";
 
 function Router() {
@@ -21,6 +23,8 @@ function Router() {
       <Route path="/" component={Configurator} />
       <Route path="/configurator/:category" component={Configurator} />
       <Route path="/admin/login" component={AdminLogin} />
+      <Route path="/admin/forgot-password" component={ForgotPassword} />
+      <Route path="/admin/reset-password" component={ResetPassword} />
       <Route path="/admin" component={AdminDashboard} />
       <Route path="/admin/pricing" component={FastPricing} />
       <Route path="/admin/pricing-management" component={PricingManagement} />

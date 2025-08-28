@@ -947,6 +947,95 @@ export async function registerRoutes(app: Express): Promise<Express> {
     }
   });
 
+  // Password Reset Request
+  app.post("/api/admin/forgot-password", async (req, res) => {
+    try {
+      const { email } = z.object({ email: z.string().email() }).parse(req.body);
+      
+      const user = await storage.getAdminUserByEmail(email);
+      
+      if (!user) {
+        // For security, don't reveal if email exists
+        return res.json({ message: "If an account with that email exists, a reset link has been sent." });
+      }
+
+      // Generate reset token
+      const { EmailService } = await import("./email");
+      const emailService = EmailService.getInstance();
+      const resetToken = emailService.generateResetToken();
+      
+      // Create token in database
+      const expiresAt = new Date();
+      expiresAt.setHours(expiresAt.getHours() + 1); // 1 hour expiry
+      
+      await storage.createPasswordResetToken({
+        userId: user.id,
+        token: resetToken,
+        email: user.email,
+        expiresAt,
+        isUsed: false,
+      });
+
+      // Send email
+      const emailSent = await emailService.sendPasswordResetEmail(user.email, resetToken);
+      
+      if (!emailSent) {
+        console.error("Failed to send password reset email");
+      }
+
+      res.json({ message: "If an account with that email exists, a reset link has been sent." });
+    } catch (error) {
+      console.error("Password reset request error:", error);
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ error: error.errors[0].message });
+      }
+      res.status(500).json({ error: "Password reset request failed" });
+    }
+  });
+
+  // Password Reset Confirmation
+  app.post("/api/admin/reset-password", async (req, res) => {
+    try {
+      const { token, newPassword } = z.object({
+        token: z.string(),
+        newPassword: z.string().min(8, "Password must be at least 8 characters")
+      }).parse(req.body);
+      
+      const resetToken = await storage.getPasswordResetToken(token);
+      
+      if (!resetToken) {
+        return res.status(400).json({ error: "Invalid reset token" });
+      }
+
+      if (resetToken.isUsed) {
+        return res.status(400).json({ error: "Reset token has already been used" });
+      }
+
+      if (new Date() > resetToken.expiresAt) {
+        return res.status(400).json({ error: "Reset token has expired" });
+      }
+
+      // Hash new password
+      const newPasswordHash = await hashPassword(newPassword);
+      
+      // Update user password
+      await storage.updateAdminUser(resetToken.userId, {
+        passwordHash: newPasswordHash
+      });
+
+      // Mark token as used
+      await storage.markPasswordResetTokenAsUsed(token);
+
+      res.json({ message: "Password reset successful" });
+    } catch (error) {
+      console.error("Password reset error:", error);
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ error: error.errors[0].message });
+      }
+      res.status(500).json({ error: "Password reset failed" });
+    }
+  });
+
   // Admin logout
   app.post("/api/admin/logout", requireAuth, async (req: any, res) => {
     try {

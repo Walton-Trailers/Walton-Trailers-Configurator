@@ -150,6 +150,16 @@ export default function AdminLogin() {
               </Button>
             </form>
 
+            <div className="mt-4 text-center">
+              <button
+                type="button"
+                className="text-sm text-blue-600 hover:text-blue-800 underline"
+                onClick={() => setLocation("/admin/forgot-password")}
+              >
+                Forgot Password?
+              </button>
+            </div>
+
             <div className="mt-6 text-sm text-gray-600">
               <p className="font-medium">Demo Credentials:</p>
               <p>Admin: username <code>admin</code>, password <code>admin123</code></p>
