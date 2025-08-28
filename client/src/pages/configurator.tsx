@@ -2103,10 +2103,34 @@ Configuration Date: ${new Date().toLocaleDateString()}
       {/* Pricing Configuration Modal */}
       <Dialog open={showPricingModal} onOpenChange={setShowPricingModal}>
         <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
-          <DialogHeader className="pb-4">
+          <DialogHeader className="pb-4 flex flex-row items-center justify-between space-y-0">
             <DialogTitle className="text-xl font-semibold">
               Configuration Summary
             </DialogTitle>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={async () => {
+                try {
+                  const { generateConfigurationPDF } = await import("@/lib/pdf-generator");
+                  generateConfigurationPDF(selectedModel, selectedOptions, totalPrice, options || []);
+                  toast({
+                    title: "PDF Downloaded",
+                    description: "Your configuration summary has been downloaded as a PDF.",
+                  });
+                } catch (error) {
+                  toast({
+                    title: "Download Failed",
+                    description: "Unable to generate PDF. Please try again.",
+                    variant: "destructive",
+                  });
+                }
+              }}
+              className="flex items-center gap-2"
+            >
+              <Download className="w-4 h-4" />
+              Download PDF
+            </Button>
           </DialogHeader>
           
           {selectedModel && (
