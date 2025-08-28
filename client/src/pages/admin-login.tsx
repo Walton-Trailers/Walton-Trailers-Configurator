@@ -157,6 +157,26 @@ export default function AdminLogin() {
             </div>
           </CardContent>
         </Card>
+
+        <div className="mt-6 space-y-3">
+          <Button
+            type="button"
+            variant="outline"
+            className="w-full"
+            onClick={() => setLocation("/")}
+          >
+            Return to Configurator
+          </Button>
+          
+          <div className="text-center">
+            <button
+              className="text-sm text-blue-600 hover:text-blue-800 underline"
+              onClick={() => setLocation("/dealer-login")}
+            >
+              Dealer Portal Login
+            </button>
+          </div>
+        </div>
       </div>
     </div>
   );
