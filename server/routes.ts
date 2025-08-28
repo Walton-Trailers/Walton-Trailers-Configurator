@@ -960,7 +960,7 @@ export async function registerRoutes(app: Express): Promise<Express> {
       }
 
       // Generate reset token
-      const { EmailService } = await import("./email");
+      const { EmailService } = await import("./email-service");
       const emailService = EmailService.getInstance();
       const resetToken = emailService.generateResetToken();
       
@@ -1033,6 +1033,112 @@ export async function registerRoutes(app: Express): Promise<Express> {
         return res.status(400).json({ error: error.errors[0].message });
       }
       res.status(500).json({ error: "Password reset failed" });
+    }
+  });
+
+  // Email Configuration Endpoints
+  app.get("/api/admin/email-config", requireAuth, requireAdmin, async (req: any, res) => {
+    try {
+      const { EmailConfigManager } = await import("./email-config");
+      const configManager = EmailConfigManager.getInstance();
+      
+      res.json({
+        config: configManager.getPublicSettings(),
+        validation: configManager.validateSettings()
+      });
+    } catch (error) {
+      console.error("Get email config error:", error);
+      res.status(500).json({ error: "Failed to get email configuration" });
+    }
+  });
+
+  app.post("/api/admin/email-config", requireAuth, requireAdmin, async (req: any, res) => {
+    try {
+      const { EmailConfigManager } = await import("./email-config");
+      const { EmailService } = await import("./email-service");
+      
+      const configManager = EmailConfigManager.getInstance();
+      const emailService = EmailService.getInstance();
+      
+      // Update configuration
+      configManager.updateSettings(req.body);
+      
+      // Validate new settings
+      const validation = configManager.validateSettings();
+      if (!validation.isValid) {
+        return res.status(400).json({ 
+          error: "Invalid configuration", 
+          details: validation.errors 
+        });
+      }
+
+      // Reconfigure email service with new settings
+      const settings = configManager.getSettings();
+      await emailService.configure({
+        provider: settings.provider,
+        from: settings.fromAddress,
+        smtp: settings.provider === 'smtp' ? {
+          host: settings.smtpHost!,
+          port: settings.smtpPort!,
+          secure: settings.smtpSecure!,
+          user: settings.smtpUser!,
+          pass: settings.smtpPass!
+        } : undefined,
+        gmail: settings.provider === 'gmail' ? {
+          user: settings.gmailUser!,
+          pass: settings.gmailAppPassword!
+        } : undefined,
+        outlook: settings.provider === 'outlook' ? {
+          user: settings.outlookUser!,
+          pass: settings.outlookPass!
+        } : undefined
+      });
+
+      res.json({ 
+        message: "Email configuration updated successfully",
+        config: configManager.getPublicSettings()
+      });
+    } catch (error) {
+      console.error("Update email config error:", error);
+      res.status(500).json({ error: "Failed to update email configuration" });
+    }
+  });
+
+  // Test Email Endpoint
+  app.post("/api/admin/test-email", requireAuth, requireAdmin, async (req: any, res) => {
+    try {
+      const { testEmail } = z.object({ 
+        testEmail: z.string().email() 
+      }).parse(req.body);
+
+      const { EmailService } = await import("./email-service");
+      const emailService = EmailService.getInstance();
+
+      const success = await emailService.sendEmail({
+        to: testEmail,
+        subject: "Test Email - Walton Trailers Admin",
+        text: "This is a test email from your Walton Trailers admin system. If you received this, your email configuration is working correctly!",
+        html: `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+          <h2 style="color: #1f2937;">Test Email</h2>
+          <p>This is a test email from your Walton Trailers admin system.</p>
+          <p style="color: #059669; font-weight: bold;">✅ Your email configuration is working correctly!</p>
+          <hr style="margin: 20px 0; border: none; border-top: 1px solid #e5e7eb;">
+          <p style="color: #6b7280; font-size: 14px;">Sent from Walton Trailers Admin System</p>
+        </div>`
+      });
+
+      if (success) {
+        res.json({ message: "Test email sent successfully!" });
+      } else {
+        res.status(500).json({ error: "Failed to send test email" });
+      }
+    } catch (error) {
+      console.error("Test email error:", error);
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ error: error.errors[0].message });
+      }
+      res.status(500).json({ error: "Failed to send test email" });
     }
   });
 

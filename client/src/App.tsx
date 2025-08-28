@@ -15,6 +15,7 @@ import DealerDashboard from "@/pages/dealer-dashboard";
 import AdminDealers from "@/pages/admin-dealers";
 import ForgotPassword from "@/pages/forgot-password";
 import ResetPassword from "@/pages/reset-password";
+import EmailSettings from "@/pages/email-settings";
 import { ClearDealerSession } from "@/components/clear-dealer-session";
 
 function Router() {
@@ -30,6 +31,7 @@ function Router() {
       <Route path="/admin/pricing-management" component={PricingManagement} />
       <Route path="/admin/account" component={AccountManagement} />
       <Route path="/admin/dealers" component={AdminDealers} />
+      <Route path="/admin/email-settings" component={EmailSettings} />
       <Route path="/dealer/login" component={DealerLogin} />
       <Route path="/dealer/dashboard" component={DealerDashboard} />
       <Route path="/dealer/clear" component={ClearDealerSession} />
