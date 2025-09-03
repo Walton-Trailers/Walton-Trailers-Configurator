@@ -1343,23 +1343,43 @@ Configuration Date: ${new Date().toLocaleDateString()}
                   </p>
                 </div>
 
-                {/* Key Specs */}
-                {models && models.length > 0 && (
-                  <div className="grid grid-cols-3 gap-4 mb-6">
-                    <div className="text-center">
-                      <div className="text-lg font-bold text-gray-900">24,000 lbs</div>
-                      <div className="text-sm text-gray-500">GVWR</div>
+                {/* Key Specs - Dynamic based on hovered or selected model */}
+                {models && models.length > 0 && (() => {
+                  // Filter models by series
+                  const filteredModels = models.filter(model => {
+                    if (selectedSeries === 'FBH') return model.name.includes('FBH');
+                    if (selectedSeries === 'FBX') return model.name.includes('FBX');
+                    if (selectedSeries === 'Skid-Steer Tilt') return model.name.toLowerCase().includes('skid');
+                    if (selectedSeries === 'Tilt Heavy Deckover Equipment Hauler') return model.name.toLowerCase().includes('heavy');
+                    if (selectedSeries === 'Mini-Tilt Equipment Trailer') return model.name.toLowerCase().includes('mini');
+                    if (selectedSeries === 'Dump Heavy-Duty') return model.name.toLowerCase().includes('heavy');
+                    if (selectedSeries === 'Dump Standard Duty') return !model.name.toLowerCase().includes('heavy');
+                    if (selectedSeries === 'MowPr') return model.name.toLowerCase().includes('mow');
+                    return false;
+                  });
+
+                  // Use hovered model, selected model, or first model as fallback
+                  const displayModel = hoveredModel || selectedModel || filteredModels[0];
+                  
+                  if (!displayModel) return null;
+                  
+                  return (
+                    <div className="grid grid-cols-3 gap-4 mb-6">
+                      <div className="text-center">
+                        <div className="text-lg font-bold text-gray-900">{displayModel.gvwr}</div>
+                        <div className="text-sm text-gray-500">GVWR</div>
+                      </div>
+                      <div className="text-center">
+                        <div className="text-lg font-bold text-gray-900">{displayModel.payload}</div>
+                        <div className="text-sm text-gray-500">Payload</div>
+                      </div>
+                      <div className="text-center">
+                        <div className="text-lg font-bold text-gray-900">{displayModel.deckSize}</div>
+                        <div className="text-sm text-gray-500">Deck Size</div>
+                      </div>
                     </div>
-                    <div className="text-center">
-                      <div className="text-lg font-bold text-gray-900">18,700 lbs</div>
-                      <div className="text-sm text-gray-500">Payload</div>
-                    </div>
-                    <div className="text-center">
-                      <div className="text-lg font-bold text-gray-900">96.5" x 24-28'</div>
-                      <div className="text-sm text-gray-500">Deck Size</div>
-                    </div>
-                  </div>
-                )}
+                  );
+                })()}
 
                 {/* Choose Your Model */}
                 <div className="mb-6">
@@ -1380,6 +1400,8 @@ Configuration Date: ${new Date().toLocaleDateString()}
                     <button
                       key={model.id}
                       onClick={() => setSelectedModel(model)}
+                      onMouseEnter={() => setHoveredModel(model)}
+                      onMouseLeave={() => setHoveredModel(null)}
                       className={`w-full p-4 rounded-lg border text-left transition-all duration-200 mb-3 ${
                         selectedModel?.id === model.id
                           ? 'border-gray-900 bg-gray-50'
