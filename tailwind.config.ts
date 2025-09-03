@@ -6,7 +6,7 @@ export default {
   theme: {
     extend: {
       fontFamily: {
-        sans: ['Oswald', 'sans-serif'],
+        sans: ["Oswald", "sans-serif"],
       },
       borderRadius: {
         lg: "var(--radius)",
@@ -15,7 +15,7 @@ export default {
       },
       colors: {
         brand: {
-          tan: "#c1af89",
+          tan: "#c1af88",
         },
         background: "var(--background)",
         foreground: "var(--foreground)",
