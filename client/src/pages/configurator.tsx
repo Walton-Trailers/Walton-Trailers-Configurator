@@ -373,15 +373,8 @@ export default function Configurator() {
 
   const handleModelSelect = (model: TrailerModel) => {
     setSelectedModel(model);
-    // Initialize with default values for length and pull options
+    // Initialize with default values for pull options
     const defaultOptions: Record<string, any> = {};
-    
-    // Set default length based on model
-    if (model.name.includes('FBH207')) {
-      defaultOptions.length = '16\'';
-    } else if (model.name.includes('FBH208')) {
-      defaultOptions.length = '22\'';
-    }
     
     // Set default pull option
     defaultOptions.pullOption = 'Bumper';
@@ -392,15 +385,8 @@ export default function Configurator() {
 
   const handleModelChange = (model: TrailerModel) => {
     setSelectedModel(model);
-    // Initialize with default values for length and pull options
+    // Initialize with default values for pull options
     const defaultOptions: Record<string, any> = {};
-    
-    // Set default length based on model
-    if (model.name.includes('FBH207')) {
-      defaultOptions.length = '16\'';
-    } else if (model.name.includes('FBH208')) {
-      defaultOptions.length = '22\'';
-    }
     
     // Set default pull option
     defaultOptions.pullOption = 'Bumper';
@@ -1420,17 +1406,15 @@ Configuration Date: ${new Date().toLocaleDateString()}
                       return (
                         <div className="relative">
                           <select
-                            value={selectedOptions.length || lengthOptions[0]?.name || ''}
+                            value={selectedOptions.length?.toString() || lengthOptions[0]?.id?.toString() || ''}
                             onChange={(e) => {
-                              const selectedOption = lengthOptions.find(opt => opt.name === e.target.value);
-                              if (selectedOption) {
-                                handleOptionChange('length', selectedOption.id, false, true);
-                              }
+                              const optionId = parseInt(e.target.value);
+                              handleOptionChange('length', optionId, false, true);
                             }}
                             className="w-full p-4 border border-gray-300 rounded-lg bg-white text-gray-900 font-medium appearance-none cursor-pointer hover:border-gray-400 focus:border-gray-900 focus:outline-none focus:ring-0"
                           >
                             {lengthOptions.map((option) => (
-                              <option key={option.id} value={option.name}>
+                              <option key={option.id} value={option.id}>
                                 {option.name} - {option.price === 0 ? 'Standard' : `+$${option.price.toLocaleString()}`}
                               </option>
                             ))}
