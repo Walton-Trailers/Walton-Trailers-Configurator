@@ -2177,37 +2177,6 @@ Configuration Date: ${new Date().toLocaleDateString()}
                 </div>
               )}
 
-              {/* Pricing Breakdown */}
-              <div className="border-t pt-4">
-                <div className="flex justify-between items-center mb-2">
-                  <span className="text-sm">Base Price</span>
-                  <span className="text-sm">${selectedModel.basePrice.toLocaleString()}</span>
-                </div>
-                {Object.entries(selectedOptions).map(([category, optionIds]) => {
-                  const categoryOptions = options?.filter(opt => opt.category === category) || [];
-                  const selectedCategoryOptions = Array.isArray(optionIds) 
-                    ? categoryOptions.filter(opt => optionIds.includes(opt.id))
-                    : categoryOptions.filter(opt => opt.id === optionIds);
-                  
-                  return selectedCategoryOptions.map(option => (
-                    option.price !== 0 && (
-                      <div key={option.id} className="flex justify-between items-center mb-2">
-                        <span className="text-sm text-zinc-600">{option.name}</span>
-                        <span className="text-sm">
-                          {option.price > 0 ? `+$${option.price.toLocaleString()}` : 
-                           `$${option.price.toLocaleString()}`}
-                        </span>
-                      </div>
-                    )
-                  ));
-                })}
-                <div className="border-t pt-2 mt-4">
-                  <div className="flex justify-between items-center">
-                    <span className="text-lg font-semibold">Total MSRP</span>
-                    <span className="text-lg font-bold">${totalPrice.toLocaleString()}</span>
-                  </div>
-                </div>
-              </div>
             </div>
           )}
         </DialogContent>
