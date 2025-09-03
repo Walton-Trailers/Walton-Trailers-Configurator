@@ -1516,10 +1516,9 @@ Configuration Date: ${new Date().toLocaleDateString()}
                                   return (
                                     <button
                                       key={option.id}
-                                      className={`flex-1 py-2 px-3 rounded-md transition-all duration-300 text-center ${
-                                        isSelected ? 'text-black shadow-sm' : 'text-black hover:text-black'
+                                      className={`flex-1 py-2 px-3 transition-all duration-300 text-center ${
+                                        isSelected ? 'bg-amber-100 ring-2 ring-black rounded-lg font-semibold' : 'bg-white ring-1 ring-gray-200 hover:ring-black rounded-lg'
                                       }`}
-                                      style={isSelected ? { backgroundColor: '#f8efdd' } : {}}
                                       onClick={() => handleOptionChange(category, option.id, false, true)}
                                     >
                                       <div className="font-medium text-sm">{option.name}</div>
@@ -1669,12 +1668,11 @@ Configuration Date: ${new Date().toLocaleDateString()}
                   ).map((model) => (
                     <button
                       key={model.id}
-                      className={`w-full p-4 rounded-lg transition-all duration-300 text-left ${
+                      className={`w-full p-4 transition-all duration-300 text-left ${
                         selectedModel.id === model.id 
-                          ? 'text-black border-0 outline-0' 
-                          : 'border-2 border-black text-black hover:border-gray-600 bg-white'
+                          ? 'bg-amber-100 ring-2 ring-black rounded-lg font-semibold' 
+                          : 'bg-white ring-1 ring-gray-200 hover:ring-black rounded-lg'
                       }`}
-                      style={selectedModel.id === model.id ? { backgroundColor: '#f8efdd' } : {}}
                       onClick={() => handleModelChange(model)}
                     >
                       <div className="flex justify-between items-center">
@@ -1788,32 +1786,22 @@ Configuration Date: ${new Date().toLocaleDateString()}
                 <h3 className="text-lg font-semibold">Pull Options</h3>
                 <div className="bg-gray-100 p-1 rounded-lg flex">
                   <button
-                    className={`flex-1 py-1.5 px-2 rounded-md transition-all duration-300 text-center ${
+                    className={`flex-1 py-1.5 px-2 transition-all duration-300 text-center ${
                       selectedOptions.pullOption === 'Bumper' || !selectedOptions.pullOption
-                        ? 'text-black shadow-sm'
-                        : 'text-black hover:text-black'
+                        ? 'bg-amber-100 ring-2 ring-black rounded-lg font-semibold'
+                        : 'bg-white ring-1 ring-gray-200 hover:ring-black rounded-lg'
                     }`}
-                    style={
-                      selectedOptions.pullOption === 'Bumper' || !selectedOptions.pullOption
-                        ? { backgroundColor: '#f8efdd' }
-                        : {}
-                    }
                     onClick={() => setSelectedOptions(prev => ({ ...prev, pullOption: 'Bumper' }))}
                   >
                     <div className="font-medium text-sm">Bumper Pull</div>
                     <div className="text-xs font-medium">$0</div>
                   </button>
                   <button
-                    className={`flex-1 py-1.5 px-2 rounded-md transition-all duration-300 text-center ${
+                    className={`flex-1 py-1.5 px-2 transition-all duration-300 text-center ${
                       selectedOptions.pullOption === 'Gooseneck'
-                        ? 'text-black shadow-sm'
-                        : 'text-black hover:text-black'
+                        ? 'bg-amber-100 ring-2 ring-black rounded-lg font-semibold'
+                        : 'bg-white ring-1 ring-gray-200 hover:ring-black rounded-lg'
                     }`}
-                    style={
-                      selectedOptions.pullOption === 'Gooseneck'
-                        ? { backgroundColor: '#f8efdd' }
-                        : {}
-                    }
                     onClick={() => setSelectedOptions(prev => ({ ...prev, pullOption: 'Gooseneck' }))}
                   >
                     <div className="font-medium text-sm">Gooseneck Pull</div>
@@ -1880,16 +1868,11 @@ Configuration Date: ${new Date().toLocaleDateString()}
                             return (
                               <button
                                 key={option.id}
-                                className={`flex-1 py-1.5 px-2 rounded-md transition-all duration-300 text-center ${
+                                className={`flex-1 py-1.5 px-2 transition-all duration-300 text-center ${
                                   isSelected
-                                    ? 'text-black shadow-sm'
-                                    : 'text-black hover:text-black'
+                                    ? 'bg-amber-100 ring-2 ring-black rounded-lg font-semibold'
+                                    : 'bg-white ring-1 ring-gray-200 hover:ring-black rounded-lg'
                                 }`}
-                                style={
-                                  isSelected
-                                    ? { backgroundColor: '#f8efdd' }
-                                    : {}
-                                }
                                 onClick={() => handleOptionChange(category, option.id, false, true)}
                               >
                                 <div className="font-medium text-sm">{option.name}</div>
