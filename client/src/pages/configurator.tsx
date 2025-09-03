@@ -298,6 +298,12 @@ export default function Configurator() {
     enabled: selectedCategory?.slug === 'flatbed'
   });
 
+  // Fetch series for Dump category
+  const { data: dumpSeries } = useQuery<any[]>({
+    queryKey: ['/api/categories', 'dump', 'series'],
+    enabled: selectedCategory?.slug === 'dump'
+  });
+
   // Calculate total price
   useEffect(() => {
     if (!selectedModel) {
@@ -1074,82 +1080,49 @@ Configuration Date: ${new Date().toLocaleDateString()}
             {/* Dump Trailers Series Selection */}
             {selectedCategory.slug === 'dump' && (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-4xl mx-auto">
-                {/* Dump Heavy-Duty */}
-                <div className="animate-in slide-in-from-bottom duration-700">
-                  <button
-                    className="w-full h-full text-left group relative overflow-hidden rounded-md border border-gray-200 bg-white hover:border-gray-300 hover:shadow-xl transition-all duration-500 hover:scale-[1.02]"
-                    onClick={() => handleSeriesSelect('Dump Heavy-Duty')}
-                  >
-                    <div className="flex flex-col h-full">
-                      {/* Top - Image */}
-                      <div className="w-full h-48 md:h-56 relative overflow-hidden rounded-t-md bg-orange-500 flex items-center justify-center">
-                        <div className="text-white text-2xl md:text-3xl font-bold tracking-wider text-center">
-                          HEAVY-DUTY
-                        </div>
-                      </div>
-                      
-                      {/* Bottom - Content */}
-                      <div className="w-full p-6 md:p-8 flex-1 flex flex-col justify-between">
-                        <div>
-                          <div className="flex items-center justify-between mb-3 md:mb-4">
-                            <h3 className="text-xl md:text-2xl font-semibold text-gray-900 group-hover:text-blue-600 transition-colors duration-300">
-                              Dump Heavy-Duty
-                            </h3>
-                            <ArrowRight className="w-5 h-5 text-gray-400 group-hover:text-blue-500 group-hover:translate-x-1 transition-all duration-300" />
+                {dumpSeries && dumpSeries.length > 0 ? (
+                  dumpSeries.map((series, index) => (
+                    <div key={series.id} className="animate-in slide-in-from-bottom duration-700" style={{ animationDelay: `${index * 150}ms` }}>
+                      <button
+                        className="w-full h-full text-left group relative overflow-hidden rounded-md border border-gray-200 bg-white hover:border-gray-300 hover:shadow-xl transition-all duration-500 hover:scale-[1.02]"
+                        onClick={() => handleSeriesSelect(series.name)}
+                      >
+                        <div className="flex flex-col h-full">
+                          {/* Top - Image */}
+                          <div className="w-full h-48 md:h-56 relative overflow-hidden rounded-t-md bg-orange-500 flex items-center justify-center">
+                            <div className="text-white text-2xl md:text-3xl font-bold tracking-wider text-center">
+                              {series.name.toUpperCase()}
+                            </div>
                           </div>
                           
-                          <p className="text-gray-600 mb-4 md:mb-6 leading-relaxed">
-                            Heavy-duty dump trailers built for demanding commercial applications with superior durability and higher payload capacity.
-                          </p>
-                        </div>
-                        
-                        <div className="text-lg md:text-xl font-semibold text-blue-600">
-                          Starting at ${models?.find(m => m.name.toLowerCase().includes('heavy'))?.basePrice.toLocaleString() || '24,500'}
-                        </div>
-                      </div>
-                    </div>
-                  </button>
-                </div>
-
-                {/* Dump Standard Duty */}
-                <div className="animate-in slide-in-from-bottom duration-700" style={{ animationDelay: '150ms' }}>
-                  <button
-                    className="w-full h-full text-left group relative overflow-hidden rounded-md border border-gray-200 bg-white hover:border-gray-300 hover:shadow-xl transition-all duration-500 hover:scale-[1.02]"
-                    onClick={() => handleSeriesSelect('Dump Standard Duty')}
-                  >
-                    <div className="flex flex-col h-full">
-                      {/* Top - Image */}
-                      <div className="w-full h-48 md:h-56 relative overflow-hidden rounded-t-md bg-orange-500 flex items-center justify-center">
-                        <div className="text-white text-2xl md:text-3xl font-bold tracking-wider text-center">
-                          STANDARD DUTY
-                        </div>
-                      </div>
-                      
-                      {/* Bottom - Content */}
-                      <div className="w-full p-6 md:p-8 flex-1 flex flex-col justify-between">
-                        <div>
-                          <div className="flex items-center justify-between mb-3 md:mb-4">
-                            <h3 className="text-xl md:text-2xl font-semibold text-gray-900 group-hover:text-blue-600 transition-colors duration-300">
-                              Dump Standard Duty
-                            </h3>
-                            <ArrowRight className="w-5 h-5 text-gray-400 group-hover:text-blue-500 group-hover:translate-x-1 transition-all duration-300" />
+                          {/* Bottom - Content */}
+                          <div className="w-full p-6 md:p-8 flex-1 flex flex-col justify-between">
+                            <div>
+                              <div className="flex items-center justify-between mb-3 md:mb-4">
+                                <h3 className="text-xl md:text-2xl font-semibold text-gray-900 group-hover:text-blue-600 transition-colors duration-300">
+                                  {series.name}
+                                </h3>
+                                <ArrowRight className="w-5 h-5 text-gray-400 group-hover:text-blue-500 group-hover:translate-x-1 transition-all duration-300" />
+                              </div>
+                              
+                              <p className="text-gray-600 mb-4 md:mb-6 leading-relaxed">
+                                {series.description || 'Professional dump trailer for your hauling needs.'}
+                              </p>
+                            </div>
+                            
+                            <div className="text-lg md:text-xl font-semibold text-blue-600">
+                              Starting at ${series.basePrice ? series.basePrice.toLocaleString() : '18,000'}
+                            </div>
                           </div>
-                          
-                          <p className="text-gray-600 mb-4 md:mb-6 leading-relaxed">
-                            Reliable standard duty dump trailers perfect for regular hauling needs with excellent value and performance.
-                          </p>
                         </div>
-                        
-                        <div className="text-lg md:text-xl font-semibold text-blue-600">
-                          Starting at ${models?.find(m => 
-                            m.name.toLowerCase().includes('standard') || 
-                            (!m.name.toLowerCase().includes('heavy') && m.categoryId === selectedCategory.id)
-                          )?.basePrice.toLocaleString() || '18,750'}
-                        </div>
-                      </div>
+                      </button>
                     </div>
-                  </button>
-                </div>
+                  ))
+                ) : (
+                  <div className="col-span-full text-center py-8">
+                    <p className="text-gray-500">Loading series options...</p>
+                  </div>
+                )}
               </div>
             )}
 
