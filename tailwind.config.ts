@@ -15,7 +15,7 @@ export default {
       },
       colors: {
         brand: {
-          tan: "#c1af88",
+          tan: "#c1af89",
         },
         background: "var(--background)",
         foreground: "var(--foreground)",
