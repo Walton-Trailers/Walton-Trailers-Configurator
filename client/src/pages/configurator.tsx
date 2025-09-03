@@ -297,17 +297,8 @@ export default function Configurator() {
     
     if (options && Object.keys(selectedOptions).length > 0) {
       Object.entries(selectedOptions).forEach(([category, selected]) => {
-        // Handle custom length and pull options
-        if (category === 'length' && selected) {
-          // Calculate length pricing based on model
-          if (selectedModel.name.includes('FBH207') && selected !== '16\'') {
-            const lengthFeet = parseInt(selected);
-            price += (lengthFeet - 16) * 500;
-          } else if (selectedModel.name.includes('FBH208') && selected !== '22\'') {
-            const lengthFeet = parseInt(selected);
-            price += (lengthFeet - 22) * 500;
-          }
-        } else if (category === 'pullOption' && selected === 'Gooseneck') {
+        // Handle custom pull options
+        if (category === 'pullOption' && selected === 'Gooseneck') {
           price += 2500;
         } else {
           // Handle database options
