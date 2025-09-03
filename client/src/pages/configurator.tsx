@@ -1519,7 +1519,7 @@ Configuration Date: ${new Date().toLocaleDateString()}
                                       className={`flex-1 py-2 px-3 transition-all duration-300 text-center ${
                                         isSelected ? 'border-2 border-black rounded-lg font-semibold focus-visible:outline focus-visible:outline-2 focus-visible:outline-black' : 'bg-white border-2 border-gray-200 hover:border-black rounded-lg focus-visible:outline focus-visible:outline-2 focus-visible:outline-black'
                                       }`}
-                                      style={isSelected ? { backgroundColor: '#c1af89' } : {}}
+                                      style={isSelected ? { backgroundColor: '#c3af84' } : {}}
                                       onClick={() => handleOptionChange(category, option.id, false, true)}
                                     >
                                       <div className="font-medium text-sm">{option.name}</div>
@@ -1674,7 +1674,7 @@ Configuration Date: ${new Date().toLocaleDateString()}
                           ? 'border-2 border-black rounded-lg font-semibold focus-visible:outline focus-visible:outline-2 focus-visible:outline-black' 
                           : 'bg-white border-2 border-gray-200 hover:border-black rounded-lg focus-visible:outline focus-visible:outline-2 focus-visible:outline-black'
                       }`}
-                      style={selectedModel.id === model.id ? { backgroundColor: '#c1af89' } : {}}
+                      style={selectedModel.id === model.id ? { backgroundColor: '#c3af84' } : {}}
                       onClick={() => handleModelChange(model)}
                     >
                       <div className="flex justify-between items-center">
@@ -1793,7 +1793,7 @@ Configuration Date: ${new Date().toLocaleDateString()}
                         ? 'border-2 border-black rounded-lg font-semibold focus-visible:outline focus-visible:outline-2 focus-visible:outline-black'
                         : 'bg-white border-2 border-gray-200 hover:border-black rounded-lg focus-visible:outline focus-visible:outline-2 focus-visible:outline-black'
                     }`}
-                    style={selectedOptions.pullOption === 'Bumper' || !selectedOptions.pullOption ? { backgroundColor: '#c1af89' } : {}}
+                    style={selectedOptions.pullOption === 'Bumper' || !selectedOptions.pullOption ? { backgroundColor: '#c3af84' } : {}}
                     onClick={() => setSelectedOptions(prev => ({ ...prev, pullOption: 'Bumper' }))}
                   >
                     <div className="font-medium text-sm">Bumper Pull</div>
@@ -1805,7 +1805,7 @@ Configuration Date: ${new Date().toLocaleDateString()}
                         ? 'border-2 border-black rounded-lg font-semibold focus-visible:outline focus-visible:outline-2 focus-visible:outline-black'
                         : 'bg-white border-2 border-gray-200 hover:border-black rounded-lg focus-visible:outline focus-visible:outline-2 focus-visible:outline-black'
                     }`}
-                    style={selectedOptions.pullOption === 'Gooseneck' ? { backgroundColor: '#c1af89' } : {}}
+                    style={selectedOptions.pullOption === 'Gooseneck' ? { backgroundColor: '#c3af84' } : {}}
                     onClick={() => setSelectedOptions(prev => ({ ...prev, pullOption: 'Gooseneck' }))}
                   >
                     <div className="font-medium text-sm">Gooseneck Pull</div>
@@ -1877,7 +1877,7 @@ Configuration Date: ${new Date().toLocaleDateString()}
                                     ? 'border-2 border-black rounded-lg font-semibold focus-visible:outline focus-visible:outline-2 focus-visible:outline-black'
                                     : 'bg-white border-2 border-gray-200 hover:border-black rounded-lg focus-visible:outline focus-visible:outline-2 focus-visible:outline-black'
                                 }`}
-                                style={isSelected ? { backgroundColor: '#c1af89' } : {}}
+                                style={isSelected ? { backgroundColor: '#c3af84' } : {}}
                                 onClick={() => handleOptionChange(category, option.id, false, true)}
                               >
                                 <div className="font-medium text-sm">{option.name}</div>
