@@ -1418,6 +1418,43 @@ Configuration Date: ${new Date().toLocaleDateString()}
                   ))}
                 </div>
 
+                {/* Length Selection for FBH Models */}
+                {selectedModel && selectedModel.name.includes('FBH') && options && (
+                  <div className="mb-6">
+                    <h3 className="text-lg font-semibold text-gray-900 mb-4">Length Options</h3>
+                    {(() => {
+                      const lengthOptions = options.filter(opt => opt.category === 'length');
+                      if (lengthOptions.length === 0) return null;
+                      
+                      return (
+                        <div className="relative">
+                          <select
+                            value={selectedOptions.length || lengthOptions[0]?.name || ''}
+                            onChange={(e) => {
+                              const selectedOption = lengthOptions.find(opt => opt.name === e.target.value);
+                              if (selectedOption) {
+                                handleOptionChange('length', selectedOption.id, false, true);
+                              }
+                            }}
+                            className="w-full p-4 border border-gray-300 rounded-lg bg-white text-gray-900 font-medium appearance-none cursor-pointer hover:border-gray-400 focus:border-gray-900 focus:outline-none focus:ring-0"
+                          >
+                            {lengthOptions.map((option) => (
+                              <option key={option.id} value={option.name}>
+                                {option.name} - {option.price === 0 ? 'Standard' : `+$${option.price.toLocaleString()}`}
+                              </option>
+                            ))}
+                          </select>
+                          <div className="absolute inset-y-0 right-0 flex items-center px-4 pointer-events-none">
+                            <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                            </svg>
+                          </div>
+                        </div>
+                      );
+                    })()}
+                  </div>
+                )}
+
                 {/* Standard Features */}
                 <div className="mb-6">
                   <div className="text-xs text-gray-500 mb-2">INCLUDED</div>
