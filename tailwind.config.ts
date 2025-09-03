@@ -14,6 +14,9 @@ export default {
         sm: "calc(var(--radius) - 4px)",
       },
       colors: {
+        brand: {
+          tan: "#c1af89",
+        },
         background: "var(--background)",
         foreground: "var(--foreground)",
         card: {

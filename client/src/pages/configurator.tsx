@@ -1517,7 +1517,7 @@ Configuration Date: ${new Date().toLocaleDateString()}
                                     <button
                                       key={option.id}
                                       className={`flex-1 py-2 px-3 transition-all duration-300 text-center ${
-                                        isSelected ? 'bg-amber-100 ring-2 ring-black rounded-lg font-semibold' : 'bg-white ring-1 ring-gray-200 hover:ring-black rounded-lg'
+                                        isSelected ? 'bg-brand-tan border-2 border-black rounded-lg font-semibold focus-visible:outline focus-visible:outline-2 focus-visible:outline-black' : 'bg-white border-2 border-gray-200 hover:border-black rounded-lg focus-visible:outline focus-visible:outline-2 focus-visible:outline-black'
                                       }`}
                                       onClick={() => handleOptionChange(category, option.id, false, true)}
                                     >
@@ -1670,8 +1670,8 @@ Configuration Date: ${new Date().toLocaleDateString()}
                       key={model.id}
                       className={`w-full p-4 transition-all duration-300 text-left ${
                         selectedModel.id === model.id 
-                          ? 'bg-amber-100 ring-2 ring-black rounded-lg font-semibold' 
-                          : 'bg-white ring-1 ring-gray-200 hover:ring-black rounded-lg'
+                          ? 'bg-brand-tan border-2 border-black rounded-lg font-semibold focus-visible:outline focus-visible:outline-2 focus-visible:outline-black' 
+                          : 'bg-white border-2 border-gray-200 hover:border-black rounded-lg focus-visible:outline focus-visible:outline-2 focus-visible:outline-black'
                       }`}
                       onClick={() => handleModelChange(model)}
                     >
@@ -1788,8 +1788,8 @@ Configuration Date: ${new Date().toLocaleDateString()}
                   <button
                     className={`flex-1 py-1.5 px-2 transition-all duration-300 text-center ${
                       selectedOptions.pullOption === 'Bumper' || !selectedOptions.pullOption
-                        ? 'bg-amber-100 ring-2 ring-black rounded-lg font-semibold'
-                        : 'bg-white ring-1 ring-gray-200 hover:ring-black rounded-lg'
+                        ? 'bg-brand-tan border-2 border-black rounded-lg font-semibold focus-visible:outline focus-visible:outline-2 focus-visible:outline-black'
+                        : 'bg-white border-2 border-gray-200 hover:border-black rounded-lg focus-visible:outline focus-visible:outline-2 focus-visible:outline-black'
                     }`}
                     onClick={() => setSelectedOptions(prev => ({ ...prev, pullOption: 'Bumper' }))}
                   >
@@ -1799,8 +1799,8 @@ Configuration Date: ${new Date().toLocaleDateString()}
                   <button
                     className={`flex-1 py-1.5 px-2 transition-all duration-300 text-center ${
                       selectedOptions.pullOption === 'Gooseneck'
-                        ? 'bg-amber-100 ring-2 ring-black rounded-lg font-semibold'
-                        : 'bg-white ring-1 ring-gray-200 hover:ring-black rounded-lg'
+                        ? 'bg-brand-tan border-2 border-black rounded-lg font-semibold focus-visible:outline focus-visible:outline-2 focus-visible:outline-black'
+                        : 'bg-white border-2 border-gray-200 hover:border-black rounded-lg focus-visible:outline focus-visible:outline-2 focus-visible:outline-black'
                     }`}
                     onClick={() => setSelectedOptions(prev => ({ ...prev, pullOption: 'Gooseneck' }))}
                   >
@@ -1870,8 +1870,8 @@ Configuration Date: ${new Date().toLocaleDateString()}
                                 key={option.id}
                                 className={`flex-1 py-1.5 px-2 transition-all duration-300 text-center ${
                                   isSelected
-                                    ? 'bg-amber-100 ring-2 ring-black rounded-lg font-semibold'
-                                    : 'bg-white ring-1 ring-gray-200 hover:ring-black rounded-lg'
+                                    ? 'bg-brand-tan border-2 border-black rounded-lg font-semibold focus-visible:outline focus-visible:outline-2 focus-visible:outline-black'
+                                    : 'bg-white border-2 border-gray-200 hover:border-black rounded-lg focus-visible:outline focus-visible:outline-2 focus-visible:outline-black'
                                 }`}
                                 onClick={() => handleOptionChange(category, option.id, false, true)}
                               >

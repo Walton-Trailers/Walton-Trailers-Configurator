@@ -1,0 +1,31 @@
+Goal: Make the selected option cards match the tan color used in the header and ensure the black border is always fully visible (not clipped). Also avoid any layout shift when toggling selection.
+
+1) Find the exact tan used in the header nav chips (the tan buttons next to Category/Series/Configure).
+   - If the tan is set via Tailwind class with a hex (e.g., bg-[#xxxxxx]), copy that hex.
+   - If it’s a CSS variable (e.g., var(--walton-tan)), reuse that variable.
+   - Create a Tailwind token if one doesn’t exist: in tailwind.config.ts add:
+     extend: { colors: { brand: { tan: "<the exact tan from the header>" } } }
+   - After this, we should be able to use `bg-brand-tan`.
+
+2) Update the option card component(s) used in the Configure step (the cards that currently use bg-amber-100 for the selected state):
+   - Replace the ring-based styling with border-based styling so the border can’t be clipped by any parent overflow.
+   - Keep a constant border width (2px) for both states to prevent layout shift.
+   - Use the header tan for the selected background, and a solid black border when selected.
+
+   The conditional class string should be equivalent to:
+
+   isSelected
+     ? "bg-brand-tan border-2 border-black rounded-lg font-semibold focus-visible:outline focus-visible:outline-2 focus-visible:outline-black"
+     : "bg-white border-2 border-gray-200 hover:border-black rounded-lg focus-visible:outline focus-visible:outline-2 focus-visible:outline-black"
+
+   Notes:
+   - If you couldn’t create `bg-brand-tan`, use the same class used in the header (e.g., `bg-[var(--walton-tan)]` or `bg-[#hex]`) in place of `bg-brand-tan`.
+   - Remove any `ring-*` classes from these cards.
+   - Ensure the card container does not apply styles that would visually clip the border. If there is `overflow-hidden` on a parent that still affects borders, either remove it from that wrapper or ensure the border is inside the element (which it will be since we're using `border-*` not `ring-*`).
+
+3) Apply the change everywhere those option cards are used.
+
+4) Reply with:
+   - The exact hex or variable used for the tan.
+   - The files you modified and the specific components updated.
+   - A brief diff or code snippet showing the before/after of the className.
