@@ -221,6 +221,18 @@ export async function registerRoutes(app: Express): Promise<Express> {
     }
   });
 
+  // Get series by category slug
+  app.get("/api/categories/:slug/series", async (req, res) => {
+    try {
+      const { slug } = req.params;
+      const series = await storage.getSeriesByCategory(slug);
+      res.json(series);
+    } catch (error) {
+      console.error("Error fetching series by category:", error);
+      res.status(500).json({ message: "Failed to fetch series" });
+    }
+  });
+
   // Create a new series
   app.post("/api/series", requireAuth, async (req, res) => {
     try {

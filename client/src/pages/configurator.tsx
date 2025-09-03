@@ -286,6 +286,12 @@ export default function Configurator() {
     enabled: !!selectedModel?.modelId
   });
 
+  // Fetch series for Equipment & Tilt category
+  const { data: equipmentTiltSeries } = useQuery<any[]>({
+    queryKey: ['/api/categories', 'equipment-tilt', 'series'],
+    enabled: selectedCategory?.slug === 'equipment-tilt'
+  });
+
   // Calculate total price
   useEffect(() => {
     if (!selectedModel) {

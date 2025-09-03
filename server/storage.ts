@@ -1227,6 +1227,34 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
+  async getSeriesByCategory(categorySlug: string): Promise<any[]> {
+    try {
+      const result = await db.execute(sql`
+        SELECT s.id, s.category_id, s.name, s.description, s.slug, s.base_price,
+               s.created_at, s.updated_at, c.name as category_name
+        FROM trailer_series s
+        JOIN trailer_categories c ON s.category_id = c.id
+        WHERE c.slug = ${categorySlug}
+        ORDER BY s.name
+      `);
+      
+      return result.rows.map((series: any) => ({
+        id: series.id,
+        categoryId: series.category_id,
+        name: series.name,
+        description: series.description,
+        slug: series.slug,
+        basePrice: series.base_price,
+        categoryName: series.category_name,
+        createdAt: series.created_at,
+        updatedAt: series.updated_at,
+      }));
+    } catch (error) {
+      console.error('Error fetching series by category:', error);
+      throw error;
+    }
+  }
+
   async createSeries(data: { categoryId: number; name: string; description: string; slug: string; basePrice: number }): Promise<any> {
     try {
       const result = await db.execute(sql`
