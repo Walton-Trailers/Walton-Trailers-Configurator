@@ -328,6 +328,25 @@ export default function Configurator() {
     setTotalPrice(price);
   }, [selectedModel, selectedOptions, options]);
 
+  // Calculate dynamic payload based on selected length option
+  const getDynamicPayload = () => {
+    if (!selectedModel || !options) {
+      return selectedModel?.payload || '10,432 lbs';
+    }
+
+    // For FBH models, check if a length is selected
+    if (selectedModel.name.includes('FBH') && selectedOptions.length) {
+      const lengthOptions = options.filter(opt => opt.category === 'length');
+      const selectedLengthOption = lengthOptions.find(opt => opt.id === selectedOptions.length);
+      if (selectedLengthOption && selectedLengthOption.payload) {
+        return `${selectedLengthOption.payload.toLocaleString()} lbs`;
+      }
+    }
+
+    // Default to model payload
+    return selectedModel.payload || '10,432 lbs';
+  };
+
   if (isLoading) {
     return (
       <div className="min-h-screen bg-white flex items-center justify-center">
@@ -423,7 +442,7 @@ WALTON TRAILERS SPECIFICATION SHEET
 
 Model: ${selectedModel.name}
 GVWR: ${selectedModel.gvwr}
-Payload: ${selectedModel.payload}
+Payload: ${getDynamicPayload()}
 Deck Size: ${selectedModel.deckSize}
 Axles: ${selectedModel.axles}
 
@@ -1669,7 +1688,7 @@ Configuration Date: ${new Date().toLocaleDateString()}
                     <div className="text-xs text-gray-500 mt-1">GVWR</div>
                   </div>
                   <div className="text-center">
-                    <div className="font-medium text-gray-900">{selectedModel.payload}</div>
+                    <div className="font-medium text-gray-900">{getDynamicPayload()}</div>
                     <div className="text-xs text-gray-500 mt-1">Payload</div>
                   </div>
                   <div className="text-center">
@@ -1987,7 +2006,7 @@ Configuration Date: ${new Date().toLocaleDateString()}
                     </div>
                     <div>
                       <span className="text-zinc-500">Payload: </span>
-                      <span className="font-medium">{selectedModel.payload}</span>
+                      <span className="font-medium">{getDynamicPayload()}</span>
                     </div>
                     <div>
                       <span className="text-zinc-500">Deck: </span>
@@ -2161,7 +2180,7 @@ Configuration Date: ${new Date().toLocaleDateString()}
                     <span className="font-medium">GVWR:</span> {selectedModel.gvwr}
                   </div>
                   <div>
-                    <span className="font-medium">Payload:</span> {selectedModel.payload}
+                    <span className="font-medium">Payload:</span> {getDynamicPayload()}
                   </div>
                   <div>
                     <span className="font-medium">Deck Size:</span> {selectedModel.deckSize}
