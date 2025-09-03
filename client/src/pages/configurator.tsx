@@ -292,6 +292,12 @@ export default function Configurator() {
     enabled: selectedCategory?.slug === 'equipment-tilt'
   });
 
+  // Fetch series for Flatbed category
+  const { data: flatbedSeries } = useQuery<any[]>({
+    queryKey: ['/api/categories', 'flatbed', 'series'],
+    enabled: selectedCategory?.slug === 'flatbed'
+  });
+
   // Calculate total price
   useEffect(() => {
     if (!selectedModel) {
@@ -972,75 +978,47 @@ Configuration Date: ${new Date().toLocaleDateString()}
             {/* Conditional Series Selection based on Category */}
             {selectedCategory.slug === 'flatbed' && (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-4xl mx-auto">
-                {/* FBH Models Card */}
-                <div className="animate-in slide-in-from-bottom duration-700">
-                  <button
-                    className="w-full text-left group relative overflow-hidden rounded-md border border-gray-200 bg-white hover:border-gray-300 hover:shadow-xl transition-all duration-500 hover:scale-[1.02]"
-                    onClick={() => handleSeriesSelect('FBH')}
-                  >
-                    <div className="flex flex-col">
-                      {/* Top - Image */}
-                      <div className="w-full h-48 md:h-56 relative overflow-hidden rounded-t-md bg-orange-500 flex items-center justify-center">
-                        <div className="text-white text-2xl md:text-3xl font-bold tracking-wider">
-                          FBH SERIES
+                {flatbedSeries && flatbedSeries.length > 0 ? (
+                  flatbedSeries.map((series, index) => (
+                    <div key={series.id} className="animate-in slide-in-from-bottom duration-700" style={{ animationDelay: `${index * 150}ms` }}>
+                      <button
+                        className="w-full text-left group relative overflow-hidden rounded-md border border-gray-200 bg-white hover:border-gray-300 hover:shadow-xl transition-all duration-500 hover:scale-[1.02]"
+                        onClick={() => handleSeriesSelect(series.name)}
+                      >
+                        <div className="flex flex-col">
+                          {/* Top - Image */}
+                          <div className="w-full h-48 md:h-56 relative overflow-hidden rounded-t-md bg-orange-500 flex items-center justify-center">
+                            <div className="text-white text-2xl md:text-3xl font-bold tracking-wider">
+                              {series.name.toUpperCase()}
+                            </div>
+                          </div>
+                          
+                          {/* Bottom - Content */}
+                          <div className="w-full p-6 md:p-8">
+                            <div className="flex items-center justify-between mb-3 md:mb-4">
+                              <h3 className="text-xl md:text-2xl font-semibold text-gray-900 group-hover:text-blue-600 transition-colors duration-300">
+                                {series.name}
+                              </h3>
+                              <ArrowRight className="w-5 h-5 text-gray-400 group-hover:text-blue-500 group-hover:translate-x-1 transition-all duration-300" />
+                            </div>
+                            
+                            <p className="text-gray-600 mb-4 md:mb-6 leading-relaxed">
+                              {series.description || 'Professional flatbed trailer for your hauling needs.'}
+                            </p>
+                            
+                            <div className="text-lg md:text-xl font-semibold text-blue-600">
+                              Starting at ${series.basePrice ? series.basePrice.toLocaleString() : '10,000'}
+                            </div>
+                          </div>
                         </div>
-                      </div>
-                      
-                      {/* Bottom - Content */}
-                      <div className="w-full p-6 md:p-8">
-                        <div className="flex items-center justify-between mb-3 md:mb-4">
-                          <h3 className="text-xl md:text-2xl font-semibold text-gray-900 group-hover:text-blue-600 transition-colors duration-300">
-                            FBH Models
-                          </h3>
-                          <ArrowRight className="w-5 h-5 text-gray-400 group-hover:text-blue-500 group-hover:translate-x-1 transition-all duration-300" />
-                        </div>
-                        
-                        <p className="text-gray-600 mb-4 md:mb-6 leading-relaxed">
-                          Heavy-duty flatbed trailers with superior stability and higher payload capacity for demanding commercial applications.
-                        </p>
-                        
-                        <div className="text-lg md:text-xl font-semibold text-blue-600">
-                          Starting at ${models?.find(m => m.name.includes('FBH'))?.basePrice.toLocaleString() || '12,345'}
-                        </div>
-                      </div>
+                      </button>
                     </div>
-                  </button>
-                </div>
-
-                {/* FBX Models Card */}
-                <div className="animate-in slide-in-from-bottom duration-700" style={{ animationDelay: '150ms' }}>
-                  <button
-                    className="w-full text-left group relative overflow-hidden rounded-md border border-gray-200 bg-white hover:border-gray-300 hover:shadow-xl transition-all duration-500 hover:scale-[1.02]"
-                    onClick={() => handleSeriesSelect('FBX')}
-                  >
-                    <div className="flex flex-col">
-                      {/* Top - Image */}
-                      <div className="w-full h-48 md:h-56 relative overflow-hidden rounded-t-md bg-orange-500 flex items-center justify-center">
-                        <div className="text-white text-2xl md:text-3xl font-bold tracking-wider">
-                          FBX SERIES
-                        </div>
-                      </div>
-                      
-                      {/* Bottom - Content */}
-                      <div className="w-full p-6 md:p-8">
-                        <div className="flex items-center justify-between mb-3 md:mb-4">
-                          <h3 className="text-xl md:text-2xl font-semibold text-gray-900 group-hover:text-blue-600 transition-colors duration-300">
-                            FBX Models
-                          </h3>
-                          <ArrowRight className="w-5 h-5 text-gray-400 group-hover:text-blue-500 group-hover:translate-x-1 transition-all duration-300" />
-                        </div>
-                        
-                        <p className="text-gray-600 mb-4 md:mb-6 leading-relaxed">
-                          Versatile flatbed trailers designed for enhanced performance and reliability across diverse hauling needs.
-                        </p>
-                        
-                        <div className="text-lg md:text-xl font-semibold text-blue-600">
-                          Starting at ${models?.find(m => m.name.includes('FBX'))?.basePrice.toLocaleString() || '15,450'}
-                        </div>
-                      </div>
-                    </div>
-                  </button>
-                </div>
+                  ))
+                ) : (
+                  <div className="col-span-full text-center py-8">
+                    <p className="text-gray-500">Loading series options...</p>
+                  </div>
+                )}
               </div>
             )}
 
