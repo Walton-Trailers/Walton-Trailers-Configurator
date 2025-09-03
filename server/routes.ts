@@ -10,7 +10,7 @@ import {
   hashPassword,
   isAdmin
 } from "./auth";
-import { insertAdminUserSchema, type AdminUser, trailerCategories, trailerModels, trailerSeries, customQuoteRequests, insertCustomQuoteRequestSchema, quoteRequests, insertQuoteRequestSchema, dealers, dealerSessions, dealerOrders, dealerUsers, dealerUserSessions, userConfigurations, mediaFiles, type Dealer, type DealerUser, type MediaFile } from "@shared/schema";
+import { insertAdminUserSchema, type AdminUser, trailerCategories, trailerModels, customQuoteRequests, insertCustomQuoteRequestSchema, quoteRequests, insertQuoteRequestSchema, dealers, dealerSessions, dealerOrders, dealerUsers, dealerUserSessions, userConfigurations, mediaFiles, type Dealer, type DealerUser, type MediaFile } from "@shared/schema";
 import { z } from "zod";
 import crypto from "crypto";
 import {
@@ -309,32 +309,6 @@ export async function registerRoutes(app: Express): Promise<Express> {
       res.json(models);
     } catch (error) {
       res.status(500).json({ message: "Failed to fetch models" });
-    }
-  });
-
-  // Get series by category
-  app.get("/api/categories/:categorySlug/series", async (req, res) => {
-    try {
-      const { categorySlug } = req.params;
-      
-      // Get category first
-      const category = await db.select().from(trailerCategories)
-        .where(eq(trailerCategories.slug, categorySlug))
-        .limit(1);
-      
-      if (!category.length) {
-        return res.status(404).json({ message: "Category not found" });
-      }
-
-      // Get series for this category
-      const series = await db.select().from(trailerSeries)
-        .where(eq(trailerSeries.categoryId, category[0].id))
-        .orderBy(trailerSeries.name);
-      
-      res.json(series);
-    } catch (error) {
-      console.error("Error fetching series by category:", error);
-      res.status(500).json({ message: "Failed to fetch series" });
     }
   });
 
