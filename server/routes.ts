@@ -867,6 +867,26 @@ export async function registerRoutes(app: Express): Promise<Express> {
     }
   });
 
+  // Get all series for admin dropdowns
+  app.get("/api/series/all", requireAuth, async (req, res) => {
+    try {
+      const series = await storage.getAllSeries();
+      console.log("Found series:", series.length);
+      
+      // Set cache control headers to prevent stale data
+      res.set({
+        'Cache-Control': 'no-cache, no-store, must-revalidate',
+        'Pragma': 'no-cache',
+        'Expires': '0'
+      });
+      
+      res.json(series);
+    } catch (error) {
+      console.error("Error fetching all series:", error);
+      res.status(500).json({ message: "Failed to fetch series" });
+    }
+  });
+
   // Get specific model
   app.get("/api/models/:modelId", async (req, res) => {
     try {

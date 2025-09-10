@@ -142,6 +142,15 @@ export default function PricingManagement() {
       }),
   });
 
+  // Fetch all series for dropdown
+  const { data: allSeries, isLoading: allSeriesLoading } = useQuery({
+    queryKey: ["/api/series/all"],
+    queryFn: () =>
+      apiRequest("/api/series/all", {
+        headers: sessionId ? { Authorization: `Bearer ${sessionId}` } : {},
+      }),
+  });
+
   // Fetch all options
   const { data: options, isLoading: optionsLoading } = useQuery({
     queryKey: ["/api/options/all"],
@@ -587,6 +596,7 @@ export default function PricingManagement() {
       deckSize: data.deckSize !== undefined ? data.deckSize : model.deckSize,
       categoryId: data.categoryId !== undefined ? data.categoryId : model.categoryId,
       categorySubType: data.categorySubType !== undefined ? data.categorySubType : model.categorySubType,
+      seriesId: data.seriesId !== undefined ? data.seriesId : model.seriesId,
     });
   };
 
@@ -1406,6 +1416,7 @@ export default function PricingManagement() {
                         <TableHead>Model ID</TableHead>
                         <TableHead>Model Name</TableHead>
                         <TableHead>Category</TableHead>
+                        <TableHead>Series</TableHead>
                         <TableHead>Category Sub Type</TableHead>
                         <TableHead>GVWR</TableHead>
                         <TableHead>Payload</TableHead>
@@ -1552,6 +1563,31 @@ export default function PricingManagement() {
                           <TableCell>
                             {editingModel?.id === model.id ? (
                               <Select 
+                                value={editData[model.id]?.seriesId?.toString() ?? model.seriesId?.toString() ?? ''}
+                                onValueChange={(value) => setEditData(prev => ({
+                                  ...prev,
+                                  [model.id]: { ...prev[model.id], seriesId: value ? parseInt(value) : null }
+                                }))}
+                              >
+                                <SelectTrigger className="w-40">
+                                  <SelectValue placeholder="Select series" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="">No Series</SelectItem>
+                                  {allSeries?.filter((series: any) => series.categoryId === model.categoryId).map((series: any) => (
+                                    <SelectItem key={series.id} value={series.id.toString()}>
+                                      {series.name}
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                            ) : (
+                              <span className="text-sm text-gray-600">{model.seriesName || 'No Series'}</span>
+                            )}
+                          </TableCell>
+                          <TableCell>
+                            {editingModel?.id === model.id ? (
+                              <Select 
                                 value={editData[model.id]?.categorySubType ?? model.categorySubType ?? ''}
                                 onValueChange={(value) => setEditData(prev => ({
                                   ...prev,
@@ -1679,7 +1715,8 @@ export default function PricingManagement() {
                                     payload: model.payload,
                                     deckSize: model.deckSize,
                                     categoryId: model.categoryId,
-                                    categorySubType: model.categorySubType
+                                    categorySubType: model.categorySubType,
+                                    seriesId: model.seriesId
                                   } });
                                 }}
                               >
