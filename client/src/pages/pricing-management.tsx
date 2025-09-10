@@ -1409,6 +1409,7 @@ export default function PricingManagement() {
                 {modelsLoading ? (
                   <div className="text-center py-8">Loading models...</div>
                 ) : filteredModels && filteredModels.length > 0 ? (
+                  <div className="overflow-x-auto">
                   <Table>
                     <TableHeader>
                       <TableRow>
@@ -1728,6 +1729,7 @@ export default function PricingManagement() {
                       ))}
                     </TableBody>
                   </Table>
+                  </div>
                 ) : (
                   <div className="text-center py-8 text-gray-500">
                     No trailer models found
