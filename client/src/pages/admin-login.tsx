@@ -159,12 +159,6 @@ export default function AdminLogin() {
                 Forgot Password?
               </button>
             </div>
-
-            <div className="mt-6 text-sm text-gray-600">
-              <p className="font-medium">Demo Credentials:</p>
-              <p>Admin: username <code>admin</code>, password <code>admin123</code></p>
-              <p>Employee: username <code>employee</code>, password <code>user123</code></p>
-            </div>
           </CardContent>
         </Card>
 
