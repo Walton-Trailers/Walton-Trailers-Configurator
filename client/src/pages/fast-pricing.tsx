@@ -1173,10 +1173,10 @@ export default function FastPricing() {
                   <TableHead>Model ID</TableHead>
                   <TableHead>Name</TableHead>
                   <TableHead>Category</TableHead>
+                  <TableHead>Associated Series</TableHead>
                   <TableHead>Price</TableHead>
                   <TableHead>Image</TableHead>
                   <TableHead>Actions</TableHead>
-                  <TableHead>Associated Series</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -1227,6 +1227,9 @@ export default function FastPricing() {
                       ) : (
                         model.categoryName
                       )}
+                    </TableCell>
+                    <TableCell>
+                      n/a
                     </TableCell>
                     <TableCell>
                       {editingModel?.id === model.id ? (
@@ -1307,9 +1310,6 @@ export default function FastPricing() {
                           <Edit className="w-4 h-4" />
                         </Button>
                       )}
-                    </TableCell>
-                    <TableCell>
-                      n/a
                     </TableCell>
                   </TableRow>
                 ))}
