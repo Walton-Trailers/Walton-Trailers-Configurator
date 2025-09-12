@@ -94,6 +94,7 @@ export default function FastPricing() {
   const [editingSeries, setEditingSeries] = useState<any>(null);
   const [seriesData, setSeriesData] = useState<any[]>([]);
   const [showAddSeries, setShowAddSeries] = useState(false);
+  const [seriesSelection, setSeriesSelection] = useState<Record<number, string>>({});
   const [newSeriesData, setNewSeriesData] = useState({
     categoryId: 0,
     name: "",
@@ -1231,14 +1232,14 @@ export default function FastPricing() {
                     <TableCell>
                       {editingModel?.id === model.id ? (
                         <Select
-                          value={editData[model.id]?.associatedSeries ?? ""}
-                          onValueChange={(value: string) => setEditData({
-                            ...editData,
-                            [model.id]: { ...editData[model.id], associatedSeries: value }
-                          })}
+                          value={seriesSelection[model.id] ?? "1"}
+                          onValueChange={(value: string) => setSeriesSelection(prev => ({ 
+                            ...prev, 
+                            [model.id]: value 
+                          }))}
                         >
                           <SelectTrigger className="w-full">
-                            <SelectValue placeholder="Select series" />
+                            <SelectValue />
                           </SelectTrigger>
                           <SelectContent>
                             <SelectItem value="1">1</SelectItem>
@@ -1246,7 +1247,7 @@ export default function FastPricing() {
                           </SelectContent>
                         </Select>
                       ) : (
-                        editData[model.id]?.associatedSeries || "n/a"
+                        seriesSelection[model.id] ?? "1"
                       )}
                     </TableCell>
                     <TableCell>
