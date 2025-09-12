@@ -1176,6 +1176,7 @@ export default function FastPricing() {
                   <TableHead>Price</TableHead>
                   <TableHead>Image</TableHead>
                   <TableHead>Actions</TableHead>
+                  <TableHead>Associated Series</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -1306,6 +1307,9 @@ export default function FastPricing() {
                           <Edit className="w-4 h-4" />
                         </Button>
                       )}
+                    </TableCell>
+                    <TableCell>
+                      n/a
                     </TableCell>
                   </TableRow>
                 ))}
