@@ -1229,7 +1229,25 @@ export default function FastPricing() {
                       )}
                     </TableCell>
                     <TableCell>
-                      n/a
+                      {editingModel?.id === model.id ? (
+                        <Select
+                          value={editData[model.id]?.associatedSeries ?? ""}
+                          onValueChange={(value: string) => setEditData({
+                            ...editData,
+                            [model.id]: { ...editData[model.id], associatedSeries: value }
+                          })}
+                        >
+                          <SelectTrigger className="w-full">
+                            <SelectValue placeholder="Select series" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="1">1</SelectItem>
+                            <SelectItem value="2">2</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      ) : (
+                        editData[model.id]?.associatedSeries || "n/a"
+                      )}
                     </TableCell>
                     <TableCell>
                       {editingModel?.id === model.id ? (
