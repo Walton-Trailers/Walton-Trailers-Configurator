@@ -126,7 +126,7 @@ export default function FastPricing() {
 
   // Load series on mount and when tab changes
   useEffect(() => {
-    if (activeTab === 'series') {
+    if (activeTab === 'series' || activeTab === 'models') {
       fetchSeries();
     }
   }, [activeTab]);
@@ -1232,7 +1232,7 @@ export default function FastPricing() {
                     <TableCell>
                       {editingModel?.id === model.id ? (
                         <Select
-                          value={seriesSelection[model.id] ?? "1"}
+                          value={seriesSelection[model.id] ?? (seriesData[0]?.name || "")}
                           onValueChange={(value: string) => setSeriesSelection(prev => ({ 
                             ...prev, 
                             [model.id]: value 
@@ -1242,12 +1242,15 @@ export default function FastPricing() {
                             <SelectValue />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="1">1</SelectItem>
-                            <SelectItem value="2">2</SelectItem>
+                            {seriesData.map((series) => (
+                              <SelectItem key={series.id} value={series.name}>
+                                {series.name}
+                              </SelectItem>
+                            ))}
                           </SelectContent>
                         </Select>
                       ) : (
-                        seriesSelection[model.id] ?? "1"
+                        seriesSelection[model.id] ?? (seriesData[0]?.name || "")
                       )}
                     </TableCell>
                     <TableCell>
