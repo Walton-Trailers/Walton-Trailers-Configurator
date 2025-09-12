@@ -1417,7 +1417,7 @@ export default function PricingManagement() {
                         <TableHead>Model ID</TableHead>
                         <TableHead>Model Name</TableHead>
                         <TableHead>Category</TableHead>
-                        <TableHead>Series</TableHead>
+                        <TableHead>Associated Series</TableHead>
                         <TableHead>Category Sub Type</TableHead>
                         <TableHead>GVWR</TableHead>
                         <TableHead>Payload</TableHead>
