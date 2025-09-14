@@ -1120,7 +1120,7 @@ export default function FastPricing() {
                     <TableCell>
                       {editingModel?.id === model.id ? (
                         <Select
-                          value={seriesSelection[model.id] ?? "No Series"}
+                          value={seriesSelection[model.id] ?? model.series ?? "No Series"}
                           onValueChange={(value: string) => setSeriesSelection(prev => ({ 
                             ...prev, 
                             [model.id]: value 
@@ -1139,7 +1139,7 @@ export default function FastPricing() {
                           </SelectContent>
                         </Select>
                       ) : (
-                        seriesSelection[model.id] ?? "No Series"
+                        model.series ?? "No Series"
                       )}
                     </TableCell>
                     <TableCell>
@@ -1216,7 +1216,14 @@ export default function FastPricing() {
                         <Button
                           size="sm"
                           variant="outline"
-                          onClick={() => setEditingModel(model)}
+                          onClick={() => {
+                            setEditingModel(model);
+                            // Initialize seriesSelection with current model's series
+                            setSeriesSelection(prev => ({
+                              ...prev,
+                              [model.id]: model.series ?? "No Series"
+                            }));
+                          }}
                         >
                           <Edit className="w-4 h-4" />
                         </Button>
