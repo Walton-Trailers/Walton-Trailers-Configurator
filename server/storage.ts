@@ -964,6 +964,13 @@ export class DatabaseStorage implements IStorage {
           WHERE id = ${id}
         `);
       }
+      if (updates.series !== undefined) {
+        await db.execute(sql`
+          UPDATE trailer_models 
+          SET series = ${updates.series}
+          WHERE id = ${id}
+        `);
+      }
       if (updates.seriesId !== undefined) {
         await db.execute(sql`
           UPDATE trailer_models 

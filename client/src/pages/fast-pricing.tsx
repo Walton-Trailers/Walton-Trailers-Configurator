@@ -250,12 +250,8 @@ export default function FastPricing() {
     const data = editData[model.id] || {};
     const selectedSeriesName = seriesSelection[model.id];
     
-    // Find the series ID based on the selected series name
-    let seriesId = null;
-    if (selectedSeriesName && selectedSeriesName !== "No Series") {
-      const selectedSeries = seriesData.find(series => series.name === selectedSeriesName);
-      seriesId = selectedSeries?.id || null;
-    }
+    // Use the series name directly as text (or null if "No Series")
+    const seriesText = selectedSeriesName && selectedSeriesName !== "No Series" ? selectedSeriesName : null;
     
     updateMutation.mutate({
       id: model.id,
@@ -263,7 +259,7 @@ export default function FastPricing() {
       name: data.name ?? model.name,
       categoryId: data.categoryId ?? model.categoryId,
       basePrice: data.basePrice ?? model.basePrice,
-      seriesId: seriesId,
+      series: seriesText,
     });
   };
 

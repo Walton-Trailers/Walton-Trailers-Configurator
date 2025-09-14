@@ -19,6 +19,7 @@ export const trailerModels = pgTable("trailer_models", {
   id: serial("id").primaryKey(),
   categoryId: integer("category_id").notNull(),
   seriesId: integer("series_id"), // links to trailerSeries table
+  series: text("series"), // series name as text (e.g., "FBH", "FBX")
   modelSeries: text("model_series").notNull(), // e.g., DHV207, FBH208
   name: text("name").notNull(),
   pullType: text("pull_type"), // 'bumper', 'gooseneck', 'both'
