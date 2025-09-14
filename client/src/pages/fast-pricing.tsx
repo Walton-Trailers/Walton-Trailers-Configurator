@@ -102,8 +102,6 @@ export default function FastPricing() {
     slug: "",
     basePrice: 0
   });
-  const [showEditModels, setShowEditModels] = useState(false);
-  const [editingSeriesModels, setEditingSeriesModels] = useState<any>(null);
 
   const sessionId = localStorage.getItem("admin_session");
   const queryClient = useQueryClient();
@@ -178,24 +176,6 @@ export default function FastPricing() {
     },
   });
 
-  const updateSeriesModelsMutation = useMutation({
-    mutationFn: ({ seriesId, modelIds }: { seriesId: number; modelIds: number[] }) => 
-      fastMutate(`/api/series/${seriesId}/models`, {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${sessionId}`,
-        },
-        body: JSON.stringify({ modelIds }),
-      }),
-    onSuccess: () => {
-      fetchSeries();
-      queryClient.invalidateQueries({ queryKey: ['admin', 'models'] });
-      setShowEditModels(false);
-      setEditingSeriesModels(null);
-      toast({ title: "Success", description: "Model assignments updated successfully" });
-    },
-  });
 
   // Fast filtering with memoization
   const { activeModels, archivedModels } = useMemo(() => {
@@ -868,7 +848,7 @@ export default function FastPricing() {
                           <label className="block text-sm font-medium mb-1">Category</label>
                           <Select
                             value={newSeriesData.categoryId > 0 ? newSeriesData.categoryId.toString() : ""}
-                            onValueChange={(value) => setNewSeriesData({ ...newSeriesData, categoryId: parseInt(value) })}
+                            onValueChange={(value: string) => setNewSeriesData({ ...newSeriesData, categoryId: parseInt(value) })}
                           >
                             <option value="">Select category</option>
                             {categories.map((category: any) => (
@@ -1047,17 +1027,6 @@ export default function FastPricing() {
                                 size="sm"
                                 variant="outline"
                                 onClick={() => {
-                                  setEditingSeriesModels(series);
-                                  setShowEditModels(true);
-                                }}
-                                title="Edit model assignments"
-                              >
-                                <span className="text-xs">Models</span>
-                              </Button>
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                onClick={() => {
                                   if (confirm('Are you sure you want to delete this series?')) {
                                     deleteSeriesMutation.mutate(series.id);
                                   }
@@ -1079,78 +1048,6 @@ export default function FastPricing() {
           </Card>
         )}
 
-        {/* Edit Models Dialog */}
-        {showEditModels && editingSeriesModels && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-            <div className="bg-white rounded-lg p-6 max-w-4xl w-full max-h-[80vh] overflow-y-auto">
-              <h3 className="text-lg font-semibold mb-4">
-                Edit Models for "{editingSeriesModels.name}"
-              </h3>
-              <p className="text-sm text-gray-600 mb-4">
-                Select which models belong to this series:
-              </p>
-              
-              <div className="space-y-2 max-h-96 overflow-y-auto border rounded p-4">
-                {models
-                  .filter((model: any) => model.categoryId === editingSeriesModels.categoryId)
-                  .map((model: any) => {
-                    const isAssigned = model.seriesId === editingSeriesModels.id;
-                    return (
-                      <label key={model.id} className="flex items-center space-x-3 p-2 hover:bg-gray-50 rounded">
-                        <input
-                          type="checkbox"
-                          checked={isAssigned}
-                          onChange={(e) => {
-                            // Update the model's seriesId locally for immediate feedback
-                            const updatedModels = models.map((m: any) => 
-                              m.id === model.id 
-                                ? { ...m, seriesId: e.target.checked ? editingSeriesModels.id : null }
-                                : m
-                            );
-                            // This is just for UI feedback - the actual update happens on save
-                          }}
-                          className="rounded border-gray-300"
-                        />
-                        <div className="flex-1">
-                          <div className="font-medium text-sm">{model.name}</div>
-                          <div className="text-xs text-gray-500">
-                            {model.modelId} • ${model.basePrice?.toLocaleString()}
-                          </div>
-                        </div>
-                      </label>
-                    );
-                  })}
-              </div>
-              
-              <div className="flex justify-end gap-3 mt-6">
-                <Button 
-                  variant="outline" 
-                  onClick={() => {
-                    setShowEditModels(false);
-                    setEditingSeriesModels(null);
-                  }}
-                >
-                  Cancel
-                </Button>
-                <Button 
-                  onClick={() => {
-                    const selectedModelIds = models
-                      .filter((model: any) => model.seriesId === editingSeriesModels.id)
-                      .map((model: any) => model.id);
-                    
-                    updateSeriesModelsMutation.mutate({
-                      seriesId: editingSeriesModels.id,
-                      modelIds: selectedModelIds
-                    });
-                  }}
-                  disabled={updateSeriesModelsMutation.isPending}
-                >
-                  {updateSeriesModelsMutation.isPending ? 'Saving...' : 'Save Changes'}
-                </Button>
-              </div>
-            </div>
-          </div>
-        )}
 
         {/* Models table */}
         {activeTab === "models" && (
