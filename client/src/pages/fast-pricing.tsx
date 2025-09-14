@@ -1012,17 +1012,6 @@ export default function FastPricing() {
                               >
                                 <X className="w-4 h-4" />
                               </Button>
-                            </>
-                          ) : (
-                            <>
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                onClick={() => setEditingSeries(series)}
-                                title="Edit series details"
-                              >
-                                <Edit className="w-4 h-4" />
-                              </Button>
                               <Button
                                 size="sm"
                                 variant="outline"
@@ -1033,8 +1022,20 @@ export default function FastPricing() {
                                 }}
                                 disabled={deleteSeriesMutation.isPending}
                                 title="Delete series"
+                                className="text-red-600 hover:text-red-700 hover:bg-red-50"
                               >
                                 <X className="w-4 h-4" />
+                              </Button>
+                            </>
+                          ) : (
+                            <>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => setEditingSeries(series)}
+                                title="Edit series details"
+                              >
+                                <Edit className="w-4 h-4" />
                               </Button>
                             </>
                           )}
