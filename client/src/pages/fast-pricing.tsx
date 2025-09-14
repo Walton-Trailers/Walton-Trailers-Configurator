@@ -230,8 +230,12 @@ export default function FastPricing() {
     const data = editData[model.id] || {};
     const selectedSeriesName = seriesSelection[model.id];
     
-    // Use the series name directly as text (or null if "No Series")
-    const seriesText = selectedSeriesName && selectedSeriesName !== "No Series" ? selectedSeriesName : null;
+    // Convert series name to series_id by looking it up in seriesData
+    let seriesId = null;
+    if (selectedSeriesName && selectedSeriesName !== "No Series") {
+      const foundSeries = seriesData.find(series => series.name === selectedSeriesName);
+      seriesId = foundSeries ? foundSeries.id : null;
+    }
     
     updateMutation.mutate({
       id: model.id,
@@ -239,7 +243,7 @@ export default function FastPricing() {
       name: data.name ?? model.name,
       categoryId: data.categoryId ?? model.categoryId,
       basePrice: data.basePrice ?? model.basePrice,
-      series: seriesText,
+      seriesId: seriesId, // Use the foreign key instead of text
     });
   };
 
