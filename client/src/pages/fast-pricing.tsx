@@ -207,6 +207,7 @@ export default function FastPricing() {
       queryClient.invalidateQueries({ queryKey: ['admin', 'models'] });
       setEditingModel(null);
       setEditData({});
+      setSeriesSelection({}); // Clear series selection state
     },
   });
 

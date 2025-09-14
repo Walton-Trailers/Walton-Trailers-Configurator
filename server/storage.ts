@@ -994,11 +994,14 @@ export class DatabaseStorage implements IStorage {
         `);
       }
       
-      // Get the updated record
+      // Get the updated record with series information
       const result = await db.execute(sql`
-        SELECT id, category_id, model_id, name, gvwr, payload,
-               deck_size, axles, base_price, image_url, features, is_archived, category_sub_type
-        FROM trailer_models WHERE id = ${id}
+        SELECT m.id, m.category_id, m.series_id, m.model_id, m.name, m.gvwr, m.payload,
+               m.deck_size, m.axles, m.base_price, m.image_url, m.features, m.is_archived, 
+               m.category_sub_type, s.name as series_name
+        FROM trailer_models m
+        LEFT JOIN trailer_series s ON m.series_id = s.id
+        WHERE m.id = ${id}
       `);
       
       const updatedModel = result.rows[0] as any;
@@ -1009,6 +1012,8 @@ export class DatabaseStorage implements IStorage {
       return {
         id: updatedModel.id,
         categoryId: updatedModel.category_id,
+        seriesId: updatedModel.series_id,
+        series: updatedModel.series_name, // From the JOIN with trailer_series
         modelId: updatedModel.model_id,
         name: updatedModel.name,
         gvwr: updatedModel.gvwr,
@@ -1019,6 +1024,7 @@ export class DatabaseStorage implements IStorage {
         imageUrl: updatedModel.image_url,
         features: updatedModel.features || [],
         categorySubType: updatedModel.category_sub_type,
+        seriesName: updatedModel.series_name, // For backward compatibility
         isArchived: updatedModel.is_archived || false,
       };
     } catch (error) {
