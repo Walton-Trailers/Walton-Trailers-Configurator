@@ -933,7 +933,6 @@ export default function FastPricing() {
                   <TableRow>
                     <TableHead>Name</TableHead>
                     <TableHead>Category</TableHead>
-                    <TableHead>Models</TableHead>
                     <TableHead>Slug</TableHead>
                     <TableHead>Base Price</TableHead>
                     <TableHead>Actions</TableHead>
@@ -974,22 +973,7 @@ export default function FastPricing() {
                           series.categoryName || 'Unknown'
                         )}
                       </TableCell>
-                      <TableCell>
-                        {(() => {
-                          const seriesModels = models.filter((model: any) => model.seriesId === series.id);
-                          return seriesModels.length > 0 ? (
-                            <div className="text-sm">
-                              <span className="font-medium">{seriesModels.length} models:</span>
-                              <div className="text-gray-600 text-xs mt-1">
-                                {seriesModels.slice(0, 2).map((model: any) => model.modelId).join(', ')}
-                                {seriesModels.length > 2 && ` +${seriesModels.length - 2} more`}
-                              </div>
-                            </div>
-                          ) : (
-                            <span className="text-gray-400 text-sm">No models</span>
-                          );
-                        })()}
-                      </TableCell>
+                      
                       <TableCell>
                         {editingSeries?.id === series.id ? (
                           <Input
