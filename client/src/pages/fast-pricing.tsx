@@ -1180,7 +1180,7 @@ export default function FastPricing() {
                   <TableHead>Model ID</TableHead>
                   <TableHead>Name</TableHead>
                   <TableHead>Category</TableHead>
-                  <TableHead>Associated Series</TableHead>
+                  <TableHead>Series</TableHead>
                   <TableHead>Price</TableHead>
                   <TableHead>Image</TableHead>
                   <TableHead>Actions</TableHead>
