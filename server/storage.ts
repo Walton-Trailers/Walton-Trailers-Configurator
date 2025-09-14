@@ -821,13 +821,11 @@ export class DatabaseStorage implements IStorage {
   async getAllModels(): Promise<TrailerModelResponse[]> {
     try {
       const result = await db.execute(sql`
-        SELECT m.id, m.category_id, m.series_id, m.model_id, m.name, m.gvwr, m.payload,
+        SELECT m.id, m.category_id, m.series, m.model_id, m.name, m.gvwr, m.payload,
                m.deck_size, m.axles, m.base_price, m.image_url, m.features,
-               m.is_archived, m.category_sub_type, c.name as category_name,
-               s.name as series_name
+               m.is_archived, m.category_sub_type, c.name as category_name
         FROM trailer_models m
         JOIN trailer_categories c ON m.category_id = c.id
-        LEFT JOIN trailer_series s ON m.series_id = s.id
         ORDER BY c.name, m.id
       `);
       
@@ -836,7 +834,7 @@ export class DatabaseStorage implements IStorage {
       return result.rows.map((model: any) => ({
         id: model.id,
         categoryId: model.category_id,
-        seriesId: model.series_id,
+        series: model.series,
         modelId: model.model_id,
         name: model.name,
         gvwr: model.gvwr,
@@ -848,7 +846,7 @@ export class DatabaseStorage implements IStorage {
         features: model.features || [],
         categoryName: model.category_name,
         categorySubType: model.category_sub_type,
-        seriesName: model.series_name,
+        seriesName: model.series, // For backward compatibility
         isArchived: model.is_archived || false,
       }));
     } catch (error) {
