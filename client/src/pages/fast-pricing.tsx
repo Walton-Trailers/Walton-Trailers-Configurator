@@ -248,12 +248,22 @@ export default function FastPricing() {
 
   const handleUpdate = (model: any) => {
     const data = editData[model.id] || {};
+    const selectedSeriesName = seriesSelection[model.id];
+    
+    // Find the series ID based on the selected series name
+    let seriesId = null;
+    if (selectedSeriesName && selectedSeriesName !== "No Series") {
+      const selectedSeries = seriesData.find(series => series.name === selectedSeriesName);
+      seriesId = selectedSeries?.id || null;
+    }
+    
     updateMutation.mutate({
       id: model.id,
       modelId: data.modelId ?? model.modelId,
       name: data.name ?? model.name,
       categoryId: data.categoryId ?? model.categoryId,
       basePrice: data.basePrice ?? model.basePrice,
+      seriesId: seriesId,
     });
   };
 
