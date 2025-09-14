@@ -288,6 +288,30 @@ export async function registerRoutes(app: Express): Promise<Express> {
     }
   });
 
+  // Update model assignments for a series
+  app.patch("/api/series/:id/models", requireAuth, async (req, res) => {
+    try {
+      const seriesId = parseInt(req.params.id);
+      const { modelIds } = req.body; // Array of model IDs to assign to this series
+      
+      // First, remove all existing assignments for this series
+      await db.update(trailerModels)
+        .set({ seriesId: null })
+        .where(eq(trailerModels.seriesId, seriesId));
+      
+      // Then assign the new models
+      if (modelIds && modelIds.length > 0) {
+        await db.update(trailerModels)
+          .set({ seriesId })
+          .where(inArray(trailerModels.id, modelIds));
+      }
+      
+      res.json({ message: "Model assignments updated successfully" });
+    } catch (error) {
+      console.error("Error updating series models:", error);
+      res.status(500).json({ message: "Failed to update model assignments" });
+    }
+  });
 
   // Get models by category
   app.get("/api/categories/:categorySlug/models", async (req, res) => {
@@ -1507,7 +1531,7 @@ export async function registerRoutes(app: Express): Promise<Express> {
   app.patch("/api/models/:id", requireAuth, async (req, res) => {
     try {
       const modelId = parseInt(req.params.id);
-      const { basePrice, name, modelId: modelIdField, gvwr, payload, deckSize, categoryId, categorySubType } = req.body;
+      const { basePrice, name, modelId: modelIdField, gvwr, payload, deckSize, categoryId, categorySubType, series } = req.body;
       
       console.log(`Updating model ${modelId} with:`, req.body);
       
@@ -1520,6 +1544,7 @@ export async function registerRoutes(app: Express): Promise<Express> {
         deckSize,
         categoryId,
         categorySubType,
+        series,
       });
       
       console.log("Updated model result:", updatedModel);

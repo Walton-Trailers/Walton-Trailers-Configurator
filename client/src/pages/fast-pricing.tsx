@@ -248,12 +248,18 @@ export default function FastPricing() {
 
   const handleUpdate = (model: any) => {
     const data = editData[model.id] || {};
+    const selectedSeriesName = seriesSelection[model.id];
+    
+    // Use the series name directly as text (or null if "No Series")
+    const seriesText = selectedSeriesName && selectedSeriesName !== "No Series" ? selectedSeriesName : null;
+    
     updateMutation.mutate({
       id: model.id,
       modelId: data.modelId ?? model.modelId,
       name: data.name ?? model.name,
       categoryId: data.categoryId ?? model.categoryId,
       basePrice: data.basePrice ?? model.basePrice,
+      series: seriesText,
     });
   };
 
@@ -1174,7 +1180,7 @@ export default function FastPricing() {
                   <TableHead>Model ID</TableHead>
                   <TableHead>Name</TableHead>
                   <TableHead>Category</TableHead>
-                  <TableHead>Series</TableHead>
+                  <TableHead>Associated Series</TableHead>
                   <TableHead>Price</TableHead>
                   <TableHead>Image</TableHead>
                   <TableHead>Actions</TableHead>
