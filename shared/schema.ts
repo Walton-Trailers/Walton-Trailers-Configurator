@@ -18,8 +18,6 @@ export const trailerCategories = pgTable("trailer_categories", {
 export const trailerModels = pgTable("trailer_models", {
   id: serial("id").primaryKey(),
   categoryId: integer("category_id").notNull(),
-  seriesId: integer("series_id"), // links to trailerSeries table
-  modelSeries: text("model_series").notNull(), // e.g., DHV207, FBH208
   name: text("name").notNull(),
   pullType: text("pull_type"), // 'bumper', 'gooseneck', 'both'
   gvwrRange: text("gvwr_range"), // e.g., "14,000 - 15,500"
@@ -406,10 +404,6 @@ export const trailerModelsRelations = relations(trailerModels, ({ one, many }) =
   category: one(trailerCategories, {
     fields: [trailerModels.categoryId],
     references: [trailerCategories.id],
-  }),
-  series: one(trailerSeries, {
-    fields: [trailerModels.seriesId],
-    references: [trailerSeries.id],
   }),
   variants: many(modelVariants),
   configurations: many(userConfigurations),
