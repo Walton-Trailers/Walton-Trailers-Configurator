@@ -280,6 +280,26 @@ export async function registerRoutes(app: Express): Promise<Express> {
     }
   });
 
+  // Create a new model
+  app.post("/api/models", requireAuth, async (req, res) => {
+    try {
+      const { categoryId, seriesId, modelSeries, name, pullType, imageUrl, standardFeatures } = req.body;
+      const result = await storage.createModel({
+        categoryId,
+        seriesId,
+        modelSeries,
+        name,
+        pullType,
+        imageUrl: imageUrl || '/objects/models/default-model.png',
+        standardFeatures: standardFeatures || [],
+      });
+      res.json(result);
+    } catch (error) {
+      console.error("Error creating model:", error);
+      res.status(500).json({ message: "Failed to create model" });
+    }
+  });
+
   // Update model assignments for a series
   app.patch("/api/series/:id/models", requireAuth, async (req, res) => {
     try {
