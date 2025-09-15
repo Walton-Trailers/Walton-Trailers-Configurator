@@ -102,6 +102,16 @@ export default function FastPricing() {
     slug: "",
     basePrice: 0
   });
+  const [showAddModel, setShowAddModel] = useState(false);
+  const [newModelData, setNewModelData] = useState({
+    categoryId: 0,
+    seriesId: null as number | null,
+    modelSeries: "",
+    name: "",
+    pullType: "",
+    imageUrl: "",
+    standardFeatures: [] as string[]
+  });
 
   const sessionId = localStorage.getItem("admin_session");
   const queryClient = useQueryClient();
