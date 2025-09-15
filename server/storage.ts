@@ -83,6 +83,7 @@ export interface IStorage {
   // Trailer operations
   getTrailerCategories(): Promise<TrailerCategoryResponse[]>;
   getTrailerModelsByCategory(categorySlug: string): Promise<TrailerModelResponse[]>;
+  getTrailerModelsBySeries(seriesId: number): Promise<TrailerModelResponse[]>;
   getTrailerModel(modelId: string): Promise<TrailerModelResponse | undefined>;
   getTrailerOptions(modelId: string): Promise<TrailerOptionResponse[]>;
   saveUserConfiguration(config: InsertUserConfiguration): Promise<UserConfiguration>;
@@ -210,6 +211,7 @@ export class MemStorage implements IStorage {
       {
         id: 1,
         categoryId: 3,
+        seriesId: 1,
         modelId: "DHO215",
         name: "DHO215 - 16' Dump Trailer",
         gvwr: "15,400 lbs",
@@ -223,6 +225,7 @@ export class MemStorage implements IStorage {
       {
         id: 2,
         categoryId: 3,
+        seriesId: 2,
         modelId: "DTX620",
         name: "DTX620 - 20' Heavy Duty Dump",
         gvwr: "20,000 lbs",
@@ -237,6 +240,7 @@ export class MemStorage implements IStorage {
       {
         id: 3,
         categoryId: 1,
+        seriesId: 3,
         modelId: "FBX210",
         name: "FBX210 - 28' Gooseneck Flatbed",
         gvwr: "25,000 lbs",
@@ -251,6 +255,7 @@ export class MemStorage implements IStorage {
       {
         id: 4,
         categoryId: 2,
+        seriesId: 4,
         modelId: "TSX208",
         name: "TSX208 - 20' Tilt Equipment",
         gvwr: "16,000 lbs",
@@ -313,6 +318,10 @@ export class MemStorage implements IStorage {
     if (!category) return [];
     
     return Array.from(this.models.values()).filter(model => model.categoryId === category.id);
+  }
+
+  async getTrailerModelsBySeries(seriesId: number): Promise<TrailerModelResponse[]> {
+    return Array.from(this.models.values()).filter(model => model.seriesId === seriesId);
   }
 
   async getTrailerModel(modelId: string): Promise<TrailerModelResponse | undefined> {
@@ -522,18 +531,16 @@ export class MemStorage implements IStorage {
     const model: TrailerModelResponse = {
       id: this.currentId++,
       categoryId: data.categoryId,
-      categoryName: `Category ${data.categoryId}`,
-      series: data.seriesId ? `Series ${data.seriesId}` : "No Series",
+      seriesId: data.seriesId,
       modelId: data.modelSeries,
       name: data.name,
-      pullType: data.pullType,
-      gvwrRange: undefined,
-      deckHeight: undefined,
-      overallWidth: undefined,
-      lengthRange: undefined,
-      imageUrl: data.imageUrl,
-      standardFeatures: data.standardFeatures,
+      gvwr: "N/A",
+      payload: "N/A", 
+      deckSize: "N/A",
+      axles: "N/A",
       basePrice: 0,
+      imageUrl: data.imageUrl,
+      features: data.standardFeatures || [],
       isArchived: false,
     };
     this.models.set(model.modelId, model);
@@ -607,6 +614,38 @@ export class DatabaseStorage implements IStorage {
       }));
     } catch (error) {
       console.error('Error fetching models by category:', error);
+      throw error;
+    }
+  }
+
+  async getTrailerModelsBySeries(seriesId: number): Promise<TrailerModelResponse[]> {
+    try {
+      const result = await db.execute(sql`
+        SELECT m.id, m.category_id, m.series_id, m.series, m.model_series, m.name, 
+               m.pull_type, m.gvwr_range, m.deck_height, m.overall_width, 
+               m.length_range, m.image_url, m.standard_features
+        FROM trailer_models m
+        WHERE m.series_id = ${seriesId}
+        ORDER BY m.name
+      `);
+      
+      return result.rows.map((model: any) => ({
+        id: model.id,
+        categoryId: model.category_id,
+        seriesId: model.series_id,
+        series: model.series,
+        modelSeries: model.model_series,
+        name: model.name,
+        pullType: model.pull_type,
+        gvwrRange: model.gvwr_range,
+        deckHeight: model.deck_height,
+        overallWidth: model.overall_width,
+        lengthRange: model.length_range,
+        imageUrl: model.image_url,
+        standardFeatures: model.standard_features || []
+      }));
+    } catch (error) {
+      console.error('Error fetching models by series:', error);
       throw error;
     }
   }
@@ -861,7 +900,7 @@ export class DatabaseStorage implements IStorage {
         id: model.id,
         categoryId: model.category_id,
         seriesId: model.series_id,
-        series: model.series_name, // Now comes from the JOIN with trailer_series
+        seriesName: model.series_name, // Now comes from the JOIN with trailer_series
         modelId: model.model_id,
         name: model.name,
         gvwr: model.gvwr,
@@ -873,7 +912,6 @@ export class DatabaseStorage implements IStorage {
         features: model.features || [],
         categoryName: model.category_name,
         categorySubType: model.category_sub_type,
-        seriesName: model.series_name, // For backward compatibility
         isArchived: model.is_archived || false,
       }));
     } catch (error) {
@@ -1032,7 +1070,7 @@ export class DatabaseStorage implements IStorage {
         id: updatedModel.id,
         categoryId: updatedModel.category_id,
         seriesId: updatedModel.series_id,
-        series: updatedModel.series_name, // From the JOIN with trailer_series
+        seriesName: updatedModel.series_name, // From the JOIN with trailer_series
         modelId: updatedModel.model_id,
         name: updatedModel.name,
         gvwr: updatedModel.gvwr,
@@ -1043,7 +1081,6 @@ export class DatabaseStorage implements IStorage {
         imageUrl: updatedModel.image_url,
         features: updatedModel.features || [],
         categorySubType: updatedModel.category_sub_type,
-        seriesName: updatedModel.series_name, // For backward compatibility
         isArchived: updatedModel.is_archived || false,
       };
     } catch (error) {
@@ -1267,33 +1304,7 @@ export class DatabaseStorage implements IStorage {
     return !!sessionId;
   }
 
-  // Series management operations
-  async getAllSeries(): Promise<any[]> {
-    try {
-      const result = await db.execute(sql`
-        SELECT s.id, s.category_id, s.name, s.description, s.slug, s.base_price,
-               s.created_at, s.updated_at, c.name as category_name
-        FROM trailer_series s
-        JOIN trailer_categories c ON s.category_id = c.id
-        ORDER BY c.name, s.name
-      `);
-      
-      return result.rows.map((series: any) => ({
-        id: series.id,
-        categoryId: series.category_id,
-        name: series.name,
-        description: series.description,
-        slug: series.slug,
-        basePrice: series.base_price,
-        categoryName: series.category_name,
-        createdAt: series.created_at,
-        updatedAt: series.updated_at,
-      }));
-    } catch (error) {
-      console.error('Error fetching all series:', error);
-      throw error;
-    }
-  }
+  // Series management operations - this is the correct getAllSeries implementation
 
   async getSeriesByCategory(categorySlug: string): Promise<any[]> {
     try {
@@ -1377,10 +1388,9 @@ export class DatabaseStorage implements IStorage {
         id: model.id,
         categoryId: model.category_id,
         categoryName: categoryName,
-        series: seriesName,
+        seriesName: seriesName,
         modelId: model.model_series,
         name: model.name,
-        pullType: model.pull_type,
         gvwrRange: undefined,
         deckHeight: undefined,
         overallWidth: undefined,

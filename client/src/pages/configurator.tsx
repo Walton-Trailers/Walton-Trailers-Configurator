@@ -22,6 +22,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
+import { TrailerSeries } from "@shared/schema";
 
 // Quote form schema
 const quoteFormSchema = z.object({
@@ -166,7 +167,7 @@ export default function Configurator() {
   const { toast } = useToast();
   const [currentStep, setCurrentStep] = useState(1);
   const [selectedCategory, setSelectedCategory] = useState<TrailerCategory | null>(null);
-  const [selectedSeries, setSelectedSeries] = useState<string | null>(null);
+  const [selectedSeries, setSelectedSeries] = useState<TrailerSeries | null>(null);
   const [selectedModel, setSelectedModel] = useState<TrailerModel | null>(null);
   const [selectedOptions, setSelectedOptions] = useState<Record<string, any>>({});
   const [totalPrice, setTotalPrice] = useState(0);
@@ -310,6 +311,12 @@ export default function Configurator() {
     enabled: selectedCategory?.slug === 'landscape'
   });
 
+  // Fetch models by selected series (database-driven filtering)
+  const { data: seriesModels } = useQuery<TrailerModel[]>({
+    queryKey: ['/api/series', selectedSeries?.id, 'models'],
+    enabled: !!selectedSeries?.id
+  });
+
   // Calculate total price
   useEffect(() => {
     if (!selectedModel) {
@@ -409,8 +416,8 @@ export default function Configurator() {
     setCurrentStep(2);
   };
 
-  const handleSeriesSelect = (seriesName: string) => {
-    setSelectedSeries(seriesName);
+  const handleSeriesSelect = (series: TrailerSeries) => {
+    setSelectedSeries(series);
     setCurrentStep(3); // New step for product listing
   };
 
@@ -578,7 +585,7 @@ Configuration Date: ${new Date().toLocaleDateString()}
                   if (currentStep > 1) {
                     setCurrentStep(1);
                     setSelectedCategory(null);
-                    setSelectedSeries('');
+                    setSelectedSeries(null);
                     setSelectedModel(null);
                     setSelectedOptions({});
                   }
@@ -591,7 +598,7 @@ Configuration Date: ${new Date().toLocaleDateString()}
                 onClick={() => {
                   if (currentStep > 2 && selectedCategory) {
                     setCurrentStep(2);
-                    setSelectedSeries('');
+                    setSelectedSeries(null);
                     setSelectedModel(null);
                     setSelectedOptions({});
                   }
@@ -626,7 +633,7 @@ Configuration Date: ${new Date().toLocaleDateString()}
                   if (currentStep > 1) {
                     setCurrentStep(1);
                     setSelectedCategory(null);
-                    setSelectedSeries('');
+                    setSelectedSeries(null);
                     setSelectedModel(null);
                     setSelectedOptions({});
                   }
@@ -641,7 +648,7 @@ Configuration Date: ${new Date().toLocaleDateString()}
                 onClick={() => {
                   if (currentStep > 2 && selectedCategory) {
                     setCurrentStep(2);
-                    setSelectedSeries('');
+                    setSelectedSeries(null);
                     setSelectedModel(null);
                     setSelectedOptions({});
                   }
@@ -995,7 +1002,7 @@ Configuration Date: ${new Date().toLocaleDateString()}
                     <div key={series.id} className="animate-in slide-in-from-bottom duration-700" style={{ animationDelay: `${index * 150}ms` }}>
                       <button
                         className="w-full text-left group relative overflow-hidden rounded-md border border-gray-200 bg-white hover:border-gray-300 hover:shadow-xl transition-all duration-500 hover:scale-[1.02]"
-                        onClick={() => handleSeriesSelect(series.name)}
+                        onClick={() => handleSeriesSelect(series)}
                       >
                         <div className="flex flex-col">
                           {/* Top - Image */}
@@ -1091,7 +1098,7 @@ Configuration Date: ${new Date().toLocaleDateString()}
                     <div key={series.id} className="animate-in slide-in-from-bottom duration-700" style={{ animationDelay: `${index * 150}ms` }}>
                       <button
                         className="w-full h-full text-left group relative overflow-hidden rounded-md border border-gray-200 bg-white hover:border-gray-300 hover:shadow-xl transition-all duration-500 hover:scale-[1.02]"
-                        onClick={() => handleSeriesSelect(series.name)}
+                        onClick={() => handleSeriesSelect(series)}
                       >
                         <div className="flex flex-col h-full">
                           {/* Top - Image */}
@@ -1140,7 +1147,7 @@ Configuration Date: ${new Date().toLocaleDateString()}
                     <div key={series.id} className="animate-in slide-in-from-bottom duration-700" style={{ animationDelay: `${index * 150}ms` }}>
                       <button
                         className="w-full h-full text-left group relative overflow-hidden rounded-md border border-gray-200 bg-white hover:border-gray-300 hover:shadow-xl transition-all duration-500 hover:scale-[1.02]"
-                        onClick={() => handleSeriesSelect(series.name)}
+                        onClick={() => handleSeriesSelect(series)}
                       >
                         <div className="flex flex-col h-full">
                           {/* Top - Image */}
@@ -1231,34 +1238,17 @@ Configuration Date: ${new Date().toLocaleDateString()}
                 {/* Product Title */}
                 <div className="mb-6">
                   <h1 className="text-2xl lg:text-3xl font-bold text-gray-900 mb-2">
-                    {selectedSeries.includes('FBH') ? 'Flatbed Heavy-Duty' : 
-                     selectedSeries.includes('FBX') ? 'Flatbed Extreme' :
-                     selectedSeries}
+                    {selectedSeries?.displayName || selectedSeries?.name}
                   </h1>
                   <p className="text-gray-600 text-base">
-                    {selectedSeries.includes('FBH') ? 'FBH Offers Superior Stability and Payload' :
-                     selectedSeries.includes('FBX') ? 'FBX Offers Ultimate Strength and Flexibility' :
-                     'Professional grade trailers for your needs'}
+                    {selectedSeries?.description || 'Professional grade trailers for your needs'}
                   </p>
                 </div>
 
                 {/* Key Specs - Dynamic based on hovered or selected model */}
-                {models && models.length > 0 && (() => {
-                  // Filter models by series
-                  const filteredModels = models.filter(model => {
-                    if (selectedSeries === 'FBH') return model.name.includes('FBH');
-                    if (selectedSeries === 'FBX') return model.name.includes('FBX');
-                    if (selectedSeries === 'Skid-Steer Tilt') return model.name.toLowerCase().includes('skid');
-                    if (selectedSeries === 'Tilt Heavy Deckover Equipment Hauler') return model.name.toLowerCase().includes('heavy');
-                    if (selectedSeries === 'Mini-Tilt Equipment Trailer') return model.name.toLowerCase().includes('mini');
-                    if (selectedSeries === 'Dump Heavy-Duty') return model.name.toLowerCase().includes('heavy');
-                    if (selectedSeries === 'Dump Standard Duty') return !model.name.toLowerCase().includes('heavy');
-                    if (selectedSeries === 'MowPr') return model.name.toLowerCase().includes('mow');
-                    return false;
-                  });
-
+                {seriesModels && seriesModels.length > 0 && (() => {
                   // Use hovered model, selected model, or first model as fallback
-                  const displayModel = hoveredModel || selectedModel || filteredModels[0];
+                  const displayModel = hoveredModel || selectedModel || seriesModels[0];
                   
                   if (!displayModel) return null;
                   
@@ -1284,18 +1274,8 @@ Configuration Date: ${new Date().toLocaleDateString()}
                 <div className="mb-6">
                   <h2 className="text-lg font-semibold text-gray-900 mb-4">Choose Your Model</h2>
                   
-                  {/* Filter models by series */}
-                  {models?.filter(model => {
-                    if (selectedSeries === 'FBH') return model.name.includes('FBH');
-                    if (selectedSeries === 'FBX') return model.name.includes('FBX');
-                    if (selectedSeries === 'Skid-Steer Tilt') return model.name.toLowerCase().includes('skid');
-                    if (selectedSeries === 'Tilt Heavy Deckover Equipment Hauler') return model.name.toLowerCase().includes('heavy');
-                    if (selectedSeries === 'Mini-Tilt Equipment Trailer') return model.name.toLowerCase().includes('mini');
-                    if (selectedSeries === 'Dump Heavy-Duty') return model.name.toLowerCase().includes('heavy');
-                    if (selectedSeries === 'Dump Standard Duty') return !model.name.toLowerCase().includes('heavy');
-                    if (selectedSeries === 'MowPr') return model.name.toLowerCase().includes('mow');
-                    return false;
-                  })?.map((model, index) => (
+                  {/* Database-driven models filtered by series */}
+                  {seriesModels?.map((model, index) => (
                     <button
                       key={model.id}
                       onClick={() => setSelectedModel(model)}

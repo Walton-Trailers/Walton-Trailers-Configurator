@@ -336,6 +336,21 @@ export async function registerRoutes(app: Express): Promise<Express> {
     }
   });
 
+  // Get models by series
+  app.get("/api/series/:seriesId/models", async (req, res) => {
+    try {
+      const seriesId = parseInt(req.params.seriesId);
+      if (isNaN(seriesId)) {
+        return res.status(400).json({ message: "Invalid series ID" });
+      }
+      const models = await storage.getTrailerModelsBySeries(seriesId);
+      res.json(models);
+    } catch (error) {
+      console.error("Error fetching models by series:", error);
+      res.status(500).json({ message: "Failed to fetch models" });
+    }
+  });
+
   // Custom quote request routes
   app.post("/api/custom-quotes", async (req, res) => {
     try {

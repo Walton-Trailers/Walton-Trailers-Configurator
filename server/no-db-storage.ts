@@ -20,6 +20,10 @@ export class NoDatabaseStorage implements IStorage {
     return [];
   }
 
+  async getTrailerModelsBySeries(seriesId: number): Promise<TrailerModelResponse[]> {
+    return [];
+  }
+
   async getTrailerModel(modelId: string): Promise<TrailerModelResponse | undefined> {
     return undefined;
   }
@@ -210,6 +214,27 @@ export class NoDatabaseStorage implements IStorage {
   }
 
   async deleteSeries(id: number): Promise<void> {
+    throw new Error("Database not available");
+  }
+
+  // Password reset token operations
+  async createPasswordResetToken(token: any): Promise<any> {
+    throw new Error("Database not available");
+  }
+
+  async getPasswordResetToken(token: string): Promise<any | undefined> {
+    return undefined;
+  }
+
+  async markPasswordResetTokenAsUsed(token: string): Promise<void> {
+    throw new Error("Database not available");
+  }
+
+  async deleteExpiredResetTokens(): Promise<void> {
+    // No-op for in-memory storage
+  }
+
+  async createModel(data: any): Promise<TrailerModelResponse> {
     throw new Error("Database not available");
   }
 }
