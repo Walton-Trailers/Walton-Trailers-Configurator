@@ -186,6 +186,32 @@ export default function FastPricing() {
     },
   });
 
+  // Model mutations
+  const addModelMutation = useMutation({
+    mutationFn: (data: any) => fastMutate('/api/models', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${sessionId}`,
+      },
+      body: JSON.stringify(data),
+    }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin', 'models'] });
+      setShowAddModel(false);
+      setNewModelData({
+        categoryId: 0,
+        seriesId: null,
+        modelSeries: "",
+        name: "",
+        pullType: "",
+        imageUrl: "",
+        standardFeatures: []
+      });
+      toast({ title: "Success", description: "Model added successfully" });
+    },
+  });
+
 
   // Fast filtering with memoization
   const { activeModels, archivedModels } = useMemo(() => {
