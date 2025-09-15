@@ -965,19 +965,14 @@ export class DatabaseStorage implements IStorage {
           WHERE id = ${id}
         `);
       }
-      if (updates.series !== undefined) {
-        await db.execute(sql`
-          UPDATE trailer_models 
-          SET series = ${updates.series}
-          WHERE id = ${id}
-        `);
-      }
       if (updates.seriesId !== undefined) {
-        await db.execute(sql`
+        console.log(`🔄 Attempting to update series_id to ${updates.seriesId} for model ${id}`);
+        const updateResult = await db.execute(sql`
           UPDATE trailer_models 
           SET series_id = ${updates.seriesId}
           WHERE id = ${id}
         `);
+        console.log(`✅ Series_id update result:`, updateResult);
       }
       if (updates.isArchived !== undefined) {
         await db.execute(sql`
