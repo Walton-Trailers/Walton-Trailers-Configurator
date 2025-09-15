@@ -825,21 +825,6 @@ export default function FastPricing() {
                               </Button>
                               <Button
                                 size="sm"
-                                variant="outline"
-                                onClick={() => {
-                                  setEditingCategory(null);
-                                  setEditData((prev: any) => {
-                                    const newData = { ...prev };
-                                    delete newData[category.id];
-                                    return newData;
-                                  });
-                                }}
-                              >
-                                <X className="w-4 h-4" />
-                              </Button>
-                              <Button
-                                size="sm"
-                                variant="outline"
                                 onClick={async () => {
                                   if (confirm('Are you sure you want to delete this category? This action cannot be undone.')) {
                                     try {
@@ -863,10 +848,24 @@ export default function FastPricing() {
                                     }
                                   }
                                 }}
-                                className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                                className="bg-red-600 text-white hover:bg-red-700"
                                 title="Delete category"
                               >
                                 <Trash2 className="w-4 h-4" />
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => {
+                                  setEditingCategory(null);
+                                  setEditData((prev: any) => {
+                                    const newData = { ...prev };
+                                    delete newData[category.id];
+                                    return newData;
+                                  });
+                                }}
+                              >
+                                <X className="w-4 h-4" />
                               </Button>
                             </div>
                           ) : (
