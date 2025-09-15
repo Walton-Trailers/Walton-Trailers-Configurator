@@ -602,7 +602,7 @@ export default function FastPricing() {
                               body: newCategoryData,
                               headers: sessionId ? { Authorization: `Bearer ${sessionId}` } : {},
                             });
-                            queryClient.invalidateQueries({ queryKey: ["/api/categories"] });
+                            queryClient.invalidateQueries({ queryKey: ['categories'] });
                             setShowAddCategory(false);
                             setNewCategoryData({
                               slug: "",
@@ -764,7 +764,7 @@ export default function FastPricing() {
                                       body: editData[category.id],
                                       headers: sessionId ? { Authorization: `Bearer ${sessionId}` } : {},
                                     });
-                                    queryClient.invalidateQueries({ queryKey: ["/api/categories"] });
+                                    queryClient.invalidateQueries({ queryKey: ['categories'] });
                                     setEditingCategory(null);
                                     setEditData({});
                                     toast({
