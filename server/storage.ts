@@ -120,6 +120,7 @@ export interface IStorage {
   archiveModel(id: number): Promise<void>;
   restoreModel(id: number): Promise<TrailerModelResponse>;
   getOptionCategories(): Promise<string[]>;
+  createModel(data: { categoryId: number; seriesId?: number; modelSeries: string; name: string; pullType?: string; imageUrl: string; standardFeatures: string[] }): Promise<TrailerModelResponse>;
   
   // Series management operations
   getAllSeries(): Promise<any[]>;
@@ -514,6 +515,29 @@ export class MemStorage implements IStorage {
       updatedAt: new Date(),
     };
     return series;
+  }
+
+  async createModel(data: { categoryId: number; seriesId?: number; modelSeries: string; name: string; pullType?: string; imageUrl: string; standardFeatures: string[] }): Promise<TrailerModelResponse> {
+    // Basic implementation for mem storage
+    const model: TrailerModelResponse = {
+      id: this.currentId++,
+      categoryId: data.categoryId,
+      categoryName: `Category ${data.categoryId}`,
+      series: data.seriesId ? `Series ${data.seriesId}` : "No Series",
+      modelId: data.modelSeries,
+      name: data.name,
+      pullType: data.pullType,
+      gvwrRange: undefined,
+      deckHeight: undefined,
+      overallWidth: undefined,
+      lengthRange: undefined,
+      imageUrl: data.imageUrl,
+      standardFeatures: data.standardFeatures,
+      basePrice: 0,
+      isArchived: false,
+    };
+    this.models.set(model.modelId, model);
+    return model;
   }
 
   async updateSeries(id: number, updates: any): Promise<any> {
@@ -1320,6 +1344,54 @@ export class DatabaseStorage implements IStorage {
       };
     } catch (error) {
       console.error('Error creating series:', error);
+      throw error;
+    }
+  }
+
+  async createModel(data: { categoryId: number; seriesId?: number; modelSeries: string; name: string; pullType?: string; imageUrl: string; standardFeatures: string[] }): Promise<TrailerModelResponse> {
+    try {
+      const result = await db.execute(sql`
+        INSERT INTO trailer_models (category_id, series_id, model_series, name, pull_type, image_url, standard_features)
+        VALUES (${data.categoryId}, ${data.seriesId || null}, ${data.modelSeries}, ${data.name}, ${data.pullType || null}, ${data.imageUrl}, ${JSON.stringify(data.standardFeatures)})
+        RETURNING id, category_id, series_id, model_series, name, pull_type, image_url, standard_features
+      `);
+      
+      const model = result.rows[0] as any;
+      
+      // Get category name
+      const categoryResult = await db.execute(sql`
+        SELECT name FROM trailer_categories WHERE id = ${model.category_id}
+      `);
+      const categoryName = categoryResult.rows[0]?.name || 'Unknown Category';
+      
+      // Get series name if series_id exists
+      let seriesName = "No Series";
+      if (model.series_id) {
+        const seriesResult = await db.execute(sql`
+          SELECT name FROM trailer_series WHERE id = ${model.series_id}
+        `);
+        seriesName = seriesResult.rows[0]?.name || 'Unknown Series';
+      }
+      
+      return {
+        id: model.id,
+        categoryId: model.category_id,
+        categoryName: categoryName,
+        series: seriesName,
+        modelId: model.model_series,
+        name: model.name,
+        pullType: model.pull_type,
+        gvwrRange: undefined,
+        deckHeight: undefined,
+        overallWidth: undefined,
+        lengthRange: undefined,
+        imageUrl: model.image_url,
+        standardFeatures: JSON.parse(model.standard_features),
+        basePrice: 0,
+        isArchived: false,
+      };
+    } catch (error) {
+      console.error('Error creating model:', error);
       throw error;
     }
   }
