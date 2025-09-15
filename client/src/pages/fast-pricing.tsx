@@ -78,7 +78,7 @@ export default function FastPricing() {
   const [editingOption, setEditingOption] = useState<any>(null);
   const [editingCategory, setEditingCategory] = useState<any>(null);
   const [editData, setEditData] = useState<any>({});
-  const [searchQuery, setSearchQuery] = useState("");
+  const [, setSearchQuery] = useState("");
   const [showArchived, setShowArchived] = useState(false);
   const [uploadingModelId, setUploadingModelId] = useState<number | null>(null);
   const [uploadingCategoryId, setUploadingCategoryId] = useState<number | null>(null);
