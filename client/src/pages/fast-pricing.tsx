@@ -824,7 +824,6 @@ export default function FastPricing() {
                                 <Save className="w-4 h-4" />
                               </Button>
                               <Button
-                                size="sm"
                                 onClick={async () => {
                                   if (confirm('Are you sure you want to delete this category? This action cannot be undone.')) {
                                     try {
