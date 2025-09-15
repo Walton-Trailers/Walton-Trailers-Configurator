@@ -1078,26 +1078,24 @@ export default function FastPricing() {
                                 <Save className="w-4 h-4" />
                               </Button>
                               <Button
+                                onClick={() => {
+                                  if (confirm('Are you sure you want to delete this series? This action cannot be undone.')) {
+                                    deleteSeriesMutation.mutate(series.id);
+                                  }
+                                }}
+                                disabled={deleteSeriesMutation.isPending}
+                                title="Delete series"
+                                className="bg-red-600 text-white hover:bg-red-700"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </Button>
+                              <Button
                                 size="sm"
                                 variant="outline"
                                 onClick={() => {
                                   setEditingSeries(null);
                                   setEditData({});
                                 }}
-                              >
-                                <X className="w-4 h-4" />
-                              </Button>
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                onClick={() => {
-                                  if (confirm('Are you sure you want to delete this series?')) {
-                                    deleteSeriesMutation.mutate(series.id);
-                                  }
-                                }}
-                                disabled={deleteSeriesMutation.isPending}
-                                title="Delete series"
-                                className="text-red-600 hover:text-red-700 hover:bg-red-50"
                               >
                                 <X className="w-4 h-4" />
                               </Button>
