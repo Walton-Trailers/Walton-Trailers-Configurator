@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useEffect } from "react";
-import { ArrowLeft, Edit, Save, X, Archive, RotateCcw, Upload, Image } from "lucide-react";
+import { ArrowLeft, Edit, Save, X, Archive, RotateCcw, Upload, Image, Trash2 } from "lucide-react";
 import { Link } from "wouter";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useFastQuery } from "@/hooks/useFastQuery";
@@ -836,6 +836,37 @@ export default function FastPricing() {
                                 }}
                               >
                                 <X className="w-4 h-4" />
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={async () => {
+                                  if (confirm('Are you sure you want to delete this category? This action cannot be undone.')) {
+                                    try {
+                                      await apiRequest(`/api/categories/${category.id}`, {
+                                        method: "DELETE",
+                                        headers: sessionId ? { Authorization: `Bearer ${sessionId}` } : {},
+                                      });
+                                      queryClient.invalidateQueries({ queryKey: ['categories'] });
+                                      setEditingCategory(null);
+                                      setEditData({});
+                                      toast({
+                                        title: "Success",
+                                        description: "Category deleted successfully",
+                                      });
+                                    } catch (error) {
+                                      toast({
+                                        title: "Error",
+                                        description: "Failed to delete category",
+                                        variant: "destructive",
+                                      });
+                                    }
+                                  }
+                                }}
+                                className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                                title="Delete category"
+                              >
+                                <Trash2 className="w-4 h-4" />
                               </Button>
                             </div>
                           ) : (
