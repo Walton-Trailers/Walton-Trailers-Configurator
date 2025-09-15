@@ -11,7 +11,6 @@ export const trailerCategories = pgTable("trailer_categories", {
   description: text("description").notNull(),
   imageUrl: text("image_url").notNull(),
   startingPrice: integer("starting_price").notNull(),
-  isArchived: boolean("is_archived").default(false),
 });
 
 // Trailer Models - represents model series (e.g., DHV207, FBH208)

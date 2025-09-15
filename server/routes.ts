@@ -157,17 +157,9 @@ export async function registerRoutes(app: Express): Promise<Express> {
       
       console.log(`📝 Update Data:`, JSON.stringify(updateData, null, 2));
       
-      const result = await db.update(trailerCategories)
-        .set(updateData)
-        .where(eq(trailerCategories.id, categoryId))
-        .returning();
-      
-      if (result.length === 0) {
-        return res.status(404).json({ message: "Category not found" });
-      }
-      
-      console.log(`✅ Update Result:`, JSON.stringify(result[0], null, 2));
-      res.json(result[0]);
+      const result = await storage.updateCategory(categoryId, updateData);
+      console.log(`✅ Update Result:`, JSON.stringify(result, null, 2));
+      res.json(result);
     } catch (error) {
       console.error("❌ Error updating category:", error);
       res.status(500).json({ message: "Failed to update category" });

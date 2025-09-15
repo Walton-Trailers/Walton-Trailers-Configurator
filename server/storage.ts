@@ -1409,6 +1409,67 @@ export class DatabaseStorage implements IStorage {
       throw error;
     }
   }
+
+  // Category management operations
+  async updateCategory(id: number, updates: any): Promise<any> {
+    try {
+      // Use individual SQL statements to avoid parameter issues
+      if (updates.slug !== undefined) {
+        await db.execute(sql`
+          UPDATE trailer_categories 
+          SET slug = ${updates.slug}
+          WHERE id = ${id}
+        `);
+      }
+      if (updates.name !== undefined) {
+        await db.execute(sql`
+          UPDATE trailer_categories 
+          SET name = ${updates.name}
+          WHERE id = ${id}
+        `);
+      }
+      if (updates.description !== undefined) {
+        await db.execute(sql`
+          UPDATE trailer_categories 
+          SET description = ${updates.description}
+          WHERE id = ${id}
+        `);
+      }
+      if (updates.imageUrl !== undefined) {
+        await db.execute(sql`
+          UPDATE trailer_categories 
+          SET image_url = ${updates.imageUrl}
+          WHERE id = ${id}
+        `);
+      }
+      if (updates.startingPrice !== undefined) {
+        await db.execute(sql`
+          UPDATE trailer_categories 
+          SET starting_price = ${updates.startingPrice}
+          WHERE id = ${id}
+        `);
+      }
+      
+      // Get the updated record
+      const result = await db.execute(sql`
+        SELECT id, slug, name, description, image_url, starting_price
+        FROM trailer_categories WHERE id = ${id}
+      `);
+      
+      const category = result.rows[0] as any;
+      return {
+        id: category.id,
+        slug: category.slug,
+        name: category.name,
+        description: category.description,
+        imageUrl: category.image_url,
+        startingPrice: category.starting_price,
+      };
+    } catch (error) {
+      console.error('Error updating category:', error);
+      throw error;
+    }
+  }
 }
 
 // Import no-database storage for production fallback
