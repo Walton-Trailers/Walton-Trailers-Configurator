@@ -110,7 +110,8 @@ export default function FastPricing() {
     name: "",
     pullType: "",
     imageUrl: "",
-    standardFeatures: [] as string[]
+    standardFeatures: [] as string[],
+    basePrice: 0
   });
 
   const sessionId = localStorage.getItem("admin_session");
@@ -197,7 +198,10 @@ export default function FastPricing() {
       body: JSON.stringify(data),
     }),
     onSuccess: () => {
+      // Invalidate multiple related queries to ensure UI updates
       queryClient.invalidateQueries({ queryKey: ['admin', 'models'] });
+      queryClient.invalidateQueries({ queryKey: ['models'] });
+      queryClient.invalidateQueries({ queryKey: ['categories'] });
       setShowAddModel(false);
       setNewModelData({
         categoryId: 0,
@@ -206,7 +210,8 @@ export default function FastPricing() {
         name: "",
         pullType: "",
         imageUrl: "",
-        standardFeatures: []
+        standardFeatures: [],
+        basePrice: 0
       });
       toast({ title: "Success", description: "Model added successfully" });
     },
@@ -1096,7 +1101,124 @@ export default function FastPricing() {
           <>
             <Card>
               <div className="p-6">
-                <h2 className="text-lg font-semibold mb-4">Models ({activeModels.length})</h2>
+                <div className="flex justify-between items-center mb-4">
+                  <h2 className="text-lg font-semibold">Models ({activeModels.length})</h2>
+                  <Button onClick={() => setShowAddModel(true)} size="sm">
+                    Add Model
+                  </Button>
+                </div>
+                
+                {/* Add Model Dialog */}
+                {showAddModel && (
+                  <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+                    <div className="bg-white rounded-lg p-6 max-w-2xl w-full">
+                      <h3 className="text-lg font-semibold mb-4">Add New Model</h3>
+                      <div className="space-y-4">
+                        <div className="grid grid-cols-2 gap-4">
+                          <div>
+                            <label className="block text-sm font-medium mb-1">Category</label>
+                            <Select
+                              value={newModelData.categoryId > 0 ? newModelData.categoryId.toString() : ""}
+                              onValueChange={(value: string) => setNewModelData({ ...newModelData, categoryId: parseInt(value) })}
+                            >
+                              <option value="">Select category</option>
+                              {categories.map((category: any) => (
+                                <option key={category.id} value={category.id}>
+                                  {category.name}
+                                </option>
+                              ))}
+                            </Select>
+                          </div>
+                          <div>
+                            <label className="block text-sm font-medium mb-1">Series (Optional)</label>
+                            <Select
+                              value={newModelData.seriesId ? newModelData.seriesId.toString() : ""}
+                              onValueChange={(value: string) => setNewModelData({ ...newModelData, seriesId: value ? parseInt(value) : null })}
+                            >
+                              <option value="">No Series</option>
+                              {seriesData.map((series: any) => (
+                                <option key={series.id} value={series.id}>
+                                  {series.name}
+                                </option>
+                              ))}
+                            </Select>
+                          </div>
+                        </div>
+                        <div className="grid grid-cols-2 gap-4">
+                          <div>
+                            <label className="block text-sm font-medium mb-1">Model Series (e.g., DHV207)</label>
+                            <Input
+                              placeholder="e.g., DHV207, FBH208"
+                              value={newModelData.modelSeries}
+                              onChange={(e: any) => setNewModelData({ ...newModelData, modelSeries: e.target.value })}
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-sm font-medium mb-1">Model Name</label>
+                            <Input
+                              placeholder="e.g., 7x14 Dump Trailer"
+                              value={newModelData.name}
+                              onChange={(e: any) => setNewModelData({ ...newModelData, name: e.target.value })}
+                            />
+                          </div>
+                        </div>
+                        <div className="grid grid-cols-2 gap-4">
+                          <div>
+                            <label className="block text-sm font-medium mb-1">Pull Type (Optional)</label>
+                            <Select
+                              value={newModelData.pullType}
+                              onValueChange={(value: string) => setNewModelData({ ...newModelData, pullType: value })}
+                            >
+                              <option value="">Select pull type</option>
+                              <option value="bumper">Bumper</option>
+                              <option value="gooseneck">Gooseneck</option>
+                              <option value="both">Both</option>
+                            </Select>
+                          </div>
+                          <div>
+                            <label className="block text-sm font-medium mb-1">Base Price ($)</label>
+                            <Input
+                              type="number"
+                              placeholder="e.g., 15000"
+                              value={newModelData.basePrice}
+                              onChange={(e: any) => setNewModelData({ ...newModelData, basePrice: parseFloat(e.target.value) || 0 })}
+                            />
+                          </div>
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium mb-1">Image URL (Optional)</label>
+                          <Input
+                            placeholder="e.g., /objects/models/model-image.png"
+                            value={newModelData.imageUrl}
+                            onChange={(e: any) => setNewModelData({ ...newModelData, imageUrl: e.target.value })}
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium mb-1">Standard Features (comma-separated)</label>
+                          <Input
+                            placeholder="e.g., Heavy-duty frame, LED lights, Electric brakes"
+                            value={newModelData.standardFeatures.join(", ")}
+                            onChange={(e: any) => setNewModelData({ 
+                              ...newModelData, 
+                              standardFeatures: e.target.value.split(",").map((f: string) => f.trim()).filter((f: string) => f.length > 0)
+                            })}
+                          />
+                        </div>
+                      </div>
+                      <div className="flex justify-end gap-3 mt-6">
+                        <Button variant="outline" onClick={() => setShowAddModel(false)}>
+                          Cancel
+                        </Button>
+                        <Button 
+                          onClick={() => addModelMutation.mutate(newModelData)}
+                          disabled={addModelMutation.isPending || !newModelData.name || !newModelData.modelSeries || !newModelData.categoryId || newModelData.basePrice < 0}
+                        >
+                          Add Model
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                )}
             <Table>
               <TableHeader>
                 <TableRow>
