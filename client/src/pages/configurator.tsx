@@ -662,7 +662,7 @@ Configuration Date: ${new Date().toLocaleDateString()}
                 }}
                 disabled={currentStep <= 3 || !selectedCategory || !selectedSeries}
               >
-                Configure
+                Model
               </button>
               <button 
                 className={`px-4 py-2 rounded-md transition-all duration-300 ${currentStep >= 4 ? 'text-white' : 'bg-gray-100 text-black'}`} 
