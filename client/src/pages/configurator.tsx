@@ -1203,6 +1203,7 @@ Configuration Date: ${new Date().toLocaleDateString()}
 
         {/* Step 3: Product Listing - Selected Series Models */}
         {currentStep === 3 && selectedCategory && selectedSeries && (
+          <>
           <div className="flex flex-col lg:flex-row min-h-screen">
             {/* Mobile/Tablet Image - Sticky Top */}
             <div className="lg:hidden sticky top-16 md:top-20 z-10 bg-gray-100 h-48 md:h-64">
@@ -1340,48 +1341,59 @@ Configuration Date: ${new Date().toLocaleDateString()}
                 )}
 
                 {/* Standard Features */}
-                <div className="mb-6">
-                  <div className="text-xs text-gray-500 mb-2">INCLUDED</div>
-                  <h3 className="text-lg font-semibold text-gray-900 mb-4">Standard Features</h3>
+                <div className="bg-gray-50 rounded-lg p-6 mb-6">
+                  <div className="text-center mb-4">
+                    <p className="text-sm text-gray-500 uppercase tracking-wide mb-2">Included</p>
+                    <h4 className="text-xl font-semibold text-gray-900">Standard Features</h4>
+                  </div>
                   
-                  {/* Features with Checkboxes */}
-                  <div className="space-y-4 mb-6">
-                    <div className="flex items-start space-x-3">
-                      <div className="w-5 h-5 bg-green-500 rounded flex items-center justify-center flex-shrink-0 mt-0.5">
-                        <svg className="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 24 24">
+                  <div className="space-y-6">
+                    {/* Smooth Towing Experience */}
+                    <div className="flex items-start space-x-4">
+                      <div className="w-12 h-12 bg-orange-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                        <svg className="w-6 h-6 text-black" fill="currentColor" viewBox="0 0 24 24">
                           <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z"/>
                         </svg>
                       </div>
                       <div>
-                        <h5 className="font-medium text-gray-900">Smooth Towing Experience</h5>
-                        <p className="text-sm text-gray-600">Advanced suspension, balanced weight, and reliable brakes for a stable, easy tow.</p>
+                        <h5 className="font-semibold text-gray-900 mb-2">Smooth Towing Experience</h5>
+                        <p className="text-sm text-gray-600 leading-relaxed">
+                          Advanced suspension, balanced weight, and reliable brakes for a stable, easy tow.
+                        </p>
                       </div>
                     </div>
 
-                    <div className="flex items-start space-x-3">
-                      <div className="w-5 h-5 bg-green-500 rounded flex items-center justify-center flex-shrink-0 mt-0.5">
-                        <svg className="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 24 24">
+                    {/* Heavy-Duty Construction */}
+                    <div className="flex items-start space-x-4">
+                      <div className="w-12 h-12 bg-orange-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                        <svg className="w-6 h-6 text-black" fill="currentColor" viewBox="0 0 24 24">
                           <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z"/>
                         </svg>
                       </div>
                       <div>
-                        <h5 className="font-medium text-gray-900">Heavy-Duty Construction</h5>
-                        <p className="text-sm text-gray-600">Reinforced steel frames and decks built to handle the toughest loads.</p>
+                        <h5 className="font-semibold text-gray-900 mb-2">Heavy-Duty Construction</h5>
+                        <p className="text-sm text-gray-600 leading-relaxed">
+                          Reinforced steel frames and decks built to handle the toughest loads.
+                        </p>
                       </div>
                     </div>
 
-                    <div className="flex items-start space-x-3">
-                      <div className="w-5 h-5 bg-green-500 rounded flex items-center justify-center flex-shrink-0 mt-0.5">
-                        <svg className="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 24 24">
+                    {/* Superior Load Capacity */}
+                    <div className="flex items-start space-x-4">
+                      <div className="w-12 h-12 bg-orange-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                        <svg className="w-6 h-6 text-black" fill="currentColor" viewBox="0 0 24 24">
                           <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z"/>
                         </svg>
                       </div>
                       <div>
-                        <h5 className="font-medium text-gray-900">Superior Load Capacity</h5>
-                        <p className="text-sm text-gray-600">Engineered to exceed weight ratings with optimal load distribution.</p>
+                        <h5 className="font-semibold text-gray-900 mb-2">Superior Load Capacity</h5>
+                        <p className="text-sm text-gray-600 leading-relaxed">
+                          Engineered to exceed weight ratings with optimal load distribution.
+                        </p>
                       </div>
                     </div>
                   </div>
+                </div>
 
                   {/* Additional Options */}
                   {options && options.length > 0 && (
@@ -1506,6 +1518,7 @@ Configuration Date: ${new Date().toLocaleDateString()}
               </div>
             </div>
           </div>
+          </>
         )}
 
         {/* Steps 4+ - Responsive Layout */}
@@ -1536,7 +1549,7 @@ Configuration Date: ${new Date().toLocaleDateString()}
             {/* Configuration Panel - Responsive */}
             <div className="flex-1 lg:ml-[65%] lg:w-[35%] bg-white">
               <div className="max-w-md mx-auto py-6 md:py-8 lg:py-12 px-4 md:px-6">
-
+                <>
           {/* Step 4: Configuration */}
           {currentStep === 4 && selectedModel && options && (
             <div className="space-y-8">
@@ -1943,7 +1956,7 @@ Configuration Date: ${new Date().toLocaleDateString()}
               )}
             </div>
           )}
-              </div>
+                </>
             </div>
           </div>
         )}
