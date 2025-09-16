@@ -1231,7 +1231,10 @@ Configuration Date: ${new Date().toLocaleDateString()}
                   <Button 
                     variant="ghost" 
                     size="sm"
-                    onClick={() => setCurrentStep(2)}
+                    onClick={() => {
+                      setSelectedModel(null); // Reset model selection
+                      setCurrentStep(2);      // Go back to series selection
+                    }}
                     className="hover:bg-gray-100 text-amber-600"
                   >
                     <ArrowLeft className="w-4 h-4 mr-2" />
