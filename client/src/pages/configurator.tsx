@@ -1350,8 +1350,61 @@ Configuration Date: ${new Date().toLocaleDateString()}
                 )}
 
                 {/* Standard Features */}
+                  <div className="bg-gray-50 rounded-lg p-6 mb-6">
+                    <div className="text-center mb-4">
+                      <p className="text-sm text-gray-500 uppercase tracking-wide mb-2">Included</p>
+                      <h4 className="text-xl font-semibold text-gray-900">Standard Features</h4>
+                    </div>
+
+                    <div className="space-y-6">
+                      {/* Smooth Towing Experience */}
+                      <div className="flex items-start space-x-4">
+                        <div className="w-12 h-12 bg-orange-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                          <svg className="w-6 h-6 text-black" fill="currentColor" viewBox="0 0 24 24">
+                            <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z"/>
+                          </svg>
+                        </div>
+                        <div>
+                          <h5 className="font-semibold text-gray-900 mb-2">Smooth Towing Experience</h5>
+                          <p className="text-sm text-gray-600 leading-relaxed">
+                            Advanced suspension, balanced weight, and reliable brakes for a stable, easy tow.
+                          </p>
+                        </div>
+                      </div>
+
+                      {/* Heavy-Duty Construction */}
+                      <div className="flex items-start space-x-4">
+                        <div className="w-12 h-12 bg-orange-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                          <svg className="w-6 h-6 text-black" fill="currentColor" viewBox="0 0 24 24">
+                            <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z"/>
+                          </svg>
+                        </div>
+                        <div>
+                          <h5 className="font-semibold text-gray-900 mb-2">Heavy-Duty Construction</h5>
+                          <p className="text-sm text-gray-600 leading-relaxed">
+                            Reinforced steel frames and decks built to handle the toughest loads.
+                          </p>
+                        </div>
+                      </div>
+
+                      {/* Superior Load Capacity */}
+                      <div className="flex items-start space-x-4">
+                        <div className="w-12 h-12 bg-orange-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                          <svg className="w-6 h-6 text-black" fill="currentColor" viewBox="0 0 24 24">
+                            <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z"/>
+                          </svg>
+                        </div>
+                        <div>
+                          <h5 className="font-semibold text-gray-900 mb-2">Superior Load Capacity</h5>
+                          <p className="text-sm text-gray-600 leading-relaxed">
+                            From light-duty to oversized equipment, trailers sized for every job.
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
                 <div className="mb-6">
-                  <div className="text-xs text-gray-500 mb-2 justify-center">INCLUDED</div>
+                  <div className="text-sm text-gray-500 uppercase tracking-wide mb-2">INCLUDED</div>
                   <h4 className="text-lg font-semibold text-gray-900 mb-4">Standard Features</h4>
                   
                   {/* Features with Checkboxes */}
