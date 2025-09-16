@@ -621,9 +621,7 @@ export class DatabaseStorage implements IStorage {
   async getTrailerModelsBySeries(seriesId: number): Promise<TrailerModelResponse[]> {
     try {
       const result = await db.execute(sql`
-        SELECT m.id, m.category_id, m.series_id, m.series, m.model_series, m.name, 
-               m.pull_type, m.gvwr_range, m.deck_height, m.overall_width, 
-               m.length_range, m.image_url, m.standard_features
+        SELECT m.id, m.category_id, m.series_id, m.model_id, m.name, m.image_url
         FROM trailer_models m
         WHERE m.series_id = ${seriesId}
         ORDER BY m.name
@@ -633,16 +631,16 @@ export class DatabaseStorage implements IStorage {
         id: model.id,
         categoryId: model.category_id,
         seriesId: model.series_id,
-        series: model.series,
-        modelSeries: model.model_series,
+        modelId: model.model_id,
         name: model.name,
-        pullType: model.pull_type,
-        gvwrRange: model.gvwr_range,
-        deckHeight: model.deck_height,
-        overallWidth: model.overall_width,
-        lengthRange: model.length_range,
         imageUrl: model.image_url,
-        standardFeatures: model.standard_features || []
+        // Use placeholder values for missing fields to match interface
+        gvwr: 'TBD',
+        payload: 'TBD', 
+        deckSize: 'TBD',
+        axles: 'TBD',
+        basePrice: 0,
+        features: []
       }));
     } catch (error) {
       console.error('Error fetching models by series:', error);
@@ -926,7 +924,7 @@ export class DatabaseStorage implements IStorage {
         SELECT s.id, s.name, s.category_id, c.name as category_name
         FROM trailer_series s
         JOIN trailer_categories c ON s.category_id = c.id
-        WHERE s.is_active = true
+        WHERE (s.is_archived IS NULL OR s.is_archived = false)
         ORDER BY c.name, s.name
       `);
       
