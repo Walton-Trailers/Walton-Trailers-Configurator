@@ -1310,7 +1310,7 @@ export default function FastPricing() {
                     <TableCell>
                       {editingModel?.id === model.id ? (
                         <Select
-                          value={seriesSelection[model.id] ?? model.series ?? "No Series"}
+                          value={seriesSelection[model.id] ?? model.seriesName ?? "No Series"}
                           onValueChange={(value: string) => setSeriesSelection(prev => ({ 
                             ...prev, 
                             [model.id]: value 
@@ -1329,7 +1329,7 @@ export default function FastPricing() {
                           </SelectContent>
                         </Select>
                       ) : (
-                        model.series ?? "No Series"
+                        model.seriesName ?? "No Series"
                       )}
                     </TableCell>
                     <TableCell>
@@ -1411,7 +1411,7 @@ export default function FastPricing() {
                             // Initialize seriesSelection with current model's series
                             setSeriesSelection(prev => ({
                               ...prev,
-                              [model.id]: model.series ?? "No Series"
+                              [model.id]: model.seriesName ?? "No Series"
                             }));
                           }}
                         >
