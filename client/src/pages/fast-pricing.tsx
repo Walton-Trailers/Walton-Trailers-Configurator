@@ -113,6 +113,15 @@ export default function FastPricing() {
     standardFeatures: [] as string[],
     basePrice: 0
   });
+  const [showAddOption, setShowAddOption] = useState(false);
+  const [newOptionData, setNewOptionData] = useState({
+    name: "",
+    modelIds: [] as string[],
+    category: "extras",
+    price: 0,
+    imageUrl: "",
+    isMultiSelect: false
+  });
 
   const sessionId = localStorage.getItem("admin_session");
   const queryClient = useQueryClient();
@@ -288,6 +297,32 @@ export default function FastPricing() {
       seriesId: seriesId, // Use the foreign key instead of text
     });
   };
+
+  // Option mutations
+  const addOptionMutation = useMutation({
+    mutationFn: (data: any) => fastMutate('/api/options', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${sessionId}`,
+      },
+      body: JSON.stringify(data),
+    }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin', 'options'] });
+      queryClient.invalidateQueries({ queryKey: ['options'] });
+      setShowAddOption(false);
+      setNewOptionData({
+        name: "",
+        modelIds: [],
+        category: "extras",
+        price: 0,
+        imageUrl: "",
+        isMultiSelect: false
+      });
+      toast({ title: "Success", description: "Option added successfully" });
+    },
+  });
 
   // Options update mutation
   const updateOptionMutation = useMutation({
@@ -1502,7 +1537,132 @@ export default function FastPricing() {
         {activeTab === "options" && (
           <Card>
             <div className="p-6">
-              <h2 className="text-lg font-semibold mb-4">Options & Extras ({options.length})</h2>
+              <div className="flex justify-between items-center mb-4">
+                <h2 className="text-lg font-semibold">Options & Extras ({options.length})</h2>
+                <Button onClick={() => setShowAddOption(true)} size="sm">
+                  Add Extras
+                </Button>
+              </div>
+              
+              {/* Add Option Dialog */}
+              {showAddOption && (
+                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+                  <div className="bg-white rounded-lg p-6 max-w-2xl w-full">
+                    <h3 className="text-lg font-semibold mb-4">Add New Option/Extra</h3>
+                    <div className="space-y-4">
+                      <div>
+                        <label className="block text-sm font-medium mb-1">Option Name</label>
+                        <Input
+                          placeholder="e.g., Spare Tire, LED Light Kit"
+                          value={newOptionData.name}
+                          onChange={(e: any) => setNewOptionData({ ...newOptionData, name: e.target.value })}
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium mb-1">Category</label>
+                        <Select
+                          value={newOptionData.category}
+                          onValueChange={(value: string) => setNewOptionData({ ...newOptionData, category: value })}
+                        >
+                          <option value="tires">Tires</option>
+                          <option value="ramps">Ramps</option>
+                          <option value="color">Color</option>
+                          <option value="extras">Extras</option>
+                          <option value="deck">Deck</option>
+                          <option value="walls">Walls</option>
+                          <option value="winch">Winch</option>
+                          <option value="wheels">Wheels</option>
+                          <option value="brakes">Brakes</option>
+                          <option value="hitch">Hitch</option>
+                        </Select>
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium mb-1">Price ($)</label>
+                        <Input
+                          type="number"
+                          placeholder="0"
+                          value={newOptionData.price}
+                          onChange={(e: any) => setNewOptionData({ ...newOptionData, price: parseFloat(e.target.value) || 0 })}
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium mb-1">Compatible Models</label>
+                        <div className="border border-gray-300 rounded-md p-3 max-h-32 overflow-y-auto space-y-1">
+                          {activeModels.map((model: any) => (
+                            <label key={model.id} className="flex items-center space-x-2 text-sm">
+                              <input
+                                type="checkbox"
+                                checked={newOptionData.modelIds.includes(model.modelId)}
+                                onChange={(e) => {
+                                  const modelIds = e.target.checked 
+                                    ? [...newOptionData.modelIds, model.modelId]
+                                    : newOptionData.modelIds.filter(id => id !== model.modelId);
+                                  setNewOptionData({ ...newOptionData, modelIds });
+                                }}
+                                className="rounded"
+                              />
+                              <span>{model.modelId} - {model.name}</span>
+                            </label>
+                          ))}
+                        </div>
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium mb-1">Image URL (Optional)</label>
+                        <Input
+                          placeholder="e.g., /objects/options/option-image.png"
+                          value={newOptionData.imageUrl}
+                          onChange={(e: any) => setNewOptionData({ ...newOptionData, imageUrl: e.target.value })}
+                        />
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <input
+                          type="checkbox"
+                          id="isMultiSelect"
+                          checked={newOptionData.isMultiSelect}
+                          onChange={(e) => setNewOptionData({ ...newOptionData, isMultiSelect: e.target.checked })}
+                          className="rounded"
+                        />
+                        <label htmlFor="isMultiSelect" className="text-sm">Allow multiple selections</label>
+                      </div>
+                    </div>
+                    <div className="flex justify-end gap-3 mt-6">
+                      <Button variant="outline" onClick={() => setShowAddOption(false)}>
+                        Cancel
+                      </Button>
+                      <Button 
+                        onClick={() => {
+                          // Create option for each selected model
+                          if (newOptionData.modelIds.length > 0) {
+                            newOptionData.modelIds.forEach(modelId => {
+                              addOptionMutation.mutate({
+                                name: newOptionData.name,
+                                modelId: modelId,
+                                category: newOptionData.category,
+                                price: newOptionData.price,
+                                imageUrl: newOptionData.imageUrl,
+                                isMultiSelect: newOptionData.isMultiSelect
+                              });
+                            });
+                          } else {
+                            // Add option without model association
+                            addOptionMutation.mutate({
+                              name: newOptionData.name,
+                              modelId: "ALL", // Default for all models
+                              category: newOptionData.category,
+                              price: newOptionData.price,
+                              imageUrl: newOptionData.imageUrl,
+                              isMultiSelect: newOptionData.isMultiSelect
+                            });
+                          }
+                        }}
+                        disabled={addOptionMutation.isPending || !newOptionData.name || newOptionData.price < 0}
+                      >
+                        Add Option
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              )}
               <Table>
                 <TableHeader>
                   <TableRow>
