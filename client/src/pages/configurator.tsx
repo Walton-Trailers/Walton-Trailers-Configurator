@@ -53,15 +53,25 @@ interface TrailerCategory {
 interface TrailerModel {
   id: number;
   categoryId: number;
-  modelId: string;
+  modelId?: string;
   name: string;
-  gvwr: string;
-  payload: string;
-  deckSize: string;
-  axles: string;
-  basePrice: number;
+  gvwr?: string;
+  payload?: string;
+  deckSize?: string;
+  axles?: string;
+  basePrice?: number;
   imageUrl: string;
-  features: string[];
+  features?: string[];
+  // Additional properties for PDF generation compatibility
+  series?: string | null;
+  seriesId?: number | null;
+  modelSeries?: string;
+  pullType?: string | null;
+  gvwrRange?: string | null;
+  deckHeight?: string | null;
+  overallWidth?: string | null;
+  lengthRange?: string | null;
+  standardFeatures?: string[];
 }
 
 interface TrailerOption {
@@ -71,6 +81,7 @@ interface TrailerOption {
   name: string;
   price: number;
   isMultiSelect: boolean;
+  payload?: number; // Optional payload for certain options
 }
 
 // Option Info Modal Component
@@ -2024,7 +2035,9 @@ Configuration Date: ${new Date().toLocaleDateString()}
               onClick={async () => {
                 try {
                   const { generateConfigurationPDF } = await import("@/lib/pdf-generator");
-                  generateConfigurationPDF(selectedModel, selectedOptions, totalPrice, options || []);
+                  if (selectedModel) {
+                    generateConfigurationPDF(selectedModel, selectedOptions, totalPrice, options || []);
+                  }
                   toast({
                     title: "PDF Downloaded",
                     description: "Your configuration summary has been downloaded as a PDF.",
