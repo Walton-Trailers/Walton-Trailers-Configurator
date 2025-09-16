@@ -1225,10 +1225,9 @@ Configuration Date: ${new Date().toLocaleDateString()}
             {/* Product Details Panel - Responsive */}
             <div className="flex-1 lg:ml-[65%] lg:w-[35%] bg-white">
               <div className="max-w-md mx-auto py-6 md:py-8 lg:py-12 px-4 md:px-6">
-                <div className="space-y-8 pb-32">
                 
                 {/* Back Button */}
-                <div className="flex items-center space-x-4">
+                <div className="flex items-center justify-between mb-6">
                   <Button 
                     variant="ghost" 
                     size="sm"
@@ -1251,40 +1250,31 @@ Configuration Date: ${new Date().toLocaleDateString()}
                 </div>
 
                 {/* Product Title */}
-                <div>
-                  <h1 className="text-2xl md:text-3xl lg:text-4xl font-bold mb-3 md:mb-4">
+                <div className="mb-6">
+                  <h1 className="text-2xl lg:text-3xl font-bold text-gray-900 mb-2">
                     {selectedSeries?.displayName || selectedSeries?.name}
                   </h1>
-                  <p className="text-zinc-600 dark:text-zinc-400 text-base md:text-lg">
+                  <p className="text-gray-600 text-base">
                     {selectedSeries?.description || 'Professional grade trailers for your needs'}
                   </p>
                 </div>
 
                 {/* Key Specs - Dynamic based on selected model only */}
                 {seriesModels && seriesModels.length > 0 && (
-                  <Card className="border border-zinc-200 dark:border-zinc-700">
-                    <CardContent className="p-6">
-                      <h3 className="text-xl font-semibold mb-4">{selectedModel?.name || 'Select a Model'}</h3>
-                      <div className="grid grid-cols-2 gap-4 text-sm mb-6">
-                        <div>
-                          <span className="text-zinc-500">GVWR: </span>
-                          <span className="font-medium">{selectedModel?.gvwr || 'N/A'}</span>
-                        </div>
-                        <div>
-                          <span className="text-zinc-500">Payload: </span>
-                          <span className="font-medium">{selectedModel?.payload || 'N/A'}</span>
-                        </div>
-                        <div>
-                          <span className="text-zinc-500">Deck: </span>
-                          <span className="font-medium">{selectedModel?.deckSize || 'N/A'}</span>
-                        </div>
-                        <div>
-                          <span className="text-zinc-500">Axles: </span>
-                          <span className="font-medium">{selectedModel?.axles || 'N/A'}</span>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
+                  <div className="grid grid-cols-3 gap-4 mb-6">
+                    <div className="text-center">
+                      <div className="text-lg font-bold text-gray-900">{selectedModel?.gvwr || 'N/A'}</div>
+                      <div className="text-sm text-gray-500">GVWR</div>
+                    </div>
+                    <div className="text-center">
+                      <div className="text-lg font-bold text-gray-900">{selectedModel?.payload || 'N/A'}</div>
+                      <div className="text-sm text-gray-500">Payload</div>
+                    </div>
+                    <div className="text-center">
+                      <div className="text-lg font-bold text-gray-900">{selectedModel?.deckSize || 'N/A'}</div>
+                      <div className="text-sm text-gray-500">Deck Size</div>
+                    </div>
+                  </div>
                 )}
 
                 {/* Choose Your Model */}
@@ -1348,65 +1338,11 @@ Configuration Date: ${new Date().toLocaleDateString()}
                     })()}
                   </div>
                 )}
-                  {/* Features that apply to all models */}
-                  <div className="bg-gray-50 rounded-lg p-6 mb-6">
-                    <div className="text-center mb-4">
-                      <p className="text-sm text-gray-500 uppercase tracking-wide mb-2">Included</p>
-                      <h4 className="text-xl font-semibold text-gray-900">Standard Features</h4>
-                    </div>
 
-                    <div className="space-y-6">
-                      {/* Smooth Towing Experience */}
-                      <div className="flex items-start space-x-4">
-                        <div className="w-12 h-12 bg-orange-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                          <svg className="w-6 h-6 text-black" fill="currentColor" viewBox="0 0 24 24">
-                            <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z"/>
-                          </svg>
-                        </div>
-                        <div>
-                          <h5 className="font-semibold text-gray-900 mb-2">Smooth Towing Experience</h5>
-                          <p className="text-sm text-gray-600 leading-relaxed">
-                            Advanced suspension, balanced weight, and reliable brakes for a stable, easy tow.
-                          </p>
-                        </div>
-                      </div>
-
-                      {/* Heavy-Duty Construction */}
-                      <div className="flex items-start space-x-4">
-                        <div className="w-12 h-12 bg-orange-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                          <svg className="w-6 h-6 text-black" fill="currentColor" viewBox="0 0 24 24">
-                            <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z"/>
-                          </svg>
-                        </div>
-                        <div>
-                          <h5 className="font-semibold text-gray-900 mb-2">Heavy-Duty Construction</h5>
-                          <p className="text-sm text-gray-600 leading-relaxed">
-                            Reinforced steel frames and decks built to handle the toughest loads.
-                          </p>
-                        </div>
-                      </div>
-
-                      {/* Superior Load Capacity */}
-                      <div className="flex items-start space-x-4">
-                        <div className="w-12 h-12 bg-orange-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                          <svg className="w-6 h-6 text-black" fill="currentColor" viewBox="0 0 24 24">
-                            <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z"/>
-                          </svg>
-                        </div>
-                        <div>
-                          <h5 className="font-semibold text-gray-900 mb-2">Superior Load Capacity</h5>
-                          <p className="text-sm text-gray-600 leading-relaxed">
-                            From light-duty to oversized equipment, trailers sized for every job.
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                  
                 {/* Standard Features */}
                 <div className="mb-6">
                   <div className="text-xs text-gray-500 mb-2">INCLUDED</div>
-                  <h4 className="text-lg font-semibold text-gray-900 mb-4">Standard Features</h4>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-4">Standard Features</h3>
                   
                   {/* Features with Checkboxes */}
                   <div className="space-y-4 mb-6">
@@ -1567,7 +1503,6 @@ Configuration Date: ${new Date().toLocaleDateString()}
                     </div>
                   )}
                 </div>
-                </div>
               </div>
             </div>
           </div>
@@ -1601,8 +1536,9 @@ Configuration Date: ${new Date().toLocaleDateString()}
             {/* Configuration Panel - Responsive */}
             <div className="flex-1 lg:ml-[65%] lg:w-[35%] bg-white">
               <div className="max-w-md mx-auto py-6 md:py-8 lg:py-12 px-4 md:px-6">
-                {/* Step 4: Configuration */}
-                {currentStep === 4 && selectedModel && options && (
+
+          {/* Step 4: Configuration */}
+          {currentStep === 4 && selectedModel && options && (
             <div className="space-y-8">
               <div className="flex items-center justify-between">
                 <Button 
