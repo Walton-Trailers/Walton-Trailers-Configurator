@@ -1356,12 +1356,41 @@ Configuration Date: ${new Date().toLocaleDateString()}
                   
                   {/* Features with Checkboxes */}
                   <div className="space-y-4 mb-6">
-                    {selectedModel?.standardFeatures?.map((feature, index) => (
-                      <div key={index} className="flex justify-between">
-                        <span>{feature}</span>
-                        <span className="text-primary">Standard</span>
+                    <div className="flex items-start space-x-3">
+                      <div className="w-5 h-5 bg-green-500 rounded flex items-center justify-center flex-shrink-0 mt-0.5">
+                        <svg className="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 24 24">
+                          <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z"/>
+                        </svg>
                       </div>
-                    ))}
+                      <div>
+                        <h5 className="font-medium text-gray-900">Smooth Towing Experience</h5>
+                        <p className="text-sm text-gray-600">Advanced suspension, balanced weight, and reliable brakes for a stable, easy tow.</p>
+                      </div>
+                    </div>
+
+                    <div className="flex items-start space-x-3">
+                      <div className="w-5 h-5 bg-green-500 rounded flex items-center justify-center flex-shrink-0 mt-0.5">
+                        <svg className="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 24 24">
+                          <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z"/>
+                        </svg>
+                      </div>
+                      <div>
+                        <h5 className="font-medium text-gray-900">Heavy-Duty Construction</h5>
+                        <p className="text-sm text-gray-600">Reinforced steel frames and decks built to handle the toughest loads.</p>
+                      </div>
+                    </div>
+
+                    <div className="flex items-start space-x-3">
+                      <div className="w-5 h-5 bg-green-500 rounded flex items-center justify-center flex-shrink-0 mt-0.5">
+                        <svg className="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 24 24">
+                          <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z"/>
+                        </svg>
+                      </div>
+                      <div>
+                        <h5 className="font-medium text-gray-900">Superior Load Capacity</h5>
+                        <p className="text-sm text-gray-600">Engineered to exceed weight ratings with optimal load distribution.</p>
+                      </div>
+                    </div>
                   </div>
 
                   {/* Additional Options */}
