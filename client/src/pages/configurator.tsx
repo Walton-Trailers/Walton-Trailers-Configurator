@@ -1356,7 +1356,7 @@ Configuration Date: ${new Date().toLocaleDateString()}
                   
                   {/* Features with Checkboxes */}
                   <div className="space-y-4 mb-6">
-                    {model.standardFeatures.map((feature, index) => (
+                    {selectedModel.standardFeatures.map((feature, index) => (
                       <div key={index} className="flex justify-between">
                         <span>{feature}</span>
                         <span className="text-primary">Standard</span>
