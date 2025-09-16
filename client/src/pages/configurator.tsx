@@ -1256,30 +1256,23 @@ Configuration Date: ${new Date().toLocaleDateString()}
                   </p>
                 </div>
 
-                {/* Key Specs - Dynamic based on hovered or selected model */}
-                {seriesModels && seriesModels.length > 0 && (() => {
-                  // Use hovered model, selected model, or first model as fallback
-                  const displayModel = hoveredModel || selectedModel || seriesModels[0];
-                  
-                  if (!displayModel) return null;
-                  
-                  return (
-                    <div className="grid grid-cols-3 gap-4 mb-6">
-                      <div className="text-center">
-                        <div className="text-lg font-bold text-gray-900">{displayModel.gvwr}</div>
-                        <div className="text-sm text-gray-500">GVWR</div>
-                      </div>
-                      <div className="text-center">
-                        <div className="text-lg font-bold text-gray-900">{displayModel.payload}</div>
-                        <div className="text-sm text-gray-500">Payload</div>
-                      </div>
-                      <div className="text-center">
-                        <div className="text-lg font-bold text-gray-900">{displayModel.deckSize}</div>
-                        <div className="text-sm text-gray-500">Deck Size</div>
-                      </div>
+                {/* Key Specs - Dynamic based on selected model only */}
+                {seriesModels && seriesModels.length > 0 && (
+                  <div className="grid grid-cols-3 gap-4 mb-6">
+                    <div className="text-center">
+                      <div className="text-lg font-bold text-gray-900">{selectedModel?.gvwr || 'N/A'}</div>
+                      <div className="text-sm text-gray-500">GVWR</div>
                     </div>
-                  );
-                })()}
+                    <div className="text-center">
+                      <div className="text-lg font-bold text-gray-900">{selectedModel?.payload || 'N/A'}</div>
+                      <div className="text-sm text-gray-500">Payload</div>
+                    </div>
+                    <div className="text-center">
+                      <div className="text-lg font-bold text-gray-900">{selectedModel?.deckSize || 'N/A'}</div>
+                      <div className="text-sm text-gray-500">Deck Size</div>
+                    </div>
+                  </div>
+                )}
 
                 {/* Choose Your Model */}
                 <div className="mb-6">
