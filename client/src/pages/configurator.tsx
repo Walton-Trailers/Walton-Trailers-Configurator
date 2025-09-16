@@ -1547,9 +1547,8 @@ Configuration Date: ${new Date().toLocaleDateString()}
             {/* Configuration Panel - Responsive */}
             <div className="flex-1 lg:ml-[65%] lg:w-[35%] bg-white">
               <div className="max-w-md mx-auto py-6 md:py-8 lg:py-12 px-4 md:px-6">
-
-          {/* Step 4: Configuration */}
-          {currentStep === 4 && selectedModel && options && (
+                {/* Step 4: Configuration */}
+                {currentStep === 4 && selectedModel && options && (
             <div className="space-y-8">
               <div className="flex items-center justify-between">
                 <Button 
