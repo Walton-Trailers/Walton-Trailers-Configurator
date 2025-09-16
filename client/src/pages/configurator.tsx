@@ -1351,7 +1351,7 @@ Configuration Date: ${new Date().toLocaleDateString()}
 
                 {/* Standard Features */}
                 <div className="mb-6">
-                  <div className="text-xs text-gray-500 mb-2">INCLUDED</div>
+                  <div className="text-xs text-gray-500 mb-2 justify-center">INCLUDED</div>
                   <h4 className="text-lg font-semibold text-gray-900 mb-4">Standard Features</h4>
                   
                   {/* Features with Checkboxes */}
