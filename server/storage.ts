@@ -921,7 +921,7 @@ export class DatabaseStorage implements IStorage {
   async getAllSeries(): Promise<any[]> {
     try {
       const result = await db.execute(sql`
-        SELECT s.id, s.name, s.category_id, c.name as category_name
+        SELECT s.id, s.name, s.category_id, s.slug, s.base_price, c.name as category_name
         FROM trailer_series s
         JOIN trailer_categories c ON s.category_id = c.id
         WHERE (s.is_archived IS NULL OR s.is_archived = false)
@@ -933,6 +933,8 @@ export class DatabaseStorage implements IStorage {
         name: series.name,
         categoryId: series.category_id,
         categoryName: series.category_name,
+        slug: series.slug,
+        basePrice: series.base_price,
       }));
     } catch (error) {
       console.error('Error fetching all series:', error);
