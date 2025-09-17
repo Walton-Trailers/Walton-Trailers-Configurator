@@ -595,7 +595,7 @@ export class DatabaseStorage implements IStorage {
                m.deck_size, m.axles, m.base_price, m.image_url, m.features
         FROM trailer_models m
         JOIN trailer_categories c ON m.category_id = c.id
-        WHERE c.slug = ${categorySlug}
+        WHERE c.slug = ${categorySlug} AND NOT m.is_archived
         ORDER BY m.id
       `);
       
@@ -628,7 +628,7 @@ export class DatabaseStorage implements IStorage {
         FROM trailer_models m
         JOIN trailer_categories c ON m.category_id = c.id
         LEFT JOIN trailer_series s ON m.series_id = s.id
-        WHERE m.series_id = ${seriesId}
+        WHERE m.series_id = ${seriesId} AND NOT m.is_archived
         ORDER BY m.name
       `);
       
