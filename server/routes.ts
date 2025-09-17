@@ -171,16 +171,16 @@ export async function registerRoutes(app: Express): Promise<Express> {
     try {
       const categoryId = parseInt(req.params.id);
       
-      // Check if category has any models using raw SQL to match actual database structure
+      // Check if category has any non-archived models using raw SQL to match actual database structure
       const modelsResult = await db.execute(sql`
         SELECT COUNT(*) as count 
         FROM trailer_models 
-        WHERE category_id = ${categoryId}
+        WHERE category_id = ${categoryId} AND NOT is_archived
       `);
       
       const modelsCount = (modelsResult.rows[0] as any).count;
       if (modelsCount > 0) {
-        return res.status(400).json({ message: "Cannot delete category with existing models" });
+        return res.status(400).json({ message: "Cannot delete category with existing active models. Archive all models first." });
       }
       
       // Delete category using raw SQL
