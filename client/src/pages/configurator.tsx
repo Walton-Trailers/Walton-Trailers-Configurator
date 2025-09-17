@@ -1377,7 +1377,12 @@ Configuration Date: ${new Date().toLocaleDateString()}
                           acc[option.category].push(option);
                           return acc;
                         }, {} as Record<string, TrailerOption[]>)
-                      ).map(([category, categoryOptions]) => (
+                      ).sort(([categoryA], [categoryB]) => {
+                        // Sort so that 'extras' (Additional Options) appears last
+                        if (categoryA === 'extras') return 1;
+                        if (categoryB === 'extras') return -1;
+                        return 0;
+                      }).map(([category, categoryOptions]) => (
                         <div key={category} className="mb-4">
                           <h4 className="text-sm font-medium text-gray-900 mb-2">
                             {category === 'tires' ? 'Tire Options' : 
