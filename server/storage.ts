@@ -1371,9 +1371,9 @@ export class DatabaseStorage implements IStorage {
   async createModel(data: { categoryId: number; seriesId?: number; modelSeries: string; name: string; basePrice?: number; imageUrl: string; standardFeatures: string[] }): Promise<TrailerModelResponse> {
     try {
       const result = await db.execute(sql`
-        INSERT INTO trailer_models (category_id, series_id, model_series, name, base_price, image_url, features)
+        INSERT INTO trailer_models (category_id, series_id, model_id, name, base_price, image_url, features)
         VALUES (${data.categoryId}, ${data.seriesId || null}, ${data.modelSeries}, ${data.name}, ${data.basePrice || 0}, ${data.imageUrl}, ${JSON.stringify(data.standardFeatures)})
-        RETURNING id, category_id, series_id, model_series, name, base_price, image_url, features
+        RETURNING id, category_id, series_id, model_id, name, base_price, image_url, features
       `);
       
       const model = result.rows[0] as any;
@@ -1398,7 +1398,7 @@ export class DatabaseStorage implements IStorage {
         categoryId: model.category_id,
         categoryName: categoryName,
         seriesName: seriesName,
-        modelId: model.model_series,
+        modelId: model.model_id,
         name: model.name,
         gvwrRange: undefined,
         deckHeight: undefined,
