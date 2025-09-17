@@ -1238,19 +1238,7 @@ export default function FastPricing() {
                             />
                           </div>
                         </div>
-                        <div className="grid grid-cols-2 gap-4">
-                          <div>
-                            <label className="block text-sm font-medium mb-1">Pull Type (Optional)</label>
-                            <Select
-                              value={newModelData.pullType}
-                              onValueChange={(value: string) => setNewModelData({ ...newModelData, pullType: value })}
-                            >
-                              <option value="">Select pull type</option>
-                              <option value="bumper">Bumper</option>
-                              <option value="gooseneck">Gooseneck</option>
-                              <option value="both">Both</option>
-                            </Select>
-                          </div>
+                        <div className="grid grid-cols-1 gap-4">
                           <div>
                             <label className="block text-sm font-medium mb-1">Base Price ($)</label>
                             <Input

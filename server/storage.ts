@@ -121,7 +121,7 @@ export interface IStorage {
   archiveModel(id: number): Promise<void>;
   restoreModel(id: number): Promise<TrailerModelResponse>;
   getOptionCategories(): Promise<string[]>;
-  createModel(data: { categoryId: number; seriesId?: number; modelSeries: string; name: string; pullType?: string; basePrice?: number; imageUrl: string; standardFeatures: string[] }): Promise<TrailerModelResponse>;
+  createModel(data: { categoryId: number; seriesId?: number; modelSeries: string; name: string; basePrice?: number; imageUrl: string; standardFeatures: string[] }): Promise<TrailerModelResponse>;
   
   // Series management operations
   getAllSeries(): Promise<any[]>;
@@ -526,7 +526,7 @@ export class MemStorage implements IStorage {
     return series;
   }
 
-  async createModel(data: { categoryId: number; seriesId?: number; modelSeries: string; name: string; pullType?: string; basePrice?: number; imageUrl: string; standardFeatures: string[] }): Promise<TrailerModelResponse> {
+  async createModel(data: { categoryId: number; seriesId?: number; modelSeries: string; name: string; basePrice?: number; imageUrl: string; standardFeatures: string[] }): Promise<TrailerModelResponse> {
     // Basic implementation for mem storage
     const model: TrailerModelResponse = {
       id: this.currentId++,
@@ -1368,12 +1368,12 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
-  async createModel(data: { categoryId: number; seriesId?: number; modelSeries: string; name: string; pullType?: string; basePrice?: number; imageUrl: string; standardFeatures: string[] }): Promise<TrailerModelResponse> {
+  async createModel(data: { categoryId: number; seriesId?: number; modelSeries: string; name: string; basePrice?: number; imageUrl: string; standardFeatures: string[] }): Promise<TrailerModelResponse> {
     try {
       const result = await db.execute(sql`
-        INSERT INTO trailer_models (category_id, series_id, model_series, name, pull_type, base_price, image_url, standard_features)
-        VALUES (${data.categoryId}, ${data.seriesId || null}, ${data.modelSeries}, ${data.name}, ${data.pullType || null}, ${data.basePrice || 0}, ${data.imageUrl}, ${JSON.stringify(data.standardFeatures)})
-        RETURNING id, category_id, series_id, model_series, name, pull_type, base_price, image_url, standard_features
+        INSERT INTO trailer_models (category_id, series_id, model_series, name, base_price, image_url, features)
+        VALUES (${data.categoryId}, ${data.seriesId || null}, ${data.modelSeries}, ${data.name}, ${data.basePrice || 0}, ${data.imageUrl}, ${JSON.stringify(data.standardFeatures)})
+        RETURNING id, category_id, series_id, model_series, name, base_price, image_url, features
       `);
       
       const model = result.rows[0] as any;
@@ -1405,7 +1405,7 @@ export class DatabaseStorage implements IStorage {
         overallWidth: undefined,
         lengthRange: undefined,
         imageUrl: model.image_url,
-        standardFeatures: JSON.parse(model.standard_features),
+        standardFeatures: JSON.parse(model.features),
         basePrice: model.base_price || 0,
         isArchived: false,
       };
