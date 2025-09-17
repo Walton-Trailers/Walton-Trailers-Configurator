@@ -1282,26 +1282,32 @@ Configuration Date: ${new Date().toLocaleDateString()}
                   <h2 className="text-lg font-semibold text-gray-900 mb-4">Choose Your Model</h2>
                   
                   {/* Database-driven models filtered by series */}
-                  {seriesModels?.map((model, index) => (
-                    <button
-                      key={model.id}
-                      onClick={() => setSelectedModel(model)}
-                      onMouseEnter={() => setHoveredModel(model)}
-                      onMouseLeave={() => setHoveredModel(null)}
-                      className={`w-full p-4 rounded-lg border text-left transition-all duration-200 mb-3 ${
-                        selectedModel?.id === model.id
-                          ? 'border-gray-900 bg-gray-50'
-                          : 'border-gray-200 hover:border-gray-300'
-                      }`}
-                    >
-                      <div className="flex justify-between items-center">
-                        <div className="font-medium text-gray-900">{model.name}</div>
-                        <div className="font-bold text-gray-900">
-                          ${model.basePrice?.toLocaleString() || '0'}
+                  {seriesModels && seriesModels.length > 0 ? (
+                    seriesModels.map((model, index) => (
+                      <button
+                        key={model.id}
+                        onClick={() => setSelectedModel(model)}
+                        onMouseEnter={() => setHoveredModel(model)}
+                        onMouseLeave={() => setHoveredModel(null)}
+                        className={`w-full p-4 rounded-lg border text-left transition-all duration-200 mb-3 ${
+                          selectedModel?.id === model.id
+                            ? 'border-gray-900 bg-gray-50'
+                            : 'border-gray-200 hover:border-gray-300'
+                        }`}
+                      >
+                        <div className="flex justify-between items-center">
+                          <div className="font-medium text-gray-900">{model.name}</div>
+                          <div className="font-bold text-gray-900">
+                            ${model.basePrice?.toLocaleString() || '0'}
+                          </div>
                         </div>
-                      </div>
-                    </button>
-                  ))}
+                      </button>
+                    ))
+                  ) : selectedSeries && seriesModels !== undefined ? (
+                    <div className="text-center py-8">
+                      <p className="text-gray-500">No Models Available</p>
+                    </div>
+                  ) : null}
                 </div>
 
                 {/* Length Selection for FBH Models */}
