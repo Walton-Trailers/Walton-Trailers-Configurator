@@ -1571,6 +1571,32 @@ Configuration Date: ${new Date().toLocaleDateString()}
                       <span className="font-medium">{selectedModel.axles}</span>
                     </div>
                   </div>
+
+                  {/* Selected Options */}
+                  {Object.keys(selectedOptions).length > 0 && (
+                    <div className="border-t pt-4">
+                      <h4 className="text-base font-semibold mb-3 text-zinc-900">Selected Options</h4>
+                      <div className="space-y-2">
+                        {Object.entries(selectedOptions).map(([category, optionIds]) => {
+                          const categoryOptions = options?.filter(opt => opt.category === category) || [];
+                          const selectedCategoryOptions = Array.isArray(optionIds) 
+                            ? categoryOptions.filter(opt => optionIds.includes(opt.id))
+                            : categoryOptions.filter(opt => opt.id === optionIds);
+                          
+                          return selectedCategoryOptions.map(option => (
+                            <div key={option.id} className="flex justify-between py-1 text-sm">
+                              <span className="text-zinc-700">{option.name}</span>
+                              <span className="font-medium text-zinc-600">
+                                {option.price === 0 ? 'Included' : 
+                                 option.price > 0 ? `+$${option.price.toLocaleString()}` : 
+                                 `$${option.price.toLocaleString()}`}
+                              </span>
+                            </div>
+                          ));
+                        })}
+                      </div>
+                    </div>
+                  )}
                 </CardContent>
               </Card>
 
