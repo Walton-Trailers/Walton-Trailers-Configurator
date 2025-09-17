@@ -1309,41 +1309,7 @@ Configuration Date: ${new Date().toLocaleDateString()}
                     </div>
                   ) : null}
                 </div>
-
-                {/* Length Selection for FBH Models */}
-                {selectedModel && selectedModel.name.includes('FBH') && options && (
-                  <div className="mb-6">
-                    <h3 className="text-lg font-semibold text-gray-900 mb-4">Length Options</h3>
-                    {(() => {
-                      const lengthOptions = options.filter(opt => opt.category === 'length');
-                      if (lengthOptions.length === 0) return null;
-                      
-                      return (
-                        <div className="relative">
-                          <select
-                            value={selectedOptions.length?.toString() || lengthOptions[0]?.id?.toString() || ''}
-                            onChange={(e) => {
-                              const optionId = parseInt(e.target.value);
-                              handleOptionChange('length', optionId, false, true);
-                            }}
-                            className="w-full p-4 border border-gray-300 rounded-lg bg-white text-gray-900 font-medium appearance-none cursor-pointer hover:border-gray-400 focus:border-gray-900 focus:outline-none focus:ring-0"
-                          >
-                            {lengthOptions.map((option) => (
-                              <option key={option.id} value={option.id}>
-                                {option.name} - {option.price === 0 ? 'Standard' : `+$${option.price.toLocaleString()}`}
-                              </option>
-                            ))}
-                          </select>
-                          <div className="absolute inset-y-0 right-0 flex items-center px-4 pointer-events-none">
-                            <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                            </svg>
-                          </div>
-                        </div>
-                      );
-                    })()}
-                  </div>
-                )}
+                
                 {/* Features that apply to all models */}
                 <div className="bg-gray-50 rounded-lg p-6 mb-6">
                   <div className="text-center mb-4">
@@ -1420,7 +1386,11 @@ Configuration Date: ${new Date().toLocaleDateString()}
                              category === 'extras' ? 'Additional Options' : 
                              category === 'deck' ? 'Deck Length' : 
                              category === 'walls' ? 'Wall Height' : 
-                             category === 'winch' ? 'Winch Options' : category}
+                             category === 'winch' ? 'Winch Options' : 
+                             category === 'length' ? 'Length Options' :
+                             category === 'jack' ? 'Jack Options' :
+                             // Capitalize first letter for any unmapped categories
+                             category.charAt(0).toUpperCase() + category.slice(1) + ' Options'}
                           </h4>
                           
                           {categoryOptions[0]?.isMultiSelect ? (
