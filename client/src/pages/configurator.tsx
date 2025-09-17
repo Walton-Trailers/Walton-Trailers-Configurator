@@ -298,28 +298,10 @@ export default function Configurator() {
     enabled: !!selectedModel?.modelId
   });
 
-  // Fetch series for Equipment & Tilt category
-  const { data: equipmentTiltSeries } = useQuery<any[]>({
-    queryKey: ['/api/categories', 'equipment-tilt', 'series'],
-    enabled: selectedCategory?.slug === 'equipment-tilt'
-  });
-
-  // Fetch series for Flatbed category
-  const { data: flatbedSeries } = useQuery<any[]>({
-    queryKey: ['/api/categories', 'flatbed', 'series'],
-    enabled: selectedCategory?.slug === 'flatbed'
-  });
-
-  // Fetch series for Dump category
-  const { data: dumpSeries } = useQuery<any[]>({
-    queryKey: ['/api/categories', 'dump', 'series'],
-    enabled: selectedCategory?.slug === 'dump'
-  });
-
-  // Fetch series for Landscape category
-  const { data: landscapeSeries } = useQuery<any[]>({
-    queryKey: ['/api/categories', 'landscape', 'series'],
-    enabled: selectedCategory?.slug === 'landscape'
+  // Fetch series for any selected category (dynamic)
+  const { data: categorySeries, isLoading: isSeriesLoading } = useQuery<any[]>({
+    queryKey: ['/api/categories', selectedCategory?.slug, 'series'],
+    enabled: !!selectedCategory?.slug
   });
 
   // Fetch models by selected series (database-driven filtering)
@@ -1005,11 +987,14 @@ Configuration Date: ${new Date().toLocaleDateString()}
               </p>
             </div>
 
-            {/* Conditional Series Selection based on Category */}
-            {selectedCategory.slug === 'flatbed' && (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-4xl mx-auto">
-                {flatbedSeries && flatbedSeries.length > 0 ? (
-                  flatbedSeries.map((series, index) => (
+            {/* Dynamic Series Selection for any Category */}
+            {isSeriesLoading ? (
+              <div className="text-center py-8">
+                <p className="text-gray-500">Loading series options...</p>
+              </div>
+            ) : categorySeries && categorySeries.length > 0 ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-6xl mx-auto">
+                {categorySeries.map((series, index) => (
                     <div key={series.id} className="animate-in slide-in-from-bottom duration-700" style={{ animationDelay: `${index * 150}ms` }}>
                       <button
                         className="w-full text-left group relative overflow-hidden rounded-md border border-gray-200 bg-white hover:border-gray-300 hover:shadow-xl transition-all duration-500 hover:scale-[1.02]"
@@ -1043,159 +1028,11 @@ Configuration Date: ${new Date().toLocaleDateString()}
                         </div>
                       </button>
                     </div>
-                  ))
-                ) : (
-                  <div className="col-span-full text-center py-8">
-                    <p className="text-gray-500">Loading series options...</p>
-                  </div>
-                )}
+                  ))}
               </div>
-            )}
-
-            {/* Equipment & Tilt Trailers Series Selection */}
-            {selectedCategory.slug === 'equipment-tilt' && (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-6xl mx-auto">
-                {equipmentTiltSeries && equipmentTiltSeries.length > 0 ? (
-                  equipmentTiltSeries.map((series, index) => (
-                    <div key={series.id} className="animate-in slide-in-from-bottom duration-700" style={{ animationDelay: `${index * 150}ms` }}>
-                  <button
-                    className="w-full h-full text-left group relative overflow-hidden rounded-md border border-gray-200 bg-white hover:border-gray-300 hover:shadow-xl transition-all duration-500 hover:scale-[1.02]"
-                    onClick={() => handleSeriesSelect(series)}
-                  >
-                    <div className="flex flex-col h-full">
-                      {/* Top - Image */}
-                      <div className="w-full h-48 md:h-56 relative overflow-hidden rounded-t-md bg-orange-500 flex items-center justify-center">
-                        <div className="text-white text-xl md:text-2xl font-bold tracking-wider text-center">
-                          {series.name.toUpperCase()}
-                        </div>
-                      </div>
-                      
-                      {/* Bottom - Content */}
-                      <div className="w-full p-6 md:p-8 flex-1 flex flex-col justify-between">
-                        <div>
-                          <div className="flex items-center justify-between mb-3 md:mb-4">
-                            <h3 className="text-lg md:text-xl font-semibold text-gray-900 group-hover:text-blue-600 transition-colors duration-300">
-                              {series.name}
-                            </h3>
-                            <ArrowRight className="w-5 h-5 text-gray-400 group-hover:text-blue-500 group-hover:translate-x-1 transition-all duration-300" />
-                          </div>
-                          
-                          <p className="text-gray-600 mb-4 md:mb-6 leading-relaxed">
-                            {series.description || 'Professional equipment trailer for your hauling needs.'}
-                          </p>
-                        </div>
-                        
-                        <div className="text-lg md:text-xl font-semibold text-blue-600">
-                          Starting at ${series.basePrice ? series.basePrice.toLocaleString() : '9,500'}
-                        </div>
-                      </div>
-                    </div>
-                  </button>
-                    </div>
-                  ))
-                ) : (
-                  <div className="col-span-full text-center py-8">
-                    <p className="text-gray-500">Loading series options...</p>
-                  </div>
-                )}
-              </div>
-            )}
-
-            {/* Dump Trailers Series Selection */}
-            {selectedCategory.slug === 'dump' && (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-4xl mx-auto">
-                {dumpSeries && dumpSeries.length > 0 ? (
-                  dumpSeries.map((series, index) => (
-                    <div key={series.id} className="animate-in slide-in-from-bottom duration-700" style={{ animationDelay: `${index * 150}ms` }}>
-                      <button
-                        className="w-full h-full text-left group relative overflow-hidden rounded-md border border-gray-200 bg-white hover:border-gray-300 hover:shadow-xl transition-all duration-500 hover:scale-[1.02]"
-                        onClick={() => handleSeriesSelect(series)}
-                      >
-                        <div className="flex flex-col h-full">
-                          {/* Top - Image */}
-                          <div className="w-full h-48 md:h-56 relative overflow-hidden rounded-t-md bg-orange-500 flex items-center justify-center">
-                            <div className="text-white text-2xl md:text-3xl font-bold tracking-wider text-center">
-                              {series.name.toUpperCase()}
-                            </div>
-                          </div>
-                          
-                          {/* Bottom - Content */}
-                          <div className="w-full p-6 md:p-8 flex-1 flex flex-col justify-between">
-                            <div>
-                              <div className="flex items-center justify-between mb-3 md:mb-4">
-                                <h3 className="text-xl md:text-2xl font-semibold text-gray-900 group-hover:text-blue-600 transition-colors duration-300">
-                                  {series.name}
-                                </h3>
-                                <ArrowRight className="w-5 h-5 text-gray-400 group-hover:text-blue-500 group-hover:translate-x-1 transition-all duration-300" />
-                              </div>
-                              
-                              <p className="text-gray-600 mb-4 md:mb-6 leading-relaxed">
-                                {series.description || 'Professional dump trailer for your hauling needs.'}
-                              </p>
-                            </div>
-                            
-                            <div className="text-lg md:text-xl font-semibold text-blue-600">
-                              Starting at ${series.basePrice ? series.basePrice.toLocaleString() : '18,000'}
-                            </div>
-                          </div>
-                        </div>
-                      </button>
-                    </div>
-                  ))
-                ) : (
-                  <div className="col-span-full text-center py-8">
-                    <p className="text-gray-500">Loading series options...</p>
-                  </div>
-                )}
-              </div>
-            )}
-
-            {/* Landscape Trailers Series Selection */}
-            {selectedCategory.slug === 'landscape' && (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-4xl mx-auto">
-                {landscapeSeries && landscapeSeries.length > 0 ? (
-                  landscapeSeries.map((series, index) => (
-                    <div key={series.id} className="animate-in slide-in-from-bottom duration-700" style={{ animationDelay: `${index * 150}ms` }}>
-                      <button
-                        className="w-full h-full text-left group relative overflow-hidden rounded-md border border-gray-200 bg-white hover:border-gray-300 hover:shadow-xl transition-all duration-500 hover:scale-[1.02]"
-                        onClick={() => handleSeriesSelect(series)}
-                      >
-                        <div className="flex flex-col h-full">
-                          {/* Top - Image */}
-                          <div className="w-full h-48 md:h-56 relative overflow-hidden rounded-t-md bg-orange-500 flex items-center justify-center">
-                            <div className="text-white text-2xl md:text-3xl font-bold tracking-wider text-center">
-                              {series.name.toUpperCase()}
-                            </div>
-                          </div>
-                          
-                          {/* Bottom - Content */}
-                          <div className="w-full p-6 md:p-8 flex-1 flex flex-col justify-between">
-                            <div>
-                              <div className="flex items-center justify-between mb-3 md:mb-4">
-                                <h3 className="text-xl md:text-2xl font-semibold text-gray-900 group-hover:text-blue-600 transition-colors duration-300">
-                                  {series.name}
-                                </h3>
-                                <ArrowRight className="w-5 h-5 text-gray-400 group-hover:text-blue-500 group-hover:translate-x-1 transition-all duration-300" />
-                              </div>
-                              
-                              <p className="text-gray-600 mb-4 md:mb-6 leading-relaxed">
-                                {series.description || 'Professional landscape trailer for your hauling needs.'}
-                              </p>
-                            </div>
-                            
-                            <div className="text-lg md:text-xl font-semibold text-blue-600">
-                              Starting at ${series.basePrice ? series.basePrice.toLocaleString() : '6,000'}
-                            </div>
-                          </div>
-                        </div>
-                      </button>
-                    </div>
-                  ))
-                ) : (
-                  <div className="col-span-full text-center py-8">
-                    <p className="text-gray-500">Loading series options...</p>
-                  </div>
-                )}
+            ) : (
+              <div className="text-center py-8">
+                <p className="text-gray-500">No series available for this category.</p>
               </div>
             )}
           </div>
