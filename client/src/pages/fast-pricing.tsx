@@ -1024,6 +1024,7 @@ export default function FastPricing() {
                     <TableHead>Name</TableHead>
                     <TableHead>Category</TableHead>
                     <TableHead>Slug</TableHead>
+                    <TableHead>Descriptions</TableHead>
                     <TableHead>Base Price</TableHead>
                     <TableHead>Actions</TableHead>
                   </TableRow>
@@ -1075,6 +1076,19 @@ export default function FastPricing() {
                           />
                         ) : (
                           series.slug
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        {editingSeries?.id === series.id ? (
+                          <Input
+                            value={editData[series.id]?.description ?? series.description}
+                            onChange={(e: any) => setEditData({
+                              ...editData,
+                              [series.id]: { ...editData[series.id], description: e.target.value }
+                            })}
+                          />
+                        ) : (
+                          series.description || 'No description'
                         )}
                       </TableCell>
                       <TableCell>
