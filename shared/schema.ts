@@ -26,6 +26,7 @@ export const trailerModels = pgTable("trailer_models", {
   deckHeight: text("deck_height"),
   overallWidth: text("overall_width"),
   lengthRange: text("length_range"), // e.g., "14 - 16'"
+  basePrice: integer("base_price").notNull().default(0),
   imageUrl: text("image_url").notNull(),
   standardFeatures: json("standard_features").$type<string[]>().notNull(),
 });
