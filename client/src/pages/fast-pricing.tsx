@@ -1817,26 +1817,6 @@ export default function FastPricing() {
                             </Button>
                             <Button
                               size="sm"
-                              variant="outline"
-                              onClick={() => {
-                                setEditingOption(null);
-                                setEditData({});
-                              }}
-                            >
-                              <X className="w-4 h-4" />
-                            </Button>
-                          </div>
-                        ) : (
-                          <div className="flex gap-2">
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              onClick={() => setEditingOption(option)}
-                            >
-                              <Edit className="w-4 h-4" />
-                            </Button>
-                            <Button
-                              size="sm"
                               onClick={() => {
                                 if (confirm('Are you sure you want to delete this option? This action cannot be undone.')) {
                                   deleteOptionMutation.mutate(option.id);
@@ -1848,7 +1828,25 @@ export default function FastPricing() {
                             >
                               <Trash2 className="w-4 h-4" />
                             </Button>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => {
+                                setEditingOption(null);
+                                setEditData({});
+                              }}
+                            >
+                              <X className="w-4 h-4" />
+                            </Button>
                           </div>
+                        ) : (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => setEditingOption(option)}
+                          >
+                            <Edit className="w-4 h-4" />
+                          </Button>
                         )}
                       </TableCell>
                     </TableRow>
