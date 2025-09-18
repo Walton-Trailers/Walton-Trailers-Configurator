@@ -1061,7 +1061,7 @@ Configuration Date: ${new Date().toLocaleDateString()}
 
             {/* Product Details Panel - Responsive */}
             <div className="flex-1 lg:ml-[65%] lg:w-[35%] bg-white">
-              <div className="max-w-md mx-auto py-6 md:py-8 lg:py-12 px-4 md:px-6 pb-32">
+              <div className="max-w-md mx-auto py-6 md:py-8 lg:py-12 px-4 md:px-6 pb-48">
                 
                 {/* Back Button */}
                 <div className="flex items-center justify-between mb-6">
@@ -1371,7 +1371,7 @@ Configuration Date: ${new Date().toLocaleDateString()}
 
           {/* Step 4: Order Summary */}
           {currentStep === 4 && selectedModel && (
-            <div className="space-y-8 pb-32">
+            <div className="space-y-8 pb-48">
               <div className="flex items-center space-x-4">
                 <Button 
                   variant="ghost" 
