@@ -1479,16 +1479,16 @@ export class DatabaseStorage implements IStorage {
 
   async deleteSeries(id: number): Promise<void> {
     try {
-      // Check if series has any models
+      // Check if series has any non-archived models
       const modelsResult = await db.execute(sql`
         SELECT COUNT(*) as count 
         FROM trailer_models 
-        WHERE series_id = ${id}
+        WHERE series_id = ${id} AND NOT is_archived
       `);
       
       const modelsCount = (modelsResult.rows[0] as any).count;
       if (modelsCount > 0) {
-        throw new Error("Cannot delete series with existing models");
+        throw new Error("Cannot delete series with existing active models. Archive all models first.");
       }
       
       await db.execute(sql`
