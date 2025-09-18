@@ -1491,6 +1491,14 @@ export class DatabaseStorage implements IStorage {
         throw new Error("Cannot delete series with existing active models. Archive all models first.");
       }
       
+      // Set series_id to NULL for any archived models to avoid foreign key constraint violation
+      await db.execute(sql`
+        UPDATE trailer_models 
+        SET series_id = NULL 
+        WHERE series_id = ${id} AND is_archived = true
+      `);
+      
+      // Now delete the series
       await db.execute(sql`
         DELETE FROM trailer_series 
         WHERE id = ${id}
