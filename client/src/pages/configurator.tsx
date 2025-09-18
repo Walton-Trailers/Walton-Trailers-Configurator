@@ -1061,7 +1061,7 @@ Configuration Date: ${new Date().toLocaleDateString()}
 
             {/* Product Details Panel - Responsive */}
             <div className="flex-1 lg:ml-[65%] lg:w-[35%] bg-white">
-              <div className="max-w-md mx-auto py-6 md:py-8 lg:py-12 px-4 md:px-6">
+              <div className="max-w-md mx-auto py-6 md:py-8 lg:py-12 px-4 md:px-6 pb-32">
                 
                 {/* Back Button */}
                 <div className="flex items-center justify-between mb-6">
