@@ -484,11 +484,20 @@ export async function registerRoutes(app: Express): Promise<Express> {
     try {
       const { dealerId, password } = req.body;
       
+      console.log("🔐 Dealer login attempt:");
+      console.log("📝 Received dealerId:", dealerId);
+      console.log("📝 Received password:", password);
+      
       const [dealer] = await db.select()
         .from(dealers)
         .where(eq(dealers.dealerId, dealerId));
       
+      console.log("🔍 Database query result:", dealer);
+      
       if (!dealer || !dealer.isActive) {
+        console.log("❌ Authentication failed: dealer not found or inactive");
+        console.log("📊 Dealer exists:", !!dealer);
+        console.log("📊 Dealer active:", dealer?.isActive);
         return res.status(401).json({ error: "Invalid credentials" });
       }
       
@@ -496,7 +505,10 @@ export async function registerRoutes(app: Express): Promise<Express> {
       // In production, use bcrypt to verify password hash
       const validPassword = password === 'dealer123'; // Demo password
       
+      console.log("🔑 Password check:", password, "===", "dealer123", "=>", validPassword);
+      
       if (!validPassword) {
+        console.log("❌ Authentication failed: invalid password");
         return res.status(401).json({ error: "Invalid credentials" });
       }
       
