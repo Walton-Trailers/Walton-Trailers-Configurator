@@ -341,6 +341,20 @@ export default function FastPricing() {
     },
   });
 
+  // Options delete mutation
+  const deleteOptionMutation = useMutation({
+    mutationFn: (id: number) => fastMutate(`/api/options/${id}`, {
+      method: 'DELETE',
+      headers: {
+        Authorization: `Bearer ${sessionId}`,
+      },
+    }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin', 'options'] });
+      toast({ title: "Success", description: "Option deleted successfully" });
+    },
+  });
+
   const handleOptionUpdate = (option: any) => {
     const data = editData[option.id] || {};
     const modelIds = data.modelIds || [option.modelId];
@@ -1813,13 +1827,28 @@ export default function FastPricing() {
                             </Button>
                           </div>
                         ) : (
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => setEditingOption(option)}
-                          >
-                            <Edit className="w-4 h-4" />
-                          </Button>
+                          <div className="flex gap-2">
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => setEditingOption(option)}
+                            >
+                              <Edit className="w-4 h-4" />
+                            </Button>
+                            <Button
+                              size="sm"
+                              onClick={() => {
+                                if (confirm('Are you sure you want to delete this option? This action cannot be undone.')) {
+                                  deleteOptionMutation.mutate(option.id);
+                                }
+                              }}
+                              disabled={deleteOptionMutation.isPending}
+                              title="Delete option"
+                              className="bg-red-600 text-white hover:bg-red-700"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </Button>
+                          </div>
                         )}
                       </TableCell>
                     </TableRow>
