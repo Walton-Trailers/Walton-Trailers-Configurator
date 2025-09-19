@@ -181,6 +181,17 @@ export const dealerSessions = pgTable("dealer_sessions", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
+// Dealer Password Reset Tokens
+export const dealerPasswordResetTokens = pgTable("dealer_password_reset_tokens", {
+  id: serial("id").primaryKey(),
+  dealerId: integer("dealer_id").notNull(),
+  token: varchar("token", { length: 255 }).notNull().unique(),
+  email: varchar("email", { length: 200 }).notNull(),
+  expiresAt: timestamp("expires_at").notNull(),
+  isUsed: boolean("is_used").notNull().default(false),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
 // Dealer User Sessions - For dealer users
 export const dealerUserSessions = pgTable("dealer_user_sessions", {
   id: varchar("id", { length: 255 }).primaryKey(),

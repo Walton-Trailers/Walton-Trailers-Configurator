@@ -10,9 +10,10 @@ import {
   hashPassword,
   isAdmin
 } from "./auth";
-import { insertAdminUserSchema, type AdminUser, trailerCategories, trailerModels, customQuoteRequests, insertCustomQuoteRequestSchema, quoteRequests, insertQuoteRequestSchema, dealers, dealerSessions, dealerOrders, dealerUsers, dealerUserSessions, userConfigurations, mediaFiles, type Dealer, type DealerUser, type MediaFile } from "@shared/schema";
+import { insertAdminUserSchema, type AdminUser, trailerCategories, trailerModels, customQuoteRequests, insertCustomQuoteRequestSchema, quoteRequests, insertQuoteRequestSchema, dealers, dealerSessions, dealerOrders, dealerUsers, dealerUserSessions, userConfigurations, mediaFiles, dealerPasswordResetTokens, type Dealer, type DealerUser, type MediaFile } from "@shared/schema";
 import { z } from "zod";
 import crypto from "crypto";
+import { EmailService } from "./email-service";
 import {
   ObjectStorageService,
   ObjectNotFoundError,
@@ -537,6 +538,133 @@ export async function registerRoutes(app: Express): Promise<Express> {
     } catch (error) {
       console.error("Dealer login error:", error);
       res.status(500).json({ error: "Login failed" });
+    }
+  });
+
+  // Request password reset
+  app.post("/api/dealer/forgot-password", async (req, res) => {
+    try {
+      const { dealerId } = req.body;
+      
+      console.log("🔐 Password reset requested for dealer:", dealerId);
+
+      if (!dealerId) {
+        return res.status(400).json({ error: "Dealer ID is required" });
+      }
+
+      // Find dealer by dealerId  
+      const [dealer] = await db.select()
+        .from(dealers)
+        .where(eq(dealers.dealerId, dealerId));
+
+      // Don't reveal if dealer exists or not for security
+      if (!dealer || !dealer.isActive) {
+        console.log("⚠️ Password reset requested for non-existent/inactive dealer:", dealerId);
+        return res.json({ message: "If a dealer account with that ID exists, a reset link has been sent to the registered email address." });
+      }
+
+      // Generate reset token
+      const emailService = EmailService.getInstance();
+      const resetToken = emailService.generateResetToken();
+      const expiresAt = new Date(Date.now() + 2 * 60 * 60 * 1000); // 2 hours
+
+      // Store reset token
+      await db.insert(dealerPasswordResetTokens).values({
+        dealerId: dealer.id,
+        token: resetToken,
+        email: dealer.contactEmail,
+        expiresAt,
+      });
+
+      // Send reset email
+      const dealerName = dealer.contactName || dealer.dealerName || dealer.companyName;
+      const emailSent = await emailService.sendDealerPasswordResetEmail(
+        dealer.contactEmail,
+        dealerName,
+        resetToken
+      );
+
+      if (emailSent) {
+        console.log("✅ Password reset email sent to:", dealer.contactEmail);
+      } else {
+        console.log("⚠️ Password reset email failed, but token created for:", dealer.contactEmail);
+      }
+
+      res.json({ message: "If a dealer account with that ID exists, a reset link has been sent to the registered email address." });
+    } catch (error) {
+      console.error("Forgot password error:", error);
+      res.status(500).json({ error: "Failed to process password reset request" });
+    }
+  });
+
+  // Validate reset token
+  app.get("/api/dealer/reset-password/:token", async (req, res) => {
+    try {
+      const { token } = req.params;
+
+      const [resetRecord] = await db.select()
+        .from(dealerPasswordResetTokens)
+        .where(eq(dealerPasswordResetTokens.token, token));
+
+      if (!resetRecord || resetRecord.isUsed || resetRecord.expiresAt < new Date()) {
+        return res.status(400).json({ error: "Invalid or expired reset token" });
+      }
+
+      res.json({ valid: true, email: resetRecord.email });
+    } catch (error) {
+      console.error("Token validation error:", error);
+      res.status(500).json({ error: "Failed to validate reset token" });
+    }
+  });
+
+  // Reset password
+  app.post("/api/dealer/reset-password", async (req, res) => {
+    try {
+      const { token, newPassword } = req.body;
+
+      if (!token || !newPassword) {
+        return res.status(400).json({ error: "Token and new password are required" });
+      }
+
+      if (newPassword.length < 8) {
+        return res.status(400).json({ error: "Password must be at least 8 characters long" });
+      }
+
+      // Find and validate reset token
+      const [resetRecord] = await db.select()
+        .from(dealerPasswordResetTokens)
+        .where(eq(dealerPasswordResetTokens.token, token));
+
+      if (!resetRecord || resetRecord.isUsed || resetRecord.expiresAt < new Date()) {
+        return res.status(400).json({ error: "Invalid or expired reset token" });
+      }
+
+      // Hash new password (in production, use bcrypt)
+      const hashedPassword = await hashPassword(newPassword);
+
+      // Update dealer password
+      await db.update(dealers)
+        .set({ 
+          passwordHash: hashedPassword,
+          updatedAt: new Date()
+        })
+        .where(eq(dealers.id, resetRecord.dealerId));
+
+      // Mark token as used
+      await db.update(dealerPasswordResetTokens)
+        .set({ isUsed: true })
+        .where(eq(dealerPasswordResetTokens.token, token));
+
+      // Invalidate all existing dealer sessions for security
+      await db.delete(dealerSessions)
+        .where(eq(dealerSessions.dealerId, resetRecord.dealerId));
+
+      console.log("✅ Password reset successful for dealer:", resetRecord.dealerId);
+
+      res.json({ message: "Password reset successful" });
+    } catch (error) {
+      console.error("Password reset error:", error);
+      res.status(500).json({ error: "Failed to reset password" });
     }
   });
   
