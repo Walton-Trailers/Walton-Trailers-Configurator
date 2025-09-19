@@ -1621,6 +1621,24 @@ export default function FastPricing() {
                             </label>
                           ))}
                         </div>
+                        <div className="flex items-center space-x-2 mt-2">
+                          <input
+                            type="checkbox"
+                            id="selectAllModels"
+                            checked={newOptionData.modelIds.length === activeModels.length && activeModels.length > 0}
+                            onChange={(e) => {
+                              const allModelIds = activeModels.map((model: any) => model.modelId);
+                              setNewOptionData({ 
+                                ...newOptionData, 
+                                modelIds: e.target.checked ? allModelIds : [] 
+                              });
+                            }}
+                            className="rounded"
+                          />
+                          <label htmlFor="selectAllModels" className="text-sm font-medium text-gray-700">
+                            Select All
+                          </label>
+                        </div>
                       </div>
                       <div>
                         <label className="block text-sm font-medium mb-1">Image URL (Optional)</label>
