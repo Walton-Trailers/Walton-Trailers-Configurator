@@ -49,6 +49,7 @@ export interface TrailerModelResponse {
 export interface TrailerOptionResponse {
   id: number;
   modelId: string;
+  applicableModels?: string[];
   category: string;
   name: string;
   price: number;
@@ -115,7 +116,7 @@ export interface IStorage {
   getAllOptions(): Promise<TrailerOptionResponse[]>;
   updateModel(id: number, updates: any): Promise<TrailerModelResponse>;
   updateOption(id: number, updates: any): Promise<TrailerOptionResponse>;
-  createOption(data: { name: string; price: number; category: string; modelId: string }): Promise<TrailerOptionResponse>;
+  createOption(data: { name: string; price: number; category: string; modelIds: string[]; imageUrl?: string; isMultiSelect?: boolean }): Promise<TrailerOptionResponse>;
   deleteOption(id: number): Promise<void>;
   archiveOption(id: number): Promise<void>;
   archiveModel(id: number): Promise<void>;
@@ -446,19 +447,24 @@ export class MemStorage implements IStorage {
     throw new Error('Option not found');
   }
 
-  async createOption(data: { name: string; price: number; category: string; modelId: string }): Promise<TrailerOptionResponse> {
+  async createOption(data: { name: string; price: number; category: string; modelIds: string[]; imageUrl?: string; isMultiSelect?: boolean }): Promise<TrailerOptionResponse> {
     const newOption: TrailerOptionResponse = {
       id: this.currentId++,
-      modelId: data.modelId,
+      modelId: data.modelIds[0] || 'ALL',
+      applicableModels: data.modelIds,
       name: data.name,
       category: data.category,
       price: data.price,
-      isMultiSelect: false,
+      isMultiSelect: data.isMultiSelect || false,
+      imageUrl: data.imageUrl,
     };
     
-    const existingOptions = this.options.get(data.modelId) || [];
-    existingOptions.push(newOption);
-    this.options.set(data.modelId, existingOptions);
+    // Add option to all specified models
+    data.modelIds.forEach(modelId => {
+      const existingOptions = this.options.get(modelId) || [];
+      existingOptions.push(newOption);
+      this.options.set(modelId, existingOptions);
+    });
     
     return newOption;
   }
@@ -1180,23 +1186,25 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
-  async createOption(data: { name: string; price: number; category: string; modelId: string }): Promise<TrailerOptionResponse> {
+  async createOption(data: { name: string; price: number; category: string; modelIds: string[]; imageUrl?: string; isMultiSelect?: boolean }): Promise<TrailerOptionResponse> {
     try {
       const result = await db.execute(sql`
-        INSERT INTO trailer_options (model_id, name, category, price, is_multi_select)
-        VALUES (${data.modelId}, ${data.name}, ${data.category}, ${data.price}, false)
-        RETURNING id, model_id, name, category, price, is_multi_select
+        INSERT INTO trailer_options (model_id, name, category, price, is_multi_select, image_url, applicable_models)
+        VALUES (${data.modelIds[0] || 'ALL'}, ${data.name}, ${data.category}, ${data.price}, ${data.isMultiSelect || false}, ${data.imageUrl || null}, ${JSON.stringify(data.modelIds)})
+        RETURNING id, model_id, name, category, price, is_multi_select, image_url, applicable_models
       `);
       
       const newOption = result.rows[0] as any;
       return {
         id: newOption.id,
         modelId: newOption.model_id,
+        applicableModels: JSON.parse(newOption.applicable_models || '[]'),
         name: newOption.name,
         category: newOption.category,
         price: newOption.price,
         isRequired: false,
         isMultiSelect: newOption.is_multi_select || false,
+        imageUrl: newOption.image_url,
         options: [],
       };
     } catch (error) {
