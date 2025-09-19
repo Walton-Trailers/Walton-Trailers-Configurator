@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { useLocation } from "wouter";
+import { useLocation, Link } from "wouter";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { Loader2, Building2 } from "lucide-react";
 
@@ -159,6 +159,19 @@ export default function DealerLogin() {
                 )}
               </Button>
             </form>
+
+            <div className="mt-4 text-center">
+              <Link href="/dealer/forgot-password">
+                <Button
+                  variant="ghost" 
+                  size="sm"
+                  className="text-blue-600 hover:text-blue-800"
+                  data-testid="link-forgot-password"
+                >
+                  Forgot Password?
+                </Button>
+              </Link>
+            </div>
 
             <div className="mt-6 text-center">
               <p className="text-sm text-gray-600">
