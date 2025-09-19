@@ -1736,9 +1736,14 @@ export default function FastPricing() {
                               <label key={model.id} className="flex items-center space-x-2 text-xs">
                                 <input
                                   type="checkbox"
-                                  checked={editData[option.id]?.modelIds?.includes(model.modelId) ?? option.modelId === model.modelId}
+                                  checked={
+                                    editData[option.id]?.modelIds?.includes(model.modelId) ?? 
+                                    (option.applicableModels && option.applicableModels.includes(model.modelId)) ?? 
+                                    option.modelId === model.modelId
+                                  }
                                   onChange={(e) => {
-                                    const currentModelIds = editData[option.id]?.modelIds ?? (option.modelId === model.modelId ? [option.modelId] : []);
+                                    const currentModelIds = editData[option.id]?.modelIds ?? 
+                                      (option.applicableModels || (option.modelId === model.modelId ? [option.modelId] : []));
                                     const newModelIds = e.target.checked 
                                       ? [...currentModelIds.filter((id: string) => id !== model.modelId), model.modelId]
                                       : currentModelIds.filter((id: string) => id !== model.modelId);
@@ -1754,7 +1759,22 @@ export default function FastPricing() {
                             ))}
                           </div>
                         ) : (
-                          option.modelId
+                          <div className="max-w-xs">
+                            {option.applicableModels && option.applicableModels.length > 0 ? (
+                              <div className="flex flex-wrap gap-1">
+                                {option.applicableModels.map((modelId: string, index: number) => (
+                                  <span 
+                                    key={modelId}
+                                    className="inline-block bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded-full"
+                                  >
+                                    {modelId}
+                                  </span>
+                                ))}
+                              </div>
+                            ) : (
+                              <span className="text-gray-500">{option.modelId || 'All Models'}</span>
+                            )}
+                          </div>
                         )}
                       </TableCell>
                       <TableCell>
