@@ -13,6 +13,7 @@ import {
 import { insertAdminUserSchema, type AdminUser, trailerCategories, trailerModels, customQuoteRequests, insertCustomQuoteRequestSchema, quoteRequests, insertQuoteRequestSchema, dealers, dealerSessions, dealerOrders, dealerUsers, dealerUserSessions, userConfigurations, mediaFiles, dealerPasswordResetTokens, type Dealer, type DealerUser, type MediaFile } from "@shared/schema";
 import { z } from "zod";
 import crypto from "crypto";
+import bcrypt from "bcryptjs";
 import { EmailService } from "./email-service";
 import {
   ObjectStorageService,
@@ -487,7 +488,6 @@ export async function registerRoutes(app: Express): Promise<Express> {
       
       console.log("🔐 Dealer login attempt:");
       console.log("📝 Received dealerId:", dealerId);
-      console.log("📝 Received password:", password);
       
       const [dealer] = await db.select()
         .from(dealers)
@@ -502,11 +502,8 @@ export async function registerRoutes(app: Express): Promise<Express> {
         return res.status(401).json({ error: "Invalid credentials" });
       }
       
-      // For demo purposes, using simple password check
-      // In production, use bcrypt to verify password hash
-      const validPassword = password === 'dealer123'; // Demo password
-      
-      console.log("🔑 Password check:", password, "===", "dealer123", "=>", validPassword);
+      // Verify password using bcrypt
+      const validPassword = await bcrypt.compare(password, dealer.passwordHash);
       
       if (!validPassword) {
         console.log("❌ Authentication failed: invalid password");
@@ -572,22 +569,22 @@ export async function registerRoutes(app: Express): Promise<Express> {
       await db.insert(dealerPasswordResetTokens).values({
         dealerId: dealer.id,
         token: resetToken,
-        email: dealer.contactEmail,
+        email: dealer.email,
         expiresAt,
       });
 
       // Send reset email
       const dealerName = dealer.contactName || dealer.dealerName || dealer.companyName;
       const emailSent = await emailService.sendDealerPasswordResetEmail(
-        dealer.contactEmail,
+        dealer.email,
         dealerName,
         resetToken
       );
 
       if (emailSent) {
-        console.log("✅ Password reset email sent to:", dealer.contactEmail);
+        console.log("✅ Password reset email sent to:", dealer.email);
       } else {
-        console.log("⚠️ Password reset email failed, but token created for:", dealer.contactEmail);
+        console.log("⚠️ Password reset email failed, but token created for:", dealer.email);
       }
 
       res.json({ message: "If a dealer account with that ID exists, a reset link has been sent to the registered email address." });
