@@ -1665,23 +1665,21 @@ export default function FastPricing() {
                       </Button>
                       <Button 
                         onClick={() => {
-                          // Create option for each selected model
+                          // Create single option for all selected models
                           if (newOptionData.modelIds.length > 0) {
-                            newOptionData.modelIds.forEach(modelId => {
-                              addOptionMutation.mutate({
-                                name: newOptionData.name,
-                                modelId: modelId,
-                                category: newOptionData.category,
-                                price: newOptionData.price,
-                                imageUrl: newOptionData.imageUrl,
-                                isMultiSelect: newOptionData.isMultiSelect
-                              });
-                            });
-                          } else {
-                            // Add option without model association
                             addOptionMutation.mutate({
                               name: newOptionData.name,
-                              modelId: "ALL", // Default for all models
+                              modelIds: newOptionData.modelIds, // Send array of model IDs
+                              category: newOptionData.category,
+                              price: newOptionData.price,
+                              imageUrl: newOptionData.imageUrl,
+                              isMultiSelect: newOptionData.isMultiSelect
+                            });
+                          } else {
+                            // Add option without model association (for all models)
+                            addOptionMutation.mutate({
+                              name: newOptionData.name,
+                              modelIds: ["ALL"], // Default for all models
                               category: newOptionData.category,
                               price: newOptionData.price,
                               imageUrl: newOptionData.imageUrl,
