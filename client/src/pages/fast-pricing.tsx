@@ -1602,7 +1602,7 @@ export default function FastPricing() {
                         <label className="block text-sm font-medium mb-1">Category</label>
                         <div className="space-y-2">
                           <Select
-                            value={showCustomCategory ? "custom" : newOptionData.category}
+                            value={newOptionData.category}
                             onValueChange={(value: string) => {
                               if (value === "custom") {
                                 setShowCustomCategory(true);
@@ -1618,6 +1618,11 @@ export default function FastPricing() {
                                 {category.charAt(0).toUpperCase() + category.slice(1)}
                               </option>
                             ))}
+                            {!optionCategories.includes(newOptionData.category) && newOptionData.category !== "custom" && (
+                              <option key={newOptionData.category} value={newOptionData.category}>
+                                {newOptionData.category.charAt(0).toUpperCase() + newOptionData.category.slice(1)} (Custom)
+                              </option>
+                            )}
                             <option value="custom">+ Add New Category...</option>
                           </Select>
                           
@@ -1626,7 +1631,7 @@ export default function FastPricing() {
                               <Input
                                 placeholder="Enter new category name (e.g., suspension, lighting)"
                                 value={customCategoryName}
-                                onChange={(e: any) => setCustomCategoryName(e.target.value.toLowerCase())}
+                                onChange={(e: any) => setCustomCategoryName(e.target.value)}
                                 className="border-blue-300 focus:border-blue-500"
                               />
                               <div className="flex gap-2">
@@ -1847,7 +1852,7 @@ export default function FastPricing() {
                         {editingOption?.id === option.id ? (
                           <div className="space-y-2">
                             <Select
-                              value={showEditCustomCategory === option.id ? "custom" : (editData[option.id]?.category ?? option.category)}
+                              value={editData[option.id]?.category ?? option.category}
                               onValueChange={(value: string) => {
                                 if (value === "custom") {
                                   setShowEditCustomCategory(option.id);
@@ -1866,6 +1871,11 @@ export default function FastPricing() {
                                   {category.charAt(0).toUpperCase() + category.slice(1)}
                                 </SelectItem>
                               ))}
+                              {!optionCategories.includes(editData[option.id]?.category ?? option.category) && (editData[option.id]?.category ?? option.category) !== "custom" && (
+                                <SelectItem key={editData[option.id]?.category ?? option.category} value={editData[option.id]?.category ?? option.category}>
+                                  {(editData[option.id]?.category ?? option.category).charAt(0).toUpperCase() + (editData[option.id]?.category ?? option.category).slice(1)} (Custom)
+                                </SelectItem>
+                              )}
                               <SelectItem value="custom">+ Add New Category...</SelectItem>
                             </Select>
                             
@@ -1874,7 +1884,7 @@ export default function FastPricing() {
                                 <Input
                                   placeholder="Enter new category name (e.g., suspension, lighting)"
                                   value={editCustomCategoryName}
-                                  onChange={(e: any) => setEditCustomCategoryName(e.target.value.toLowerCase())}
+                                  onChange={(e: any) => setEditCustomCategoryName(e.target.value)}
                                   className="border-blue-300 focus:border-blue-500"
                                 />
                                 <div className="flex gap-2">
