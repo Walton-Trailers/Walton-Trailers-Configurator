@@ -137,7 +137,7 @@ export default function FastPricing() {
   
   // Fetch option categories dynamically from database
   const { data: optionCategories = [] } = useQuery({
-    queryKey: ['/api/categories/options'],
+    queryKey: ['/api/categories', 'options'],
     queryFn: async () => {
       const response = await fetch('/api/categories/options', {
         headers: {
@@ -329,7 +329,10 @@ export default function FastPricing() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin', 'options'] });
       queryClient.invalidateQueries({ queryKey: ['options'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/categories', 'options'] });
       setShowAddOption(false);
+      setShowCustomCategory(false);
+      setCustomCategoryName("");
       setNewOptionData({
         name: "",
         modelIds: [],
@@ -354,8 +357,11 @@ export default function FastPricing() {
     }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin', 'options'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/categories', 'options'] });
       setEditingOption(null);
       setEditData({});
+      setShowEditCustomCategory(null);
+      setEditCustomCategoryName("");
     },
   });
 
@@ -1618,11 +1624,6 @@ export default function FastPricing() {
                                 {category.charAt(0).toUpperCase() + category.slice(1)}
                               </option>
                             ))}
-                            {!optionCategories.includes(newOptionData.category) && newOptionData.category !== "custom" && (
-                              <option key={newOptionData.category} value={newOptionData.category}>
-                                {newOptionData.category.charAt(0).toUpperCase() + newOptionData.category.slice(1)} (Custom)
-                              </option>
-                            )}
                             <option value="custom">+ Add New Category...</option>
                           </Select>
                           
@@ -1871,11 +1872,6 @@ export default function FastPricing() {
                                   {category.charAt(0).toUpperCase() + category.slice(1)}
                                 </SelectItem>
                               ))}
-                              {!optionCategories.includes(editData[option.id]?.category ?? option.category) && (editData[option.id]?.category ?? option.category) !== "custom" && (
-                                <SelectItem key={editData[option.id]?.category ?? option.category} value={editData[option.id]?.category ?? option.category}>
-                                  {(editData[option.id]?.category ?? option.category).charAt(0).toUpperCase() + (editData[option.id]?.category ?? option.category).slice(1)} (Custom)
-                                </SelectItem>
-                              )}
                               <SelectItem value="custom">+ Add New Category...</SelectItem>
                             </Select>
                             
