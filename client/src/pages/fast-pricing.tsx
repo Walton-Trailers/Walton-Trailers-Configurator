@@ -122,6 +122,10 @@ export default function FastPricing() {
     imageUrl: "",
     isMultiSelect: false
   });
+  const [showCustomCategory, setShowCustomCategory] = useState(false);
+  const [customCategoryName, setCustomCategoryName] = useState("");
+  const [showEditCustomCategory, setShowEditCustomCategory] = useState<number | null>(null);
+  const [editCustomCategoryName, setEditCustomCategoryName] = useState("");
 
   const sessionId = localStorage.getItem("admin_session");
   const queryClient = useQueryClient();
@@ -1596,16 +1600,69 @@ export default function FastPricing() {
                       </div>
                       <div>
                         <label className="block text-sm font-medium mb-1">Category</label>
-                        <Select
-                          value={newOptionData.category}
-                          onValueChange={(value: string) => setNewOptionData({ ...newOptionData, category: value })}
-                        >
-                          {optionCategories.map((category: string) => (
-                            <option key={category} value={category}>
-                              {category.charAt(0).toUpperCase() + category.slice(1)}
-                            </option>
-                          ))}
-                        </Select>
+                        <div className="space-y-2">
+                          <Select
+                            value={showCustomCategory ? "custom" : newOptionData.category}
+                            onValueChange={(value: string) => {
+                              if (value === "custom") {
+                                setShowCustomCategory(true);
+                                setCustomCategoryName("");
+                              } else {
+                                setShowCustomCategory(false);
+                                setNewOptionData({ ...newOptionData, category: value });
+                              }
+                            }}
+                          >
+                            {optionCategories.map((category: string) => (
+                              <option key={category} value={category}>
+                                {category.charAt(0).toUpperCase() + category.slice(1)}
+                              </option>
+                            ))}
+                            <option value="custom">+ Add New Category...</option>
+                          </Select>
+                          
+                          {showCustomCategory && (
+                            <div className="space-y-2">
+                              <Input
+                                placeholder="Enter new category name (e.g., suspension, lighting)"
+                                value={customCategoryName}
+                                onChange={(e: any) => setCustomCategoryName(e.target.value.toLowerCase())}
+                                className="border-blue-300 focus:border-blue-500"
+                              />
+                              <div className="flex gap-2">
+                                <Button 
+                                  size="sm"
+                                  onClick={() => {
+                                    if (customCategoryName.trim()) {
+                                      setNewOptionData({ ...newOptionData, category: customCategoryName.trim() });
+                                      setShowCustomCategory(false);
+                                      setCustomCategoryName("");
+                                    }
+                                  }}
+                                  disabled={!customCategoryName.trim()}
+                                >
+                                  Use Category
+                                </Button>
+                                <Button 
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => {
+                                    setShowCustomCategory(false);
+                                    setCustomCategoryName("");
+                                  }}
+                                >
+                                  Cancel
+                                </Button>
+                              </div>
+                            </div>
+                          )}
+                          
+                          {showCustomCategory && customCategoryName && (
+                            <p className="text-sm text-gray-600">
+                              New category: <span className="font-medium">{customCategoryName}</span>
+                            </p>
+                          )}
+                        </div>
                       </div>
                       <div>
                         <label className="block text-sm font-medium mb-1">Price ($)</label>
