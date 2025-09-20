@@ -1565,8 +1565,8 @@ export default function FastPricing() {
               
               {/* Add Option Dialog */}
               {showAddOption && (
-                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-                  <div className="bg-white rounded-lg p-6 max-w-2xl w-full">
+                <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center z-50 overflow-y-auto">
+                  <div className="bg-white rounded-lg p-6 max-w-2xl w-full my-8 max-h-[calc(100vh-4rem)]">
                     <h3 className="text-lg font-semibold mb-4">Add New Option/Extra</h3>
                     <div className="space-y-4">
                       <div>
