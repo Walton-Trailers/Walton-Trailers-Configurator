@@ -87,6 +87,12 @@ interface MediaFile {
   accessUrl: string;
 }
 
+// Utility function to validate hex color format
+const isValidHex = (hex: string): boolean => {
+  const hexRegex = /^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/;
+  return hexRegex.test(hex);
+};
+
 export default function PricingManagement() {
   const { user, isLoading: authLoading } = useAdminAuth();
   const [editingModel, setEditingModel] = useState<TrailerModel | null>(null);
@@ -103,7 +109,8 @@ export default function PricingManagement() {
     price: 0,
     category: "",
     modelId: "", // Legacy field for backward compatibility
-    applicableModels: [] as string[] // New field for multiple models
+    applicableModels: [] as string[], // New field for multiple models
+    hexColor: "" // Hex color value for color options
   });
   const [newCategoryData, setNewCategoryData] = useState({
     slug: "",
@@ -2380,6 +2387,33 @@ export default function PricingManagement() {
                   onChange={(e) => setNewOptionData({ ...newOptionData, price: parseInt(e.target.value) || 0 })}
                 />
               </div>
+              {newOptionData.category.toLowerCase() === 'color' && (
+                <div className="grid gap-2">
+                  <Label htmlFor="option-hex-color">Hex Color</Label>
+                  <div className="flex gap-2">
+                    <Input
+                      id="option-hex-color"
+                      placeholder="#FF0000"
+                      value={newOptionData.hexColor}
+                      onChange={(e) => setNewOptionData({ ...newOptionData, hexColor: e.target.value })}
+                      className={`flex-1 ${newOptionData.hexColor && !isValidHex(newOptionData.hexColor) ? 'border-red-500' : ''}`}
+                    />
+                    {newOptionData.hexColor && isValidHex(newOptionData.hexColor) && (
+                      <div 
+                        className="w-10 h-10 rounded border border-gray-300 flex-shrink-0"
+                        style={{ backgroundColor: newOptionData.hexColor }}
+                        title={`Color preview: ${newOptionData.hexColor}`}
+                      />
+                    )}
+                  </div>
+                  {newOptionData.hexColor && !isValidHex(newOptionData.hexColor) && (
+                    <p className="text-sm text-red-600">Please enter a valid hex color (e.g., #FF0000)</p>
+                  )}
+                  <p className="text-xs text-gray-500">
+                    Enter a hex color code for this color option (e.g., #FF0000 for red)
+                  </p>
+                </div>
+              )}
               <div className="grid gap-2">
                 <Label>Related Models</Label>
                 <div className="border rounded-md p-3 max-h-40 overflow-y-auto">
@@ -2420,7 +2454,12 @@ export default function PricingManagement() {
               </Button>
               <Button
                 onClick={() => createOptionMutation.mutate(newOptionData)}
-                disabled={createOptionMutation.isPending || !newOptionData.name || !newOptionData.category}
+                disabled={
+                  createOptionMutation.isPending || 
+                  !newOptionData.name || 
+                  !newOptionData.category ||
+                  (newOptionData.category.toLowerCase() === 'color' && !isValidHex(newOptionData.hexColor))
+                }
               >
                 {createOptionMutation.isPending ? "Creating..." : "Create Option"}
               </Button>
