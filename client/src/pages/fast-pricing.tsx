@@ -1744,7 +1744,28 @@ export default function FastPricing() {
                             ))}
                           </div>
                         ) : (
-                          option.modelId
+                          <div className="text-sm">
+                            {option.applicableModels && option.applicableModels.length > 0 ? (
+                              option.applicableModels.length === 1 ? (
+                                option.applicableModels[0]
+                              ) : (
+                                <div className="space-y-1">
+                                  {option.applicableModels.slice(0, 2).map((modelId: string, index: number) => (
+                                    <div key={index} className="text-xs bg-gray-100 px-2 py-1 rounded">
+                                      {modelId}
+                                    </div>
+                                  ))}
+                                  {option.applicableModels.length > 2 && (
+                                    <div className="text-xs text-gray-500">
+                                      +{option.applicableModels.length - 2} more
+                                    </div>
+                                  )}
+                                </div>
+                              )
+                            ) : (
+                              option.modelId || "No models"
+                            )}
+                          </div>
                         )}
                       </TableCell>
                       <TableCell>
