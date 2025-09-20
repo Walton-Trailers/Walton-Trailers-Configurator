@@ -24,6 +24,35 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { TrailerSeries } from "@shared/schema";
 
+// Color mapping for trailer colors
+const getColorHex = (colorName: string): string => {
+  const colorMap: Record<string, string> = {
+    'black': '#1a1a1a',
+    'white': '#ffffff', 
+    'red': '#dc2626',
+    'blue': '#2563eb',
+    'green': '#16a34a',
+    'gray': '#6b7280',
+    'grey': '#6b7280',
+    'silver': '#9ca3af',
+    'yellow': '#eab308',
+    'orange': '#ea580c',
+    'brown': '#a16207',
+    'tan': '#d2b48c',
+    'beige': '#f5f5dc',
+    'navy': '#1e3a8a',
+    'maroon': '#7f1d1d',
+    'purple': '#7c3aed',
+    'pink': '#ec4899',
+    'teal': '#0d9488',
+    'lime': '#65a30d',
+    'gold': '#ca8a04'
+  };
+  
+  const normalizedName = colorName.toLowerCase().trim();
+  return colorMap[normalizedName] || '#4b5563'; // Default gray if color not found
+};
+
 // Quote form schema
 const quoteFormSchema = z.object({
   firstName: z.string().min(1, "First name is required"),
@@ -1322,6 +1351,55 @@ Configuration Date: ${new Date().toLocaleDateString()}
                                     </option>
                                   ))}
                                 </select>
+                              </div>
+                            ) : category === 'color' ? (
+                              // Special color circle handling for color options
+                              <div className="grid grid-cols-3 gap-3">
+                                {categoryOptions.map((option) => {
+                                  const isSelected = selectedOptions[category]?.toString() === option.id.toString() || 
+                                                   (!selectedOptions[category] && categoryOptions[0]?.id === option.id);
+                                  const colorHex = getColorHex(option.name);
+                                  
+                                  return (
+                                    <div key={option.id} className="text-center">
+                                      <button
+                                        onClick={() => handleOptionChange(category, option.id, false, true)}
+                                        className={`w-16 h-16 rounded-full border-4 transition-all duration-200 hover:scale-105 focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                                          isSelected 
+                                            ? 'border-black shadow-lg' 
+                                            : 'border-gray-300 hover:border-gray-400'
+                                        }`}
+                                        style={{ 
+                                          backgroundColor: colorHex,
+                                          boxShadow: colorHex === '#ffffff' ? 'inset 0 0 0 1px #e5e7eb' : undefined
+                                        }}
+                                        title={`${option.name} - ${option.price === 0 ? 'Included' : 
+                                          option.price > 0 ? `+$${option.price.toLocaleString()}` : 
+                                          `$${option.price.toLocaleString()}`}`}
+                                      >
+                                        {isSelected && (
+                                          <div className="w-full h-full rounded-full flex items-center justify-center">
+                                            <div 
+                                              className={`w-3 h-3 rounded-full ${
+                                                colorHex === '#ffffff' || colorHex === '#f5f5dc' || colorHex === '#d2b48c' 
+                                                  ? 'bg-black' 
+                                                  : 'bg-white'
+                                              }`}
+                                            />
+                                          </div>
+                                        )}
+                                      </button>
+                                      <div className="mt-1">
+                                        <div className="text-xs font-medium">{option.name}</div>
+                                        <div className="text-xs text-gray-500">
+                                          {option.price === 0 ? 'Included' : 
+                                           option.price > 0 ? `+$${option.price.toLocaleString()}` : 
+                                           `$${option.price.toLocaleString()}`}
+                                        </div>
+                                      </div>
+                                    </div>
+                                  );
+                                })}
                               </div>
                             ) : (
                               <RadioGroup 
