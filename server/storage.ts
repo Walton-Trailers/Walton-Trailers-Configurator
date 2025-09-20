@@ -1000,7 +1000,7 @@ export class DatabaseStorage implements IStorage {
   async getAllOptions(): Promise<TrailerOptionResponse[]> {
     try {
       const result = await db.execute(sql`
-        SELECT id, model_id, category, name, price, is_multi_select, is_archived, image_url
+        SELECT id, model_id, category, name, price, is_multi_select, is_archived, image_url, applicable_models
         FROM trailer_options
         ORDER BY category, name
       `);
@@ -1008,6 +1008,7 @@ export class DatabaseStorage implements IStorage {
       return result.rows.map((option: any) => ({
         id: option.id,
         modelId: option.model_id,
+        applicableModels: option.applicable_models || [],
         name: option.name,
         category: option.category,
         price: option.price,
