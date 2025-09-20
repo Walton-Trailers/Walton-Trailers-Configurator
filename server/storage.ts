@@ -1008,7 +1008,7 @@ export class DatabaseStorage implements IStorage {
       return result.rows.map((option: any) => ({
         id: option.id,
         modelId: option.model_id,
-        applicableModels: option.applicable_models || [],
+        applicableModels: option.applicable_models ? JSON.parse(option.applicable_models) : [option.model_id],
         name: option.name,
         category: option.category,
         price: option.price,
