@@ -36,7 +36,8 @@ interface TrailerModel {
 
 interface TrailerOption {
   id: number;
-  modelId: string;
+  modelId: string; // Legacy field for backward compatibility
+  applicableModels?: string[]; // New field for multiple models
   name: string;
   price: number;
   category: string;
@@ -101,8 +102,8 @@ export default function PricingManagement() {
     name: "",
     price: 0,
     category: "",
-    modelId: "",
-    relatedModels: [] as string[]
+    modelId: "", // Legacy field for backward compatibility
+    applicableModels: [] as string[] // New field for multiple models
   });
   const [newCategoryData, setNewCategoryData] = useState({
     slug: "",
@@ -291,14 +292,15 @@ export default function PricingManagement() {
 
   // Update option mutation
   const updateOptionMutation = useMutation({
-    mutationFn: (data: { id: number; price?: number; name?: string; category?: string; modelId?: string; isArchived?: boolean }) =>
+    mutationFn: (data: { id: number; price?: number; name?: string; category?: string; modelId?: string; applicableModels?: string[]; isArchived?: boolean }) =>
       apiRequest(`/api/options/${data.id}`, {
         method: "PATCH",
         body: { 
           price: data.price, 
           name: data.name, 
           category: data.category, 
-          modelId: data.modelId,
+          modelId: data.modelId, // Legacy field for backward compatibility
+          applicableModels: data.applicableModels, // New field for multiple models
           isArchived: data.isArchived
         },
         headers: sessionId ? { Authorization: `Bearer ${sessionId}` } : {},
@@ -323,10 +325,16 @@ export default function PricingManagement() {
 
   // Create new option mutation
   const createOptionMutation = useMutation({
-    mutationFn: (data: { name: string; price: number; category: string; modelId: string }) =>
+    mutationFn: (data: { name: string; price: number; category: string; modelId: string; applicableModels: string[] }) =>
       apiRequest("/api/options", {
         method: "POST",
-        body: data,
+        body: {
+          name: data.name,
+          price: data.price,
+          category: data.category,
+          modelId: data.modelId, // Legacy field for backward compatibility
+          applicableModels: data.applicableModels.length > 0 ? data.applicableModels : [data.modelId] // Use applicableModels or fallback to single modelId
+        },
         headers: sessionId ? { Authorization: `Bearer ${sessionId}` } : {},
       }),
     onSuccess: () => {
@@ -337,7 +345,7 @@ export default function PricingManagement() {
         price: 0,
         category: "",
         modelId: "",
-        relatedModels: []
+        applicableModels: []
       });
       toast({
         title: "Success",
@@ -608,6 +616,7 @@ export default function PricingManagement() {
       name: data.name !== undefined ? data.name : option.name,
       category: data.category !== undefined ? data.category : option.category,
       modelId: data.modelId !== undefined ? data.modelId : option.modelId,
+      applicableModels: data.applicableModels !== undefined ? data.applicableModels : option.applicableModels,
     });
   };
 
@@ -2004,27 +2013,23 @@ export default function PricingManagement() {
                                         <div key={model.id} className="flex items-center space-x-2">
                                           <Checkbox
                                             id={`model-${model.id}-${option.id}`}
-                                            checked={editData[option.id]?.relatedModels?.includes(model.modelId) || 
-                                                    model.modelId === option.modelId || 
-                                                    model.modelId.startsWith(option.modelId.substring(0, 3))}
+                                            checked={editData[option.id]?.applicableModels?.includes(model.modelId) || 
+                                                    option.applicableModels?.includes(model.modelId) ||
+                                                    model.modelId === option.modelId}
                                             onCheckedChange={(checked: boolean) => {
-                                              const currentRelated = editData[option.id]?.relatedModels || 
-                                                models
-                                                  .filter((m: TrailerModel) => 
-                                                    m.modelId === option.modelId || 
-                                                    m.modelId.startsWith(option.modelId.substring(0, 3))
-                                                  )
-                                                  .map((m: TrailerModel) => m.modelId);
+                                              const currentApplicable = editData[option.id]?.applicableModels || 
+                                                option.applicableModels || 
+                                                [option.modelId]; // Fallback to legacy modelId
                                               
-                                              const updatedRelated = checked
-                                                ? Array.from(new Set([...currentRelated, model.modelId]))
-                                                : currentRelated.filter((id: string) => id !== model.modelId);
+                                              const updatedApplicable = checked
+                                                ? Array.from(new Set([...currentApplicable, model.modelId]))
+                                                : currentApplicable.filter((id: string) => id !== model.modelId);
                                               
                                               setEditData(prev => ({
                                                 ...prev,
                                                 [option.id]: {
                                                   ...prev[option.id],
-                                                  relatedModels: updatedRelated
+                                                  applicableModels: updatedApplicable
                                                 }
                                               }));
                                             }}
@@ -2044,16 +2049,7 @@ export default function PricingManagement() {
                             ) : (
                               <div className="max-w-48">
                                 <span className="text-sm text-gray-600">
-                                  {models ? 
-                                    models
-                                      .filter((model: TrailerModel) => 
-                                        model.modelId === option.modelId || 
-                                        model.modelId.startsWith(option.modelId.substring(0, 3))
-                                      )
-                                      .map((model: TrailerModel) => model.modelId)
-                                      .join(", ") || option.modelId
-                                    : "Loading..."
-                                  }
+                                  {option.applicableModels?.join(", ") || option.modelId}
                                 </span>
                               </div>
                             )}
@@ -2392,12 +2388,12 @@ export default function PricingManagement() {
                       <div key={model.id} className="flex items-center space-x-2">
                         <Checkbox
                           id={`new-model-${model.id}`}
-                          checked={newOptionData.relatedModels.includes(model.modelId)}
+                          checked={newOptionData.applicableModels.includes(model.modelId)}
                           onCheckedChange={(checked: boolean) => {
-                            const updatedRelated = checked
-                              ? [...newOptionData.relatedModels, model.modelId]
-                              : newOptionData.relatedModels.filter(id => id !== model.modelId);
-                            setNewOptionData({ ...newOptionData, relatedModels: updatedRelated });
+                            const updatedModels = checked
+                              ? [...newOptionData.applicableModels, model.modelId]
+                              : newOptionData.applicableModels.filter(id => id !== model.modelId);
+                            setNewOptionData({ ...newOptionData, applicableModels: updatedModels });
                           }}
                         />
                         <label 
