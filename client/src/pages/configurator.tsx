@@ -1358,7 +1358,7 @@ Configuration Date: ${new Date().toLocaleDateString()}
                                 {categoryOptions.map((option) => {
                                   const isSelected = selectedOptions[category]?.toString() === option.id.toString() || 
                                                    (!selectedOptions[category] && categoryOptions[0]?.id === option.id);
-                                  const colorHex = getColorHex(option.name);
+                                  const colorHex = option.hexColor || getColorHex(option.name);
                                   
                                   return (
                                     <div key={option.id} className="text-center">
