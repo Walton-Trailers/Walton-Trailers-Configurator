@@ -357,17 +357,20 @@ export default function FastPricing() {
 
   const handleOptionUpdate = (option: any) => {
     const data = editData[option.id] || {};
-    const modelIds = data.modelIds || [option.modelId];
+    const applicableModels = data.modelIds || option.applicableModels || [option.modelId];
     
-    // For now, update the first model association
-    // In a full implementation, you might need to handle multiple model associations
     updateOptionMutation.mutate({
       id: option.id,
       name: data.name ?? option.name,
-      modelId: modelIds[0] || option.modelId,
+      modelId: applicableModels[0] || option.modelId, // Legacy field for backward compatibility
+      applicableModels: applicableModels, // New field for multiple models
       category: data.category ?? option.category,
       price: data.price ?? option.price,
     });
+    
+    // Clear editing state
+    setEditingOption(null);
+    setEditData({});
   };
 
   // Image upload handlers
@@ -1726,9 +1729,9 @@ export default function FastPricing() {
                               <label key={model.id} className="flex items-center space-x-2 text-xs">
                                 <input
                                   type="checkbox"
-                                  checked={editData[option.id]?.modelIds?.includes(model.modelId) ?? option.modelId === model.modelId}
+                                  checked={editData[option.id]?.modelIds?.includes(model.modelId) ?? option.applicableModels?.includes(model.modelId)}
                                   onChange={(e) => {
-                                    const currentModelIds = editData[option.id]?.modelIds ?? (option.modelId === model.modelId ? [option.modelId] : []);
+                                    const currentModelIds = editData[option.id]?.modelIds ?? (option.applicableModels || [option.modelId]);
                                     const newModelIds = e.target.checked 
                                       ? [...currentModelIds.filter((id: string) => id !== model.modelId), model.modelId]
                                       : currentModelIds.filter((id: string) => id !== model.modelId);
