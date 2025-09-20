@@ -65,6 +65,12 @@ const TableRow = ({ children, className = '' }: any) => <tr className={className
 const TableHead = ({ children }: any) => <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{children}</th>;
 const TableCell = ({ children, className = '' }: any) => <td className={`px-4 py-3 text-sm ${className}`}>{children}</td>;
 
+// Utility function to validate hex color format
+const isValidHex = (hex: string): boolean => {
+  const hexRegex = /^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/;
+  return hexRegex.test(hex);
+};
+
 // Fast mutations with minimal overhead
 const fastMutate = async (url: string, options: RequestInit) => {
   const response = await fetch(url, options);
@@ -120,7 +126,8 @@ export default function FastPricing() {
     category: "extras",
     price: 0,
     imageUrl: "",
-    isMultiSelect: false
+    isMultiSelect: false,
+    hexColor: ""
   });
 
   const sessionId = localStorage.getItem("admin_session");
@@ -333,7 +340,8 @@ export default function FastPricing() {
         category: "extras",
         price: 0,
         imageUrl: "",
-        isMultiSelect: false
+        isMultiSelect: false,
+        hexColor: ""
       });
       toast({ title: "Success", description: "Option added successfully" });
     },
@@ -1618,6 +1626,32 @@ export default function FastPricing() {
                           onChange={(e: any) => setNewOptionData({ ...newOptionData, price: parseFloat(e.target.value) || 0 })}
                         />
                       </div>
+                      {newOptionData.category.toLowerCase() === 'color' && (
+                        <div>
+                          <label className="block text-sm font-medium mb-1">Hex Color</label>
+                          <div className="flex gap-2">
+                            <Input
+                              placeholder="#FF0000"
+                              value={newOptionData.hexColor}
+                              onChange={(e: any) => setNewOptionData({ ...newOptionData, hexColor: e.target.value })}
+                              className={`flex-1 ${newOptionData.hexColor && !isValidHex(newOptionData.hexColor) ? 'border-red-500' : ''}`}
+                            />
+                            {newOptionData.hexColor && isValidHex(newOptionData.hexColor) && (
+                              <div 
+                                className="w-10 h-10 rounded border border-gray-300 flex-shrink-0"
+                                style={{ backgroundColor: newOptionData.hexColor }}
+                                title={`Color preview: ${newOptionData.hexColor}`}
+                              />
+                            )}
+                          </div>
+                          {newOptionData.hexColor && !isValidHex(newOptionData.hexColor) && (
+                            <p className="text-sm text-red-600 mt-1">Please enter a valid hex color (e.g., #FF0000)</p>
+                          )}
+                          <p className="text-xs text-gray-500 mt-1">
+                            Enter a hex color code for this color option (e.g., #FF0000 for red)
+                          </p>
+                        </div>
+                      )}
                       <div>
                         <label className="block text-sm font-medium mb-1">Compatible Models</label>
                         <div className="border border-gray-300 rounded-md p-3 max-h-32 overflow-y-auto space-y-1">
@@ -1693,10 +1727,16 @@ export default function FastPricing() {
                             category: newOptionData.category,
                             price: newOptionData.price,
                             imageUrl: newOptionData.imageUrl,
-                            isMultiSelect: newOptionData.isMultiSelect
+                            isMultiSelect: newOptionData.isMultiSelect,
+                            hexColor: newOptionData.hexColor
                           });
                         }}
-                        disabled={addOptionMutation.isPending || !newOptionData.name || newOptionData.price < 0}
+                        disabled={
+                          addOptionMutation.isPending || 
+                          !newOptionData.name || 
+                          newOptionData.price < 0 ||
+                          (newOptionData.category.toLowerCase() === 'color' && !isValidHex(newOptionData.hexColor))
+                        }
                       >
                         Add Option
                       </Button>
