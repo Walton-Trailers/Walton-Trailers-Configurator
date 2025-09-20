@@ -1069,7 +1069,7 @@ export async function registerRoutes(app: Express): Promise<Express> {
   app.get("/api/models/:modelId/options", async (req, res) => {
     try {
       const { modelId } = req.params;
-      const options = await storage.getTrailerOptions(modelId);
+      const options = await storage.getOptionsForModel(modelId);
       res.json(options);
     } catch (error) {
       res.status(500).json({ message: "Failed to fetch options" });
