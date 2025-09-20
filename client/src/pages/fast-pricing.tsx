@@ -1845,19 +1845,75 @@ export default function FastPricing() {
                       </TableCell>
                       <TableCell>
                         {editingOption?.id === option.id ? (
-                          <Select
-                            value={editData[option.id]?.category ?? option.category}
-                            onValueChange={(value: string) => setEditData({
-                              ...editData,
-                              [option.id]: { ...editData[option.id], category: value }
-                            })}
-                          >
-                            {optionCategories.map((category: string) => (
-                              <SelectItem key={category} value={category}>
-                                {category.charAt(0).toUpperCase() + category.slice(1)}
-                              </SelectItem>
-                            ))}
-                          </Select>
+                          <div className="space-y-2">
+                            <Select
+                              value={showEditCustomCategory === option.id ? "custom" : (editData[option.id]?.category ?? option.category)}
+                              onValueChange={(value: string) => {
+                                if (value === "custom") {
+                                  setShowEditCustomCategory(option.id);
+                                  setEditCustomCategoryName("");
+                                } else {
+                                  setShowEditCustomCategory(null);
+                                  setEditData({
+                                    ...editData,
+                                    [option.id]: { ...editData[option.id], category: value }
+                                  });
+                                }
+                              }}
+                            >
+                              {optionCategories.map((category: string) => (
+                                <SelectItem key={category} value={category}>
+                                  {category.charAt(0).toUpperCase() + category.slice(1)}
+                                </SelectItem>
+                              ))}
+                              <SelectItem value="custom">+ Add New Category...</SelectItem>
+                            </Select>
+                            
+                            {showEditCustomCategory === option.id && (
+                              <div className="space-y-2">
+                                <Input
+                                  placeholder="Enter new category name (e.g., suspension, lighting)"
+                                  value={editCustomCategoryName}
+                                  onChange={(e: any) => setEditCustomCategoryName(e.target.value.toLowerCase())}
+                                  className="border-blue-300 focus:border-blue-500"
+                                />
+                                <div className="flex gap-2">
+                                  <Button 
+                                    size="sm"
+                                    onClick={() => {
+                                      if (editCustomCategoryName.trim()) {
+                                        setEditData({
+                                          ...editData,
+                                          [option.id]: { ...editData[option.id], category: editCustomCategoryName.trim() }
+                                        });
+                                        setShowEditCustomCategory(null);
+                                        setEditCustomCategoryName("");
+                                      }
+                                    }}
+                                    disabled={!editCustomCategoryName.trim()}
+                                  >
+                                    Use Category
+                                  </Button>
+                                  <Button 
+                                    size="sm"
+                                    variant="outline"
+                                    onClick={() => {
+                                      setShowEditCustomCategory(null);
+                                      setEditCustomCategoryName("");
+                                    }}
+                                  >
+                                    Cancel
+                                  </Button>
+                                </div>
+                              </div>
+                            )}
+                            
+                            {showEditCustomCategory === option.id && editCustomCategoryName && (
+                              <p className="text-sm text-gray-600">
+                                New category: <span className="font-medium">{editCustomCategoryName}</span>
+                              </p>
+                            )}
+                          </div>
                         ) : (
                           option.category
                         )}
