@@ -1692,6 +1692,18 @@ export async function registerRoutes(app: Express): Promise<Express> {
     }
   });
 
+  // Get options filtered by model ID (for configurator)
+  app.get("/api/options/model/:modelId", async (req, res) => {
+    try {
+      const { modelId } = req.params;
+      const options = await storage.getOptionsForModel(modelId);
+      res.json(options);
+    } catch (error) {
+      console.error("Error fetching options for model:", error);
+      res.status(500).json({ message: "Failed to fetch options for model" });
+    }
+  });
+
   app.patch("/api/models/:id", requireAuth, async (req, res) => {
     try {
       const modelId = parseInt(req.params.id);
@@ -1724,7 +1736,7 @@ export async function registerRoutes(app: Express): Promise<Express> {
 
   app.post("/api/options", requireAuth, async (req, res) => {
     try {
-      const { name, price, category, modelId } = req.body;
+      const { name, price, category, modelId, applicableModels } = req.body;
       
       console.log("Creating new option:", req.body);
       
@@ -1732,7 +1744,8 @@ export async function registerRoutes(app: Express): Promise<Express> {
         name,
         price,
         category,
-        modelId,
+        modelId, // Backward compatibility
+        applicableModels, // New multiple models support
       });
       
       console.log("Created option:", newOption);
@@ -1746,13 +1759,14 @@ export async function registerRoutes(app: Express): Promise<Express> {
   app.patch("/api/options/:id", requireAuth, async (req, res) => {
     try {
       const optionId = parseInt(req.params.id);
-      const { price, name, category, modelId, isArchived } = req.body;
+      const { price, name, category, modelId, applicableModels, isArchived } = req.body;
       
       const updatedOption = await storage.updateOption(optionId, {
         price,
         name,
         category,
-        modelId,
+        modelId, // Backward compatibility
+        applicableModels, // New multiple models support
         isArchived,
       });
       

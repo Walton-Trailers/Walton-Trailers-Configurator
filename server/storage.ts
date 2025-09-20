@@ -1157,6 +1157,7 @@ export class DatabaseStorage implements IStorage {
       if (updates.name !== undefined) updateData.name = updates.name;
       if (updates.category !== undefined) updateData.category = updates.category;
       if (updates.modelId !== undefined) updateData.model_id = updates.modelId;
+      if (updates.applicableModels !== undefined) updateData.applicable_models = updates.applicableModels;
       if (updates.isArchived !== undefined) updateData.is_archived = updates.isArchived;
       if (updates.imageUrl !== undefined) updateData.image_url = updates.imageUrl;
       
@@ -1201,6 +1202,13 @@ export class DatabaseStorage implements IStorage {
           await db.execute(sql`
             UPDATE trailer_options 
             SET image_url = ${updates.imageUrl}
+            WHERE id = ${id}
+          `);
+        }
+        if (updates.applicableModels !== undefined) {
+          await db.execute(sql`
+            UPDATE trailer_options 
+            SET applicable_models = ${JSON.stringify(updates.applicableModels)}
             WHERE id = ${id}
           `);
         }
