@@ -1005,39 +1005,19 @@ export class DatabaseStorage implements IStorage {
         ORDER BY category, name
       `);
       
-      return result.rows.map((option: any) => {
-        console.log(`DEBUG - Processing option ${option.id}: ${option.name}`);
-        console.log(`DEBUG - Raw applicable_models:`, option.applicable_models);
-        console.log(`DEBUG - Type of applicable_models:`, typeof option.applicable_models);
-        
-        let applicableModels;
-        try {
-          if (option.applicable_models) {
-            applicableModels = JSON.parse(option.applicable_models);
-            console.log(`DEBUG - Parsed applicableModels:`, applicableModels);
-          } else {
-            applicableModels = [option.model_id];
-            console.log(`DEBUG - Using fallback modelId:`, applicableModels);
-          }
-        } catch (error) {
-          console.error(`DEBUG - JSON parse error for option ${option.id}:`, error);
-          applicableModels = [option.model_id];
-        }
-        
-        return {
-          id: option.id,
-          modelId: option.model_id,
-          applicableModels: applicableModels,
-          name: option.name,
-          category: option.category,
-          price: option.price,
-          isRequired: false,
-          isMultiSelect: option.is_multi_select || false,
-          isArchived: option.is_archived || false,
-          imageUrl: option.image_url,
-          options: [],
-        };
-      });
+      return result.rows.map((option: any) => ({
+        id: option.id,
+        modelId: option.model_id,
+        applicableModels: option.applicable_models || [option.model_id],
+        name: option.name,
+        category: option.category,
+        price: option.price,
+        isRequired: false,
+        isMultiSelect: option.is_multi_select || false,
+        isArchived: option.is_archived || false,
+        imageUrl: option.image_url,
+        options: [],
+      }));
     } catch (error) {
       console.error('Error fetching all options:', error);
       throw error;
