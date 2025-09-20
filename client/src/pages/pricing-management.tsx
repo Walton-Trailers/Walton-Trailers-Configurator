@@ -325,11 +325,8 @@ export default function PricingManagement() {
 
   // Create new option mutation
   const createOptionMutation = useMutation({
-    mutationFn: (data: { name: string; price: number; category: string; modelId: string; applicableModels: string[] }) => {
-      console.log("=== CREATE OPTION MUTATION DATA ===", data);
-      console.log("applicableModels:", data.applicableModels);
-      console.log("modelId:", data.modelId);
-      return apiRequest("/api/options", {
+    mutationFn: (data: { name: string; price: number; category: string; modelId: string; applicableModels: string[] }) =>
+      apiRequest("/api/options", {
         method: "POST",
         body: {
           name: data.name,
@@ -339,8 +336,7 @@ export default function PricingManagement() {
           applicableModels: data.applicableModels.length > 0 ? data.applicableModels : [data.modelId] // Use applicableModels or fallback to single modelId
         },
         headers: sessionId ? { Authorization: `Bearer ${sessionId}` } : {},
-      });
-    },
+      }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/options/all"] });
       setShowAddOption(false);
@@ -2423,11 +2419,7 @@ export default function PricingManagement() {
                 Cancel
               </Button>
               <Button
-                onClick={() => {
-                  console.log("=== BUTTON CLICKED ===");
-                  console.log("newOptionData:", newOptionData);
-                  createOptionMutation.mutate(newOptionData);
-                }}
+                onClick={() => createOptionMutation.mutate(newOptionData)}
                 disabled={createOptionMutation.isPending || !newOptionData.name || !newOptionData.category}
               >
                 {createOptionMutation.isPending ? "Creating..." : "Create Option"}

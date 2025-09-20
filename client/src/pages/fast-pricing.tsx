@@ -1665,29 +1665,17 @@ export default function FastPricing() {
                       </Button>
                       <Button 
                         onClick={() => {
-                          // Create option for each selected model
-                          if (newOptionData.modelIds.length > 0) {
-                            newOptionData.modelIds.forEach(modelId => {
-                              addOptionMutation.mutate({
-                                name: newOptionData.name,
-                                modelId: modelId,
-                                category: newOptionData.category,
-                                price: newOptionData.price,
-                                imageUrl: newOptionData.imageUrl,
-                                isMultiSelect: newOptionData.isMultiSelect
-                              });
-                            });
-                          } else {
-                            // Add option without model association
-                            addOptionMutation.mutate({
-                              name: newOptionData.name,
-                              modelId: "ALL", // Default for all models
-                              category: newOptionData.category,
-                              price: newOptionData.price,
-                              imageUrl: newOptionData.imageUrl,
-                              isMultiSelect: newOptionData.isMultiSelect
-                            });
-                          }
+                          // Create single option with multiple models
+                          const applicableModels = newOptionData.modelIds.length > 0 ? newOptionData.modelIds : ["ALL"];
+                          addOptionMutation.mutate({
+                            name: newOptionData.name,
+                            modelId: applicableModels[0], // Legacy field for backward compatibility
+                            applicableModels: applicableModels, // New field for multiple models
+                            category: newOptionData.category,
+                            price: newOptionData.price,
+                            imageUrl: newOptionData.imageUrl,
+                            isMultiSelect: newOptionData.isMultiSelect
+                          });
                         }}
                         disabled={addOptionMutation.isPending || !newOptionData.name || newOptionData.price < 0}
                       >
