@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useEffect } from "react";
 import { ArrowLeft, Edit, Save, X, Archive, RotateCcw, Upload, Image, Trash2 } from "lucide-react";
 import { Link } from "wouter";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query";
 import { useFastQuery } from "@/hooks/useFastQuery";
 import { ObjectUploader } from "@/components/ObjectUploader";
 import { apiRequest } from "@/lib/queryClient";
@@ -130,6 +130,20 @@ export default function FastPricing() {
   const { data: models = [], isLoading, error: modelsError } = useFastQuery.allModels(sessionId);
   const { data: options = [], error: optionsError } = useFastQuery.allOptions(sessionId);
   const { data: categories = [] } = useFastQuery.categories();
+  
+  // Fetch option categories dynamically from database
+  const { data: optionCategories = [] } = useQuery({
+    queryKey: ['/api/categories/options'],
+    queryFn: async () => {
+      const response = await fetch('/api/categories/options', {
+        headers: {
+          Authorization: `Bearer ${sessionId}`,
+        },
+      });
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+      return response.json();
+    },
+  });
 
   // Fetch series data
   const fetchSeries = async () => {
@@ -1586,16 +1600,11 @@ export default function FastPricing() {
                           value={newOptionData.category}
                           onValueChange={(value: string) => setNewOptionData({ ...newOptionData, category: value })}
                         >
-                          <option value="tires">Tires</option>
-                          <option value="ramps">Ramps</option>
-                          <option value="color">Color</option>
-                          <option value="extras">Extras</option>
-                          <option value="deck">Deck</option>
-                          <option value="walls">Walls</option>
-                          <option value="winch">Winch</option>
-                          <option value="wheels">Wheels</option>
-                          <option value="brakes">Brakes</option>
-                          <option value="hitch">Hitch</option>
+                          {optionCategories.map((category: string) => (
+                            <option key={category} value={category}>
+                              {category.charAt(0).toUpperCase() + category.slice(1)}
+                            </option>
+                          ))}
                         </Select>
                       </div>
                       <div>
@@ -1786,16 +1795,11 @@ export default function FastPricing() {
                               [option.id]: { ...editData[option.id], category: value }
                             })}
                           >
-                            <SelectItem value="tires">Tires</SelectItem>
-                            <SelectItem value="ramps">Ramps</SelectItem>
-                            <SelectItem value="color">Color</SelectItem>
-                            <SelectItem value="extras">Extras</SelectItem>
-                            <SelectItem value="deck">Deck</SelectItem>
-                            <SelectItem value="walls">Walls</SelectItem>
-                            <SelectItem value="winch">Winch</SelectItem>
-                            <SelectItem value="wheels">Wheels</SelectItem>
-                            <SelectItem value="brakes">Brakes</SelectItem>
-                            <SelectItem value="hitch">Hitch</SelectItem>
+                            {optionCategories.map((category: string) => (
+                              <SelectItem key={category} value={category}>
+                                {category.charAt(0).toUpperCase() + category.slice(1)}
+                              </SelectItem>
+                            ))}
                           </Select>
                         ) : (
                           option.category
