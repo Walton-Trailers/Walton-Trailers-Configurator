@@ -78,6 +78,7 @@ export const trailerOptions = pgTable("trailer_options", {
   isDefault: boolean("is_default").default(false),
   applicableModels: json("applicable_models").$type<string[]>(), // which model series this applies to
   payload: integer("payload"), // payload capacity for length options
+  hexColor: text("hex_color"), // hex color value for color options (e.g., '#FF0000')
 });
 
 // User Configurations (for saving)
