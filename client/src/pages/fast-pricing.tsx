@@ -1566,9 +1566,12 @@ export default function FastPricing() {
               {/* Add Option Dialog */}
               {showAddOption && (
                 <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center z-50 overflow-y-auto">
-                  <div className="bg-white rounded-lg p-6 max-w-2xl w-full my-8 max-h-[calc(100vh-4rem)]">
-                    <h3 className="text-lg font-semibold mb-4">Add New Option/Extra</h3>
-                    <div className="space-y-4">
+                  <div className="bg-white rounded-lg max-w-2xl w-full my-8 max-h-[calc(100vh-4rem)] flex flex-col">
+                    <div className="p-6 pb-4">
+                      <h3 className="text-lg font-semibold mb-4">Add New Option/Extra</h3>
+                    </div>
+                    <div className="px-6 flex-1 overflow-y-auto">
+                      <div className="space-y-4">
                       <div>
                         <label className="block text-sm font-medium mb-1">Option Name</label>
                         <Input
@@ -1661,8 +1664,10 @@ export default function FastPricing() {
                         />
                         <label htmlFor="isMultiSelect" className="text-sm">Allow multiple selections</label>
                       </div>
+                      </div>
                     </div>
-                    <div className="flex justify-end gap-3 mt-6">
+                    <div className="p-6 pt-4 border-t bg-white rounded-b-lg">
+                      <div className="flex justify-end gap-3">
                       <Button variant="outline" onClick={() => setShowAddOption(false)}>
                         Cancel
                       </Button>
@@ -1684,6 +1689,7 @@ export default function FastPricing() {
                       >
                         Add Option
                       </Button>
+                      </div>
                     </div>
                   </div>
                 </div>
