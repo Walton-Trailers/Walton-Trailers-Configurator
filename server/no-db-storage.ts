@@ -32,6 +32,10 @@ export class NoDatabaseStorage implements IStorage {
     return [];
   }
 
+  async getOptionsForModel(modelId: string): Promise<TrailerOptionResponse[]> {
+    return [];
+  }
+
   async saveConfiguration(config: any): Promise<any> {
     return { id: 1, ...config };
   }

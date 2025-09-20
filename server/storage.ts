@@ -48,7 +48,8 @@ export interface TrailerModelResponse {
 
 export interface TrailerOptionResponse {
   id: number;
-  modelId: string;
+  modelId: string; // Keep for backward compatibility
+  applicableModels: string[]; // New field for multiple models
   category: string;
   name: string;
   price: number;
@@ -86,6 +87,7 @@ export interface IStorage {
   getTrailerModelsBySeries(seriesId: number): Promise<TrailerModelResponse[]>;
   getTrailerModel(modelId: string): Promise<TrailerModelResponse | undefined>;
   getTrailerOptions(modelId: string): Promise<TrailerOptionResponse[]>;
+  getOptionsForModel(modelId: string): Promise<TrailerOptionResponse[]>; // New efficient method
   saveUserConfiguration(config: InsertUserConfiguration): Promise<UserConfiguration>;
   getUserConfiguration(sessionId: string): Promise<UserConfiguration | undefined>;
   
@@ -115,7 +117,7 @@ export interface IStorage {
   getAllOptions(): Promise<TrailerOptionResponse[]>;
   updateModel(id: number, updates: any): Promise<TrailerModelResponse>;
   updateOption(id: number, updates: any): Promise<TrailerOptionResponse>;
-  createOption(data: { name: string; price: number; category: string; modelId: string }): Promise<TrailerOptionResponse>;
+  createOption(data: { name: string; price: number; category: string; modelId?: string; applicableModels?: string[] }): Promise<TrailerOptionResponse>;
   deleteOption(id: number): Promise<void>;
   archiveOption(id: number): Promise<void>;
   archiveModel(id: number): Promise<void>;
@@ -270,37 +272,37 @@ export class MemStorage implements IStorage {
 
     modelsData.forEach(model => this.models.set(model.modelId, model));
 
-    // Initialize options
+    // Initialize options with applicableModels support
     const optionsData: Record<string, TrailerOptionResponse[]> = {
       "DHO215": [
-        { id: 1, modelId: "DHO215", category: "tires", name: "Standard ST235/85R16", price: 0, isMultiSelect: false },
-        { id: 2, modelId: "DHO215", category: "tires", name: "ST235/85R16 \"G\" 14-ply", price: 600, isMultiSelect: false },
-        { id: 3, modelId: "DHO215", category: "ramps", name: "No Ramp", price: 0, isMultiSelect: false },
-        { id: 4, modelId: "DHO215", category: "ramps", name: "Slide-in Ramps", price: 450, isMultiSelect: false },
-        { id: 5, modelId: "DHO215", category: "color", name: "Standard Black", price: 0, isMultiSelect: false },
-        { id: 6, modelId: "DHO215", category: "color", name: "Custom Color", price: 1200, isMultiSelect: false },
-        { id: 7, modelId: "DHO215", category: "extras", name: "Toolbox", price: 850, isMultiSelect: true },
-        { id: 8, modelId: "DHO215", category: "extras", name: "Spare Tire Mount", price: 200, isMultiSelect: true },
-        { id: 9, modelId: "DHO215", category: "extras", name: "D-Rings (4)", price: 120, isMultiSelect: true }
+        { id: 1, modelId: "DHO215", applicableModels: ["DHO215"], category: "tires", name: "Standard ST235/85R16", price: 0, isMultiSelect: false },
+        { id: 2, modelId: "DHO215", applicableModels: ["DHO215"], category: "tires", name: "ST235/85R16 \"G\" 14-ply", price: 600, isMultiSelect: false },
+        { id: 3, modelId: "DHO215", applicableModels: ["DHO215"], category: "ramps", name: "No Ramp", price: 0, isMultiSelect: false },
+        { id: 4, modelId: "DHO215", applicableModels: ["DHO215"], category: "ramps", name: "Slide-in Ramps", price: 450, isMultiSelect: false },
+        { id: 5, modelId: "DHO215", applicableModels: ["DHO215"], category: "color", name: "Standard Black", price: 0, isMultiSelect: false },
+        { id: 6, modelId: "DHO215", applicableModels: ["DHO215"], category: "color", name: "Custom Color", price: 1200, isMultiSelect: false },
+        { id: 7, modelId: "DHO215", applicableModels: ["DHO215"], category: "extras", name: "Toolbox", price: 850, isMultiSelect: true },
+        { id: 8, modelId: "DHO215", applicableModels: ["DHO215"], category: "extras", name: "Spare Tire Mount", price: 200, isMultiSelect: true },
+        { id: 9, modelId: "DHO215", applicableModels: ["DHO215"], category: "extras", name: "D-Rings (4)", price: 120, isMultiSelect: true }
       ],
       "DTX620": [
-        { id: 10, modelId: "DTX620", category: "tires", name: "Standard ST235/85R16", price: 0, isMultiSelect: false },
-        { id: 11, modelId: "DTX620", category: "tires", name: "ST235/85R16 \"G\" 14-ply", price: 900, isMultiSelect: false },
-        { id: 12, modelId: "DTX620", category: "walls", name: "Standard 24\" Walls", price: 0, isMultiSelect: false },
-        { id: 13, modelId: "DTX620", category: "walls", name: "High 36\" Walls", price: 1500, isMultiSelect: false },
-        { id: 14, modelId: "DTX620", category: "color", name: "Standard Black", price: 0, isMultiSelect: false },
-        { id: 15, modelId: "DTX620", category: "color", name: "Custom Color", price: 1200, isMultiSelect: false }
+        { id: 10, modelId: "DTX620", applicableModels: ["DTX620"], category: "tires", name: "Standard ST235/85R16", price: 0, isMultiSelect: false },
+        { id: 11, modelId: "DTX620", applicableModels: ["DTX620"], category: "tires", name: "ST235/85R16 \"G\" 14-ply", price: 900, isMultiSelect: false },
+        { id: 12, modelId: "DTX620", applicableModels: ["DTX620"], category: "walls", name: "Standard 24\" Walls", price: 0, isMultiSelect: false },
+        { id: 13, modelId: "DTX620", applicableModels: ["DTX620"], category: "walls", name: "High 36\" Walls", price: 1500, isMultiSelect: false },
+        { id: 14, modelId: "DTX620", applicableModels: ["DTX620"], category: "color", name: "Standard Black", price: 0, isMultiSelect: false },
+        { id: 15, modelId: "DTX620", applicableModels: ["DTX620"], category: "color", name: "Custom Color", price: 1200, isMultiSelect: false }
       ],
       "FBX210": [
-        { id: 16, modelId: "FBX210", category: "deck", name: "24' Length", price: -2000, isMultiSelect: false },
-        { id: 17, modelId: "FBX210", category: "deck", name: "28' Length", price: 0, isMultiSelect: false },
-        { id: 18, modelId: "FBX210", category: "deck", name: "32' Length", price: 3000, isMultiSelect: false },
-        { id: 19, modelId: "FBX210", category: "ramps", name: "No Ramps", price: 0, isMultiSelect: false },
-        { id: 20, modelId: "FBX210", category: "ramps", name: "8' Slide-in Ramps", price: 1200, isMultiSelect: false }
+        { id: 16, modelId: "FBX210", applicableModels: ["FBX210"], category: "deck", name: "24' Length", price: -2000, isMultiSelect: false },
+        { id: 17, modelId: "FBX210", applicableModels: ["FBX210"], category: "deck", name: "28' Length", price: 0, isMultiSelect: false },
+        { id: 18, modelId: "FBX210", applicableModels: ["FBX210"], category: "deck", name: "32' Length", price: 3000, isMultiSelect: false },
+        { id: 19, modelId: "FBX210", applicableModels: ["FBX210"], category: "ramps", name: "No Ramps", price: 0, isMultiSelect: false },
+        { id: 20, modelId: "FBX210", applicableModels: ["FBX210"], category: "ramps", name: "8' Slide-in Ramps", price: 1200, isMultiSelect: false }
       ],
       "TSX208": [
-        { id: 21, modelId: "TSX208", category: "winch", name: "No Winch", price: 0, isMultiSelect: false },
-        { id: 22, modelId: "TSX208", category: "winch", name: "12V Electric Winch", price: 1500, isMultiSelect: false }
+        { id: 21, modelId: "TSX208", applicableModels: ["TSX208"], category: "winch", name: "No Winch", price: 0, isMultiSelect: false },
+        { id: 22, modelId: "TSX208", applicableModels: ["TSX208"], category: "winch", name: "12V Electric Winch", price: 1500, isMultiSelect: false }
       ]
     };
 
@@ -330,6 +332,14 @@ export class MemStorage implements IStorage {
 
   async getTrailerOptions(modelId: string): Promise<TrailerOptionResponse[]> {
     return this.options.get(modelId) || [];
+  }
+
+  async getOptionsForModel(modelId: string): Promise<TrailerOptionResponse[]> {
+    // Get all options and filter by applicableModels
+    const allOptions = Array.from(this.options.values()).flat();
+    return allOptions.filter(option => 
+      option.applicableModels.includes(modelId)
+    );
   }
 
   async saveUserConfiguration(config: InsertUserConfiguration): Promise<UserConfiguration> {
@@ -446,19 +456,29 @@ export class MemStorage implements IStorage {
     throw new Error('Option not found');
   }
 
-  async createOption(data: { name: string; price: number; category: string; modelId: string }): Promise<TrailerOptionResponse> {
+  async createOption(data: { name: string; price: number; category: string; modelId?: string; applicableModels?: string[] }): Promise<TrailerOptionResponse> {
+    // Support both legacy modelId and new applicableModels
+    const applicableModels = data.applicableModels || (data.modelId ? [data.modelId] : []);
+    const modelId = data.modelId || applicableModels[0] || "";
+    
     const newOption: TrailerOptionResponse = {
       id: this.currentId++,
-      modelId: data.modelId,
+      modelId: modelId, // Backward compatibility
+      applicableModels: applicableModels,
       name: data.name,
       category: data.category,
       price: data.price,
       isMultiSelect: false,
     };
     
-    const existingOptions = this.options.get(data.modelId) || [];
-    existingOptions.push(newOption);
-    this.options.set(data.modelId, existingOptions);
+    // Store the option in the map for each applicable model
+    applicableModels.forEach(model => {
+      const existingOptions = this.options.get(model) || [];
+      if (!existingOptions.find(opt => opt.id === newOption.id)) {
+        existingOptions.push(newOption);
+        this.options.set(model, existingOptions);
+      }
+    });
     
     return newOption;
   }
@@ -559,6 +579,35 @@ export class MemStorage implements IStorage {
 }
 
 export class DatabaseStorage implements IStorage {
+  async getOptionsForModel(modelId: string): Promise<TrailerOptionResponse[]> {
+    try {
+      const result = await db.execute(sql`
+        SELECT id, option_category, option_type, name, description, trac_code,
+               price, price_unit, image_url, is_default, applicable_models, payload,
+               is_multi_select, is_archived
+        FROM trailer_options
+        WHERE (is_archived IS NULL OR is_archived = false)
+          AND (applicable_models IS NULL OR applicable_models @> ${JSON.stringify([modelId])})
+        ORDER BY option_category, name
+      `);
+      
+      return result.rows.map((option: any) => ({
+        id: option.id,
+        modelId: option.applicable_models?.[0] || "", // Backward compatibility
+        applicableModels: option.applicable_models || [],
+        category: option.option_category,
+        name: option.name,
+        price: option.price,
+        isMultiSelect: option.is_multi_select || false,
+        isArchived: option.is_archived || false,
+        imageUrl: option.image_url
+      }));
+    } catch (error) {
+      console.error('Error fetching options for model:', error);
+      throw error;
+    }
+  }
+
   async getTrailerCategories(): Promise<TrailerCategoryResponse[]> {
     try {
       // Dynamic pricing based on lowest model price in each category
@@ -1159,7 +1208,7 @@ export class DatabaseStorage implements IStorage {
       
       // Get the updated record
       result = await db.execute(sql`
-        SELECT id, model_id, category, name, price, is_multi_select, is_archived, image_url
+        SELECT id, model_id, category, name, price, is_multi_select, is_archived, image_url, applicable_models
         FROM trailer_options WHERE id = ${id}
       `);
       
@@ -1167,6 +1216,7 @@ export class DatabaseStorage implements IStorage {
       return {
         id: updatedOption.id,
         modelId: updatedOption.model_id,
+        applicableModels: updatedOption.applicable_models || [],
         name: updatedOption.name,
         category: updatedOption.category,
         price: updatedOption.price,
@@ -1180,18 +1230,23 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
-  async createOption(data: { name: string; price: number; category: string; modelId: string }): Promise<TrailerOptionResponse> {
+  async createOption(data: { name: string; price: number; category: string; modelId?: string; applicableModels?: string[] }): Promise<TrailerOptionResponse> {
     try {
+      // Support both legacy modelId and new applicableModels
+      const applicableModels = data.applicableModels || (data.modelId ? [data.modelId] : []);
+      const modelId = data.modelId || applicableModels[0] || "";
+      
       const result = await db.execute(sql`
-        INSERT INTO trailer_options (model_id, name, category, price, is_multi_select)
-        VALUES (${data.modelId}, ${data.name}, ${data.category}, ${data.price}, false)
-        RETURNING id, model_id, name, category, price, is_multi_select
+        INSERT INTO trailer_options (model_id, name, category, price, is_multi_select, applicable_models)
+        VALUES (${modelId}, ${data.name}, ${data.category}, ${data.price}, false, ${JSON.stringify(applicableModels)})
+        RETURNING id, model_id, name, category, price, is_multi_select, applicable_models
       `);
       
       const newOption = result.rows[0] as any;
       return {
         id: newOption.id,
         modelId: newOption.model_id,
+        applicableModels: newOption.applicable_models || [],
         name: newOption.name,
         category: newOption.category,
         price: newOption.price,
@@ -1400,12 +1455,12 @@ export class DatabaseStorage implements IStorage {
         seriesName: seriesName,
         modelId: model.model_id,
         name: model.name,
-        gvwrRange: undefined,
-        deckHeight: undefined,
-        overallWidth: undefined,
-        lengthRange: undefined,
+        gvwr: "N/A",
+        payload: "N/A",
+        deckSize: "N/A",
+        axles: "N/A",
         imageUrl: model.image_url,
-        standardFeatures: JSON.parse(model.features),
+        features: JSON.parse(model.features),
         basePrice: model.base_price || 0,
         isArchived: false,
       };
@@ -1590,7 +1645,7 @@ function getStorage(): IStorage {
       storageInstance = new MemStorage();
     }
   }
-  return storageInstance;
+  return storageInstance!;
 }
 
 export const storage = getStorage();

@@ -105,7 +105,7 @@ export class FastStorage {
     if (cached) return cached;
 
     const result = await db.execute(sql`
-      SELECT id, model_id, name, category, price, is_archived
+      SELECT id, model_id, name, category, price, is_archived, applicable_models
       FROM trailer_options
       ORDER BY category, name
     `);
@@ -113,6 +113,7 @@ export class FastStorage {
     const options = result.rows.map((option: any) => ({
       id: option.id,
       modelId: option.model_id,
+      applicableModels: option.applicable_models || [],
       name: option.name,
       category: option.category,
       price: option.price,
@@ -164,6 +165,34 @@ export class FastStorage {
   async archiveOption(id: number) {
     await db.execute(sql`UPDATE trailer_options SET is_archived = true WHERE id = ${id}`);
     cache.clear();
+  }
+
+  // Get options that apply to a specific model
+  async getOptionsForModel(modelId: string) {
+    const cacheKey = `options_${modelId}`;
+    const cached = cache.get(cacheKey);
+    if (cached) return cached;
+
+    const result = await db.execute(sql`
+      SELECT id, model_id, name, category, price, is_archived, applicable_models
+      FROM trailer_options
+      WHERE (is_archived IS NULL OR is_archived = false)
+        AND (applicable_models IS NULL OR applicable_models @> ${JSON.stringify([modelId])})
+      ORDER BY category, name
+    `);
+    
+    const options = result.rows.map((option: any) => ({
+      id: option.id,
+      modelId: option.model_id,
+      applicableModels: option.applicable_models || [],
+      name: option.name,
+      category: option.category,
+      price: option.price,
+      isArchived: option.is_archived || false
+    }));
+    
+    cache.set(cacheKey, options);
+    return options;
   }
 
   private async getModelById(id: number) {
