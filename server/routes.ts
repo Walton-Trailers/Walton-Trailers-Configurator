@@ -1736,7 +1736,7 @@ export async function registerRoutes(app: Express): Promise<Express> {
 
   app.post("/api/options", requireAuth, async (req, res) => {
     try {
-      const { name, price, category, modelId, applicableModels } = req.body;
+      const { name, price, category, modelId, applicableModels, hexColor } = req.body;
       
       console.log("Creating new option:", req.body);
       
@@ -1746,6 +1746,7 @@ export async function registerRoutes(app: Express): Promise<Express> {
         category,
         modelId, // Backward compatibility
         applicableModels, // New multiple models support
+        hexColor, // Hex color for color options
       });
       
       console.log("Created option:", newOption);
