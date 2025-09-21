@@ -1355,7 +1355,7 @@ Configuration Date: ${new Date().toLocaleDateString()}
                               </div>
                             ) : category.toLowerCase() === 'color' ? (
                               // Special color circle handling for color options
-                              <div className="grid grid-cols-3 gap-4 justify-items-center">
+                              <div className="flex flex-wrap justify-center gap-4">
                                 {categoryOptions.map((option) => {
                                   const isSelected = selectedOptions[category]?.toString() === option.id.toString() || 
                                                    (!selectedOptions[category] && categoryOptions[0]?.id === option.id);
