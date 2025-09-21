@@ -111,6 +111,7 @@ interface TrailerOption {
   price: number;
   isMultiSelect: boolean;
   payload?: number; // Optional payload for certain options
+  hexColor?: string; // Hex color value for color options (renamed from hex_color by API)
 }
 
 // Option Info Modal Component
