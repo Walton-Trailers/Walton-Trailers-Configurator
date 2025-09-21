@@ -1245,10 +1245,13 @@ Configuration Date: ${new Date().toLocaleDateString()}
                           return acc;
                         }, {} as Record<string, TrailerOption[]>)
                       ).sort(([categoryA], [categoryB]) => {
-                        // Sort so that 'extras' (Additional Options) appears last
-                        if (categoryA === 'extras') return 1;
-                        if (categoryB === 'extras') return -1;
-                        return 0;
+                        // Define custom order: color first, then length, then others, extras last
+                        const order = { 'color': 0, 'length': 1, 'extras': 999 };
+                        const orderA = order[categoryA] !== undefined ? order[categoryA] : 50;
+                        const orderB = order[categoryB] !== undefined ? order[categoryB] : 50;
+                        
+                        if (orderA !== orderB) return orderA - orderB;
+                        return categoryA.localeCompare(categoryB); // Alphabetical for same priority
                       }).map(([category, categoryOptions]) => (
                         <div key={category} className="mb-4">
                           <h4 className="text-sm font-medium text-gray-900 mb-2">
