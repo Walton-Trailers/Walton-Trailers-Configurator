@@ -1355,14 +1355,14 @@ Configuration Date: ${new Date().toLocaleDateString()}
                               </div>
                             ) : category.toLowerCase() === 'color' ? (
                               // Special color circle handling for color options
-                              <div className="grid grid-cols-3 gap-3">
+                              <div className="grid grid-cols-3 gap-4 justify-items-center">
                                 {categoryOptions.map((option) => {
                                   const isSelected = selectedOptions[category]?.toString() === option.id.toString() || 
                                                    (!selectedOptions[category] && categoryOptions[0]?.id === option.id);
                                   const colorHex = option.hexColor || getColorHex(option.name);
                                   
                                   return (
-                                    <div key={option.id} className="text-center">
+                                    <div key={option.id} className="flex flex-col items-center text-center">
                                       <button
                                         onClick={() => handleOptionChange(category, option.id, false, true)}
                                         className={`w-16 h-16 rounded-full border-4 transition-all duration-200 hover:scale-105 focus:outline-none focus:ring-2 focus:ring-blue-500 ${
