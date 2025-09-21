@@ -1352,7 +1352,7 @@ Configuration Date: ${new Date().toLocaleDateString()}
                                   ))}
                                 </select>
                               </div>
-                            ) : category === 'color' ? (
+                            ) : category.toLowerCase() === 'color' ? (
                               // Special color circle handling for color options
                               <div className="grid grid-cols-3 gap-3">
                                 {categoryOptions.map((option) => {
