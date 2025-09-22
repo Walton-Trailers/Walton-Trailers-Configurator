@@ -549,25 +549,24 @@ Configuration Date: ${new Date().toLocaleDateString()}
       
       const quoteData = {
         ...data,
-        configuration: {
-          categoryId: selectedCategory?.id,
-          categoryName: selectedCategory?.name,
-          modelId: selectedModel?.modelId,
-          modelName: selectedModel?.name,
-          selectedOptions,
-          totalPrice,
-          trailerSpecs: selectedModel ? {
-            gvwr: selectedModel.gvwr,
-            payload: selectedModel.payload,
-            deckSize: selectedModel.deckSize,
-            axles: selectedModel.axles
-          } : null
-        }
+        // Flatten configuration data to match database schema
+        categoryId: selectedCategory?.id,
+        categoryName: selectedCategory?.name,
+        modelId: selectedModel?.modelId,
+        modelName: selectedModel?.name,
+        selectedOptions,
+        totalPrice,
+        trailerSpecs: selectedModel ? {
+          gvwr: selectedModel.gvwr,
+          payload: selectedModel.payload,
+          deckSize: selectedModel.deckSize,
+          axles: selectedModel.axles
+        } : null
       };
 
       await apiRequest('/api/quotes', {
         method: 'POST',
-        body: JSON.stringify(quoteData)
+        body: quoteData
       });
 
       toast({
