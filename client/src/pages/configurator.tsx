@@ -1637,6 +1637,24 @@ Configuration Date: ${new Date().toLocaleDateString()}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <Button 
                   variant="outline"
+                  onClick={async () => {
+                    try {
+                      const { generateConfigurationPDF } = await import("@/lib/pdf-generator");
+                      if (selectedModel) {
+                        generateConfigurationPDF(selectedModel, selectedOptions, totalPrice, options || []);
+                      }
+                      toast({
+                        title: "PDF Downloaded",
+                        description: "Your configuration summary has been downloaded as a PDF.",
+                      });
+                    } catch (error) {
+                      toast({
+                        title: "Download Failed",
+                        description: "Unable to generate PDF. Please try again.",
+                        variant: "destructive",
+                      });
+                    }
+                  }}
                   className="py-4 md:py-6 text-sm md:text-base min-h-[48px]"
                 >
                   <Download className="w-4 h-4 md:w-5 md:h-5 mr-2" />
