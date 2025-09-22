@@ -2419,6 +2419,21 @@ export default function PricingManagement() {
                   </p>
                 </div>
               )}
+              {newOptionData.category.toLowerCase() === 'color' && (
+                <div className="grid gap-2">
+                  <Label htmlFor="option-primer-price">Primer Price</Label>
+                  <Input
+                    id="option-primer-price"
+                    type="number"
+                    placeholder="Enter primer price (integer)"
+                    value={newOptionData.primerPrice}
+                    onChange={(e) => setNewOptionData({ ...newOptionData, primerPrice: parseInt(e.target.value) || 0 })}
+                  />
+                  <p className="text-xs text-gray-500">
+                    Enter the primer price for this color option
+                  </p>
+                </div>
+              )}
               <div className="grid gap-2">
                 <Label>Related Models</Label>
                 <div className="border rounded-md p-3 max-h-40 overflow-y-auto">
