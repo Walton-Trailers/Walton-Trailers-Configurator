@@ -477,6 +477,30 @@ export async function registerRoutes(app: Express): Promise<Express> {
     }
   });
 
+  // Delete quote request (admin only)
+  app.delete("/api/quotes/:id", requireAuth, async (req, res) => {
+    try {
+      const quoteId = parseInt(req.params.id);
+      
+      const result = await db.delete(quoteRequests)
+        .where(eq(quoteRequests.id, quoteId))
+        .returning();
+      
+      if (result.length === 0) {
+        return res.status(404).json({ message: "Quote request not found" });
+      }
+      
+      res.json({ 
+        success: true, 
+        message: "Quote request deleted successfully",
+        deletedId: quoteId 
+      });
+    } catch (error) {
+      console.error("Error deleting quote request:", error);
+      res.status(500).json({ message: "Failed to delete quote request" });
+    }
+  });
+
   // ========================
   // Dealer Routes
   // ========================

@@ -66,6 +66,7 @@ export default function AdminDashboard() {
   const [isExporting, setIsExporting] = useState(false);
   const [selectedQuoteRequest, setSelectedQuoteRequest] = useState<any>(null);
   const [showQuoteDetailModal, setShowQuoteDetailModal] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -243,6 +244,33 @@ export default function AdminDashboard() {
       toast({
         title: "Error",
         description: error.message || "Failed to change password",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const deleteQuoteRequestMutation = useMutation({
+    mutationFn: (quoteId: number) =>
+      apiRequest(`/api/quotes/${quoteId}`, {
+        method: "DELETE",
+        headers: {
+          Authorization: `Bearer ${sessionId}`,
+        },
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/quotes"] });
+      setShowQuoteDetailModal(false);
+      setShowDeleteConfirm(false);
+      setSelectedQuoteRequest(null);
+      toast({
+        title: "Success",
+        description: "Quote request deleted successfully",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to delete quote request",
         variant: "destructive",
       });
     },
@@ -1314,10 +1342,22 @@ ${quote.notes ? `\nAdmin Notes: ${quote.notes}` : ''}`;
       <Dialog open={showQuoteDetailModal} onOpenChange={setShowQuoteDetailModal}>
         <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Quote Request Details</DialogTitle>
-            <DialogDescription>
-              Complete information for quote request #{selectedQuoteRequest?.id}
-            </DialogDescription>
+            <div className="flex items-center justify-between">
+              <div>
+                <DialogTitle>Quote Request Details</DialogTitle>
+                <DialogDescription>
+                  Complete information for quote request #{selectedQuoteRequest?.id}
+                </DialogDescription>
+              </div>
+              <Button
+                variant="destructive"
+                size="sm"
+                onClick={() => setShowDeleteConfirm(true)}
+                className="ml-4"
+              >
+                Delete Quote
+              </Button>
+            </div>
           </DialogHeader>
           
           {selectedQuoteRequest && (
@@ -1526,6 +1566,38 @@ ${quote.notes ? `\nAdmin Notes: ${quote.notes}` : ''}`;
               </div>
             </div>
           )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Delete Quote Request</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to delete this quote request? This action cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex justify-end space-x-2 mt-4">
+            <Button
+              variant="outline"
+              onClick={() => setShowDeleteConfirm(false)}
+              disabled={deleteQuoteRequestMutation.isPending}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={() => {
+                if (selectedQuoteRequest) {
+                  deleteQuoteRequestMutation.mutate(selectedQuoteRequest.id);
+                }
+              }}
+              disabled={deleteQuoteRequestMutation.isPending}
+            >
+              {deleteQuoteRequestMutation.isPending ? "Deleting..." : "Delete"}
+            </Button>
+          </div>
         </DialogContent>
       </Dialog>
     </div>
