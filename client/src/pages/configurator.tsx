@@ -1653,8 +1653,30 @@ Configuration Date: ${new Date().toLocaleDateString()}
                   onClick={async () => {
                     try {
                       const { generateConfigurationPDF } = await import("@/lib/pdf-generator");
-                      if (selectedModel) {
-                        generateConfigurationPDF(selectedModel, selectedOptions, totalPrice, options || []);
+                      if (selectedModel && options) {
+                        // Create complete options object including defaults
+                        const completeOptions: Record<string, any> = {};
+                        const allCategories = [...new Set(options.map(opt => opt.category))];
+                        
+                        allCategories.forEach(category => {
+                          const categoryOptions = options.filter(opt => opt.category === category);
+                          if (categoryOptions.length > 0) {
+                            const selectedOptionId = selectedOptions[category];
+                            const selectedOption = selectedOptionId 
+                              ? categoryOptions.find(opt => 
+                                  Array.isArray(selectedOptionId) 
+                                    ? selectedOptionId.includes(opt.id)
+                                    : opt.id === selectedOptionId
+                                )
+                              : categoryOptions[0]; // Default to first option
+                            
+                            if (selectedOption) {
+                              completeOptions[category] = selectedOption.id;
+                            }
+                          }
+                        });
+                        
+                        generateConfigurationPDF(selectedModel, completeOptions, totalPrice, options);
                       }
                       toast({
                         title: "PDF Downloaded",
@@ -1785,8 +1807,30 @@ Configuration Date: ${new Date().toLocaleDateString()}
               onClick={async () => {
                 try {
                   const { generateConfigurationPDF } = await import("@/lib/pdf-generator");
-                  if (selectedModel) {
-                    generateConfigurationPDF(selectedModel, selectedOptions, totalPrice, options || []);
+                  if (selectedModel && options) {
+                    // Create complete options object including defaults
+                    const completeOptions: Record<string, any> = {};
+                    const allCategories = [...new Set(options.map(opt => opt.category))];
+                    
+                    allCategories.forEach(category => {
+                      const categoryOptions = options.filter(opt => opt.category === category);
+                      if (categoryOptions.length > 0) {
+                        const selectedOptionId = selectedOptions[category];
+                        const selectedOption = selectedOptionId 
+                          ? categoryOptions.find(opt => 
+                              Array.isArray(selectedOptionId) 
+                                ? selectedOptionId.includes(opt.id)
+                                : opt.id === selectedOptionId
+                            )
+                          : categoryOptions[0]; // Default to first option
+                        
+                        if (selectedOption) {
+                          completeOptions[category] = selectedOption.id;
+                        }
+                      }
+                    });
+                    
+                    generateConfigurationPDF(selectedModel, completeOptions, totalPrice, options);
                   }
                   toast({
                     title: "PDF Downloaded",
