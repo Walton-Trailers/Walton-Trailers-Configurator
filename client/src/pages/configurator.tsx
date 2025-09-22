@@ -1596,12 +1596,25 @@ Configuration Date: ${new Date().toLocaleDateString()}
                             
                             // Get selected option or default to first option
                             const selectedOptionId = selectedOptions[category];
+                            
+                            // Handle multi-select categories (like extras)
+                            if (Array.isArray(selectedOptionId)) {
+                              const selectedCategoryOptions = categoryOptions.filter(opt => selectedOptionId.includes(opt.id));
+                              return selectedCategoryOptions.map(option => (
+                                <div key={option.id} className="flex justify-between py-1 text-sm">
+                                  <span className="text-zinc-700">{option.name}</span>
+                                  <span className="font-medium text-zinc-600">
+                                    {option.price === 0 ? 'Included' : 
+                                     option.price > 0 ? `+$${option.price.toLocaleString()}` : 
+                                     `$${option.price.toLocaleString()}`}
+                                  </span>
+                                </div>
+                              ));
+                            }
+                            
+                            // Handle single-select categories
                             const selectedOption = selectedOptionId 
-                              ? categoryOptions.find(opt => 
-                                  Array.isArray(selectedOptionId) 
-                                    ? selectedOptionId.includes(opt.id)
-                                    : opt.id === selectedOptionId
-                                )
+                              ? categoryOptions.find(opt => opt.id === selectedOptionId)
                               : categoryOptions[0]; // Default to first option
                             
                             if (!selectedOption) return null;
