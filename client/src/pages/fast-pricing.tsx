@@ -127,7 +127,8 @@ export default function FastPricing() {
     price: 0,
     imageUrl: "",
     isMultiSelect: false,
-    hexColor: ""
+    hexColor: "",
+    primerPrice: 0
   });
 
   const sessionId = localStorage.getItem("admin_session");
@@ -341,7 +342,8 @@ export default function FastPricing() {
         price: 0,
         imageUrl: "",
         isMultiSelect: false,
-        hexColor: ""
+        hexColor: "",
+        primerPrice: 0
       });
       toast({ title: "Success", description: "Option added successfully" });
     },
@@ -1652,6 +1654,20 @@ export default function FastPricing() {
                           </p>
                         </div>
                       )}
+                      {newOptionData.category.toLowerCase() === 'color' && (
+                        <div>
+                          <label className="block text-sm font-medium mb-1">Primer Price</label>
+                          <Input
+                            type="number"
+                            placeholder="Enter primer price (integer)"
+                            value={newOptionData.primerPrice}
+                            onChange={(e: any) => setNewOptionData({ ...newOptionData, primerPrice: parseInt(e.target.value) || 0 })}
+                          />
+                          <p className="text-xs text-gray-500 mt-1">
+                            Enter the primer price for this color option
+                          </p>
+                        </div>
+                      )}
                       <div>
                         <label className="block text-sm font-medium mb-1">Compatible Models</label>
                         <div className="border border-gray-300 rounded-md p-3 max-h-32 overflow-y-auto space-y-1">
@@ -1728,7 +1744,8 @@ export default function FastPricing() {
                             price: newOptionData.price,
                             imageUrl: newOptionData.imageUrl,
                             isMultiSelect: newOptionData.isMultiSelect,
-                            hexColor: newOptionData.hexColor
+                            hexColor: newOptionData.hexColor,
+                            primerPrice: newOptionData.primerPrice
                           });
                         }}
                         disabled={
