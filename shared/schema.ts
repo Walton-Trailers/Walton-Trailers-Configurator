@@ -79,6 +79,7 @@ export const trailerOptions = pgTable("trailer_options", {
   applicableModels: json("applicable_models").$type<string[]>(), // which model series this applies to
   payload: integer("payload"), // payload capacity for length options
   hexColor: text("hex_color"), // hex color value for color options (e.g., '#FF0000')
+  primerPrice: integer("primer_price"), // primer price for color options
 });
 
 // User Configurations (for saving)
