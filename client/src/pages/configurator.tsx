@@ -1583,10 +1583,11 @@ Configuration Date: ${new Date().toLocaleDateString()}
                   </div>
 
                   {/* Selected Options */}
-                  {Object.keys(selectedOptions).length > 0 && (
+                  {(Object.keys(selectedOptions).length > 0 || Object.keys(selectedPrimer).some(key => selectedPrimer[key])) && (
                     <div className="border-t pt-4">
                       <h4 className="text-base font-semibold mb-3 text-zinc-900">Selected Options</h4>
                       <div className="space-y-2">
+                        {/* Display regular options */}
                         {Object.entries(selectedOptions).map(([category, optionIds]) => {
                           const categoryOptions = options?.filter(opt => opt.category === category) || [];
                           const selectedCategoryOptions = Array.isArray(optionIds) 
@@ -1603,6 +1604,29 @@ Configuration Date: ${new Date().toLocaleDateString()}
                               </span>
                             </div>
                           ));
+                        })}
+                        
+                        {/* Display primer selections */}
+                        {Object.entries(selectedPrimer).map(([category, isSelected]) => {
+                          if (!isSelected) return null;
+                          
+                          const categoryOptions = options?.filter(opt => opt.category === category) || [];
+                          const selectedColorOption = categoryOptions.find(opt => 
+                            selectedOptions[category]?.toString() === opt.id.toString() || 
+                            (!selectedOptions[category] && categoryOptions[0]?.id === opt.id)
+                          );
+                          
+                          if (selectedColorOption && selectedColorOption.primerPrice && selectedColorOption.primerPrice > 0) {
+                            return (
+                              <div key={`primer-${category}`} className="flex justify-between py-1 text-sm">
+                                <span className="text-zinc-700">Primer ({selectedColorOption.name})</span>
+                                <span className="font-medium text-zinc-600">
+                                  +${selectedColorOption.primerPrice.toLocaleString()}
+                                </span>
+                              </div>
+                            );
+                          }
+                          return null;
                         })}
                       </div>
                     </div>
@@ -1784,10 +1808,11 @@ Configuration Date: ${new Date().toLocaleDateString()}
               </div>
 
               {/* Selected Options */}
-              {Object.keys(selectedOptions).length > 0 && (
+              {(Object.keys(selectedOptions).length > 0 || Object.keys(selectedPrimer).some(key => selectedPrimer[key])) && (
                 <div>
                   <h4 className="text-base font-semibold mb-3">Selected Options</h4>
                   <div className="space-y-2">
+                    {/* Display regular options */}
                     {Object.entries(selectedOptions).map(([category, optionIds]) => {
                       const categoryOptions = options?.filter(opt => opt.category === category) || [];
                       const selectedCategoryOptions = Array.isArray(optionIds) 
@@ -1804,6 +1829,29 @@ Configuration Date: ${new Date().toLocaleDateString()}
                           </span>
                         </div>
                       ));
+                    })}
+                    
+                    {/* Display primer selections */}
+                    {Object.entries(selectedPrimer).map(([category, isSelected]) => {
+                      if (!isSelected) return null;
+                      
+                      const categoryOptions = options?.filter(opt => opt.category === category) || [];
+                      const selectedColorOption = categoryOptions.find(opt => 
+                        selectedOptions[category]?.toString() === opt.id.toString() || 
+                        (!selectedOptions[category] && categoryOptions[0]?.id === opt.id)
+                      );
+                      
+                      if (selectedColorOption && selectedColorOption.primerPrice && selectedColorOption.primerPrice > 0) {
+                        return (
+                          <div key={`primer-${category}`} className="flex justify-between py-1 text-sm">
+                            <span>Primer ({selectedColorOption.name})</span>
+                            <span className="font-medium">
+                              +${selectedColorOption.primerPrice.toLocaleString()}
+                            </span>
+                          </div>
+                        );
+                      }
+                      return null;
                     })}
                   </div>
                 </div>
@@ -1832,6 +1880,29 @@ Configuration Date: ${new Date().toLocaleDateString()}
                       </div>
                     )
                   ));
+                })}
+                
+                {/* Display primer pricing in breakdown */}
+                {Object.entries(selectedPrimer).map(([category, isSelected]) => {
+                  if (!isSelected) return null;
+                  
+                  const categoryOptions = options?.filter(opt => opt.category === category) || [];
+                  const selectedColorOption = categoryOptions.find(opt => 
+                    selectedOptions[category]?.toString() === opt.id.toString() || 
+                    (!selectedOptions[category] && categoryOptions[0]?.id === opt.id)
+                  );
+                  
+                  if (selectedColorOption && selectedColorOption.primerPrice && selectedColorOption.primerPrice > 0) {
+                    return (
+                      <div key={`pricing-primer-${category}`} className="flex justify-between items-center mb-2">
+                        <span className="text-sm text-zinc-600">Primer ({selectedColorOption.name})</span>
+                        <span className="text-sm">
+                          +${selectedColorOption.primerPrice.toLocaleString()}
+                        </span>
+                      </div>
+                    );
+                  }
+                  return null;
                 })}
                 <div className="border-t pt-2 mt-4">
                   <div className="flex justify-between items-center">
