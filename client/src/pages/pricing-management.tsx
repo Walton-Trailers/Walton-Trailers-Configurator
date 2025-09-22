@@ -44,6 +44,8 @@ interface TrailerOption {
   description?: string;
   imageUrl?: string;
   isArchived?: boolean;
+  hexColor?: string; // hex color value for color options
+  primerPrice?: number; // primer price for color options
 }
 
 interface TrailerCategory {
@@ -110,7 +112,8 @@ export default function PricingManagement() {
     category: "",
     modelId: "", // Legacy field for backward compatibility
     applicableModels: [] as string[], // New field for multiple models
-    hexColor: "" // Hex color value for color options
+    hexColor: "", // Hex color value for color options
+    primerPrice: 0 // Primer price for color options
   });
   const [newCategoryData, setNewCategoryData] = useState({
     slug: "",
