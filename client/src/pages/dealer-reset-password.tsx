@@ -47,6 +47,13 @@ export default function DealerResetPassword() {
       if (!token) {
         setError("Invalid reset link. Please request a new password reset.");
         setIsValidatingToken(false);
+        // Clear any stale localStorage data
+        localStorage.removeItem("dealer_session");
+        localStorage.removeItem("dealer_user");
+        // Redirect to homepage if no token is provided
+        setTimeout(() => {
+          setLocation("/");
+        }, 2000);
         return;
       }
 
@@ -60,6 +67,13 @@ export default function DealerResetPassword() {
       } catch (err: any) {
         setError(err.message || "Invalid or expired reset link. Please request a new password reset.");
         setTokenValid(false);
+        // Clear any stale localStorage data
+        localStorage.removeItem("dealer_session");
+        localStorage.removeItem("dealer_user");
+        // Redirect to homepage after a brief delay if token is invalid
+        setTimeout(() => {
+          setLocation("/");
+        }, 2000);
       } finally {
         setIsValidatingToken(false);
       }
