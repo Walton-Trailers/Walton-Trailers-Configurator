@@ -335,7 +335,7 @@ export default function PricingManagement() {
 
   // Create new option mutation
   const createOptionMutation = useMutation({
-    mutationFn: (data: { name: string; price: number; category: string; modelId: string; applicableModels: string[]; hexColor: string }) =>
+    mutationFn: (data: { name: string; price: number; category: string; modelId: string; applicableModels: string[]; hexColor: string; primerPrice: number }) =>
       apiRequest("/api/options", {
         method: "POST",
         body: {
@@ -344,7 +344,8 @@ export default function PricingManagement() {
           category: data.category,
           modelId: data.modelId, // Legacy field for backward compatibility
           applicableModels: data.applicableModels.length > 0 ? data.applicableModels : [data.modelId], // Use applicableModels or fallback to single modelId
-          hexColor: data.hexColor // Hex color for color options
+          hexColor: data.hexColor, // Hex color for color options
+          primerPrice: data.primerPrice // Primer price for color options
         },
         headers: sessionId ? { Authorization: `Bearer ${sessionId}` } : {},
       }),
@@ -357,7 +358,8 @@ export default function PricingManagement() {
         category: "",
         modelId: "",
         applicableModels: [],
-        hexColor: ""
+        hexColor: "",
+        primerPrice: 0
       });
       toast({
         title: "Success",
