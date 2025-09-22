@@ -1666,13 +1666,13 @@ export async function registerRoutes(app: Express): Promise<Express> {
 
 
 
-  // Get all categories for dropdown
+  // Get all categories for dropdown from trailer_option_categories table
   app.get("/api/categories/options", requireAuth, async (req, res) => {
     try {
       const result = await db.execute(sql`
-        SELECT DISTINCT category FROM trailer_options ORDER BY category
+        SELECT "Name" FROM trailer_option_categories ORDER BY "Name"
       `);
-      const categories = result.rows.map((row: any) => row.category);
+      const categories = result.rows.map((row: any) => row.Name).filter((name: string) => name); // Filter out null values
       res.json(categories);
     } catch (error) {
       console.error("Error fetching option categories:", error);

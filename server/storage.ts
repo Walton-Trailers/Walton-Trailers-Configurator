@@ -1353,11 +1353,11 @@ export class DatabaseStorage implements IStorage {
   async getOptionCategories(): Promise<string[]> {
     try {
       const result = await db.execute(sql`
-        SELECT DISTINCT category FROM trailer_options 
-        WHERE category IS NOT NULL 
-        ORDER BY category
+        SELECT "Name" FROM trailer_option_categories 
+        WHERE "Name" IS NOT NULL 
+        ORDER BY "Name"
       `);
-      return result.rows.map((row: any) => row.category);
+      return result.rows.map((row: any) => row.Name);
     } catch (error) {
       console.error('Error fetching option categories:', error);
       throw error;
