@@ -64,6 +64,8 @@ export default function AdminDashboard() {
   const [selectedTable, setSelectedTable] = useState("");
   const [isImporting, setIsImporting] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
+  const [selectedQuoteRequest, setSelectedQuoteRequest] = useState<any>(null);
+  const [showQuoteDetailModal, setShowQuoteDetailModal] = useState(false);
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -1279,10 +1281,8 @@ ${quote.notes ? `\nAdmin Notes: ${quote.notes}` : ''}`;
                                     variant="outline"
                                     size="sm"
                                     onClick={() => {
-                                      toast({
-                                        title: "Quote Details",
-                                        description: `Quote request from ${request.firstName} ${request.lastName}`,
-                                      });
+                                      setSelectedQuoteRequest(request);
+                                      setShowQuoteDetailModal(true);
                                     }}
                                   >
                                     View
@@ -1309,6 +1309,225 @@ ${quote.notes ? `\nAdmin Notes: ${quote.notes}` : ''}`;
           )}
         </Tabs>
       </main>
+
+      {/* Quote Request Detail Modal */}
+      <Dialog open={showQuoteDetailModal} onOpenChange={setShowQuoteDetailModal}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Quote Request Details</DialogTitle>
+            <DialogDescription>
+              Complete information for quote request #{selectedQuoteRequest?.id}
+            </DialogDescription>
+          </DialogHeader>
+          
+          {selectedQuoteRequest && (
+            <div className="space-y-6">
+              {/* Customer Information */}
+              <div className="bg-gray-50 p-4 rounded-lg">
+                <h3 className="text-lg font-semibold mb-3">Customer Information</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <Label className="font-medium">Name</Label>
+                    <p className="text-sm">
+                      {selectedQuoteRequest.firstName} {selectedQuoteRequest.lastName}
+                    </p>
+                  </div>
+                  {selectedQuoteRequest.company && (
+                    <div>
+                      <Label className="font-medium">Company</Label>
+                      <p className="text-sm">{selectedQuoteRequest.company}</p>
+                    </div>
+                  )}
+                  <div>
+                    <Label className="font-medium">Email</Label>
+                    <p className="text-sm">
+                      <a href={`mailto:${selectedQuoteRequest.email}`} className="text-blue-600 hover:underline">
+                        {selectedQuoteRequest.email}
+                      </a>
+                    </p>
+                  </div>
+                  <div>
+                    <Label className="font-medium">Mobile</Label>
+                    <p className="text-sm">
+                      <a href={`tel:${selectedQuoteRequest.mobile}`} className="text-blue-600 hover:underline">
+                        {selectedQuoteRequest.mobile}
+                      </a>
+                    </p>
+                  </div>
+                  <div>
+                    <Label className="font-medium">Zip Code</Label>
+                    <p className="text-sm">{selectedQuoteRequest.zipCode}</p>
+                  </div>
+                  <div>
+                    <Label className="font-medium">Request Date</Label>
+                    <p className="text-sm">
+                      {new Date(selectedQuoteRequest.createdAt).toLocaleDateString('en-US', {
+                        year: 'numeric',
+                        month: 'long',
+                        day: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit'
+                      })}
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Configuration Details */}
+              <div className="bg-blue-50 p-4 rounded-lg">
+                <h3 className="text-lg font-semibold mb-3">Configuration Details</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {selectedQuoteRequest.categoryName && (
+                    <div>
+                      <Label className="font-medium">Category</Label>
+                      <p className="text-sm">{selectedQuoteRequest.categoryName}</p>
+                    </div>
+                  )}
+                  {selectedQuoteRequest.modelName && (
+                    <div>
+                      <Label className="font-medium">Model</Label>
+                      <p className="text-sm">{selectedQuoteRequest.modelName}</p>
+                    </div>
+                  )}
+                  {selectedQuoteRequest.totalPrice && (
+                    <div>
+                      <Label className="font-medium">Total Price</Label>
+                      <p className="text-sm font-semibold text-green-600">
+                        ${selectedQuoteRequest.totalPrice.toLocaleString()}
+                      </p>
+                    </div>
+                  )}
+                </div>
+                
+                {/* Trailer Specifications */}
+                {selectedQuoteRequest.trailerSpecs && (
+                  <div className="mt-4">
+                    <Label className="font-medium">Trailer Specifications</Label>
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mt-2">
+                      {selectedQuoteRequest.trailerSpecs.gvwr && (
+                        <div className="bg-white p-2 rounded border">
+                          <div className="text-xs text-gray-500">GVWR</div>
+                          <div className="text-sm font-medium">{selectedQuoteRequest.trailerSpecs.gvwr}</div>
+                        </div>
+                      )}
+                      {selectedQuoteRequest.trailerSpecs.payload && (
+                        <div className="bg-white p-2 rounded border">
+                          <div className="text-xs text-gray-500">Payload</div>
+                          <div className="text-sm font-medium">{selectedQuoteRequest.trailerSpecs.payload}</div>
+                        </div>
+                      )}
+                      {selectedQuoteRequest.trailerSpecs.deckSize && (
+                        <div className="bg-white p-2 rounded border">
+                          <div className="text-xs text-gray-500">Deck Size</div>
+                          <div className="text-sm font-medium">{selectedQuoteRequest.trailerSpecs.deckSize}</div>
+                        </div>
+                      )}
+                      {selectedQuoteRequest.trailerSpecs.axles && (
+                        <div className="bg-white p-2 rounded border">
+                          <div className="text-xs text-gray-500">Axles</div>
+                          <div className="text-sm font-medium">{selectedQuoteRequest.trailerSpecs.axles}</div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                {/* Selected Options */}
+                {selectedQuoteRequest.selectedOptions && Object.keys(selectedQuoteRequest.selectedOptions).length > 0 && (
+                  <div className="mt-4">
+                    <Label className="font-medium">Selected Options</Label>
+                    <div className="bg-white p-3 rounded border mt-2">
+                      <pre className="text-xs text-gray-700 whitespace-pre-wrap">
+                        {JSON.stringify(selectedQuoteRequest.selectedOptions, null, 2)}
+                      </pre>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Additional Information */}
+              <div className="bg-green-50 p-4 rounded-lg">
+                <h3 className="text-lg font-semibold mb-3">Additional Information</h3>
+                <div className="space-y-3">
+                  {selectedQuoteRequest.comments && (
+                    <div>
+                      <Label className="font-medium">Customer Comments</Label>
+                      <p className="text-sm bg-white p-3 rounded border mt-1">
+                        {selectedQuoteRequest.comments}
+                      </p>
+                    </div>
+                  )}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <Label className="font-medium">Email Marketing Opt-in</Label>
+                      <p className="text-sm">
+                        <Badge variant={selectedQuoteRequest.optIn ? "default" : "secondary"}>
+                          {selectedQuoteRequest.optIn ? "Yes" : "No"}
+                        </Badge>
+                      </p>
+                    </div>
+                    <div>
+                      <Label className="font-medium">Age Verification</Label>
+                      <p className="text-sm">
+                        <Badge variant={selectedQuoteRequest.ageVerification ? "default" : "destructive"}>
+                          {selectedQuoteRequest.ageVerification ? "Verified" : "Not Verified"}
+                        </Badge>
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Admin Information */}
+              <div className="bg-yellow-50 p-4 rounded-lg">
+                <h3 className="text-lg font-semibold mb-3">Admin Information</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <Label className="font-medium">Status</Label>
+                    <p className="text-sm">
+                      <Badge
+                        variant={
+                          selectedQuoteRequest.status === "pending"
+                            ? "secondary"
+                            : selectedQuoteRequest.status === "contacted"
+                            ? "default"
+                            : selectedQuoteRequest.status === "quoted"
+                            ? "outline"
+                            : "destructive"
+                        }
+                      >
+                        {selectedQuoteRequest.status}
+                      </Badge>
+                    </p>
+                  </div>
+                  <div>
+                    <Label className="font-medium">Last Updated</Label>
+                    <p className="text-sm">
+                      {selectedQuoteRequest.updatedAt ? 
+                        new Date(selectedQuoteRequest.updatedAt).toLocaleDateString('en-US', {
+                          year: 'numeric',
+                          month: 'short',
+                          day: 'numeric',
+                          hour: '2-digit',
+                          minute: '2-digit'
+                        }) : 'N/A'
+                      }
+                    </p>
+                  </div>
+                </div>
+                {selectedQuoteRequest.notes && (
+                  <div className="mt-3">
+                    <Label className="font-medium">Admin Notes</Label>
+                    <p className="text-sm bg-white p-3 rounded border mt-1">
+                      {selectedQuoteRequest.notes}
+                    </p>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
