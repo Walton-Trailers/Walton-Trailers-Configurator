@@ -1637,7 +1637,6 @@ Configuration Date: ${new Date().toLocaleDateString()}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <Button 
                   variant="outline"
-                  onClick={handleDownloadPDF}
                   className="py-4 md:py-6 text-sm md:text-base min-h-[48px]"
                 >
                   <Download className="w-4 h-4 md:w-5 md:h-5 mr-2" />
