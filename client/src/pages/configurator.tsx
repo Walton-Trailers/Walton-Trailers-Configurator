@@ -1583,28 +1583,41 @@ Configuration Date: ${new Date().toLocaleDateString()}
                   </div>
 
                   {/* Selected Options */}
-                  {(Object.keys(selectedOptions).length > 0 || Object.keys(selectedPrimer).some(key => selectedPrimer[key])) && (
+                  {options && options.length > 0 && (
                     <div className="border-t pt-4">
                       <h4 className="text-base font-semibold mb-3 text-zinc-900">Selected Options</h4>
                       <div className="space-y-2">
-                        {/* Display regular options */}
-                        {Object.entries(selectedOptions).map(([category, optionIds]) => {
-                          const categoryOptions = options?.filter(opt => opt.category === category) || [];
-                          const selectedCategoryOptions = Array.isArray(optionIds) 
-                            ? categoryOptions.filter(opt => optionIds.includes(opt.id))
-                            : categoryOptions.filter(opt => opt.id === optionIds);
-                          
-                          return selectedCategoryOptions.map(option => (
-                            <div key={option.id} className="flex justify-between py-1 text-sm">
-                              <span className="text-zinc-700">{option.name}</span>
-                              <span className="font-medium text-zinc-600">
-                                {option.price === 0 ? 'Included' : 
-                                 option.price > 0 ? `+$${option.price.toLocaleString()}` : 
-                                 `$${option.price.toLocaleString()}`}
-                              </span>
-                            </div>
-                          ));
-                        })}
+                        {/* Display all options including defaults */}
+                        {(() => {
+                          const allCategories = [...new Set(options.map(opt => opt.category))];
+                          return allCategories.map(category => {
+                            const categoryOptions = options.filter(opt => opt.category === category);
+                            if (categoryOptions.length === 0) return null;
+                            
+                            // Get selected option or default to first option
+                            const selectedOptionId = selectedOptions[category];
+                            const selectedOption = selectedOptionId 
+                              ? categoryOptions.find(opt => 
+                                  Array.isArray(selectedOptionId) 
+                                    ? selectedOptionId.includes(opt.id)
+                                    : opt.id === selectedOptionId
+                                )
+                              : categoryOptions[0]; // Default to first option
+                            
+                            if (!selectedOption) return null;
+                            
+                            return (
+                              <div key={selectedOption.id} className="flex justify-between py-1 text-sm">
+                                <span className="text-zinc-700">{selectedOption.name}</span>
+                                <span className="font-medium text-zinc-600">
+                                  {selectedOption.price === 0 ? 'Included' : 
+                                   selectedOption.price > 0 ? `+$${selectedOption.price.toLocaleString()}` : 
+                                   `$${selectedOption.price.toLocaleString()}`}
+                                </span>
+                              </div>
+                            );
+                          });
+                        })()}
                         
                         {/* Display primer selections */}
                         {Object.entries(selectedPrimer).map(([category, isSelected]) => {
