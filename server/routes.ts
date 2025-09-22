@@ -541,23 +541,23 @@ export async function registerRoutes(app: Express): Promise<Express> {
   // Request password reset
   app.post("/api/dealer/forgot-password", async (req, res) => {
     try {
-      const { dealerId } = req.body;
+      const { email } = req.body;
       
-      console.log("🔐 Password reset requested for dealer:", dealerId);
+      console.log("🔐 Password reset requested for email:", email);
 
-      if (!dealerId) {
-        return res.status(400).json({ error: "Dealer ID is required" });
+      if (!email) {
+        return res.status(400).json({ error: "Email is required" });
       }
 
-      // Find dealer by dealerId  
+      // Find dealer by email
       const [dealer] = await db.select()
         .from(dealers)
-        .where(eq(dealers.dealerId, dealerId));
+        .where(eq(dealers.email, email));
 
       // Don't reveal if dealer exists or not for security
       if (!dealer || !dealer.isActive) {
-        console.log("⚠️ Password reset requested for non-existent/inactive dealer:", dealerId);
-        return res.json({ message: "If a dealer account with that ID exists, a reset link has been sent to the registered email address." });
+        console.log("⚠️ Password reset requested for non-existent/inactive dealer:", email);
+        return res.json({ message: "If a dealer account with that email exists, a reset link has been sent to that email address." });
       }
 
       // Generate reset token
@@ -587,7 +587,7 @@ export async function registerRoutes(app: Express): Promise<Express> {
         console.log("⚠️ Password reset email failed, but token created for:", dealer.email);
       }
 
-      res.json({ message: "If a dealer account with that ID exists, a reset link has been sent to the registered email address." });
+      res.json({ message: "If a dealer account with that email exists, a reset link has been sent to that email address." });
     } catch (error) {
       console.error("Forgot password error:", error);
       res.status(500).json({ error: "Failed to process password reset request" });

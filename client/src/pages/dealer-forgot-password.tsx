@@ -12,7 +12,7 @@ import { apiRequest } from "@/lib/queryClient";
 import { Loader2, Building2, ArrowLeft, Mail } from "lucide-react";
 
 const forgotPasswordSchema = z.object({
-  dealerId: z.string().min(1, "Dealer ID is required"),
+  email: z.string().email("Please enter a valid email address").min(1, "Email is required"),
 });
 
 type ForgotPasswordForm = z.infer<typeof forgotPasswordSchema>;
@@ -38,7 +38,7 @@ export default function DealerForgotPassword() {
         body: data,
       });
 
-      setSuccess("If a dealer account with that ID exists, a password reset link has been sent to the registered email address.");
+      setSuccess("If a dealer account with that email exists, a password reset link has been sent to that email address.");
     } catch (err: any) {
       setError(err.message || "Failed to process password reset request. Please try again.");
     } finally {
@@ -57,7 +57,7 @@ export default function DealerForgotPassword() {
             Reset Password
           </h2>
           <p className="mt-2 text-sm text-gray-600">
-            Enter your Dealer ID to receive a password reset link
+            Enter your email address to receive a password reset link
           </p>
         </div>
 
@@ -106,18 +106,18 @@ export default function DealerForgotPassword() {
                 )}
 
                 <div className="space-y-2">
-                  <Label htmlFor="dealerId">Dealer ID</Label>
+                  <Label htmlFor="email">Email Address</Label>
                   <Input
-                    id="dealerId"
-                    type="text"
-                    placeholder="Enter your dealer ID (e.g., D001)"
-                    {...form.register("dealerId")}
+                    id="email"
+                    type="email"
+                    placeholder="Enter your email address (e.g., dealer@company.com)"
+                    {...form.register("email")}
                     disabled={isLoading}
-                    data-testid="input-dealer-id"
+                    data-testid="input-email"
                   />
-                  {form.formState.errors.dealerId && (
+                  {form.formState.errors.email && (
                     <p className="text-sm text-red-600">
-                      {form.formState.errors.dealerId.message}
+                      {form.formState.errors.email.message}
                     </p>
                   )}
                 </div>
