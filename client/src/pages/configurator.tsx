@@ -1286,7 +1286,7 @@ Configuration Date: ${new Date().toLocaleDateString()}
                              category.charAt(0).toUpperCase() + category.slice(1) + ' Options'}
                           </h4>
                           
-                          {categoryOptions[0]?.isMultiSelect ? (
+                          {categoryOptions[0]?.isMultiSelect || category === 'extras' ? (
                             <div className="space-y-2">
                               {categoryOptions.map((option) => (
                                 <div key={option.id} className="flex items-center justify-between">
