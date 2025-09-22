@@ -1374,6 +1374,23 @@ Configuration Date: ${new Date().toLocaleDateString()}
                                   ))}
                                 </select>
                               </div>
+                            ) : category === 'walls' ? (
+                              // Special dropdown handling for wall height options
+                              <div className="space-y-2">
+                                <select
+                                  value={selectedOptions[category]?.toString() || categoryOptions[0]?.id.toString()}
+                                  onChange={(e) => handleOptionChange(category, parseInt(e.target.value), false, true)}
+                                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+                                >
+                                  {categoryOptions.map((option) => (
+                                    <option key={option.id} value={option.id.toString()}>
+                                      {option.name} - {option.price === 0 ? 'Included' : 
+                                       option.price > 0 ? `+$${option.price.toLocaleString()}` : 
+                                       `$${option.price.toLocaleString()}`}
+                                    </option>
+                                  ))}
+                                </select>
+                              </div>
                             ) : category.toLowerCase() === 'color' ? (
                               // Special color circle handling for color options
                               <>
