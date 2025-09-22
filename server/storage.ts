@@ -586,7 +586,7 @@ export class DatabaseStorage implements IStorage {
   async getOptionsForModel(modelId: string): Promise<TrailerOptionResponse[]> {
     try {
       const result = await db.execute(sql`
-        SELECT id, name, price, category, model_id, applicable_models, image_url, is_archived, hex_color
+        SELECT id, name, price, category, model_id, applicable_models, image_url, is_archived, hex_color, primer_price
         FROM trailer_options
         WHERE (is_archived IS NULL OR is_archived = false)
           AND (applicable_models IS NULL OR applicable_models @> ${JSON.stringify([modelId])})
@@ -603,6 +603,7 @@ export class DatabaseStorage implements IStorage {
         imageUrl: option.image_url,
         isArchived: option.is_archived || false,
         hexColor: option.hex_color,
+        primerPrice: option.primer_price,
       }));
     } catch (error) {
       console.error('Error fetching options for model:', error);
