@@ -1119,7 +1119,7 @@ export default function FastPricing() {
           <Card>
             <div className="p-6">
               <div className="flex justify-between items-center mb-4">
-                <h2 className="text-lg font-semibold">Series ({seriesData.length})</h2>
+                <h2 className="text-lg font-semibold">Series ({activeSeries.length})</h2>
                 <Button onClick={() => setShowAddSeries(true)} size="sm">
                   Add Series
                 </Button>
@@ -1208,7 +1208,7 @@ export default function FastPricing() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {seriesData.map((series: any) => (
+                  {activeSeries.map((series: any) => (
                     <TableRow key={series.id}>
                       <TableCell>
                         {editingSeries?.id === series.id ? (
@@ -1306,15 +1306,15 @@ export default function FastPricing() {
                               </Button>
                               <Button
                                 onClick={() => {
-                                  if (confirm('Are you sure you want to delete this series? This action cannot be undone.')) {
-                                    deleteSeriesMutation.mutate(series.id);
+                                  if (confirm('Are you sure you want to archive this series?')) {
+                                    archiveSeriesMutation.mutate(series.id);
                                   }
                                 }}
-                                disabled={deleteSeriesMutation.isPending}
-                                title="Delete series"
-                                className="bg-red-600 text-white hover:bg-red-700"
+                                disabled={archiveSeriesMutation.isPending}
+                                title="Archive series"
+                                className="bg-orange-600 text-white hover:bg-orange-700"
                               >
-                                <Trash2 className="w-4 h-4" />
+                                <Archive className="w-4 h-4" />
                               </Button>
                               <Button
                                 size="sm"
@@ -1345,6 +1345,65 @@ export default function FastPricing() {
                   ))}
                 </TableBody>
               </Table>
+
+              {/* Archived Series Section */}
+              {archivedSeries.length > 0 && (
+                <div className="mt-6">
+                  <Button
+                    variant="outline"
+                    onClick={() => setShowArchivedSeries(!showArchivedSeries)}
+                    className="mb-4"
+                  >
+                    {showArchivedSeries ? 'Hide' : 'Show'} Archived Series ({archivedSeries.length})
+                  </Button>
+                  
+                  {showArchivedSeries && (
+                    <Card className="border-orange-200">
+                      <div className="p-6">
+                        <h3 className="text-md font-semibold mb-4 text-orange-600">Archived Series</h3>
+                        <Table>
+                          <TableHeader>
+                            <TableRow>
+                              <TableHead>Name</TableHead>
+                              <TableHead>Category</TableHead>
+                              <TableHead>Slug</TableHead>
+                              <TableHead>Description</TableHead>
+                              <TableHead>Base Price</TableHead>
+                              <TableHead>Actions</TableHead>
+                            </TableRow>
+                          </TableHeader>
+                          <TableBody>
+                            {archivedSeries.map((series: any) => (
+                              <TableRow key={series.id} className="bg-orange-50">
+                                <TableCell>{series.name}</TableCell>
+                                <TableCell>{series.categoryName || 'Unknown'}</TableCell>
+                                <TableCell>{series.slug}</TableCell>
+                                <TableCell>{series.description}</TableCell>
+                                <TableCell>{series.basePrice}</TableCell>
+                                <TableCell>
+                                  <Button
+                                    onClick={() => {
+                                      if (confirm('Are you sure you want to restore this series?')) {
+                                        restoreSeriesMutation.mutate(series.id);
+                                      }
+                                    }}
+                                    disabled={restoreSeriesMutation.isPending}
+                                    title="Restore series"
+                                    className="bg-green-600 text-white hover:bg-green-700"
+                                    size="sm"
+                                  >
+                                    <RotateCcw className="w-4 h-4" />
+                                  </Button>
+                                </TableCell>
+                              </TableRow>
+                            ))}
+                          </TableBody>
+                        </Table>
+                      </div>
+                    </Card>
+                  )}
+                </div>
+              )}
             </div>
           </Card>
         )}
