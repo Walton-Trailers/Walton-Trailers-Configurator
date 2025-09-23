@@ -1363,6 +1363,19 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
+  async restoreOption(id: number): Promise<void> {
+    try {
+      await db.execute(sql`
+        UPDATE trailer_options 
+        SET is_archived = false
+        WHERE id = ${id}
+      `);
+    } catch (error) {
+      console.error('Error restoring option:', error);
+      throw error;
+    }
+  }
+
   async archiveModel(id: number): Promise<void> {
     try {
       await db.execute(sql`
