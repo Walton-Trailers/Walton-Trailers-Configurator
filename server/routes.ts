@@ -1851,6 +1851,17 @@ export async function registerRoutes(app: Express): Promise<Express> {
     }
   });
 
+  app.patch("/api/options/:id/restore", requireAuth, async (req, res) => {
+    try {
+      const optionId = parseInt(req.params.id);
+      await storage.restoreOption(optionId);
+      res.json({ success: true });
+    } catch (error) {
+      console.error('Error restoring option:', error);
+      res.status(500).json({ error: "Failed to restore option" });
+    }
+  });
+
   // Archive model
   app.patch("/api/models/:id/archive", requireAuth, async (req, res) => {
     try {
