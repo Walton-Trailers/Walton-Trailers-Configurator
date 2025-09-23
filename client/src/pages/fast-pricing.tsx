@@ -106,7 +106,7 @@ export default function FastPricing() {
     name: "",
     description: "",
     slug: "",
-    basePrice: 0
+    basePrice: ""
   });
   const [showAddModel, setShowAddModel] = useState(false);
   const [newModelData, setNewModelData] = useState({
@@ -117,7 +117,7 @@ export default function FastPricing() {
     pullType: "",
     imageUrl: "",
     standardFeatures: [] as string[],
-    basePrice: 0
+    basePrice: ""
   });
   const [showAddOption, setShowAddOption] = useState(false);
   const [newOptionData, setNewOptionData] = useState({
@@ -1040,9 +1040,9 @@ export default function FastPricing() {
                         <label className="block text-sm font-medium mb-1">Base Price</label>
                         <Input
                           type="number"
-                          placeholder="0"
+                          placeholder="Enter base price"
                           value={newSeriesData.basePrice}
-                          onChange={(e: any) => setNewSeriesData({ ...newSeriesData, basePrice: parseFloat(e.target.value) || 0 })}
+                          onChange={(e: any) => setNewSeriesData({ ...newSeriesData, basePrice: e.target.value === "" ? "" : parseFloat(e.target.value) || 0 })}
                         />
                       </div>
                     </div>
@@ -1141,7 +1141,7 @@ export default function FastPricing() {
                             value={editData[series.id]?.basePrice ?? series.basePrice}
                             onChange={(e: any) => setEditData({
                               ...editData,
-                              [series.id]: { ...editData[series.id], basePrice: parseFloat(e.target.value) || 0 }
+                              [series.id]: { ...editData[series.id], basePrice: e.target.value === "" ? "" : parseFloat(e.target.value) || 0 }
                             })}
                           />
                         ) : (
@@ -1286,9 +1286,9 @@ export default function FastPricing() {
                             <label className="block text-sm font-medium mb-1">Base Price ($)</label>
                             <Input
                               type="number"
-                              placeholder="e.g., 15000"
+                              placeholder="Enter base price"
                               value={newModelData.basePrice}
-                              onChange={(e: any) => setNewModelData({ ...newModelData, basePrice: parseFloat(e.target.value) || 0 })}
+                              onChange={(e: any) => setNewModelData({ ...newModelData, basePrice: e.target.value === "" ? "" : parseFloat(e.target.value) || 0 })}
                             />
                           </div>
                         </div>
@@ -1419,7 +1419,7 @@ export default function FastPricing() {
                           value={editData[model.id]?.basePrice ?? model.basePrice}
                           onChange={(e: any) => setEditData({
                             ...editData,
-                            [model.id]: { ...editData[model.id], basePrice: parseInt(e.target.value) }
+                            [model.id]: { ...editData[model.id], basePrice: e.target.value === "" ? "" : parseFloat(e.target.value) || 0 }
                           })}
                         />
                       ) : (
