@@ -1851,6 +1851,30 @@ export async function registerRoutes(app: Express): Promise<Express> {
     }
   });
 
+  // Archive category
+  app.patch("/api/categories/:id/archive", requireAuth, async (req, res) => {
+    try {
+      const categoryId = parseInt(req.params.id);
+      await storage.archiveCategory(categoryId);
+      res.json({ success: true });
+    } catch (error) {
+      console.error('Error archiving category:', error);
+      res.status(500).json({ error: "Failed to archive category" });
+    }
+  });
+
+  // Restore category
+  app.patch("/api/categories/:id/restore", requireAuth, async (req, res) => {
+    try {
+      const categoryId = parseInt(req.params.id);
+      const restoredCategory = await storage.restoreCategory(categoryId);
+      res.json(restoredCategory);
+    } catch (error) {
+      console.error('Error restoring category:', error);
+      res.status(500).json({ error: "Failed to restore category" });
+    }
+  });
+
   // Category image upload routes
   app.post("/api/categories/upload-url", requireAuth, async (req, res) => {
     try {

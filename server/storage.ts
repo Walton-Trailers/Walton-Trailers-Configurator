@@ -123,6 +123,8 @@ export interface IStorage {
   deleteOption(id: number): Promise<void>;
   archiveOption(id: number): Promise<void>;
   archiveModel(id: number): Promise<void>;
+  archiveCategory(id: number): Promise<void>;
+  restoreCategory(id: number): Promise<TrailerCategoryResponse>;
   restoreModel(id: number): Promise<TrailerModelResponse>;
   getOptionCategories(): Promise<string[]>;
   createModel(data: { categoryId: number; seriesId?: number; modelSeries: string; name: string; basePrice?: number; imageUrl: string; standardFeatures: string[] }): Promise<TrailerModelResponse>;
@@ -508,6 +510,14 @@ export class MemStorage implements IStorage {
 
   async restoreModel(id: number): Promise<TrailerModelResponse> {
     throw new Error("MemStorage restoreModel not implemented for pricing management");
+  }
+
+  async archiveCategory(id: number): Promise<void> {
+    throw new Error("MemStorage archiveCategory not implemented for pricing management");
+  }
+
+  async restoreCategory(id: number): Promise<TrailerCategoryResponse> {
+    throw new Error("MemStorage restoreCategory not implemented for pricing management");
   }
 
   async getOptionCategories(): Promise<string[]> {
@@ -1346,6 +1356,50 @@ export class DatabaseStorage implements IStorage {
       };
     } catch (error) {
       console.error('Error restoring model:', error);
+      throw error;
+    }
+  }
+
+  async archiveCategory(id: number): Promise<void> {
+    try {
+      await db.execute(sql`
+        UPDATE trailer_categories 
+        SET is_archived = true
+        WHERE id = ${id}
+      `);
+    } catch (error) {
+      console.error('Error archiving category:', error);
+      throw error;
+    }
+  }
+
+  async restoreCategory(categoryId: number): Promise<TrailerCategoryResponse> {
+    try {
+      await db.execute(sql`
+        UPDATE trailer_categories 
+        SET is_archived = false 
+        WHERE id = ${categoryId}
+      `);
+      
+      // Return the restored category
+      const result = await db.execute(sql`
+        SELECT * FROM trailer_categories
+        WHERE id = ${categoryId}
+      `);
+      
+      const category = result.rows[0] as any;
+      return {
+        id: category.id,
+        slug: category.slug,
+        name: category.name,
+        description: category.description,
+        imageUrl: category.image_url,
+        startingPrice: category.starting_price,
+        orderIndex: category.order_index,
+        isArchived: false
+      };
+    } catch (error) {
+      console.error('Error restoring category:', error);
       throw error;
     }
   }
