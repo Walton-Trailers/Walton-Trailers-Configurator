@@ -132,7 +132,7 @@ export async function registerRoutes(app: Express): Promise<Express> {
         description,
         imageUrl,
         startingPrice,
-        orderIndex: orderIndex || 0
+        isArchived: false
       }).returning();
       res.json(result[0]);
     } catch (error) {
