@@ -87,6 +87,7 @@ export default function FastPricing() {
   const [searchQuery, setSearchQuery] = useState("");
   const [showArchived, setShowArchived] = useState(false);
   const [showArchivedCategories, setShowArchivedCategories] = useState(false);
+  const [showArchivedSeries, setShowArchivedSeries] = useState(false);
   const [uploadingModelId, setUploadingModelId] = useState<number | null>(null);
   const [uploadingCategoryId, setUploadingCategoryId] = useState<number | null>(null);
   const [showAddCategory, setShowAddCategory] = useState(false);
@@ -294,6 +295,22 @@ export default function FastPricing() {
     };
   }, [categories, searchQuery]);
 
+  // Filter series into active and archived
+  const { activeSeries, archivedSeries } = useMemo(() => {
+    const query = searchQuery.toLowerCase();
+    const filtered = seriesData.filter((series: any) => 
+      !query || 
+      series.name.toLowerCase().includes(query) ||
+      series.slug.toLowerCase().includes(query) ||
+      series.description.toLowerCase().includes(query)
+    );
+    
+    return {
+      activeSeries: filtered.filter((s: any) => !s.isArchived),
+      archivedSeries: filtered.filter((s: any) => s.isArchived)
+    };
+  }, [seriesData, searchQuery]);
+
   // Fast mutations
   const updateMutation = useMutation({
     mutationFn: ({ id, ...data }: any) => fastMutate(`/api/models/${id}`, {
@@ -343,6 +360,23 @@ export default function FastPricing() {
       headers: { Authorization: `Bearer ${sessionId}` },
     }),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['categories'] }),
+  });
+
+  // Series archive/restore mutations
+  const archiveSeriesMutation = useMutation({
+    mutationFn: (id: number) => fastMutate(`/api/series/${id}/archive`, {
+      method: 'PATCH',
+      headers: { Authorization: `Bearer ${sessionId}` },
+    }),
+    onSuccess: () => fetchSeries(),
+  });
+
+  const restoreSeriesMutation = useMutation({
+    mutationFn: (id: number) => fastMutate(`/api/series/${id}/restore`, {
+      method: 'PATCH',
+      headers: { Authorization: `Bearer ${sessionId}` },
+    }),
+    onSuccess: () => fetchSeries(),
   });
 
   const handleUpdate = (model: any) => {

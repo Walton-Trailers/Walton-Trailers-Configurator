@@ -60,6 +60,7 @@ export const trailerSeries = pgTable("trailer_series", {
   imageUrl: text("image_url"),
   startingPrice: integer("starting_price"),
   isActive: boolean("is_active").default(true),
+  isArchived: boolean("is_archived").default(false),
   displayOrder: integer("display_order").default(0),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
