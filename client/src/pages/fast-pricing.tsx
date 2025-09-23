@@ -708,7 +708,7 @@ export default function FastPricing() {
                           <Input
                             type="number"
                             placeholder="Enter starting price"
-                            value={newCategoryData.startingPrice === "" ? "" : String(newCategoryData.startingPrice)}
+                            value={String(newCategoryData.startingPrice)}
                             onChange={(e: any) => setNewCategoryData({ ...newCategoryData, startingPrice: e.target.value === "" ? "" : parseFloat(e.target.value) || 0 })}
                           />
                         </div>
