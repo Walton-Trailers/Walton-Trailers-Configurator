@@ -136,6 +136,8 @@ export interface IStorage {
   createSeries(data: { categoryId: number; name: string; description: string; slug: string; basePrice: number }): Promise<any>;
   updateSeries(id: number, updates: any): Promise<any>;
   deleteSeries(id: number): Promise<void>;
+  archiveSeries(id: number): Promise<any>;
+  restoreSeries(id: number): Promise<any>;
   
   // Integration operations
   saveAirtableConfig(config: { accessToken: string; baseId: string }): Promise<void>;
@@ -596,6 +598,16 @@ export class MemStorage implements IStorage {
     // Basic implementation for mem storage
     return;
   }
+
+  async archiveSeries(id: number): Promise<any> {
+    // Basic implementation for mem storage
+    return { id };
+  }
+
+  async restoreSeries(id: number): Promise<any> {
+    // Basic implementation for mem storage
+    return { id };
+  }
 }
 
 export class DatabaseStorage implements IStorage {
@@ -1032,10 +1044,10 @@ export class DatabaseStorage implements IStorage {
   async getAllSeries(): Promise<any[]> {
     try {
       const result = await db.execute(sql`
-        SELECT s.id, s.name, s.category_id, s.slug, s.description, s.base_price, c.name as category_name
+        SELECT s.id, s.name, s.category_id, s.slug, s.description, s.base_price, 
+               COALESCE(s.is_archived, false) as is_archived, c.name as category_name
         FROM trailer_series s
         JOIN trailer_categories c ON s.category_id = c.id
-        WHERE (s.is_archived IS NULL OR s.is_archived = false)
         ORDER BY c.name, s.name
       `);
       
@@ -1047,6 +1059,7 @@ export class DatabaseStorage implements IStorage {
         slug: series.slug,
         description: series.description,
         basePrice: series.base_price,
+        isArchived: series.is_archived,
       }));
     } catch (error) {
       console.error('Error fetching all series:', error);
@@ -1670,6 +1683,74 @@ export class DatabaseStorage implements IStorage {
       `);
     } catch (error) {
       console.error('Error deleting series:', error);
+      throw error;
+    }
+  }
+
+  async archiveSeries(id: number): Promise<any> {
+    try {
+      await db.execute(sql`
+        UPDATE trailer_series 
+        SET is_archived = true
+        WHERE id = ${id}
+      `);
+      
+      const result = await db.execute(sql`
+        SELECT s.*, c.name as category_name
+        FROM trailer_series s
+        LEFT JOIN trailer_categories c ON s.category_id = c.id
+        WHERE s.id = ${id}
+      `);
+      
+      const series = result.rows[0] as any;
+      return {
+        id: series.id,
+        categoryId: series.category_id,
+        name: series.name,
+        description: series.description,
+        slug: series.slug,
+        basePrice: series.base_price,
+        categoryName: series.category_name,
+        isArchived: series.is_archived,
+        createdAt: series.created_at,
+        updatedAt: series.updated_at
+      };
+    } catch (error) {
+      console.error('Error archiving series:', error);
+      throw error;
+    }
+  }
+
+  async restoreSeries(id: number): Promise<any> {
+    try {
+      await db.execute(sql`
+        UPDATE trailer_series 
+        SET is_archived = false
+        WHERE id = ${id}
+      `);
+      
+      const result = await db.execute(sql`
+        SELECT s.*, c.name as category_name
+        FROM trailer_series s
+        LEFT JOIN trailer_categories c ON s.category_id = c.id
+        WHERE s.id = ${id}
+      `);
+      
+      const series = result.rows[0] as any;
+      return {
+        id: series.id,
+        categoryId: series.category_id,
+        name: series.name,
+        description: series.description,
+        slug: series.slug,
+        basePrice: series.base_price,
+        categoryName: series.category_name,
+        isArchived: series.is_archived,
+        createdAt: series.created_at,
+        updatedAt: series.updated_at
+      };
+    } catch (error) {
+      console.error('Error restoring series:', error);
       throw error;
     }
   }

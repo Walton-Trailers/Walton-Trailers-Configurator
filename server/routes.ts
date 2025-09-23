@@ -282,6 +282,30 @@ export async function registerRoutes(app: Express): Promise<Express> {
     }
   });
 
+  // Archive series
+  app.patch("/api/series/:id/archive", requireAuth, async (req, res) => {
+    try {
+      const seriesId = parseInt(req.params.id);
+      const archivedSeries = await storage.archiveSeries(seriesId);
+      res.json(archivedSeries);
+    } catch (error) {
+      console.error('Error archiving series:', error);
+      res.status(500).json({ error: "Failed to archive series" });
+    }
+  });
+
+  // Restore series
+  app.patch("/api/series/:id/restore", requireAuth, async (req, res) => {
+    try {
+      const seriesId = parseInt(req.params.id);
+      const restoredSeries = await storage.restoreSeries(seriesId);
+      res.json(restoredSeries);
+    } catch (error) {
+      console.error('Error restoring series:', error);
+      res.status(500).json({ error: "Failed to restore series" });
+    }
+  });
+
   // Create a new model
   app.post("/api/models", requireAuth, async (req, res) => {
     try {
