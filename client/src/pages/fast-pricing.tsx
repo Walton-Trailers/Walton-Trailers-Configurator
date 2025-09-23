@@ -124,11 +124,11 @@ export default function FastPricing() {
     name: "",
     modelIds: [] as string[],
     category: "extras",
-    price: 0,
+    price: "",
     imageUrl: "",
     isMultiSelect: false,
     hexColor: "",
-    primerPrice: 0
+    primerPrice: ""
   });
 
   const sessionId = localStorage.getItem("admin_session");
@@ -351,11 +351,11 @@ export default function FastPricing() {
         name: "",
         modelIds: [],
         category: "extras",
-        price: 0,
+        price: "",
         imageUrl: "",
         isMultiSelect: false,
         hexColor: "",
-        primerPrice: 0
+        primerPrice: ""
       });
       toast({ title: "Success", description: "Option added successfully" });
     },
@@ -1643,9 +1643,9 @@ export default function FastPricing() {
                         <label className="block text-sm font-medium mb-1">Price ($)</label>
                         <Input
                           type="number"
-                          placeholder="0"
-                          value={newOptionData.price}
-                          onChange={(e: any) => setNewOptionData({ ...newOptionData, price: parseFloat(e.target.value) || 0 })}
+                          placeholder="Enter price"
+                          value={String(newOptionData.price)}
+                          onChange={(e: any) => setNewOptionData({ ...newOptionData, price: e.target.value === "" ? "" : parseFloat(e.target.value) || 0 })}
                         />
                       </div>
                       {newOptionData.category.toLowerCase() === 'color' && (
@@ -1679,9 +1679,9 @@ export default function FastPricing() {
                           <label className="block text-sm font-medium mb-1">Primer Price</label>
                           <Input
                             type="number"
-                            placeholder="Enter primer price (integer)"
-                            value={newOptionData.primerPrice}
-                            onChange={(e: any) => setNewOptionData({ ...newOptionData, primerPrice: parseInt(e.target.value) || 0 })}
+                            placeholder="Enter primer price"
+                            value={String(newOptionData.primerPrice)}
+                            onChange={(e: any) => setNewOptionData({ ...newOptionData, primerPrice: e.target.value === "" ? "" : parseFloat(e.target.value) || 0 })}
                           />
                           <p className="text-xs text-gray-500 mt-1">
                             Enter the primer price for this color option
@@ -1761,17 +1761,17 @@ export default function FastPricing() {
                             modelId: applicableModels[0], // Legacy field for backward compatibility
                             applicableModels: applicableModels, // New field for multiple models
                             category: newOptionData.category,
-                            price: newOptionData.price,
+                            price: parseFloat(newOptionData.price as string) || 0,
                             imageUrl: newOptionData.imageUrl,
                             isMultiSelect: newOptionData.isMultiSelect,
                             hexColor: newOptionData.hexColor,
-                            primerPrice: newOptionData.primerPrice
+                            primerPrice: parseFloat(newOptionData.primerPrice as string) || 0
                           });
                         }}
                         disabled={
                           addOptionMutation.isPending || 
                           !newOptionData.name || 
-                          newOptionData.price < 0 ||
+                          (parseFloat(newOptionData.price as string) || 0) < 0 ||
                           (newOptionData.category.toLowerCase() === 'color' && !isValidHex(newOptionData.hexColor))
                         }
                       >
@@ -1891,7 +1891,7 @@ export default function FastPricing() {
                             value={editData[option.id]?.price ?? option.price}
                             onChange={(e: any) => setEditData({
                               ...editData,
-                              [option.id]: { ...editData[option.id], price: parseInt(e.target.value) }
+                              [option.id]: { ...editData[option.id], price: e.target.value === "" ? "" : parseFloat(e.target.value) || 0 }
                             })}
                           />
                         ) : (
