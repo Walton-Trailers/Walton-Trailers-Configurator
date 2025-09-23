@@ -25,6 +25,7 @@ export interface TrailerCategoryResponse {
   imageUrl: string;
   startingPrice: number;
   orderIndex: number;
+  isArchived?: boolean;
 }
 
 export interface TrailerModelResponse {
@@ -626,12 +627,13 @@ export class DatabaseStorage implements IStorage {
       // Dynamic pricing based on lowest model price in each category
       const result = await db.execute(sql`
         SELECT 
-          c.id, c.slug, c.name, c.description, c.image_url,
+          c.id, c.slug, c.name, c.description, c.image_url, c.order_index,
+          COALESCE(c.is_archived, false) as is_archived,
           COALESCE(MIN(m.base_price), c.starting_price) as starting_price
         FROM trailer_categories c
         LEFT JOIN trailer_models m ON c.id = m.category_id 
           AND (m.is_archived IS NULL OR m.is_archived = false)
-        GROUP BY c.id, c.slug, c.name, c.description, c.image_url, c.starting_price
+        GROUP BY c.id, c.slug, c.name, c.description, c.image_url, c.starting_price, c.order_index, c.is_archived
         ORDER BY c.id
       `);
       
@@ -642,7 +644,8 @@ export class DatabaseStorage implements IStorage {
         description: cat.description,
         imageUrl: cat.image_url,
         startingPrice: cat.starting_price,
-        orderIndex: 0
+        orderIndex: cat.order_index || 0,
+        isArchived: cat.is_archived
       }));
     } catch (error) {
       console.error('Error fetching categories:', error);
