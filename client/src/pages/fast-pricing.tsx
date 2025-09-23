@@ -122,6 +122,7 @@ export default function FastPricing() {
     basePrice: ""
   });
   const [showAddOption, setShowAddOption] = useState(false);
+  const [showArchivedOptions, setShowArchivedOptions] = useState(false);
   const [newOptionData, setNewOptionData] = useState({
     name: "",
     modelIds: [] as string[],
@@ -140,6 +141,10 @@ export default function FastPricing() {
   const { data: models = [], isLoading, error: modelsError } = useFastQuery.allModels(sessionId);
   const { data: options = [], error: optionsError } = useFastQuery.allOptions(sessionId);
   const { data: categories = [] } = useFastQuery.categories(sessionId);
+
+  // Separate active and archived options
+  const activeOptions = options.filter(option => !option.isArchived);
+  const archivedOptions = options.filter(option => option.isArchived);
   
   // Fetch option categories dynamically from database
   const { data: optionCategories = [] } = useQuery({
@@ -458,6 +463,32 @@ export default function FastPricing() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin', 'options'] });
       toast({ title: "Success", description: "Option deleted successfully" });
+    },
+  });
+
+  const archiveOptionMutation = useMutation({
+    mutationFn: (id: number) => fastMutate(`/api/options/${id}/archive`, {
+      method: 'PATCH',
+      headers: {
+        Authorization: `Bearer ${sessionId}`,
+      },
+    }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin', 'options'] });
+      toast({ title: "Success", description: "Option archived successfully" });
+    },
+  });
+
+  const restoreOptionMutation = useMutation({
+    mutationFn: (id: number) => fastMutate(`/api/options/${id}/restore`, {
+      method: 'PATCH',
+      headers: {
+        Authorization: `Bearer ${sessionId}`,
+      },
+    }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin', 'options'] });
+      toast({ title: "Success", description: "Option restored successfully" });
     },
   });
 
