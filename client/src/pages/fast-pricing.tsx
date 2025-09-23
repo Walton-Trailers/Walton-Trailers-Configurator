@@ -1053,7 +1053,7 @@ export default function FastPricing() {
                         <Input
                           type="number"
                           placeholder="Enter base price"
-                          value={newSeriesData.basePrice === "" ? "" : newSeriesData.basePrice.toString()}
+                          value={String(newSeriesData.basePrice)}
                           onChange={(e: any) => setNewSeriesData({ ...newSeriesData, basePrice: e.target.value === "" ? "" : parseFloat(e.target.value) || 0 })}
                         />
                       </div>
@@ -1299,7 +1299,7 @@ export default function FastPricing() {
                             <Input
                               type="number"
                               placeholder="Enter base price"
-                              value={newModelData.basePrice === "" ? "" : newModelData.basePrice.toString()}
+                              value={String(newModelData.basePrice)}
                               onChange={(e: any) => setNewModelData({ ...newModelData, basePrice: e.target.value === "" ? "" : parseFloat(e.target.value) || 0 })}
                             />
                           </div>
