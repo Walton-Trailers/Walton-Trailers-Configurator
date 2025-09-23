@@ -13,7 +13,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
-import { Building2, Plus, FileText, Edit, Trash2, LogOut, Package, User, Users, Phone, Mail, DollarSign, Calendar, StickyNote, RefreshCw, Key } from "lucide-react";
+import { Building2, Plus, FileText, Edit, Trash2, LogOut, Package, User, Users, Phone, Mail, DollarSign, Calendar, StickyNote, RefreshCw, Key, Eye, EyeOff } from "lucide-react";
 import { format } from "date-fns";
 
 interface DealerOrder {
@@ -97,6 +97,11 @@ export default function DealerDashboard() {
     currentPassword: "",
     newPassword: "",
     confirmPassword: "",
+  });
+  const [showPasswords, setShowPasswords] = useState({
+    current: false,
+    new: false,
+    confirm: false,
   });
   const [isAddingUser, setIsAddingUser] = useState(false);
   const [editingUser, setEditingUser] = useState<DealerUser | null>(null);
@@ -236,6 +241,11 @@ export default function DealerDashboard() {
         currentPassword: "",
         newPassword: "",
         confirmPassword: "",
+      });
+      setShowPasswords({
+        current: false,
+        new: false,
+        confirm: false,
       });
     },
     onError: (error: any) => {
@@ -823,6 +833,11 @@ export default function DealerDashboard() {
                                   newPassword: "",
                                   confirmPassword: "",
                                 });
+                                setShowPasswords({
+                                  current: false,
+                                  new: false,
+                                  confirm: false,
+                                });
                               }}
                               variant="outline"
                               size="sm"
@@ -865,33 +880,81 @@ export default function DealerDashboard() {
                         <div className="space-y-4">
                           <div>
                             <Label htmlFor="currentPassword" className="text-sm text-gray-600">Current Password</Label>
-                            <Input
-                              id="currentPassword"
-                              type="password"
-                              value={passwordFormData.currentPassword}
-                              onChange={(e) => setPasswordFormData({ ...passwordFormData, currentPassword: e.target.value })}
-                              placeholder="Enter your current password"
-                            />
+                            <div className="relative">
+                              <Input
+                                id="currentPassword"
+                                type={showPasswords.current ? "text" : "password"}
+                                value={passwordFormData.currentPassword}
+                                onChange={(e) => setPasswordFormData({ ...passwordFormData, currentPassword: e.target.value })}
+                                placeholder="Enter your current password"
+                                className="pr-10"
+                              />
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="sm"
+                                className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                                onClick={() => setShowPasswords({ ...showPasswords, current: !showPasswords.current })}
+                              >
+                                {showPasswords.current ? (
+                                  <EyeOff className="h-4 w-4 text-gray-400" />
+                                ) : (
+                                  <Eye className="h-4 w-4 text-gray-400" />
+                                )}
+                              </Button>
+                            </div>
                           </div>
                           <div>
                             <Label htmlFor="newPassword" className="text-sm text-gray-600">New Password</Label>
-                            <Input
-                              id="newPassword"
-                              type="password"
-                              value={passwordFormData.newPassword}
-                              onChange={(e) => setPasswordFormData({ ...passwordFormData, newPassword: e.target.value })}
-                              placeholder="Enter your new password (min 8 characters)"
-                            />
+                            <div className="relative">
+                              <Input
+                                id="newPassword"
+                                type={showPasswords.new ? "text" : "password"}
+                                value={passwordFormData.newPassword}
+                                onChange={(e) => setPasswordFormData({ ...passwordFormData, newPassword: e.target.value })}
+                                placeholder="Enter your new password (min 8 characters)"
+                                className="pr-10"
+                              />
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="sm"
+                                className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                                onClick={() => setShowPasswords({ ...showPasswords, new: !showPasswords.new })}
+                              >
+                                {showPasswords.new ? (
+                                  <EyeOff className="h-4 w-4 text-gray-400" />
+                                ) : (
+                                  <Eye className="h-4 w-4 text-gray-400" />
+                                )}
+                              </Button>
+                            </div>
                           </div>
                           <div>
                             <Label htmlFor="confirmPassword" className="text-sm text-gray-600">Confirm New Password</Label>
-                            <Input
-                              id="confirmPassword"
-                              type="password"
-                              value={passwordFormData.confirmPassword}
-                              onChange={(e) => setPasswordFormData({ ...passwordFormData, confirmPassword: e.target.value })}
-                              placeholder="Confirm your new password"
-                            />
+                            <div className="relative">
+                              <Input
+                                id="confirmPassword"
+                                type={showPasswords.confirm ? "text" : "password"}
+                                value={passwordFormData.confirmPassword}
+                                onChange={(e) => setPasswordFormData({ ...passwordFormData, confirmPassword: e.target.value })}
+                                placeholder="Confirm your new password"
+                                className="pr-10"
+                              />
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="sm"
+                                className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                                onClick={() => setShowPasswords({ ...showPasswords, confirm: !showPasswords.confirm })}
+                              >
+                                {showPasswords.confirm ? (
+                                  <EyeOff className="h-4 w-4 text-gray-400" />
+                                ) : (
+                                  <Eye className="h-4 w-4 text-gray-400" />
+                                )}
+                              </Button>
+                            </div>
                           </div>
                         </div>
                       ) : (
