@@ -138,7 +138,7 @@ export default function FastPricing() {
 
   const { data: models = [], isLoading, error: modelsError } = useFastQuery.allModels(sessionId);
   const { data: options = [], error: optionsError } = useFastQuery.allOptions(sessionId);
-  const { data: categories = [] } = useFastQuery.categories();
+  const { data: categories = [] } = useFastQuery.categories(sessionId);
   
   // Fetch option categories dynamically from database
   const { data: optionCategories = [] } = useQuery({

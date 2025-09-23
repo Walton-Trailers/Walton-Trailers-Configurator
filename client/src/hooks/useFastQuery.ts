@@ -19,11 +19,14 @@ const fastFetch = async (url: string, options: RequestInit = {}) => {
 
 // Pre-configured fast queries with optimal cache times
 export const useFastQuery = {
-  categories: () => useQuery({
+  categories: (sessionId: string | null = null) => useQuery({
     queryKey: ['categories'],
-    queryFn: () => fastFetch('/api/categories'),
+    queryFn: () => fastFetch('/api/admin/categories', {
+      headers: sessionId ? { Authorization: `Bearer ${sessionId}` } : {},
+    }),
     staleTime: 600000, // 10 minutes
     gcTime: 900000, // 15 minutes
+    enabled: !!sessionId,
   }),
 
   models: (categorySlug: string) => useQuery({

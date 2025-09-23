@@ -86,6 +86,7 @@ interface InsertUserConfiguration {
 export interface IStorage {
   // Trailer operations
   getTrailerCategories(): Promise<TrailerCategoryResponse[]>;
+  getAllTrailerCategories(): Promise<TrailerCategoryResponse[]>;
   getTrailerModelsByCategory(categorySlug: string): Promise<TrailerModelResponse[]>;
   getTrailerModelsBySeries(seriesId: number): Promise<TrailerModelResponse[]>;
   getTrailerModel(modelId: string): Promise<TrailerModelResponse | undefined>;
@@ -317,6 +318,10 @@ export class MemStorage implements IStorage {
   }
 
   async getTrailerCategories(): Promise<TrailerCategoryResponse[]> {
+    return Array.from(this.categories.values());
+  }
+
+  async getAllTrailerCategories(): Promise<TrailerCategoryResponse[]> {
     return Array.from(this.categories.values());
   }
 
@@ -625,6 +630,39 @@ export class DatabaseStorage implements IStorage {
   async getTrailerCategories(): Promise<TrailerCategoryResponse[]> {
     try {
       // Dynamic pricing based on lowest model price in each category
+      // Only return non-archived categories for public use
+      const result = await db.execute(sql`
+        SELECT 
+          c.id, c.slug, c.name, c.description, c.image_url,
+          COALESCE(c.is_archived, false) as is_archived,
+          COALESCE(MIN(m.base_price), c.starting_price) as starting_price
+        FROM trailer_categories c
+        LEFT JOIN trailer_models m ON c.id = m.category_id 
+          AND (m.is_archived IS NULL OR m.is_archived = false)
+        WHERE COALESCE(c.is_archived, false) = false
+        GROUP BY c.id, c.slug, c.name, c.description, c.image_url, c.starting_price, c.is_archived
+        ORDER BY c.id
+      `);
+      
+      return result.rows.map((cat: any) => ({
+        id: cat.id,
+        slug: cat.slug,
+        name: cat.name,
+        description: cat.description,
+        imageUrl: cat.image_url,
+        startingPrice: cat.starting_price,
+        orderIndex: 0,
+        isArchived: cat.is_archived
+      }));
+    } catch (error) {
+      console.error('Error fetching categories:', error);
+      throw error;
+    }
+  }
+
+  async getAllTrailerCategories(): Promise<TrailerCategoryResponse[]> {
+    try {
+      // Get all categories including archived ones for admin use
       const result = await db.execute(sql`
         SELECT 
           c.id, c.slug, c.name, c.description, c.image_url,
@@ -648,7 +686,7 @@ export class DatabaseStorage implements IStorage {
         isArchived: cat.is_archived
       }));
     } catch (error) {
-      console.error('Error fetching categories:', error);
+      console.error('Error fetching all categories:', error);
       throw error;
     }
   }

@@ -1875,6 +1875,22 @@ export async function registerRoutes(app: Express): Promise<Express> {
     }
   });
 
+  // Get all categories including archived ones (admin only)
+  app.get("/api/admin/categories", requireAuth, async (req, res) => {
+    try {
+      const categories = await storage.getAllTrailerCategories();
+      res.json(categories);
+    } catch (error) {
+      console.error("Error in /api/admin/categories:", error);
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+      res.status(500).json({ 
+        message: "Failed to fetch categories", 
+        error: errorMessage,
+        timestamp: new Date().toISOString()
+      });
+    }
+  });
+
   // Category image upload routes
   app.post("/api/categories/upload-url", requireAuth, async (req, res) => {
     try {
