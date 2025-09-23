@@ -173,18 +173,24 @@ export default function FastPricing() {
 
   // Series mutations
   const addSeriesMutation = useMutation({
-    mutationFn: (data: any) => fastMutate('/api/series', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${sessionId}`,
-      },
-      body: JSON.stringify(data),
-    }),
+    mutationFn: (data: any) => {
+      const processedData = {
+        ...data,
+        basePrice: parseFloat(data.basePrice) || 0
+      };
+      return fastMutate('/api/series', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${sessionId}`,
+        },
+        body: JSON.stringify(processedData),
+      });
+    },
     onSuccess: () => {
       fetchSeries();
       setShowAddSeries(false);
-      setNewSeriesData({ categoryId: 0, name: "", description: "", slug: "", basePrice: 0 });
+      setNewSeriesData({ categoryId: 0, name: "", description: "", slug: "", basePrice: "" });
       toast({ title: "Success", description: "Series added successfully" });
     },
   });
@@ -220,14 +226,20 @@ export default function FastPricing() {
 
   // Model mutations
   const addModelMutation = useMutation({
-    mutationFn: (data: any) => fastMutate('/api/models', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${sessionId}`,
-      },
-      body: JSON.stringify(data),
-    }),
+    mutationFn: (data: any) => {
+      const processedData = {
+        ...data,
+        basePrice: parseFloat(data.basePrice) || 0
+      };
+      return fastMutate('/api/models', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${sessionId}`,
+        },
+        body: JSON.stringify(processedData),
+      });
+    },
     onSuccess: () => {
       // Invalidate multiple related queries to ensure UI updates
       queryClient.invalidateQueries({ queryKey: ['admin', 'models'] });
@@ -242,7 +254,7 @@ export default function FastPricing() {
         pullType: "",
         imageUrl: "",
         standardFeatures: [],
-        basePrice: 0
+        basePrice: ""
       });
       toast({ title: "Success", description: "Model added successfully" });
     },
@@ -1041,7 +1053,7 @@ export default function FastPricing() {
                         <Input
                           type="number"
                           placeholder="Enter base price"
-                          value={newSeriesData.basePrice}
+                          value={newSeriesData.basePrice === "" ? "" : newSeriesData.basePrice.toString()}
                           onChange={(e: any) => setNewSeriesData({ ...newSeriesData, basePrice: e.target.value === "" ? "" : parseFloat(e.target.value) || 0 })}
                         />
                       </div>
@@ -1287,7 +1299,7 @@ export default function FastPricing() {
                             <Input
                               type="number"
                               placeholder="Enter base price"
-                              value={newModelData.basePrice}
+                              value={newModelData.basePrice === "" ? "" : newModelData.basePrice.toString()}
                               onChange={(e: any) => setNewModelData({ ...newModelData, basePrice: e.target.value === "" ? "" : parseFloat(e.target.value) || 0 })}
                             />
                           </div>
@@ -1318,7 +1330,7 @@ export default function FastPricing() {
                         </Button>
                         <Button 
                           onClick={() => addModelMutation.mutate(newModelData)}
-                          disabled={addModelMutation.isPending || !newModelData.name || !newModelData.modelSeries || !newModelData.categoryId || newModelData.basePrice < 0}
+                          disabled={addModelMutation.isPending || !newModelData.name || !newModelData.modelSeries || !newModelData.categoryId || (parseFloat(newModelData.basePrice as string) || 0) < 0}
                         >
                           Add Model
                         </Button>
