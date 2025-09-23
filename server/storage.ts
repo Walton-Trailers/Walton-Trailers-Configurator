@@ -1497,10 +1497,11 @@ export class DatabaseStorage implements IStorage {
     try {
       const result = await db.execute(sql`
         SELECT s.id, s.category_id, s.name, s.description, s.slug, s.base_price,
+               COALESCE(s.is_archived, false) as is_archived,
                s.created_at, s.updated_at, c.name as category_name
         FROM trailer_series s
         JOIN trailer_categories c ON s.category_id = c.id
-        WHERE c.slug = ${categorySlug}
+        WHERE c.slug = ${categorySlug} AND COALESCE(s.is_archived, false) = false
         ORDER BY s.name
       `);
       
@@ -1512,6 +1513,7 @@ export class DatabaseStorage implements IStorage {
         slug: series.slug,
         basePrice: series.base_price,
         categoryName: series.category_name,
+        isArchived: series.is_archived,
         createdAt: series.created_at,
         updatedAt: series.updated_at,
       }));
