@@ -1125,18 +1125,6 @@ export default function FastPricing() {
                 </Button>
               </div>
               
-              {/* Show Archived Button */}
-              {archivedSeries.length > 0 && (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setShowArchivedSeries(!showArchivedSeries)}
-                  className="mb-4"
-                >
-                  <Archive className="w-4 h-4 mr-2" />
-                  {showArchivedSeries ? 'Hide' : 'Show'} Archived ({archivedSeries.length})
-                </Button>
-              )}
               
               {/* Add Series Dialog */}
               {showAddSeries && (
@@ -1354,10 +1342,21 @@ export default function FastPricing() {
                   ))}
                 </TableBody>
               </Table>
+              
+              {/* Show Archived Button */}
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setShowArchivedSeries(!showArchivedSeries)}
+                className="mt-4"
+              >
+                <Archive className="w-4 h-4 mr-2" />
+                {showArchivedSeries ? 'Hide' : 'Show'} Archived ({archivedSeries.length})
+              </Button>
 
               {/* Archived Series Section */}
               {showArchivedSeries && archivedSeries.length > 0 && (
-                <Card className="mt-6">
+                <Card className="mt-4">
                   <div className="p-6">
                     <h3 className="text-lg font-semibold mb-4">Archived Series ({archivedSeries.length})</h3>
                     <Table>
