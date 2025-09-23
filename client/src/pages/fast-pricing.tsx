@@ -1269,12 +1269,12 @@ export default function FastPricing() {
                             </Select>
                           </div>
                           <div>
-                            <label className="block text-sm font-medium mb-1">Series (Optional)</label>
+                            <label className="block text-sm font-medium mb-1">Series</label>
                             <Select
                               value={newModelData.seriesId ? newModelData.seriesId.toString() : ""}
                               onValueChange={(value: string) => setNewModelData({ ...newModelData, seriesId: value ? parseInt(value) : null })}
                             >
-                              <option value="">No Series</option>
+                              <option value="">Select series</option>
                               {seriesData.map((series: any) => (
                                 <option key={series.id} value={series.id}>
                                   {series.name}
@@ -1338,7 +1338,7 @@ export default function FastPricing() {
                         </Button>
                         <Button 
                           onClick={() => addModelMutation.mutate(newModelData)}
-                          disabled={addModelMutation.isPending || !newModelData.name || !newModelData.modelSeries || !newModelData.categoryId || (parseFloat(newModelData.basePrice as string) || 0) < 0}
+                          disabled={addModelMutation.isPending || !newModelData.name || !newModelData.modelSeries || !newModelData.categoryId || !newModelData.seriesId || (parseFloat(newModelData.basePrice as string) || 0) < 0}
                         >
                           Add Model
                         </Button>
