@@ -1509,12 +1509,50 @@ export default function FastPricing() {
                           </div>
                         </div>
                         <div>
-                          <label className="block text-sm font-medium mb-1">Image URL (Optional)</label>
-                          <Input
-                            placeholder="e.g., /objects/models/model-image.png"
-                            value={newModelData.imageUrl}
-                            onChange={(e: any) => setNewModelData({ ...newModelData, imageUrl: e.target.value })}
-                          />
+                          <label className="block text-sm font-medium mb-1">Image (Optional)</label>
+                          <div className="space-y-2">
+                            <input
+                              type="file"
+                              accept="image/*"
+                              onChange={async (e) => {
+                                const file = e.target.files?.[0];
+                                if (file) {
+                                  try {
+                                    const uploadParams = await handleGetUploadParameters();
+                                    const formData = new FormData();
+                                    formData.append("file", file);
+                                    
+                                    const response = await fetch(uploadParams.url, {
+                                      method: "POST",
+                                      body: formData,
+                                    });
+                                    
+                                    if (response.ok) {
+                                      const result = await response.json();
+                                      setNewModelData({ ...newModelData, imageUrl: result.url });
+                                    }
+                                  } catch (error) {
+                                    console.error('Upload failed:', error);
+                                  }
+                                }
+                              }}
+                              className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-medium file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+                            />
+                            {newModelData.imageUrl && (
+                              <div className="flex items-center gap-2">
+                                <img 
+                                  src={newModelData.imageUrl} 
+                                  alt="Preview"
+                                  className="w-12 h-12 object-cover rounded-md border border-gray-200"
+                                  onError={(e: any) => {
+                                    e.target.onerror = null;
+                                    e.target.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="48" height="48" fill="none"%3E%3Crect width="48" height="48" fill="%23f3f4f6"/%3E%3Cpath stroke="%239ca3af" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M24 16v16m-8-8h16"/%3E%3C/svg%3E';
+                                  }}
+                                />
+                                <span className="text-sm text-gray-600">Image uploaded</span>
+                              </div>
+                            )}
+                          </div>
                         </div>
                         <div>
                           <label className="block text-sm font-medium mb-1">Standard Features (comma-separated)</label>
