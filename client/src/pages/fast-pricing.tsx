@@ -2163,6 +2163,90 @@ export default function FastPricing() {
                   ))}
                 </TableBody>
               </Table>
+              
+              {/* Show Archived Button */}
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setShowArchivedOptions(!showArchivedOptions)}
+                className="mt-4"
+              >
+                <Archive className="w-4 h-4 mr-2" />
+                {showArchivedOptions ? 'Hide' : 'Show'} Archived ({archivedOptions.length})
+              </Button>
+
+              {/* Archived Options Section */}
+              {showArchivedOptions && archivedOptions.length > 0 && (
+                <Card className="mt-4">
+                  <div className="p-6">
+                    <h3 className="text-lg font-semibold mb-4">Archived Options ({archivedOptions.length})</h3>
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Option Name</TableHead>
+                          <TableHead>Models</TableHead>
+                          <TableHead>Category</TableHead>
+                          <TableHead>Price</TableHead>
+                          <TableHead>Image</TableHead>
+                          <TableHead>Actions</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {archivedOptions.map((option: any) => (
+                          <TableRow key={option.id}>
+                            <TableCell>{option.name}</TableCell>
+                            <TableCell>
+                              <div className="space-y-1">
+                                {(option.applicableModels || [option.modelId]).map((modelId: string) => {
+                                  const model = activeModels.find((m: any) => m.modelId === modelId);
+                                  return model ? (
+                                    <div key={modelId} className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded-full inline-block mr-1">
+                                      {model.modelId}
+                                    </div>
+                                  ) : (
+                                    <div key={modelId} className="text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded-full inline-block mr-1">
+                                      {modelId}
+                                    </div>
+                                  );
+                                })}
+                              </div>
+                            </TableCell>
+                            <TableCell>{option.category}</TableCell>
+                            <TableCell>${option.price}</TableCell>
+                            <TableCell>
+                              {option.imageUrl ? (
+                                <div className="w-12 h-12 rounded-md overflow-hidden border border-gray-200">
+                                  <img 
+                                    src={option.imageUrl} 
+                                    alt={option.name}
+                                    className="w-full h-full object-cover"
+                                    onError={(e: any) => {
+                                      e.target.onerror = null;
+                                      e.target.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="48" height="48" fill="none"%3E%3Crect width="48" height="48" fill="%23f3f4f6"/%3E%3Cpath stroke="%239ca3af" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M24 16v16m-8-8h16"/%3E%3C/svg%3E';
+                                    }}
+                                  />
+                                </div>
+                              ) : (
+                                <span className="text-gray-400">-</span>
+                              )}
+                            </TableCell>
+                            <TableCell>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => restoreOptionMutation.mutate(option.id)}
+                                disabled={restoreOptionMutation.isPending}
+                              >
+                                <RotateCcw className="w-4 h-4" />
+                              </Button>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
+                </Card>
+              )}
             </div>
           </Card>
         )}
