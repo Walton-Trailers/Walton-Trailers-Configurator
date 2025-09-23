@@ -94,7 +94,7 @@ export default function FastPricing() {
     name: "",
     description: "",
     imageUrl: "",
-    startingPrice: 0,
+    startingPrice: "",
     orderIndex: 0
   });
   const [editingSeries, setEditingSeries] = useState<any>(null);
@@ -707,9 +707,9 @@ export default function FastPricing() {
                           <label className="block text-sm font-medium mb-1">Starting Price</label>
                           <Input
                             type="number"
-                            placeholder="0"
-                            value={newCategoryData.startingPrice}
-                            onChange={(e: any) => setNewCategoryData({ ...newCategoryData, startingPrice: parseInt(e.target.value) || 0 })}
+                            placeholder="Enter starting price"
+                            value={String(newCategoryData.startingPrice)}
+                            onChange={(e: any) => setNewCategoryData({ ...newCategoryData, startingPrice: e.target.value === "" ? "" : parseFloat(e.target.value) || 0 })}
                           />
                         </div>
                       </div>
@@ -728,9 +728,13 @@ export default function FastPricing() {
                       <Button 
                         onClick={async () => {
                           try {
+                            const processedData = {
+                              ...newCategoryData,
+                              startingPrice: parseFloat(newCategoryData.startingPrice as string) || 0
+                            };
                             await apiRequest("/api/categories", {
                               method: "POST",
-                              body: newCategoryData,
+                              body: processedData,
                               headers: sessionId ? { Authorization: `Bearer ${sessionId}` } : {},
                             });
                             queryClient.invalidateQueries({ queryKey: ['categories'] });
@@ -740,7 +744,7 @@ export default function FastPricing() {
                               name: "",
                               description: "",
                               imageUrl: "",
-                              startingPrice: 0,
+                              startingPrice: "",
                               orderIndex: 0
                             });
                             toast({
@@ -875,7 +879,7 @@ export default function FastPricing() {
                               value={editData[category.id]?.startingPrice ?? category.startingPrice}
                               onChange={(e: any) => setEditData((prev: any) => ({
                                 ...prev,
-                                [category.id]: { ...prev[category.id], startingPrice: parseInt(e.target.value) || 0 }
+                                [category.id]: { ...prev[category.id], startingPrice: e.target.value === "" ? "" : parseFloat(e.target.value) || 0 }
                               }))}
                               className="w-32"
                             />
@@ -890,9 +894,13 @@ export default function FastPricing() {
                                 size="sm"
                                 onClick={async () => {
                                   try {
+                                    const processedEditData = {
+                                      ...editData[category.id],
+                                      startingPrice: parseFloat(editData[category.id]?.startingPrice) || 0
+                                    };
                                     await apiRequest(`/api/categories/${category.id}`, {
                                       method: "PATCH",
-                                      body: editData[category.id],
+                                      body: processedEditData,
                                       headers: sessionId ? { Authorization: `Bearer ${sessionId}` } : {},
                                     });
                                     queryClient.invalidateQueries({ queryKey: ['categories'] });
