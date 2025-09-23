@@ -67,6 +67,8 @@ export default function AdminDashboard() {
   const [selectedQuoteRequest, setSelectedQuoteRequest] = useState<any>(null);
   const [showQuoteDetailModal, setShowQuoteDetailModal] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [selectedConfiguration, setSelectedConfiguration] = useState<any>(null);
+  const [showConfigDetailModal, setShowConfigDetailModal] = useState(false);
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -1190,8 +1192,8 @@ ${quote.notes ? `\nAdmin Notes: ${quote.notes}` : ''}`;
                                   size="sm"
                                   variant="outline"
                                   onClick={() => {
-                                    // TODO: Implement view details dialog
-                                    console.log('View details for:', config);
+                                    setSelectedConfiguration(config);
+                                    setShowConfigDetailModal(true);
                                   }}
                                 >
                                   View
@@ -1564,6 +1566,180 @@ ${quote.notes ? `\nAdmin Notes: ${quote.notes}` : ''}`;
                   </div>
                 )}
               </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Configuration Detail Modal */}
+      <Dialog open={showConfigDetailModal} onOpenChange={setShowConfigDetailModal}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Configuration Details</DialogTitle>
+            <DialogDescription>
+              Complete information for {selectedConfiguration?.type === 'dealer' ? 'dealer' : 'public'} configuration #{selectedConfiguration?.id}
+            </DialogDescription>
+          </DialogHeader>
+          
+          {selectedConfiguration && (
+            <div className="space-y-6">
+              {/* Configuration Source Information */}
+              <div className="bg-blue-50 p-4 rounded-lg">
+                <h3 className="text-lg font-semibold mb-3">Configuration Source</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <Label className="font-medium">Source Type</Label>
+                    <p className="text-sm">
+                      <Badge variant={selectedConfiguration.type === 'dealer' ? 'default' : 'secondary'}>
+                        {selectedConfiguration.source}
+                      </Badge>
+                    </p>
+                  </div>
+                  <div>
+                    <Label className="font-medium">Configuration ID</Label>
+                    <p className="text-sm">{selectedConfiguration.id}</p>
+                  </div>
+                  <div>
+                    <Label className="font-medium">Created Date</Label>
+                    <p className="text-sm">
+                      {new Date(selectedConfiguration.createdAt).toLocaleDateString('en-US', {
+                        year: 'numeric',
+                        month: 'long',
+                        day: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit'
+                      })}
+                    </p>
+                  </div>
+                  {selectedConfiguration.type === 'dealer' && selectedConfiguration.orderNumber && (
+                    <div>
+                      <Label className="font-medium">Order Number</Label>
+                      <p className="text-sm font-mono">{selectedConfiguration.orderNumber}</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Customer/User Information */}
+              {selectedConfiguration.type === 'dealer' ? (
+                <div className="bg-gray-50 p-4 rounded-lg">
+                  <h3 className="text-lg font-semibold mb-3">Dealer & Customer Information</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <Label className="font-medium">Dealer</Label>
+                      <p className="text-sm">{selectedConfiguration.dealerName || 'N/A'}</p>
+                      <p className="text-xs text-gray-500">ID: {selectedConfiguration.dealerId}</p>
+                    </div>
+                    {selectedConfiguration.customerName && (
+                      <div>
+                        <Label className="font-medium">Customer Name</Label>
+                        <p className="text-sm">{selectedConfiguration.customerName}</p>
+                      </div>
+                    )}
+                    {selectedConfiguration.customerEmail && (
+                      <div>
+                        <Label className="font-medium">Customer Email</Label>
+                        <p className="text-sm">
+                          <a href={`mailto:${selectedConfiguration.customerEmail}`} className="text-blue-600 hover:underline">
+                            {selectedConfiguration.customerEmail}
+                          </a>
+                        </p>
+                      </div>
+                    )}
+                    {selectedConfiguration.customerPhone && (
+                      <div>
+                        <Label className="font-medium">Customer Phone</Label>
+                        <p className="text-sm">
+                          <a href={`tel:${selectedConfiguration.customerPhone}`} className="text-blue-600 hover:underline">
+                            {selectedConfiguration.customerPhone}
+                          </a>
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              ) : (
+                <div className="bg-gray-50 p-4 rounded-lg">
+                  <h3 className="text-lg font-semibold mb-3">Public User Information</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <Label className="font-medium">Session ID</Label>
+                      <p className="text-sm font-mono">{selectedConfiguration.sessionId}</p>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Trailer Configuration Details */}
+              <div className="bg-green-50 p-4 rounded-lg">
+                <h3 className="text-lg font-semibold mb-3">Trailer Configuration</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <Label className="font-medium">Category</Label>
+                    <p className="text-sm">{selectedConfiguration.categoryName || selectedConfiguration.categorySlug || 'N/A'}</p>
+                  </div>
+                  <div>
+                    <Label className="font-medium">Model</Label>
+                    <p className="text-sm">{selectedConfiguration.modelName || `Model ${selectedConfiguration.modelId}`}</p>
+                  </div>
+                  {selectedConfiguration.variantId && (
+                    <div>
+                      <Label className="font-medium">Variant ID</Label>
+                      <p className="text-sm">{selectedConfiguration.variantId}</p>
+                    </div>
+                  )}
+                  <div>
+                    <Label className="font-medium">Total Price</Label>
+                    <p className="text-sm font-semibold text-green-600">
+                      ${(selectedConfiguration.totalPrice || 0).toLocaleString()}
+                    </p>
+                  </div>
+                </div>
+
+                {/* Selected Options */}
+                {selectedConfiguration.selectedOptions && Object.keys(selectedConfiguration.selectedOptions).length > 0 && (
+                  <div className="mt-4">
+                    <Label className="font-medium">Selected Options</Label>
+                    <div className="bg-white p-3 rounded border mt-2 max-h-40 overflow-y-auto">
+                      <pre className="text-xs text-gray-700 whitespace-pre-wrap">
+                        {JSON.stringify(selectedConfiguration.selectedOptions, null, 2)}
+                      </pre>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Status and Notes (for dealer configurations) */}
+              {selectedConfiguration.type === 'dealer' && (
+                <div className="bg-yellow-50 p-4 rounded-lg">
+                  <h3 className="text-lg font-semibold mb-3">Status & Notes</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <Label className="font-medium">Status</Label>
+                      <p className="text-sm">
+                        <Badge
+                          variant={
+                            selectedConfiguration.status === 'completed' ? 'default' : 
+                            selectedConfiguration.status === 'submitted' ? 'secondary' :
+                            selectedConfiguration.status === 'processing' ? 'outline' :
+                            'secondary'
+                          }
+                        >
+                          {selectedConfiguration.status || 'saved'}
+                        </Badge>
+                      </p>
+                    </div>
+                  </div>
+                  {selectedConfiguration.notes && (
+                    <div className="mt-3">
+                      <Label className="font-medium">Notes</Label>
+                      <p className="text-sm bg-white p-3 rounded border mt-1">
+                        {selectedConfiguration.notes}
+                      </p>
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
           )}
         </DialogContent>
