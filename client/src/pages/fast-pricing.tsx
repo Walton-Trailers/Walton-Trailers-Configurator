@@ -1523,13 +1523,14 @@ export default function FastPricing() {
                                     formData.append("file", file);
                                     
                                     const response = await fetch(uploadParams.url, {
-                                      method: "POST",
+                                      method: uploadParams.method,
                                       body: formData,
                                     });
                                     
                                     if (response.ok) {
-                                      const result = await response.json();
-                                      setNewModelData({ ...newModelData, imageUrl: result.url });
+                                      // Use the upload URL from the parameters, not the response
+                                      // This will be processed properly by the backend when the model is created
+                                      setNewModelData({ ...newModelData, imageUrl: uploadParams.url });
                                     }
                                   } catch (error) {
                                     console.error('Upload failed:', error);
@@ -1976,13 +1977,14 @@ export default function FastPricing() {
                                   formData.append("file", file);
                                   
                                   const response = await fetch(uploadParams.url, {
-                                    method: "POST",
+                                    method: uploadParams.method,
                                     body: formData,
                                   });
                                   
                                   if (response.ok) {
-                                    const result = await response.json();
-                                    setNewOptionData({ ...newOptionData, imageUrl: result.url });
+                                    // Use the upload URL from the parameters, not the response
+                                    // This will be processed properly by the backend when the option is created
+                                    setNewOptionData({ ...newOptionData, imageUrl: uploadParams.url });
                                   }
                                 } catch (error) {
                                   console.error('Upload failed:', error);
