@@ -86,6 +86,7 @@ export default function FastPricing() {
   const [editData, setEditData] = useState<any>({});
   const [searchQuery, setSearchQuery] = useState("");
   const [showArchived, setShowArchived] = useState(false);
+  const [showArchivedCategories, setShowArchivedCategories] = useState(false);
   const [uploadingModelId, setUploadingModelId] = useState<number | null>(null);
   const [uploadingCategoryId, setUploadingCategoryId] = useState<number | null>(null);
   const [showAddCategory, setShowAddCategory] = useState(false);
@@ -949,33 +950,12 @@ export default function FastPricing() {
                                 <Save className="w-4 h-4" />
                               </Button>
                               <Button
-                                onClick={async () => {
-                                  if (confirm('Are you sure you want to delete this category? This action cannot be undone.')) {
-                                    try {
-                                      await apiRequest(`/api/categories/${category.id}`, {
-                                        method: "DELETE",
-                                        headers: sessionId ? { Authorization: `Bearer ${sessionId}` } : {},
-                                      });
-                                      queryClient.invalidateQueries({ queryKey: ['categories'] });
-                                      setEditingCategory(null);
-                                      setEditData({});
-                                      toast({
-                                        title: "Success",
-                                        description: "Category deleted successfully",
-                                      });
-                                    } catch (error) {
-                                      toast({
-                                        title: "Error",
-                                        description: "Failed to delete category",
-                                        variant: "destructive",
-                                      });
-                                    }
-                                  }
-                                }}
-                                className="bg-red-600 text-white hover:bg-red-700"
-                                title="Delete category"
+                                size="sm"
+                                variant="outline"
+                                onClick={() => archiveCategoryMutation.mutate(category.id)}
+                                disabled={archiveCategoryMutation.isPending}
                               >
-                                <Trash2 className="w-4 h-4" />
+                                <Archive className="w-4 h-4" />
                               </Button>
                               <Button
                                 size="sm"
@@ -1023,6 +1003,80 @@ export default function FastPricing() {
                 </TableBody>
               </Table>
             </div>
+
+            {/* Archived Categories section */}
+            {archivedCategories.length > 0 && (
+              <Card className="mt-6">
+                <div className="p-6">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setShowArchivedCategories(!showArchivedCategories)}
+                    className="mb-4"
+                  >
+                    <Archive className="w-4 h-4 mr-2" />
+                    {showArchivedCategories ? 'Hide' : 'Show'} Archived ({archivedCategories.length})
+                  </Button>
+                  
+                  {showArchivedCategories && (
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Order</TableHead>
+                          <TableHead>Image</TableHead>
+                          <TableHead>Slug</TableHead>
+                          <TableHead>Name</TableHead>
+                          <TableHead>Description</TableHead>
+                          <TableHead>Starting Price</TableHead>
+                          <TableHead>Actions</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {archivedCategories.map((category: any) => (
+                          <TableRow key={category.id} className="opacity-60">
+                            <TableCell>{category.orderIndex ?? 0}</TableCell>
+                            <TableCell>
+                              {category.imageUrl ? (
+                                <div className="w-12 h-12 rounded-md overflow-hidden border border-gray-200">
+                                  <img 
+                                    src={category.imageUrl} 
+                                    alt={category.name}
+                                    className="w-full h-full object-cover opacity-60"
+                                    onError={(e: any) => {
+                                      e.target.onerror = null;
+                                      e.target.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="48" height="48" fill="none"%3E%3Crect width="48" height="48" fill="%23f3f4f6"/%3E%3Cpath stroke="%239ca3af" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M24 16v16m-8-8h16"/%3E%3C/svg%3E';
+                                    }}
+                                  />
+                                </div>
+                              ) : (
+                                <span className="text-gray-400">-</span>
+                              )}
+                            </TableCell>
+                            <TableCell>{category.slug}</TableCell>
+                            <TableCell>{category.name}</TableCell>
+                            <TableCell>
+                              <span className="text-sm text-gray-600">{category.description}</span>
+                            </TableCell>
+                            <TableCell>${category.startingPrice?.toLocaleString()}</TableCell>
+                            <TableCell>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => restoreCategoryMutation.mutate(category.id)}
+                                disabled={restoreCategoryMutation.isPending}
+                                title="Restore to active"
+                              >
+                                <RotateCcw className="w-4 h-4" />
+                              </Button>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  )}
+                </div>
+              </Card>
+            )}
           </Card>
         )}
 
