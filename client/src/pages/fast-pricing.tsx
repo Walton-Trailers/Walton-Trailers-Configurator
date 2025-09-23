@@ -1799,7 +1799,7 @@ export default function FastPricing() {
           <Card>
             <div className="p-6">
               <div className="flex justify-between items-center mb-4">
-                <h2 className="text-lg font-semibold">Options & Extras ({options.length})</h2>
+                <h2 className="text-lg font-semibold">Options & Extras ({activeOptions.length})</h2>
                 <Button onClick={() => setShowAddOption(true)} size="sm">
                   Add Extras
                 </Button>
@@ -1990,7 +1990,7 @@ export default function FastPricing() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {options
+                  {activeOptions
                     .filter((option: any) => 
                       !searchQuery || 
                       option.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -2132,16 +2132,11 @@ export default function FastPricing() {
                             </Button>
                             <Button
                               size="sm"
-                              onClick={() => {
-                                if (confirm('Are you sure you want to delete this option? This action cannot be undone.')) {
-                                  deleteOptionMutation.mutate(option.id);
-                                }
-                              }}
-                              disabled={deleteOptionMutation.isPending}
-                              title="Delete option"
-                              className="bg-red-600 text-white hover:bg-red-700"
+                              variant="outline"
+                              onClick={() => archiveOptionMutation.mutate(option.id)}
+                              disabled={archiveOptionMutation.isPending}
                             >
-                              <Trash2 className="w-4 h-4" />
+                              <Archive className="w-4 h-4" />
                             </Button>
                             <Button
                               size="sm"
