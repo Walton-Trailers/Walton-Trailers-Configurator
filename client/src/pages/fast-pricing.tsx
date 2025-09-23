@@ -277,6 +277,22 @@ export default function FastPricing() {
     };
   }, [models, searchQuery]);
 
+  // Filter categories into active and archived
+  const { activeCategories, archivedCategories } = useMemo(() => {
+    const query = searchQuery.toLowerCase();
+    const filtered = categories.filter((cat: any) => 
+      !query || 
+      cat.name.toLowerCase().includes(query) ||
+      cat.slug.toLowerCase().includes(query) ||
+      cat.description.toLowerCase().includes(query)
+    );
+    
+    return {
+      activeCategories: filtered.filter((c: any) => !c.isArchived),
+      archivedCategories: filtered.filter((c: any) => c.isArchived)
+    };
+  }, [categories, searchQuery]);
+
   // Fast mutations
   const updateMutation = useMutation({
     mutationFn: ({ id, ...data }: any) => fastMutate(`/api/models/${id}`, {
@@ -309,6 +325,23 @@ export default function FastPricing() {
       headers: { Authorization: `Bearer ${sessionId}` },
     }),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['admin', 'models'] }),
+  });
+
+  // Category archive/restore mutations
+  const archiveCategoryMutation = useMutation({
+    mutationFn: (id: number) => fastMutate(`/api/categories/${id}/archive`, {
+      method: 'PATCH',
+      headers: { Authorization: `Bearer ${sessionId}` },
+    }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['categories'] }),
+  });
+
+  const restoreCategoryMutation = useMutation({
+    mutationFn: (id: number) => fastMutate(`/api/categories/${id}/restore`, {
+      method: 'PATCH',
+      headers: { Authorization: `Bearer ${sessionId}` },
+    }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['categories'] }),
   });
 
   const handleUpdate = (model: any) => {
@@ -780,13 +813,7 @@ export default function FastPricing() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {categories
-                    .filter((cat: any) => !searchQuery || 
-                      cat.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                      cat.slug.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                      cat.description.toLowerCase().includes(searchQuery.toLowerCase())
-                    )
-                    .map((category: any) => (
+                  {activeCategories.map((category: any) => (
                       <TableRow key={category.id}>
                         <TableCell>
                           {editingCategory?.id === category.id ? (
