@@ -13,7 +13,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
-import { Building2, Plus, FileText, Edit, Trash2, LogOut, Package, User, Users, Phone, Mail, DollarSign, Calendar, StickyNote, RefreshCw } from "lucide-react";
+import { Building2, Plus, FileText, Edit, Trash2, LogOut, Package, User, Users, Phone, Mail, DollarSign, Calendar, StickyNote, RefreshCw, Key } from "lucide-react";
 import { format } from "date-fns";
 
 interface DealerOrder {
@@ -92,6 +92,12 @@ export default function DealerDashboard() {
   const [activeTab, setActiveTab] = useState("orders");
   const [isEditingProfile, setIsEditingProfile] = useState(false);
   const [profileFormData, setProfileFormData] = useState<Partial<DealerProfile>>({});
+  const [isChangingPassword, setIsChangingPassword] = useState(false);
+  const [passwordFormData, setPasswordFormData] = useState({
+    currentPassword: "",
+    newPassword: "",
+    confirmPassword: "",
+  });
   const [isAddingUser, setIsAddingUser] = useState(false);
   const [editingUser, setEditingUser] = useState<DealerUser | null>(null);
   const [newUserData, setNewUserData] = useState({
@@ -208,6 +214,34 @@ export default function DealerDashboard() {
       toast({
         title: "Update failed",
         description: error.message || "Failed to update profile",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const changePasswordMutation = useMutation({
+    mutationFn: async (data: { currentPassword: string; newPassword: string }) => {
+      return apiRequest("/api/dealer/change-password", {
+        method: "POST",
+        body: data,
+      });
+    },
+    onSuccess: () => {
+      toast({
+        title: "Password changed",
+        description: "Your password has been successfully updated.",
+      });
+      setIsChangingPassword(false);
+      setPasswordFormData({
+        currentPassword: "",
+        newPassword: "",
+        confirmPassword: "",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Password change failed",
+        description: error.message || "Failed to change password",
         variant: "destructive",
       });
     },
@@ -764,6 +798,105 @@ export default function DealerDashboard() {
                           </p>
                         )}
                       </div>
+                    </div>
+
+                    {/* Password Section */}
+                    <div>
+                      <div className="flex justify-between items-center mb-4">
+                        <h3 className="text-lg font-semibold">Password</h3>
+                        {!isChangingPassword ? (
+                          <Button
+                            onClick={() => setIsChangingPassword(true)}
+                            variant="outline"
+                            size="sm"
+                          >
+                            <Key className="w-4 h-4 mr-2" />
+                            Change Password
+                          </Button>
+                        ) : (
+                          <div className="flex gap-2">
+                            <Button
+                              onClick={() => {
+                                setIsChangingPassword(false);
+                                setPasswordFormData({
+                                  currentPassword: "",
+                                  newPassword: "",
+                                  confirmPassword: "",
+                                });
+                              }}
+                              variant="outline"
+                              size="sm"
+                            >
+                              Cancel
+                            </Button>
+                            <Button
+                              onClick={() => {
+                                if (passwordFormData.newPassword !== passwordFormData.confirmPassword) {
+                                  toast({
+                                    title: "Password mismatch",
+                                    description: "New passwords don't match",
+                                    variant: "destructive",
+                                  });
+                                  return;
+                                }
+                                if (passwordFormData.newPassword.length < 8) {
+                                  toast({
+                                    title: "Password too short",
+                                    description: "Password must be at least 8 characters long",
+                                    variant: "destructive",
+                                  });
+                                  return;
+                                }
+                                changePasswordMutation.mutate({
+                                  currentPassword: passwordFormData.currentPassword,
+                                  newPassword: passwordFormData.newPassword,
+                                });
+                              }}
+                              size="sm"
+                              disabled={changePasswordMutation.isPending || !passwordFormData.currentPassword || !passwordFormData.newPassword || !passwordFormData.confirmPassword}
+                            >
+                              {changePasswordMutation.isPending ? "Updating..." : "Update Password"}
+                            </Button>
+                          </div>
+                        )}
+                      </div>
+                      
+                      {isChangingPassword ? (
+                        <div className="space-y-4">
+                          <div>
+                            <Label htmlFor="currentPassword" className="text-sm text-gray-600">Current Password</Label>
+                            <Input
+                              id="currentPassword"
+                              type="password"
+                              value={passwordFormData.currentPassword}
+                              onChange={(e) => setPasswordFormData({ ...passwordFormData, currentPassword: e.target.value })}
+                              placeholder="Enter your current password"
+                            />
+                          </div>
+                          <div>
+                            <Label htmlFor="newPassword" className="text-sm text-gray-600">New Password</Label>
+                            <Input
+                              id="newPassword"
+                              type="password"
+                              value={passwordFormData.newPassword}
+                              onChange={(e) => setPasswordFormData({ ...passwordFormData, newPassword: e.target.value })}
+                              placeholder="Enter your new password (min 8 characters)"
+                            />
+                          </div>
+                          <div>
+                            <Label htmlFor="confirmPassword" className="text-sm text-gray-600">Confirm New Password</Label>
+                            <Input
+                              id="confirmPassword"
+                              type="password"
+                              value={passwordFormData.confirmPassword}
+                              onChange={(e) => setPasswordFormData({ ...passwordFormData, confirmPassword: e.target.value })}
+                              placeholder="Confirm your new password"
+                            />
+                          </div>
+                        </div>
+                      ) : (
+                        <p className="text-gray-500">••••••••</p>
+                      )}
                     </div>
                   </div>
                 )}

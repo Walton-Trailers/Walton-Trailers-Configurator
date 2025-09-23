@@ -712,6 +712,47 @@ export async function registerRoutes(app: Express): Promise<Express> {
       res.status(500).json({ error: "Failed to reset password" });
     }
   });
+
+  // Change password (authenticated dealer)
+  app.post("/api/dealer/change-password", requireDealerAuth, async (req: AuthenticatedRequest, res) => {
+    try {
+      const { currentPassword, newPassword } = req.body;
+      const dealer = req.dealer!;
+
+      if (!currentPassword || !newPassword) {
+        return res.status(400).json({ error: "Current password and new password are required" });
+      }
+
+      if (newPassword.length < 8) {
+        return res.status(400).json({ error: "New password must be at least 8 characters long" });
+      }
+
+      // Verify current password
+      const validCurrentPassword = await bcrypt.compare(currentPassword, dealer.passwordHash);
+      
+      if (!validCurrentPassword) {
+        return res.status(400).json({ error: "Current password is incorrect" });
+      }
+
+      // Hash new password
+      const hashedNewPassword = await hashPassword(newPassword);
+
+      // Update dealer password
+      await db.update(dealers)
+        .set({ 
+          passwordHash: hashedNewPassword,
+          updatedAt: new Date()
+        })
+        .where(eq(dealers.id, dealer.id));
+
+      console.log("✅ Password changed successfully for dealer:", dealer.dealerId);
+
+      res.json({ message: "Password changed successfully" });
+    } catch (error) {
+      console.error("Password change error:", error);
+      res.status(500).json({ error: "Failed to change password" });
+    }
+  });
   
   // Get dealer profile
   app.get("/api/dealer/profile", requireDealerAuth, async (req: AuthenticatedRequest, res) => {
