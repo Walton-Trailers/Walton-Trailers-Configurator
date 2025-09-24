@@ -1809,7 +1809,7 @@ Configuration Date: ${new Date().toLocaleDateString()}
           variant="outline"
           size="sm"
           onClick={() => window.location.href = '/admin/login'}
-          className="bg-white/10 hover:bg-white/20 border border-gray-200/30 hover:border-gray-300/50 text-gray-300 hover:text-gray-500 transition-all duration-200 text-xs px-3 py-2 opacity-30 hover:opacity-60 cursor-pointer"
+          className="bg-white/10 hover:bg-white/20 border border-gray-200/30 hover:border-gray-300/50 text-gray-500 hover:text-gray-700 transition-all duration-200 text-xs px-3 py-2 opacity-50 hover:opacity-80 cursor-pointer"
         >
           <Users className="w-3 h-3 mr-1.5" />
           <span className="hidden md:inline">Employees</span>
@@ -1819,7 +1819,7 @@ Configuration Date: ${new Date().toLocaleDateString()}
           variant="outline"
           size="sm"
           onClick={() => window.location.href = '/dealer/login'}
-          className="bg-white/10 hover:bg-white/20 border border-gray-200/30 hover:border-gray-300/50 text-gray-300 hover:text-gray-500 transition-all duration-200 text-xs px-3 py-2 opacity-30 hover:opacity-60 cursor-pointer"
+          className="bg-white/10 hover:bg-white/20 border border-gray-200/30 hover:border-gray-300/50 text-gray-500 hover:text-gray-700 transition-all duration-200 text-xs px-3 py-2 opacity-50 hover:opacity-80 cursor-pointer"
         >
           <Building2 className="w-3 h-3 mr-1.5" />
           <span className="hidden md:inline">Dealers</span>
