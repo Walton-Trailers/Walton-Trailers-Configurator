@@ -10,7 +10,7 @@ import {
   hashPassword,
   isAdmin
 } from "./auth";
-import { insertAdminUserSchema, type AdminUser, trailerCategories, trailerModels, customQuoteRequests, insertCustomQuoteRequestSchema, quoteRequests, insertQuoteRequestSchema, dealers, dealerSessions, dealerOrders, dealerUsers, dealerUserSessions, userConfigurations, mediaFiles, dealerPasswordResetTokens, type Dealer, type DealerUser, type MediaFile } from "@shared/schema";
+import { insertAdminUserSchema, type AdminUser, trailerCategories, trailerModels, trailerSeries, customQuoteRequests, insertCustomQuoteRequestSchema, quoteRequests, insertQuoteRequestSchema, dealers, dealerSessions, dealerOrders, dealerUsers, dealerUserSessions, userConfigurations, mediaFiles, dealerPasswordResetTokens, type Dealer, type DealerUser, type MediaFile } from "@shared/schema";
 import { z } from "zod";
 import crypto from "crypto";
 import bcrypt from "bcryptjs";
@@ -2190,6 +2190,86 @@ export async function registerRoutes(app: Express): Promise<Express> {
     } catch (error) {
       console.error("Error updating option image:", error);
       res.status(500).json({ error: "Failed to update option image" });
+    }
+  });
+
+  // Series image upload routes
+  app.post("/api/series/upload-url", requireAuth, async (req, res) => {
+    try {
+      const objectStorageService = new ObjectStorageService();
+      const uploadURL = await objectStorageService.getObjectEntityUploadURL();
+      res.json({ uploadURL });
+    } catch (error) {
+      console.error("Error getting upload URL for series:", error);
+      res.status(500).json({ error: "Failed to get upload URL" });
+    }
+  });
+
+  app.patch("/api/series/:id/image", requireAuth, async (req, res) => {
+    try {
+      const seriesId = parseInt(req.params.id);
+      const { imageUrl } = req.body;
+
+      console.log(`Updating image for series ${seriesId}, new URL: ${imageUrl}`);
+
+      if (!imageUrl) {
+        return res.status(400).json({ error: "imageUrl is required" });
+      }
+
+      const objectStorageService = new ObjectStorageService();
+      const objectPath = await objectStorageService.trySetObjectEntityAclPolicy(
+        imageUrl,
+        {
+          owner: "admin",
+          visibility: "public", // Series images should be public for customers to see
+        }
+      );
+
+      console.log(`Object path after ACL policy: ${objectPath}`);
+
+      // Update the series with the normalized image URL
+      const result = await db.update(trailerSeries)
+        .set({ imageUrl: objectPath })
+        .where(eq(trailerSeries.id, seriesId))
+        .returning();
+
+      if (result.length === 0) {
+        return res.status(404).json({ message: "Series not found" });
+      }
+
+      // Save image metadata to media library
+      try {
+        const series = result[0];
+        const filename = objectPath.split('/').pop() || 'unknown';
+        
+        await db.insert(mediaFiles).values({
+          filename,
+          originalName: `${series.name}_series_image`,
+          objectPath,
+          mimeType: 'image/jpeg', // Default, could be improved to detect actual type
+          fileSize: 0, // Could be improved to get actual file size
+          altText: `${series.name} series image`,
+          description: `Series image for ${series.name}`,
+          tags: ['series', series.name?.toLowerCase() || 'unknown'],
+          uploadedBy: (req as AuthenticatedRequest).user?.id,
+          usageCount: 1,
+        });
+        console.log(`Saved series image to media library: ${objectPath}`);
+      } catch (mediaError) {
+        console.error("Error saving series image to media library:", mediaError);
+        // Don't fail the request if media library save fails
+      }
+
+      console.log(`Updated series result:`, result[0]);
+
+      res.json({
+        success: true,
+        imageUrl: objectPath,
+        series: result[0],
+      });
+    } catch (error) {
+      console.error("Error updating series image:", error);
+      res.status(500).json({ error: "Failed to update series image" });
     }
   });
 
