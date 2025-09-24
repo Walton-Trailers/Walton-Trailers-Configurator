@@ -198,7 +198,7 @@ export default function FastPricing() {
     onSuccess: () => {
       fetchSeries();
       setShowAddSeries(false);
-      setNewSeriesData({ categoryId: 0, name: "", description: "", slug: "", basePrice: "" });
+      setNewSeriesData({ categoryId: 0, name: "", description: "", slug: "", basePrice: "", imageUrl: "" });
       toast({ title: "Success", description: "Series added successfully" });
     },
   });
@@ -1253,14 +1253,24 @@ export default function FastPricing() {
                           onChange={(e: any) => setNewSeriesData({ ...newSeriesData, description: e.target.value })}
                         />
                       </div>
-                      <div>
-                        <label className="block text-sm font-medium mb-1">Base Price</label>
-                        <Input
-                          type="number"
-                          placeholder="Enter base price"
-                          value={String(newSeriesData.basePrice)}
-                          onChange={(e: any) => setNewSeriesData({ ...newSeriesData, basePrice: e.target.value === "" ? "" : parseFloat(e.target.value) || 0 })}
-                        />
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <label className="block text-sm font-medium mb-1">Image URL</label>
+                          <Input
+                            placeholder="https://..."
+                            value={newSeriesData.imageUrl}
+                            onChange={(e: any) => setNewSeriesData({ ...newSeriesData, imageUrl: e.target.value })}
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium mb-1">Base Price</label>
+                          <Input
+                            type="number"
+                            placeholder="Enter base price"
+                            value={String(newSeriesData.basePrice)}
+                            onChange={(e: any) => setNewSeriesData({ ...newSeriesData, basePrice: e.target.value === "" ? "" : parseFloat(e.target.value) || 0 })}
+                          />
+                        </div>
                       </div>
                     </div>
                     <div className="flex justify-end gap-3 mt-6">
