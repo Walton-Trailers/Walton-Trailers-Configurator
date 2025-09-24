@@ -1791,29 +1791,27 @@ Configuration Date: ${new Date().toLocaleDateString()}
       )}
       
       {/* Fixed Employee and Dealer Portal Buttons - Mobile Friendly */}
-      <div className="fixed left-4 bottom-4 z-40 flex gap-2">
-        <Link href="/admin/login">
-          <Button
-            variant="ghost"
-            size="sm"
-            className="bg-white/80 md:bg-white/20 backdrop-blur-sm hover:bg-white/90 md:hover:bg-white/40 border border-gray-200 md:border-0 hover:border-gray-300 md:hover:border-gray-200 text-gray-600 md:text-gray-400 hover:text-gray-800 md:hover:text-gray-600 transition-all duration-500 text-xs px-3 py-2 md:py-1.5 opacity-90 md:opacity-60 hover:opacity-100 shadow-sm md:shadow-none"
-          >
-            <Users className="w-3 h-3 mr-1.5" />
-            <span className="hidden md:inline">Employees</span>
-            <span className="md:hidden">Staff</span>
-          </Button>
-        </Link>
-        <Link href="/dealer/login">
-          <Button
-            variant="ghost"
-            size="sm"
-            className="bg-white/80 md:bg-white/20 backdrop-blur-sm hover:bg-white/90 md:hover:bg-white/40 border border-gray-200 md:border-0 hover:border-gray-300 md:hover:border-gray-200 text-gray-600 md:text-gray-400 hover:text-gray-800 md:hover:text-gray-600 transition-all duration-500 text-xs px-3 py-2 md:py-1.5 opacity-90 md:opacity-60 hover:opacity-100 shadow-sm md:shadow-none"
-          >
-            <Building2 className="w-3 h-3 mr-1.5" />
-            <span className="hidden md:inline">Dealers</span>
-            <span className="md:hidden">Dealers</span>
-          </Button>
-        </Link>
+      <div className="fixed left-4 bottom-4 z-50 flex gap-2 pointer-events-auto">
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => window.location.href = '/admin/login'}
+          className="bg-white/95 hover:bg-white border border-gray-300 hover:border-gray-400 text-gray-700 hover:text-gray-900 transition-all duration-200 text-xs px-3 py-2 shadow-md hover:shadow-lg cursor-pointer"
+        >
+          <Users className="w-3 h-3 mr-1.5" />
+          <span className="hidden md:inline">Employees</span>
+          <span className="md:hidden">Staff</span>
+        </Button>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => window.location.href = '/dealer/login'}
+          className="bg-white/95 hover:bg-white border border-gray-300 hover:border-gray-400 text-gray-700 hover:text-gray-900 transition-all duration-200 text-xs px-3 py-2 shadow-md hover:shadow-lg cursor-pointer"
+        >
+          <Building2 className="w-3 h-3 mr-1.5" />
+          <span className="hidden md:inline">Dealers</span>
+          <span className="md:hidden">Dealers</span>
+        </Button>
       </div>
 
       {/* Dealer Save Dialog */}
