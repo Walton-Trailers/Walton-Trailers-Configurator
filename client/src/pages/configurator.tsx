@@ -1049,10 +1049,23 @@ Configuration Date: ${new Date().toLocaleDateString()}
                       >
                         <div className="flex flex-col">
                           {/* Top - Image */}
-                          <div className="w-full h-48 md:h-56 relative overflow-hidden rounded-t-md bg-orange-500 flex items-center justify-center">
-                            <div className="text-white text-2xl md:text-3xl font-bold tracking-wider">
-                              {series.name.toUpperCase()}
-                            </div>
+                          <div className="w-full h-48 md:h-56 relative overflow-hidden rounded-t-md">
+                            {series.imageUrl ? (
+                              <>
+                                <img 
+                                  src={series.imageUrl}
+                                  alt={series.name}
+                                  className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+                                />
+                                <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-black/10"></div>
+                              </>
+                            ) : (
+                              <div className="w-full h-full bg-orange-500 flex items-center justify-center">
+                                <div className="text-white text-2xl md:text-3xl font-bold tracking-wider">
+                                  {series.name.toUpperCase()}
+                                </div>
+                              </div>
+                            )}
                           </div>
                           
                           {/* Bottom - Content */}
