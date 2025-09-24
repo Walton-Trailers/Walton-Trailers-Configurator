@@ -1253,24 +1253,61 @@ export default function FastPricing() {
                           onChange={(e: any) => setNewSeriesData({ ...newSeriesData, description: e.target.value })}
                         />
                       </div>
-                      <div className="grid grid-cols-2 gap-4">
-                        <div>
-                          <label className="block text-sm font-medium mb-1">Image URL</label>
-                          <Input
-                            placeholder="https://..."
-                            value={newSeriesData.imageUrl}
-                            onChange={(e: any) => setNewSeriesData({ ...newSeriesData, imageUrl: e.target.value })}
+                      <div>
+                        <label className="block text-sm font-medium mb-1">Image (Optional)</label>
+                        <div className="space-y-2">
+                          <input
+                            type="file"
+                            accept="image/*"
+                            onChange={async (e) => {
+                              const file = e.target.files?.[0];
+                              if (file) {
+                                try {
+                                  const uploadParams = await handleGetSeriesUploadParameters();
+                                  const formData = new FormData();
+                                  formData.append("file", file);
+                                  
+                                  const response = await fetch(uploadParams.url, {
+                                    method: uploadParams.method,
+                                    body: formData,
+                                  });
+                                  
+                                  if (response.ok) {
+                                    // Use the upload URL from the parameters, not the response
+                                    // This will be processed properly by the backend when the series is created
+                                    setNewSeriesData({ ...newSeriesData, imageUrl: uploadParams.url });
+                                  }
+                                } catch (error) {
+                                  console.error('Upload failed:', error);
+                                }
+                              }
+                            }}
+                            className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-medium file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
                           />
+                          {newSeriesData.imageUrl && (
+                            <div className="flex items-center gap-2">
+                              <img 
+                                src={newSeriesData.imageUrl} 
+                                alt="Preview"
+                                className="w-12 h-12 object-cover rounded-md border border-gray-200"
+                                onError={(e: any) => {
+                                  e.target.onerror = null;
+                                  e.target.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="48" height="48" fill="none"%3E%3Crect width="48" height="48" fill="%23f3f4f6"/%3E%3Cpath stroke="%239ca3af" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M24 16v16m-8-8h16"/%3E%3C/svg%3E';
+                                }}
+                              />
+                              <span className="text-sm text-gray-600">Image uploaded</span>
+                            </div>
+                          )}
                         </div>
-                        <div>
-                          <label className="block text-sm font-medium mb-1">Base Price</label>
-                          <Input
-                            type="number"
-                            placeholder="Enter base price"
-                            value={String(newSeriesData.basePrice)}
-                            onChange={(e: any) => setNewSeriesData({ ...newSeriesData, basePrice: e.target.value === "" ? "" : parseFloat(e.target.value) || 0 })}
-                          />
-                        </div>
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium mb-1">Base Price</label>
+                        <Input
+                          type="number"
+                          placeholder="Enter base price"
+                          value={String(newSeriesData.basePrice)}
+                          onChange={(e: any) => setNewSeriesData({ ...newSeriesData, basePrice: e.target.value === "" ? "" : parseFloat(e.target.value) || 0 })}
+                        />
                       </div>
                     </div>
                     <div className="flex justify-end gap-3 mt-6">
