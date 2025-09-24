@@ -1268,28 +1268,30 @@ export default function FastPricing() {
                                 });
                               }
                             }}
-                            buttonClassName="w-full h-20 border-2 border-dashed border-gray-300 rounded flex items-center justify-center hover:bg-gray-50"
-                            data-testid="upload-new-series-image"
+                            currentImageUrl={newSeriesData.imageUrl}
+                            modelName="New Series"
                           >
-                            <div className="text-center">
-                              <Upload className="w-8 h-8 text-gray-400 mx-auto mb-2" />
-                              <span className="text-sm text-gray-600">Click to upload image</span>
-                            </div>
+                            {newSeriesData.imageUrl ? (
+                              <div className="w-full h-20 rounded-md overflow-hidden border border-gray-200 hover:border-gray-400 transition-colors cursor-pointer">
+                                <img 
+                                  src={newSeriesData.imageUrl} 
+                                  alt="Series Preview"
+                                  className="w-full h-full object-cover"
+                                  onError={(e: any) => {
+                                    e.target.onerror = null;
+                                    e.target.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="400" height="80" fill="none"%3E%3Crect width="400" height="80" fill="%23f3f4f6"/%3E%3Cpath stroke="%239ca3af" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M200 30v20m-10-10h20"/%3E%3C/svg%3E';
+                                  }}
+                                />
+                              </div>
+                            ) : (
+                              <div className="w-full h-20 rounded-md border-2 border-dashed border-gray-300 hover:border-gray-400 transition-colors cursor-pointer flex items-center justify-center bg-gray-50">
+                                <div className="text-center">
+                                  <Upload className="w-8 h-8 text-gray-400 mx-auto mb-1" />
+                                  <span className="text-sm text-gray-600">Click to upload image</span>
+                                </div>
+                              </div>
+                            )}
                           </ObjectUploader>
-                          {newSeriesData.imageUrl && (
-                            <div className="flex items-center gap-2">
-                              <img 
-                                src={newSeriesData.imageUrl} 
-                                alt="Preview"
-                                className="w-12 h-12 object-cover rounded-md border border-gray-200"
-                                onError={(e: any) => {
-                                  e.target.onerror = null;
-                                  e.target.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="48" height="48" fill="none"%3E%3Crect width="48" height="48" fill="%23f3f4f6"/%3E%3Cpath stroke="%239ca3af" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M24 16v16m-8-8h16"/%3E%3C/svg%3E';
-                                }}
-                              />
-                              <span className="text-sm text-gray-600">Image uploaded</span>
-                            </div>
-                          )}
                         </div>
                       </div>
                       <div>
