@@ -403,6 +403,10 @@ export default function FastPricing() {
       categoryId: data.categoryId ?? model.categoryId,
       basePrice: data.basePrice ?? model.basePrice,
       seriesId: seriesId, // Use the foreign key instead of text
+      gvwr: data.gvwr ?? model.gvwr,
+      payload: data.payload ?? model.payload,
+      deckSize: data.deckSize ?? model.deckSize,
+      axles: data.axles ?? model.axles,
     });
   };
 
@@ -1716,6 +1720,10 @@ export default function FastPricing() {
                   <TableHead>Name</TableHead>
                   <TableHead>Category</TableHead>
                   <TableHead>Series</TableHead>
+                  <TableHead>GVWR</TableHead>
+                  <TableHead>Payload</TableHead>
+                  <TableHead>Deck Size</TableHead>
+                  <TableHead>Axles</TableHead>
                   <TableHead>Price</TableHead>
                   <TableHead>Image</TableHead>
                   <TableHead>Actions</TableHead>
@@ -1793,6 +1801,65 @@ export default function FastPricing() {
                         </Select>
                       ) : (
                         model.seriesName ?? "No Series"
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      {editingModel?.id === model.id ? (
+                        <Input
+                          type="number"
+                          placeholder="GVWR"
+                          value={editData[model.id]?.gvwr ?? model.gvwr ?? ""}
+                          onChange={(e: any) => setEditData({
+                            ...editData,
+                            [model.id]: { ...editData[model.id], gvwr: e.target.value === "" ? null : parseInt(e.target.value) || null }
+                          })}
+                        />
+                      ) : (
+                        model.gvwr ? model.gvwr.toLocaleString() : "—"
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      {editingModel?.id === model.id ? (
+                        <Input
+                          type="number"
+                          placeholder="Payload"
+                          value={editData[model.id]?.payload ?? model.payload ?? ""}
+                          onChange={(e: any) => setEditData({
+                            ...editData,
+                            [model.id]: { ...editData[model.id], payload: e.target.value === "" ? null : parseInt(e.target.value) || null }
+                          })}
+                        />
+                      ) : (
+                        model.payload ? model.payload.toLocaleString() : "—"
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      {editingModel?.id === model.id ? (
+                        <Input
+                          placeholder="Deck Size"
+                          value={editData[model.id]?.deckSize ?? model.deckSize ?? ""}
+                          onChange={(e: any) => setEditData({
+                            ...editData,
+                            [model.id]: { ...editData[model.id], deckSize: e.target.value || null }
+                          })}
+                        />
+                      ) : (
+                        model.deckSize || "—"
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      {editingModel?.id === model.id ? (
+                        <Input
+                          type="number"
+                          placeholder="Axles"
+                          value={editData[model.id]?.axles ?? model.axles ?? ""}
+                          onChange={(e: any) => setEditData({
+                            ...editData,
+                            [model.id]: { ...editData[model.id], axles: e.target.value === "" ? null : parseInt(e.target.value) || null }
+                          })}
+                        />
+                      ) : (
+                        model.axles || "—"
                       )}
                     </TableCell>
                     <TableCell>
@@ -1910,6 +1977,11 @@ export default function FastPricing() {
                           <TableHead>Model ID</TableHead>
                           <TableHead>Name</TableHead>
                           <TableHead>Category</TableHead>
+                          <TableHead>Series</TableHead>
+                          <TableHead>GVWR</TableHead>
+                          <TableHead>Payload</TableHead>
+                          <TableHead>Deck Size</TableHead>
+                          <TableHead>Axles</TableHead>
                           <TableHead>Price</TableHead>
                           <TableHead>Image</TableHead>
                           <TableHead>Actions</TableHead>
@@ -1921,6 +1993,11 @@ export default function FastPricing() {
                             <TableCell>{model.modelId}</TableCell>
                             <TableCell>{model.name}</TableCell>
                             <TableCell>{model.categoryName}</TableCell>
+                            <TableCell>{model.seriesName ?? "No Series"}</TableCell>
+                            <TableCell>{model.gvwr ? model.gvwr.toLocaleString() : "—"}</TableCell>
+                            <TableCell>{model.payload ? model.payload.toLocaleString() : "—"}</TableCell>
+                            <TableCell>{model.deckSize || "—"}</TableCell>
+                            <TableCell>{model.axles || "—"}</TableCell>
                             <TableCell>${model.basePrice?.toLocaleString()}</TableCell>
                             <TableCell>
                               {model.imageUrl ? (
