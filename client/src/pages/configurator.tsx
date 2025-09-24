@@ -311,8 +311,8 @@ export default function Configurator() {
         axles: selectedModel.axles
       },
       selectedOptions: selectedOptions,
-      basePrice: selectedModel.basePrice,
-      optionsPrice: totalPrice - selectedModel.basePrice,
+      basePrice: selectedModel.basePrice || 0,
+      optionsPrice: totalPrice - (selectedModel.basePrice || 0),
       totalPrice: totalPrice,
       notes: customerInfo.notes || null
     });
@@ -349,13 +349,13 @@ export default function Configurator() {
       return;
     }
 
-    let price = selectedModel.basePrice;
+    let price = selectedModel.basePrice || 0;
     
     if (options && Object.keys(selectedOptions).length > 0) {
       Object.entries(selectedOptions).forEach(([category, selected]) => {
         // Handle custom pull options
         if (category === 'pullOption' && selected === 'Gooseneck') {
-          price += 2500;
+          price = (price || 0) + 2500;
         } else {
           // Handle database options
           const categoryOptions = options.filter(opt => opt.category === category);
@@ -367,15 +367,15 @@ export default function Configurator() {
                 // Check if this is D-Rings option and multiply by quantity
                 if (option.name.includes('D-Rings')) {
                   const quantity = selectedOptions[`${category}_${optionId}_qty`] || 1;
-                  price += option.price * quantity;
+                  price = (price || 0) + (option.price || 0) * quantity;
                 } else {
-                  price += option.price;
+                  price = (price || 0) + (option.price || 0);
                 }
               }
             });
           } else if (selected !== undefined) {
             const option = categoryOptions.find(opt => opt.id === selected);
-            if (option) price += option.price;
+            if (option) price = (price || 0) + (option.price || 0);
           }
         }
       });
@@ -391,7 +391,7 @@ export default function Configurator() {
           
           // Add primer price if the color option has one
           if (selectedColorOption && selectedColorOption.primerPrice && selectedColorOption.primerPrice > 0) {
-            price += selectedColorOption.primerPrice;
+            price = (price || 0) + selectedColorOption.primerPrice;
           }
         }
       });
