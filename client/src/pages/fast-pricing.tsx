@@ -1257,8 +1257,8 @@ export default function FastPricing() {
                         <label className="block text-sm font-medium mb-1">Image (Optional)</label>
                         <div className="space-y-2">
                           <ObjectUploader
-                            getUploadParameters={handleGetSeriesUploadParameters}
-                            onUploadComplete={(result) => {
+                            onGetUploadParameters={handleGetSeriesUploadParameters}
+                            onComplete={(result) => {
                               const uploadedFile = result.successful?.[0];
                               if (uploadedFile) {
                                 setNewSeriesData({ ...newSeriesData, imageUrl: uploadedFile.uploadURL });
@@ -1268,7 +1268,7 @@ export default function FastPricing() {
                                 });
                               }
                             }}
-                            className="w-full h-20 border-2 border-dashed border-gray-300 rounded flex items-center justify-center hover:bg-gray-50"
+                            buttonClassName="w-full h-20 border-2 border-dashed border-gray-300 rounded flex items-center justify-center hover:bg-gray-50"
                             data-testid="upload-new-series-image"
                           >
                             <div className="text-center">
