@@ -108,7 +108,8 @@ export default function FastPricing() {
     name: "",
     description: "",
     slug: "",
-    basePrice: ""
+    basePrice: "",
+    imageUrl: ""
   });
   const [showAddModel, setShowAddModel] = useState(false);
   const [newModelData, setNewModelData] = useState({
