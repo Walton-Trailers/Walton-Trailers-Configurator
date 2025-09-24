@@ -230,13 +230,14 @@ export async function registerRoutes(app: Express): Promise<Express> {
   // Create a new series
   app.post("/api/series", requireAuth, async (req, res) => {
     try {
-      const { categoryId, name, description, slug, basePrice } = req.body;
+      const { categoryId, name, description, slug, basePrice, imageUrl } = req.body;
       const result = await storage.createSeries({
         categoryId,
         name,
         description,
         slug,
         basePrice,
+        imageUrl,
       });
       res.json(result);
     } catch (error) {

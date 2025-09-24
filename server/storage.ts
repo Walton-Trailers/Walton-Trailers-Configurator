@@ -1536,12 +1536,12 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
-  async createSeries(data: { categoryId: number; name: string; description: string; slug: string; basePrice: number }): Promise<any> {
+  async createSeries(data: { categoryId: number; name: string; description: string; slug: string; basePrice: number; imageUrl?: string }): Promise<any> {
     try {
       const result = await db.execute(sql`
-        INSERT INTO trailer_series (category_id, name, description, slug, base_price)
-        VALUES (${data.categoryId}, ${data.name}, ${data.description}, ${data.slug}, ${data.basePrice})
-        RETURNING id, category_id, name, description, slug, base_price, created_at, updated_at
+        INSERT INTO trailer_series (category_id, name, description, slug, base_price, image_url)
+        VALUES (${data.categoryId}, ${data.name}, ${data.description}, ${data.slug}, ${data.basePrice}, ${data.imageUrl || null})
+        RETURNING id, category_id, name, description, slug, base_price, image_url, created_at, updated_at
       `);
       
       const series = result.rows[0] as any;
@@ -1552,6 +1552,7 @@ export class DatabaseStorage implements IStorage {
         description: series.description,
         slug: series.slug,
         basePrice: series.base_price,
+        imageUrl: series.image_url,
         createdAt: series.created_at,
         updatedAt: series.updated_at,
       };
