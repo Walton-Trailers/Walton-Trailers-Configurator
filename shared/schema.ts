@@ -24,6 +24,10 @@ export const trailerModels = pgTable("trailer_models", {
   name: text("name").notNull(),
   pullType: text("pull_type"), // 'bumper', 'gooseneck', 'both'
   gvwrRange: text("gvwr_range"), // e.g., "14,000 - 15,500"
+  gvwr: integer("gvwr"), // GVWR in pounds
+  payload: integer("payload"), // payload capacity in pounds
+  deckSize: text("deck_size"), // e.g., "20' x 7'"
+  axles: integer("axles"), // number of axles
   deckHeight: text("deck_height"),
   overallWidth: text("overall_width"),
   lengthRange: text("length_range"), // e.g., "14 - 16'"
