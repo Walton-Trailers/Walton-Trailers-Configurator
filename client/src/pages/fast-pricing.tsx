@@ -1362,9 +1362,9 @@ export default function FastPricing() {
                               />
                               <div className="absolute inset-0 bg-black bg-opacity-50 opacity-0 group-hover:opacity-100 transition-opacity rounded flex items-center justify-center">
                                 <ObjectUploader
-                                  getUploadParameters={handleGetSeriesUploadParameters}
-                                  onUploadComplete={(result) => handleSeriesImageUploadComplete(series.id, result)}
-                                  className="w-full h-full flex items-center justify-center"
+                                  onGetUploadParameters={handleGetSeriesUploadParameters}
+                                  onComplete={(result) => handleSeriesImageUploadComplete(series.id, result)}
+                                  buttonClassName="w-full h-full flex items-center justify-center"
                                   data-testid={`upload-series-${series.id}`}
                                 >
                                   <Upload className="w-4 h-4 text-white" />
@@ -1373,9 +1373,9 @@ export default function FastPricing() {
                             </div>
                           ) : (
                             <ObjectUploader
-                              getUploadParameters={handleGetSeriesUploadParameters}
-                              onUploadComplete={(result) => handleSeriesImageUploadComplete(series.id, result)}
-                              className="w-12 h-12 border-2 border-dashed border-gray-300 rounded flex items-center justify-center hover:bg-gray-50"
+                              onGetUploadParameters={handleGetSeriesUploadParameters}
+                              onComplete={(result) => handleSeriesImageUploadComplete(series.id, result)}
+                              buttonClassName="w-12 h-12 border-2 border-dashed border-gray-300 rounded flex items-center justify-center hover:bg-gray-50"
                               data-testid={`upload-series-${series.id}`}
                             >
                               <Upload className="w-4 h-4 text-gray-400" />
