@@ -54,14 +54,12 @@ export const modelVariants = pgTable("model_variants", {
 export const trailerSeries = pgTable("trailer_series", {
   id: serial("id").primaryKey(),
   name: text("name").notNull().unique(), // e.g., "FBH", "FBX", "Skid-Steer Tilt"
-  displayName: text("display_name").notNull(), // e.g., "FBH Series", "Heavy-Duty Equipment"
   description: text("description").notNull(),
+  slug: text("slug"), // URL-friendly version of name
   categoryId: integer("category_id").notNull(), // which category this series belongs to
   imageUrl: text("image_url"),
-  startingPrice: integer("starting_price"),
-  isActive: boolean("is_active").default(true),
+  basePrice: integer("base_price"),
   isArchived: boolean("is_archived").default(false),
-  displayOrder: integer("display_order").default(0),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
