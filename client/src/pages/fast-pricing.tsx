@@ -1256,34 +1256,26 @@ export default function FastPricing() {
                       <div>
                         <label className="block text-sm font-medium mb-1">Image (Optional)</label>
                         <div className="space-y-2">
-                          <input
-                            type="file"
-                            accept="image/*"
-                            onChange={async (e) => {
-                              const file = e.target.files?.[0];
-                              if (file) {
-                                try {
-                                  const uploadParams = await handleGetSeriesUploadParameters();
-                                  const formData = new FormData();
-                                  formData.append("file", file);
-                                  
-                                  const response = await fetch(uploadParams.url, {
-                                    method: uploadParams.method,
-                                    body: formData,
-                                  });
-                                  
-                                  if (response.ok) {
-                                    // Use the upload URL from the parameters, not the response
-                                    // This will be processed properly by the backend when the series is created
-                                    setNewSeriesData({ ...newSeriesData, imageUrl: uploadParams.url });
-                                  }
-                                } catch (error) {
-                                  console.error('Upload failed:', error);
-                                }
+                          <ObjectUploader
+                            getUploadParameters={handleGetSeriesUploadParameters}
+                            onUploadComplete={(result) => {
+                              const uploadedFile = result.successful?.[0];
+                              if (uploadedFile) {
+                                setNewSeriesData({ ...newSeriesData, imageUrl: uploadedFile.uploadURL });
+                                toast({
+                                  title: "Success",
+                                  description: "Image uploaded successfully",
+                                });
                               }
                             }}
-                            className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-medium file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
-                          />
+                            className="w-full h-20 border-2 border-dashed border-gray-300 rounded flex items-center justify-center hover:bg-gray-50"
+                            data-testid="upload-new-series-image"
+                          >
+                            <div className="text-center">
+                              <Upload className="w-8 h-8 text-gray-400 mx-auto mb-2" />
+                              <span className="text-sm text-gray-600">Click to upload image</span>
+                            </div>
+                          </ObjectUploader>
                           {newSeriesData.imageUrl && (
                             <div className="flex items-center gap-2">
                               <img 

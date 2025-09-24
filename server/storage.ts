@@ -1044,7 +1044,7 @@ export class DatabaseStorage implements IStorage {
   async getAllSeries(): Promise<any[]> {
     try {
       const result = await db.execute(sql`
-        SELECT s.id, s.name, s.category_id, s.slug, s.description, s.base_price, 
+        SELECT s.id, s.name, s.category_id, s.slug, s.description, s.base_price, s.image_url,
                COALESCE(s.is_archived, false) as is_archived, c.name as category_name
         FROM trailer_series s
         JOIN trailer_categories c ON s.category_id = c.id
@@ -1059,6 +1059,7 @@ export class DatabaseStorage implements IStorage {
         slug: series.slug,
         description: series.description,
         basePrice: series.base_price,
+        imageUrl: series.image_url,
         isArchived: series.is_archived,
       }));
     } catch (error) {
