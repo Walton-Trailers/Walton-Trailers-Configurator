@@ -1804,7 +1804,11 @@ Configuration Date: ${new Date().toLocaleDateString()}
       )}
       
       {/* Fixed Employee and Dealer Portal Buttons - Mobile Friendly */}
-      <div className="fixed left-4 bottom-4 z-50 flex gap-2 pointer-events-auto">
+      <div className={`fixed left-4 z-40 flex gap-2 pointer-events-auto transition-all duration-200 ${
+        (currentStep === 3 || currentStep === 4) && selectedModel 
+          ? 'bottom-24 lg:bottom-4' // Above pricing section on mobile, normal position on desktop
+          : 'bottom-4' // Normal position when no pricing section
+      }`}>
         <Button
           variant="outline"
           size="sm"
