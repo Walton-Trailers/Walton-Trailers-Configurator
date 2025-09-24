@@ -1141,6 +1141,13 @@ export class DatabaseStorage implements IStorage {
           WHERE id = ${id}
         `);
       }
+      if (updates.axles !== undefined) {
+        await db.execute(sql`
+          UPDATE trailer_models 
+          SET axles = ${updates.axles}
+          WHERE id = ${id}
+        `);
+      }
       if (updates.categoryId !== undefined) {
         await db.execute(sql`
           UPDATE trailer_models 
