@@ -662,6 +662,55 @@ export default function FastPricing() {
     }
   };
 
+  // Series image upload handlers
+  const handleGetSeriesUploadParameters = async () => {
+    const response = await apiRequest("/api/series/upload-url", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${sessionId}`,
+      },
+    });
+    return {
+      method: "PUT" as const,
+      url: response.uploadURL,
+    };
+  };
+
+  const handleSeriesImageUploadComplete = async (seriesId: number, result: any) => {
+    try {
+      const uploadedFile = result.successful?.[0];
+      if (!uploadedFile) {
+        throw new Error("No file uploaded");
+      }
+
+      const imageUrl = uploadedFile.uploadURL;
+      
+      // Update the series with the new image URL
+      await apiRequest(`/api/series/${seriesId}/image`, {
+        method: "PATCH",
+        body: { imageUrl },
+        headers: {
+          Authorization: `Bearer ${sessionId}`,
+        },
+      });
+
+      // Refresh the series data
+      fetchSeries();
+      
+      toast({
+        title: "Success",
+        description: "Series image uploaded successfully",
+      });
+    } catch (error) {
+      console.error("Error uploading series image:", error);
+      toast({
+        title: "Error",
+        description: "Failed to upload series image",
+        variant: "destructive",
+      });
+    }
+  };
+
   // Handle authentication errors
   if (modelsError || optionsError) {
     return (
@@ -1232,6 +1281,7 @@ export default function FastPricing() {
                 <TableHeader>
                   <TableRow>
                     <TableHead>Name</TableHead>
+                    <TableHead>Image</TableHead>
                     <TableHead>Category</TableHead>
                     <TableHead>Slug</TableHead>
                     <TableHead>Descriptions</TableHead>
