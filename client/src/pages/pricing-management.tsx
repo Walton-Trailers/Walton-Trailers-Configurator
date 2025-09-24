@@ -681,6 +681,53 @@ export default function PricingManagement() {
     }
   };
 
+  // Series image upload handlers
+  const handleGetSeriesUploadParameters = async () => {
+    const response = await apiRequest("/api/series/upload-url", {
+      method: "POST",
+      headers: sessionId ? { Authorization: `Bearer ${sessionId}` } : {},
+    });
+    return {
+      method: "PUT" as const,
+      url: response.uploadURL,
+    };
+  };
+
+  const handleSeriesImageUploadComplete = async (seriesId: number, result: any) => {
+    try {
+      const uploadedFile = result.successful?.[0];
+      if (!uploadedFile) {
+        throw new Error("No file uploaded");
+      }
+
+      // Get the raw upload URL from the result
+      const imageUrl = uploadedFile.uploadURL;
+      
+      // Call the dedicated image update endpoint
+      // The backend will handle normalizing the path and setting ACL
+      await apiRequest(`/api/series/${seriesId}/image`, {
+        method: "PATCH",
+        body: { imageUrl },
+        headers: sessionId ? { Authorization: `Bearer ${sessionId}` } : {},
+      });
+
+      // Refresh the series list
+      queryClient.invalidateQueries({ queryKey: ["/api/series/all"] });
+      
+      toast({
+        title: "Success",
+        description: "Series image updated successfully",
+      });
+    } catch (error) {
+      console.error("Error updating series image:", error);
+      toast({
+        title: "Error",
+        description: "Failed to update series image",
+        variant: "destructive",
+      });
+    }
+  };
+
   // Filter options based on search query
   const filteredOptions = useMemo(() => {
     if (!options || !searchQuery.trim()) {
