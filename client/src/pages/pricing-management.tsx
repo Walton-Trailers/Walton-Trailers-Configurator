@@ -65,6 +65,7 @@ interface TrailerSeries {
   description: string;
   slug: string;
   basePrice: number;
+  imageUrl?: string;
   categoryName?: string;
   isArchived?: boolean;
 }
