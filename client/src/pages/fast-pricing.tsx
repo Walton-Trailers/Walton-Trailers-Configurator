@@ -1850,12 +1850,11 @@ export default function FastPricing() {
                     <TableCell>
                       {editingModel?.id === model.id ? (
                         <Input
-                          type="number"
                           placeholder="GVWR"
                           value={editData[model.id]?.gvwr ?? model.gvwr ?? ""}
                           onChange={(e: any) => setEditData({
                             ...editData,
-                            [model.id]: { ...editData[model.id], gvwr: e.target.value === "" ? null : parseInt(e.target.value) || null }
+                            [model.id]: { ...editData[model.id], gvwr: e.target.value || null }
                           })}
                         />
                       ) : (
