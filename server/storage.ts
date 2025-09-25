@@ -617,6 +617,51 @@ export class MemStorage implements IStorage {
     // Basic implementation for mem storage
     return { id };
   }
+
+  // Trailer Lengths & Pull Types operations - stub implementations for mem storage
+  async getAllTrailerLengths(): Promise<any[]> {
+    // Return empty array for mem storage
+    return [];
+  }
+
+  async getTrailerLengthsByModel(modelId: number): Promise<any[]> {
+    // Return empty array for mem storage
+    return [];
+  }
+
+  async createTrailerLength(data: { modelId: number; length: number; pullType: string }): Promise<any> {
+    // Basic implementation for mem storage
+    const trailerLength = {
+      id: this.currentId++,
+      modelId: data.modelId,
+      length: data.length,
+      pullType: data.pullType,
+      isArchived: false,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
+    return trailerLength;
+  }
+
+  async updateTrailerLength(id: number, updates: { length?: number; pullType?: string; isArchived?: boolean }): Promise<any> {
+    // Basic implementation for mem storage
+    return { id, ...updates, updatedAt: new Date() };
+  }
+
+  async deleteTrailerLength(id: number): Promise<void> {
+    // Basic implementation for mem storage
+    return;
+  }
+
+  async archiveTrailerLength(id: number): Promise<any> {
+    // Basic implementation for mem storage
+    return { id, isArchived: true, updatedAt: new Date() };
+  }
+
+  async restoreTrailerLength(id: number): Promise<any> {
+    // Basic implementation for mem storage
+    return { id, isArchived: false, updatedAt: new Date() };
+  }
 }
 
 export class DatabaseStorage implements IStorage {
@@ -1957,12 +2002,14 @@ export class DatabaseStorage implements IStorage {
 
       setParts.push('updated_at = CURRENT_TIMESTAMP');
 
-      const result = await db.execute(sql.raw(`
+      const queryStr = `
         UPDATE trailer_lengths 
         SET ${setParts.join(', ')}
         WHERE id = $1
         RETURNING id, model_id, length, pull_type, is_archived, created_at, updated_at
-      `, [id, ...values]));
+      `;
+      
+      const result = await db.execute(sql.raw(queryStr, [id, ...values]));
       
       const length = result.rows[0] as any;
       return {
