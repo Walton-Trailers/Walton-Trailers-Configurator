@@ -362,6 +362,8 @@ export class MemStorage implements IStorage {
         ? JSON.parse(model.lengthOptions) 
         : model.lengthOptions;
       
+      const lengthPricing = model.lengthPrice || {};
+      
       if (Array.isArray(lengths)) {
         lengths.forEach((length: string, index: number) => {
           lengthOptions.push({
@@ -369,7 +371,7 @@ export class MemStorage implements IStorage {
             modelId: modelId,
             applicableModels: [modelId],
             name: length,
-            price: 0, // Length options from model are typically included
+            price: lengthPricing[length] || 0, // Use pricing from length_price column
             category: 'length',
             imageUrl: null,
             isArchived: false,
@@ -668,7 +670,7 @@ export class DatabaseStorage implements IStorage {
       // Get length options from the model's length_options JSON column
       const lengthOptions: TrailerOptionResponse[] = [];
       const modelResult = await db.execute(sql`
-        SELECT length_options
+        SELECT length_options, length_price
         FROM trailer_models
         WHERE model_id = ${modelId}
           AND (is_archived IS NULL OR is_archived = false)
@@ -682,6 +684,10 @@ export class DatabaseStorage implements IStorage {
             ? JSON.parse(model.length_options) 
             : model.length_options;
           
+          const lengthPricing = model.length_price 
+            ? (typeof model.length_price === 'string' ? JSON.parse(model.length_price) : model.length_price)
+            : {};
+          
           if (Array.isArray(lengths)) {
             lengths.forEach((length: string, index: number) => {
               lengthOptions.push({
@@ -689,7 +695,7 @@ export class DatabaseStorage implements IStorage {
                 modelId: modelId,
                 applicableModels: [modelId],
                 name: length,
-                price: 0, // Length options from model are typically included
+                price: lengthPricing[length] || 0, // Use pricing from length_price column
                 category: 'length',
                 imageUrl: null,
                 isArchived: false,
@@ -1099,6 +1105,7 @@ export class DatabaseStorage implements IStorage {
         axles: model.axles,
         lengthOptions: model.length_options ? (typeof model.length_options === 'string' ? JSON.parse(model.length_options) : model.length_options) : null,
         pulltypeOptions: model.pulltype_options ? (typeof model.pulltype_options === 'string' ? JSON.parse(model.pulltype_options) : model.pulltype_options) : null,
+        lengthPrice: model.length_price ? (typeof model.length_price === 'string' ? JSON.parse(model.length_price) : model.length_price) : null,
         basePrice: model.base_price,
         imageUrl: model.image_url,
         features: model.features || [],
@@ -1232,6 +1239,14 @@ export class DatabaseStorage implements IStorage {
         await db.execute(sql`
           UPDATE trailer_models 
           SET pulltype_options = ${pulltypeOptionsJson}
+          WHERE id = ${id}
+        `);
+      }
+      if (updates.lengthPrice !== undefined) {
+        const lengthPriceJson = updates.lengthPrice ? JSON.stringify(updates.lengthPrice) : null;
+        await db.execute(sql`
+          UPDATE trailer_models 
+          SET length_price = ${lengthPriceJson}
           WHERE id = ${id}
         `);
       }
@@ -1698,6 +1713,7 @@ export class DatabaseStorage implements IStorage {
         axles: model.axles,
         lengthOptions: model.length_options ? (typeof model.length_options === 'string' ? JSON.parse(model.length_options) : model.length_options) : null,
         pulltypeOptions: model.pulltype_options ? (typeof model.pulltype_options === 'string' ? JSON.parse(model.pulltype_options) : model.pulltype_options) : null,
+        lengthPrice: model.length_price ? (typeof model.length_price === 'string' ? JSON.parse(model.length_price) : model.length_price) : null,
         imageUrl: model.image_url,
         features: JSON.parse(model.features),
         basePrice: model.base_price || 0,

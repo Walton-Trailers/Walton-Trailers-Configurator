@@ -219,6 +219,24 @@ export default function FastPricing() {
     });
   };
 
+  const updatePriceForLength = (modelId: number, length: string, price: string) => {
+    const currentLengthPrice = editData[modelId]?.lengthPrice || 
+      models.find(m => m.id === modelId)?.lengthPrice || {};
+    
+    const newLengthPrice = {
+      ...currentLengthPrice,
+      [length]: price === "" ? 0 : parseFloat(price) || 0
+    };
+    
+    setEditData({
+      ...editData,
+      [modelId]: { 
+        ...editData[modelId], 
+        lengthPrice: newLengthPrice
+      }
+    });
+  };
+
   const sessionId = localStorage.getItem("admin_session");
   const queryClient = useQueryClient();
   const { toast } = useToast();
@@ -497,6 +515,7 @@ export default function FastPricing() {
       axles: data.axles ?? model.axles,
       lengthOptions: data.lengthOptions ?? model.lengthOptions,
       pulltypeOptions: data.pulltypeOptions ?? model.pulltypeOptions,
+      lengthPrice: data.lengthPrice ?? model.lengthPrice,
     });
   };
 
@@ -2021,6 +2040,13 @@ export default function FastPricing() {
                                       placeholder="Pull types (e.g., Bumper Pull, Gooseneck)"
                                       value={currentPulltypeOptions[length] || ""}
                                       onChange={(e: any) => updatePullTypeForLength(model.id, length, e.target.value)}
+                                      className="text-xs h-7 mb-2"
+                                    />
+                                    <Input
+                                      placeholder="Price (e.g., 1500)"
+                                      type="number"
+                                      value={(editData[model.id]?.lengthPrice || model.lengthPrice || {})[length] || ""}
+                                      onChange={(e: any) => updatePriceForLength(model.id, length, e.target.value)}
                                       className="text-xs h-7"
                                     />
                                   </div>
@@ -2096,6 +2122,7 @@ export default function FastPricing() {
                               : model.lengthOptions || [];
                             
                             const pulltypeOptions = model.pulltypeOptions || {};
+                            const lengthPrice = model.lengthPrice || {};
                             
                             const isExpanded = expandedLengthOptions[model.id];
                             const displayedOptions = isExpanded ? lengthOptions : lengthOptions.slice(0, 2);
@@ -2108,6 +2135,9 @@ export default function FastPricing() {
                                     <div className="font-medium text-gray-800">{length}</div>
                                     {pulltypeOptions[length] && (
                                       <div className="text-gray-600 mt-1">{pulltypeOptions[length]}</div>
+                                    )}
+                                    {lengthPrice[length] && lengthPrice[length] > 0 && (
+                                      <div className="text-green-600 mt-1 font-medium">+${lengthPrice[length].toLocaleString()}</div>
                                     )}
                                   </div>
                                 ))}
@@ -2276,6 +2306,7 @@ export default function FastPricing() {
                                     : model.lengthOptions || [];
                                   
                                   const pulltypeOptions = model.pulltypeOptions || {};
+                                  const lengthPrice = model.lengthPrice || {};
                                   
                                   const isExpanded = expandedLengthOptions[model.id];
                                   const displayedOptions = isExpanded ? lengthOptions : lengthOptions.slice(0, 2);
@@ -2288,6 +2319,9 @@ export default function FastPricing() {
                                           <div className="font-medium text-gray-600">{length}</div>
                                           {pulltypeOptions[length] && (
                                             <div className="text-gray-500 mt-1">{pulltypeOptions[length]}</div>
+                                          )}
+                                          {lengthPrice[length] && lengthPrice[length] > 0 && (
+                                            <div className="text-green-500 mt-1 font-medium opacity-75">+${lengthPrice[length].toLocaleString()}</div>
                                           )}
                                         </div>
                                       ))}

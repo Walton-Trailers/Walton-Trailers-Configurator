@@ -24,16 +24,20 @@ export const trailerModels = pgTable("trailer_models", {
   name: text("name").notNull(),
   pullType: text("pull_type"), // 'bumper', 'gooseneck', 'both'
   gvwrRange: text("gvwr_range"), // e.g., "14,000 - 15,500"
-  gvwr: integer("gvwr"), // GVWR in pounds
-  payload: integer("payload"), // payload capacity in pounds
+  gvwr: text("gvwr"), // GVWR as text to match database
+  payload: text("payload"), // payload as text to match database
   deckSize: text("deck_size"), // e.g., "20' x 7'"
-  axles: integer("axles"), // number of axles
+  axles: text("axles"), // axles as text to match database
   deckHeight: text("deck_height"),
   overallWidth: text("overall_width"),
   lengthRange: text("length_range"), // e.g., "14 - 16'"
-  basePrice: integer("base_price").notNull().default(0),
-  imageUrl: text("image_url").notNull(),
-  standardFeatures: json("standard_features").$type<string[]>().notNull(),
+  basePrice: integer("base_price").default(0),
+  imageUrl: text("image_url"),
+  standardFeatures: json("features").$type<string[]>(), // Match actual column name
+  lengthOptions: json("length_options").$type<string[]>(), // Available lengths for this model
+  lengthPrice: json("length_price").$type<Record<string, number>>(), // Pricing for each length
+  pulltypeOptions: text("pulltype_options"), // Pull type options as text
+  isArchived: boolean("is_archived").default(false),
 });
 
 // Model Variants - specific configurations (e.g., DHV207-14B)
