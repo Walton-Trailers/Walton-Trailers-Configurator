@@ -568,7 +568,7 @@ export class MemStorage implements IStorage {
     return series;
   }
 
-  async createModel(data: { categoryId: number; seriesId?: number; modelSeries: string; name: string; basePrice?: number; imageUrl: string; standardFeatures: string[] }): Promise<TrailerModelResponse> {
+  async createModel(data: { categoryId: number; seriesId?: number; modelSeries: string; name: string; basePrice?: number; imageUrl: string; standardFeatures: string[]; gvwr?: string; payload?: string; deckSize?: string; axles?: string }): Promise<TrailerModelResponse> {
     // Basic implementation for mem storage
     const model: TrailerModelResponse = {
       id: this.currentId++,
@@ -1571,12 +1571,12 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
-  async createModel(data: { categoryId: number; seriesId?: number; modelSeries: string; name: string; basePrice?: number; imageUrl: string; standardFeatures: string[] }): Promise<TrailerModelResponse> {
+  async createModel(data: { categoryId: number; seriesId?: number; modelSeries: string; name: string; basePrice?: number; imageUrl: string; standardFeatures: string[]; gvwr?: string; payload?: string; deckSize?: string; axles?: string }): Promise<TrailerModelResponse> {
     try {
       const result = await db.execute(sql`
-        INSERT INTO trailer_models (category_id, series_id, model_id, name, base_price, image_url, features)
-        VALUES (${data.categoryId}, ${data.seriesId || null}, ${data.modelSeries}, ${data.name}, ${data.basePrice || 0}, ${data.imageUrl}, ${JSON.stringify(data.standardFeatures)})
-        RETURNING id, category_id, series_id, model_id, name, base_price, image_url, features
+        INSERT INTO trailer_models (category_id, series_id, model_id, name, base_price, image_url, features, gvwr, payload, deck_size, axles)
+        VALUES (${data.categoryId}, ${data.seriesId || null}, ${data.modelSeries}, ${data.name}, ${data.basePrice || 0}, ${data.imageUrl}, ${JSON.stringify(data.standardFeatures)}, ${data.gvwr || null}, ${data.payload || null}, ${data.deckSize || null}, ${data.axles || null})
+        RETURNING id, category_id, series_id, model_id, name, base_price, image_url, features, gvwr, payload, deck_size, axles
       `);
       
       const model = result.rows[0] as any;
@@ -1603,10 +1603,10 @@ export class DatabaseStorage implements IStorage {
         seriesName: seriesName,
         modelId: model.model_id,
         name: model.name,
-        gvwr: "N/A",
-        payload: "N/A",
-        deckSize: "N/A",
-        axles: "N/A",
+        gvwr: model.gvwr,
+        payload: model.payload,
+        deckSize: model.deck_size,
+        axles: model.axles,
         imageUrl: model.image_url,
         features: JSON.parse(model.features),
         basePrice: model.base_price || 0,

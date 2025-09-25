@@ -310,7 +310,7 @@ export async function registerRoutes(app: Express): Promise<Express> {
   // Create a new model
   app.post("/api/models", requireAuth, async (req, res) => {
     try {
-      const { categoryId, seriesId, modelSeries, name, basePrice, imageUrl, standardFeatures } = req.body;
+      const { categoryId, seriesId, modelSeries, name, basePrice, imageUrl, standardFeatures, gvwr, payload, deckSize, axles } = req.body;
       const result = await storage.createModel({
         categoryId,
         seriesId,
@@ -319,6 +319,10 @@ export async function registerRoutes(app: Express): Promise<Express> {
         basePrice: basePrice || 0,
         imageUrl: imageUrl || '/objects/models/default-model.png',
         standardFeatures: standardFeatures || [],
+        gvwr,
+        payload,
+        deckSize,
+        axles,
       });
       res.json(result);
     } catch (error) {

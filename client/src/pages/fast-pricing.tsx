@@ -120,7 +120,11 @@ export default function FastPricing() {
     pullType: "",
     imageUrl: "",
     standardFeatures: [] as string[],
-    basePrice: ""
+    basePrice: "",
+    gvwr: "",
+    payload: "",
+    deckSize: "",
+    axles: ""
   });
   const [showAddOption, setShowAddOption] = useState(false);
   const [showArchivedOptions, setShowArchivedOptions] = useState(false);
@@ -262,7 +266,11 @@ export default function FastPricing() {
         pullType: "",
         imageUrl: "",
         standardFeatures: [],
-        basePrice: ""
+        basePrice: "",
+        gvwr: "",
+        payload: "",
+        deckSize: "",
+        axles: ""
       });
       toast({ title: "Success", description: "Model added successfully" });
     },
@@ -1637,6 +1645,42 @@ export default function FastPricing() {
                               placeholder="Enter base price"
                               value={String(newModelData.basePrice)}
                               onChange={(e: any) => setNewModelData({ ...newModelData, basePrice: e.target.value === "" ? "" : parseFloat(e.target.value) || 0 })}
+                            />
+                          </div>
+                        </div>
+                        <div className="grid grid-cols-2 gap-4">
+                          <div>
+                            <label className="block text-sm font-medium mb-1">GVWR</label>
+                            <Input
+                              placeholder="e.g., 14,000 lbs"
+                              value={newModelData.gvwr}
+                              onChange={(e: any) => setNewModelData({ ...newModelData, gvwr: e.target.value })}
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-sm font-medium mb-1">Payload</label>
+                            <Input
+                              placeholder="e.g., 9,820 lbs"
+                              value={newModelData.payload}
+                              onChange={(e: any) => setNewModelData({ ...newModelData, payload: e.target.value })}
+                            />
+                          </div>
+                        </div>
+                        <div className="grid grid-cols-2 gap-4">
+                          <div>
+                            <label className="block text-sm font-medium mb-1">Deck Size</label>
+                            <Input
+                              placeholder="e.g., 83 x 14-16ft"
+                              value={newModelData.deckSize}
+                              onChange={(e: any) => setNewModelData({ ...newModelData, deckSize: e.target.value })}
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-sm font-medium mb-1">Axles</label>
+                            <Input
+                              placeholder="e.g., Dual 7K"
+                              value={newModelData.axles}
+                              onChange={(e: any) => setNewModelData({ ...newModelData, axles: e.target.value })}
                             />
                           </div>
                         </div>
