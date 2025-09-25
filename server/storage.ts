@@ -781,7 +781,7 @@ export class DatabaseStorage implements IStorage {
   async getTrailerModelsByCategory(categorySlug: string): Promise<TrailerModelResponse[]> {
     try {
       const result = await db.execute(sql`
-        SELECT m.id, m.category_id, m.model_id, m.name, m.gvwr, m.payload, 
+        SELECT m.id, m.category_id, m.model_id, m.name, m.payload, 
                m.deck_size, m.axles, m.base_price, m.image_url, m.features
         FROM trailer_models m
         JOIN trailer_categories c ON m.category_id = c.id
@@ -811,7 +811,7 @@ export class DatabaseStorage implements IStorage {
   async getTrailerModelsBySeries(seriesId: number): Promise<TrailerModelResponse[]> {
     try {
       const result = await db.execute(sql`
-        SELECT m.id, m.category_id, m.series_id, m.model_id, m.name, m.gvwr, m.payload,
+        SELECT m.id, m.category_id, m.series_id, m.model_id, m.name, m.payload,
                m.deck_size, m.axles, m.base_price, m.image_url, m.features,
                m.pulltype_options, m.length_options, m.length_price,
                m.is_archived, m.category_sub_type, c.name as category_name,
@@ -1296,7 +1296,7 @@ export class DatabaseStorage implements IStorage {
       
       // Get the updated record with series information
       const result = await db.execute(sql`
-        SELECT m.id, m.category_id, m.series_id, m.model_id, m.name, m.gvwr, m.payload,
+        SELECT m.id, m.category_id, m.series_id, m.model_id, m.name, m.payload,
                m.deck_size, m.axles, m.length_options, m.pulltype_options, m.base_price, 
                m.image_url, m.features, m.is_archived, m.category_sub_type, s.name as series_name
         FROM trailer_models m
