@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useEffect } from "react";
-import { ArrowLeft, Edit, Save, X, Archive, RotateCcw, Upload, Image, Trash2 } from "lucide-react";
+import { ArrowLeft, Edit, Save, X, Archive, RotateCcw, Upload, Image, Trash2, Plus } from "lucide-react";
 import { Link } from "wouter";
 import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query";
 import { useFastQuery } from "@/hooks/useFastQuery";
@@ -138,6 +138,42 @@ export default function FastPricing() {
     hexColor: "",
     primerPrice: ""
   });
+  const [addingLengthFor, setAddingLengthFor] = useState<number | null>(null);
+  const [newLengthValue, setNewLengthValue] = useState("");
+
+  // Helper functions for managing length options
+  const addLengthOption = (modelId: number, lengthValue: string) => {
+    if (!lengthValue.trim()) return;
+    
+    const currentLengthOptions = editData[modelId]?.lengthOptions || 
+      (typeof (models.find(m => m.id === modelId)?.lengthOptions) === 'string' 
+        ? JSON.parse(models.find(m => m.id === modelId)?.lengthOptions || '[]')
+        : models.find(m => m.id === modelId)?.lengthOptions || []);
+    
+    const newLengthOptions = [...currentLengthOptions, lengthValue.trim()];
+    
+    setEditData({
+      ...editData,
+      [modelId]: { ...editData[modelId], lengthOptions: newLengthOptions }
+    });
+    
+    setNewLengthValue("");
+    setAddingLengthFor(null);
+  };
+
+  const removeLengthOption = (modelId: number, indexToRemove: number) => {
+    const currentLengthOptions = editData[modelId]?.lengthOptions || 
+      (typeof (models.find(m => m.id === modelId)?.lengthOptions) === 'string' 
+        ? JSON.parse(models.find(m => m.id === modelId)?.lengthOptions || '[]')
+        : models.find(m => m.id === modelId)?.lengthOptions || []);
+    
+    const newLengthOptions = currentLengthOptions.filter((_: any, index: number) => index !== indexToRemove);
+    
+    setEditData({
+      ...editData,
+      [modelId]: { ...editData[modelId], lengthOptions: newLengthOptions }
+    });
+  };
 
   const sessionId = localStorage.getItem("admin_session");
   const queryClient = useQueryClient();
@@ -1909,27 +1945,97 @@ export default function FastPricing() {
                     </TableCell>
                     <TableCell>
                       {editingModel?.id === model.id ? (
-                        <Input
-                          placeholder="Length Options"
-                          value={editData[model.id]?.lengthOptions ? JSON.stringify(editData[model.id]?.lengthOptions) : (model.lengthOptions ? JSON.stringify(model.lengthOptions) : "")}
-                          onChange={(e: any) => {
-                            try {
-                              const parsed = e.target.value ? JSON.parse(e.target.value) : null;
-                              setEditData({
-                                ...editData,
-                                [model.id]: { ...editData[model.id], lengthOptions: parsed }
-                              });
-                            } catch {
-                              // Allow invalid JSON while typing
-                              setEditData({
-                                ...editData,
-                                [model.id]: { ...editData[model.id], lengthOptions: e.target.value }
-                              });
-                            }
-                          }}
-                        />
+                        <div className="space-y-2">
+                          {/* Display existing length options as removable chips */}
+                          {(() => {
+                            const currentLengthOptions = editData[model.id]?.lengthOptions || 
+                              (typeof model.lengthOptions === 'string' 
+                                ? (model.lengthOptions ? JSON.parse(model.lengthOptions) : [])
+                                : model.lengthOptions || []);
+                            
+                            return (
+                              <div className="flex flex-wrap gap-1">
+                                {currentLengthOptions.map((length: string, index: number) => (
+                                  <span key={index} className="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium bg-blue-100 text-blue-800">
+                                    {length}
+                                    <button
+                                      type="button"
+                                      onClick={() => removeLengthOption(model.id, index)}
+                                      className="ml-1 inline-flex items-center justify-center w-3 h-3 rounded-full text-blue-400 hover:bg-blue-200 hover:text-blue-600"
+                                    >
+                                      <X className="w-2 h-2" />
+                                    </button>
+                                  </span>
+                                ))}
+                              </div>
+                            );
+                          })()}
+                          
+                          {/* Add new length option */}
+                          {addingLengthFor === model.id ? (
+                            <div className="flex gap-1">
+                              <Input
+                                placeholder="Enter length (e.g., 16', 20')"
+                                value={newLengthValue}
+                                onChange={(e: any) => setNewLengthValue(e.target.value)}
+                                onKeyPress={(e: any) => {
+                                  if (e.key === 'Enter') {
+                                    addLengthOption(model.id, newLengthValue);
+                                  }
+                                }}
+                                className="text-xs"
+                                autoFocus
+                              />
+                              <Button
+                                size="sm"
+                                onClick={() => addLengthOption(model.id, newLengthValue)}
+                                disabled={!newLengthValue.trim()}
+                                className="px-2 h-8"
+                              >
+                                <Save className="w-3 h-3" />
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => {
+                                  setAddingLengthFor(null);
+                                  setNewLengthValue("");
+                                }}
+                                className="px-2 h-8"
+                              >
+                                <X className="w-3 h-3" />
+                              </Button>
+                            </div>
+                          ) : (
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => setAddingLengthFor(model.id)}
+                              className="h-8 text-xs"
+                            >
+                              <Plus className="w-3 h-3 mr-1" />
+                              Add Length
+                            </Button>
+                          )}
+                        </div>
                       ) : (
-                        model.lengthOptions ? (typeof model.lengthOptions === 'string' ? model.lengthOptions : JSON.stringify(model.lengthOptions)) : "—"
+                        <div className="flex flex-wrap gap-1">
+                          {(() => {
+                            const lengthOptions = typeof model.lengthOptions === 'string' 
+                              ? (model.lengthOptions ? JSON.parse(model.lengthOptions) : [])
+                              : model.lengthOptions || [];
+                            
+                            return lengthOptions.length > 0 ? (
+                              lengthOptions.map((length: string, index: number) => (
+                                <span key={index} className="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium bg-gray-100 text-gray-800">
+                                  {length}
+                                </span>
+                              ))
+                            ) : (
+                              <span className="text-gray-400 text-xs">—</span>
+                            );
+                          })()}
+                        </div>
                       )}
                     </TableCell>
                     <TableCell>
@@ -2084,7 +2190,25 @@ export default function FastPricing() {
                             <TableCell>{model.payload || "—"}</TableCell>
                             <TableCell>{model.deckSize || "—"}</TableCell>
                             <TableCell>{model.axles || "—"}</TableCell>
-                            <TableCell>{model.lengthOptions ? (typeof model.lengthOptions === 'string' ? model.lengthOptions : JSON.stringify(model.lengthOptions)) : "—"}</TableCell>
+                            <TableCell>
+                              <div className="flex flex-wrap gap-1">
+                                {(() => {
+                                  const lengthOptions = typeof model.lengthOptions === 'string' 
+                                    ? (model.lengthOptions ? JSON.parse(model.lengthOptions) : [])
+                                    : model.lengthOptions || [];
+                                  
+                                  return lengthOptions.length > 0 ? (
+                                    lengthOptions.map((length: string, index: number) => (
+                                      <span key={index} className="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium bg-gray-100 text-gray-600">
+                                        {length}
+                                      </span>
+                                    ))
+                                  ) : (
+                                    <span className="text-gray-400 text-xs">—</span>
+                                  );
+                                })()}
+                              </div>
+                            </TableCell>
                             <TableCell>{model.pulltypeOptions || "—"}</TableCell>
                             <TableCell>${model.basePrice?.toLocaleString()}</TableCell>
                             <TableCell>
