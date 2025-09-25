@@ -1386,12 +1386,13 @@ Configuration Date: ${new Date().toLocaleDateString()}
                                   <SelectContent>
                                     {categoryOptions.map((option) => {
                                       // Parse pulltype data from selectedModel
-                                      let pulltypeOptions = {};
-                                      if (selectedModel?.pulltypeOptions) {
+                                      let pulltypeOptions: Record<string, string> = {};
+                                      if ((selectedModel as any)?.pulltypeOptions) {
                                         try {
-                                          pulltypeOptions = typeof selectedModel.pulltypeOptions === 'string' ? 
-                                            JSON.parse(selectedModel.pulltypeOptions) : 
-                                            selectedModel.pulltypeOptions;
+                                          const pulltypeData = (selectedModel as any).pulltypeOptions;
+                                          pulltypeOptions = typeof pulltypeData === 'string' ? 
+                                            JSON.parse(pulltypeData) : 
+                                            pulltypeData || {};
                                         } catch (e) {
                                           console.warn('Failed to parse pulltype options:', e);
                                         }
