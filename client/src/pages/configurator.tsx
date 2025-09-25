@@ -426,12 +426,21 @@ export default function Configurator() {
       return selectedModel?.gvwr || 'N/A';
     }
 
-    // Check if a length is selected and the model has length-specific GVWR data
-    if (selectedOptions.length && selectedModel.lengthGvwr) {
+    // If model has length-specific GVWR data, use it
+    if (selectedModel.lengthGvwr) {
       const lengthOptions = options.filter(opt => opt.category === 'length');
-      const selectedLengthOption = lengthOptions.find(opt => opt.id === selectedOptions.length);
       
-      if (selectedLengthOption) {
+      // Determine which length option to use
+      let targetLengthOption;
+      if (selectedOptions.length) {
+        // Use explicitly selected length
+        targetLengthOption = lengthOptions.find(opt => opt.id === selectedOptions.length);
+      } else if (lengthOptions.length > 0) {
+        // Use default (first) length option when no length is explicitly selected
+        targetLengthOption = lengthOptions[0];
+      }
+      
+      if (targetLengthOption) {
         // Parse lengthGvwr data (it might be string or object)
         let lengthGvwrData = selectedModel.lengthGvwr;
         if (typeof lengthGvwrData === 'string') {
@@ -443,8 +452,8 @@ export default function Configurator() {
           }
         }
 
-        // Get GVWR for the selected length
-        const gvwrForLength = lengthGvwrData[selectedLengthOption.name];
+        // Get GVWR for the target length
+        const gvwrForLength = lengthGvwrData[targetLengthOption.name];
         if (gvwrForLength) {
           return gvwrForLength;
         }
