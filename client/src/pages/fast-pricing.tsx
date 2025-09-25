@@ -140,6 +140,7 @@ export default function FastPricing() {
   });
   const [addingLengthFor, setAddingLengthFor] = useState<number | null>(null);
   const [newLengthValue, setNewLengthValue] = useState("");
+  const [expandedLengthOptions, setExpandedLengthOptions] = useState<Record<number, boolean>>({});
 
   // Helper functions for managing length options and their pull types
   const addLengthOption = (modelId: number, lengthValue: string) => {
@@ -1998,9 +1999,13 @@ export default function FastPricing() {
                             const currentPulltypeOptions = editData[model.id]?.pulltypeOptions || 
                               model.pulltypeOptions || {};
                             
+                            const isExpanded = expandedLengthOptions[model.id];
+                            const displayedOptions = isExpanded ? currentLengthOptions : currentLengthOptions.slice(0, 2);
+                            const hasMore = currentLengthOptions.length > 2;
+                            
                             return (
                               <div className="space-y-2">
-                                {currentLengthOptions.map((length: string, index: number) => (
+                                {displayedOptions.map((length: string, index: number) => (
                                   <div key={index} className="border rounded-md p-2 bg-gray-50">
                                     <div className="flex items-center justify-between mb-1">
                                       <span className="text-xs font-medium text-blue-800">{length}</span>
@@ -2020,6 +2025,18 @@ export default function FastPricing() {
                                     />
                                   </div>
                                 ))}
+                                {hasMore && (
+                                  <button
+                                    type="button"
+                                    onClick={() => setExpandedLengthOptions({
+                                      ...expandedLengthOptions,
+                                      [model.id]: !isExpanded
+                                    })}
+                                    className="text-xs text-blue-600 hover:text-blue-800 font-medium"
+                                  >
+                                    {isExpanded ? 'Show Less' : `Display More (${currentLengthOptions.length - 2} more)`}
+                                  </button>
+                                )}
                               </div>
                             );
                           })()}
@@ -2080,15 +2097,33 @@ export default function FastPricing() {
                             
                             const pulltypeOptions = model.pulltypeOptions || {};
                             
+                            const isExpanded = expandedLengthOptions[model.id];
+                            const displayedOptions = isExpanded ? lengthOptions : lengthOptions.slice(0, 2);
+                            const hasMore = lengthOptions.length > 2;
+                            
                             return lengthOptions.length > 0 ? (
-                              lengthOptions.map((length: string, index: number) => (
-                                <div key={index} className="text-xs border rounded px-2 py-1 bg-gray-50">
-                                  <div className="font-medium text-gray-800">{length}</div>
-                                  {pulltypeOptions[length] && (
-                                    <div className="text-gray-600 mt-1">{pulltypeOptions[length]}</div>
-                                  )}
-                                </div>
-                              ))
+                              <div className="space-y-1">
+                                {displayedOptions.map((length: string, index: number) => (
+                                  <div key={index} className="text-xs border rounded px-2 py-1 bg-gray-50">
+                                    <div className="font-medium text-gray-800">{length}</div>
+                                    {pulltypeOptions[length] && (
+                                      <div className="text-gray-600 mt-1">{pulltypeOptions[length]}</div>
+                                    )}
+                                  </div>
+                                ))}
+                                {hasMore && (
+                                  <button
+                                    type="button"
+                                    onClick={() => setExpandedLengthOptions({
+                                      ...expandedLengthOptions,
+                                      [model.id]: !isExpanded
+                                    })}
+                                    className="text-xs text-blue-600 hover:text-blue-800 font-medium mt-1"
+                                  >
+                                    {isExpanded ? 'Show Less' : `Display More (${lengthOptions.length - 2} more)`}
+                                  </button>
+                                )}
+                              </div>
                             ) : (
                               <span className="text-gray-400 text-xs">—</span>
                             );
@@ -2242,15 +2277,33 @@ export default function FastPricing() {
                                   
                                   const pulltypeOptions = model.pulltypeOptions || {};
                                   
+                                  const isExpanded = expandedLengthOptions[model.id];
+                                  const displayedOptions = isExpanded ? lengthOptions : lengthOptions.slice(0, 2);
+                                  const hasMore = lengthOptions.length > 2;
+                                  
                                   return lengthOptions.length > 0 ? (
-                                    lengthOptions.map((length: string, index: number) => (
-                                      <div key={index} className="text-xs border rounded px-2 py-1 bg-gray-50 opacity-60">
-                                        <div className="font-medium text-gray-600">{length}</div>
-                                        {pulltypeOptions[length] && (
-                                          <div className="text-gray-500 mt-1">{pulltypeOptions[length]}</div>
-                                        )}
-                                      </div>
-                                    ))
+                                    <div className="space-y-1">
+                                      {displayedOptions.map((length: string, index: number) => (
+                                        <div key={index} className="text-xs border rounded px-2 py-1 bg-gray-50 opacity-60">
+                                          <div className="font-medium text-gray-600">{length}</div>
+                                          {pulltypeOptions[length] && (
+                                            <div className="text-gray-500 mt-1">{pulltypeOptions[length]}</div>
+                                          )}
+                                        </div>
+                                      ))}
+                                      {hasMore && (
+                                        <button
+                                          type="button"
+                                          onClick={() => setExpandedLengthOptions({
+                                            ...expandedLengthOptions,
+                                            [model.id]: !isExpanded
+                                          })}
+                                          className="text-xs text-blue-600 hover:text-blue-800 font-medium mt-1 opacity-60"
+                                        >
+                                          {isExpanded ? 'Show Less' : `Display More (${lengthOptions.length - 2} more)`}
+                                        </button>
+                                      )}
+                                    </div>
                                   ) : (
                                     <span className="text-gray-400 text-xs">—</span>
                                   );
