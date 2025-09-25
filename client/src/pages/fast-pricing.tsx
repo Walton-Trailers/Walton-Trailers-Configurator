@@ -1913,7 +1913,6 @@ export default function FastPricing() {
                   <TableHead>Name</TableHead>
                   <TableHead>Category</TableHead>
                   <TableHead>Series</TableHead>
-                  <TableHead>GVWR</TableHead>
                   <TableHead>Payload</TableHead>
                   <TableHead>Deck Size</TableHead>
                   <TableHead>Axles</TableHead>
@@ -1995,20 +1994,6 @@ export default function FastPricing() {
                         </Select>
                       ) : (
                         model.seriesName ?? "No Series"
-                      )}
-                    </TableCell>
-                    <TableCell>
-                      {editingModel?.id === model.id ? (
-                        <Input
-                          placeholder="GVWR"
-                          value={editData[model.id]?.gvwr ?? model.gvwr ?? ""}
-                          onChange={(e: any) => setEditData({
-                            ...editData,
-                            [model.id]: { ...editData[model.id], gvwr: e.target.value || null }
-                          })}
-                        />
-                      ) : (
-                        model.gvwr || "—"
                       )}
                     </TableCell>
                     <TableCell>
@@ -2364,7 +2349,6 @@ export default function FastPricing() {
                           <TableHead>Name</TableHead>
                           <TableHead>Category</TableHead>
                           <TableHead>Series</TableHead>
-                          <TableHead>GVWR</TableHead>
                           <TableHead>Payload</TableHead>
                           <TableHead>Deck Size</TableHead>
                           <TableHead>Axles</TableHead>
@@ -2381,7 +2365,6 @@ export default function FastPricing() {
                             <TableCell>{model.name}</TableCell>
                             <TableCell>{model.categoryName}</TableCell>
                             <TableCell>{model.seriesName ?? "No Series"}</TableCell>
-                            <TableCell>{model.gvwr || "—"}</TableCell>
                             <TableCell>{model.payload || "—"}</TableCell>
                             <TableCell>{model.deckSize || "—"}</TableCell>
                             <TableCell>{model.axles || "—"}</TableCell>
