@@ -1850,31 +1850,29 @@ export default function FastPricing() {
                     <TableCell>
                       {editingModel?.id === model.id ? (
                         <Input
-                          type="number"
                           placeholder="GVWR"
                           value={editData[model.id]?.gvwr ?? model.gvwr ?? ""}
                           onChange={(e: any) => setEditData({
                             ...editData,
-                            [model.id]: { ...editData[model.id], gvwr: e.target.value === "" ? null : parseInt(e.target.value) || null }
+                            [model.id]: { ...editData[model.id], gvwr: e.target.value || null }
                           })}
                         />
                       ) : (
-                        model.gvwr ? model.gvwr.toLocaleString() : "—"
+                        model.gvwr || "—"
                       )}
                     </TableCell>
                     <TableCell>
                       {editingModel?.id === model.id ? (
                         <Input
-                          type="number"
                           placeholder="Payload"
                           value={editData[model.id]?.payload ?? model.payload ?? ""}
                           onChange={(e: any) => setEditData({
                             ...editData,
-                            [model.id]: { ...editData[model.id], payload: e.target.value === "" ? null : parseInt(e.target.value) || null }
+                            [model.id]: { ...editData[model.id], payload: e.target.value || null }
                           })}
                         />
                       ) : (
-                        model.payload ? model.payload.toLocaleString() : "—"
+                        model.payload || "—"
                       )}
                     </TableCell>
                     <TableCell>
@@ -2037,8 +2035,8 @@ export default function FastPricing() {
                             <TableCell>{model.name}</TableCell>
                             <TableCell>{model.categoryName}</TableCell>
                             <TableCell>{model.seriesName ?? "No Series"}</TableCell>
-                            <TableCell>{model.gvwr ? model.gvwr.toLocaleString() : "—"}</TableCell>
-                            <TableCell>{model.payload ? model.payload.toLocaleString() : "—"}</TableCell>
+                            <TableCell>{model.gvwr || "—"}</TableCell>
+                            <TableCell>{model.payload || "—"}</TableCell>
                             <TableCell>{model.deckSize || "—"}</TableCell>
                             <TableCell>{model.axles || "—"}</TableCell>
                             <TableCell>${model.basePrice?.toLocaleString()}</TableCell>
