@@ -2067,8 +2067,8 @@ export default function FastPricing() {
                               model.pulltypeOptions || {};
                             
                             const isExpanded = expandedLengthOptions[model.id];
-                            const displayedOptions = isExpanded ? currentLengthOptions : currentLengthOptions.slice(0, 2);
-                            const hasMore = currentLengthOptions.length > 2;
+                            const displayedOptions = isExpanded ? currentLengthOptions : [];
+                            const hasLengths = currentLengthOptions.length > 0;
                             
                             return (
                               <div className="space-y-2">
@@ -2136,7 +2136,7 @@ export default function FastPricing() {
                                     />
                                   </div>
                                 ))}
-                                {hasMore && (
+                                {hasLengths && (
                                   <button
                                     type="button"
                                     onClick={() => setExpandedLengthOptions({
@@ -2145,7 +2145,7 @@ export default function FastPricing() {
                                     })}
                                     className="text-xs text-blue-600 hover:text-blue-800 font-medium"
                                   >
-                                    {isExpanded ? 'Show Less' : `Display More (${currentLengthOptions.length - 2} more)`}
+                                    {isExpanded ? 'Hide Lengths' : 'Display Lengths'}
                                   </button>
                                 )}
                               </div>
@@ -2212,8 +2212,8 @@ export default function FastPricing() {
                               : model.lengthPrice || {};
                             
                             const isExpanded = expandedLengthOptions[model.id];
-                            const displayedOptions = isExpanded ? lengthOptions : lengthOptions.slice(0, 2);
-                            const hasMore = lengthOptions.length > 2;
+                            const displayedOptions = isExpanded ? lengthOptions : [];
+                            const hasLengths = lengthOptions.length > 0;
                             
                             return lengthOptions.length > 0 ? (
                               <div className="space-y-1">
@@ -2228,7 +2228,7 @@ export default function FastPricing() {
                                     )}
                                   </div>
                                 ))}
-                                {hasMore && (
+                                {hasLengths && (
                                   <button
                                     type="button"
                                     onClick={() => setExpandedLengthOptions({
@@ -2237,7 +2237,7 @@ export default function FastPricing() {
                                     })}
                                     className="text-xs text-blue-600 hover:text-blue-800 font-medium mt-1"
                                   >
-                                    {isExpanded ? 'Show Less' : `Display More (${lengthOptions.length - 2} more)`}
+                                    {isExpanded ? 'Hide Lengths' : 'Display Lengths'}
                                   </button>
                                 )}
                               </div>
@@ -2398,8 +2398,8 @@ export default function FastPricing() {
                                     : model.lengthPrice || {};
                                   
                                   const isExpanded = expandedLengthOptions[model.id];
-                                  const displayedOptions = isExpanded ? lengthOptions : lengthOptions.slice(0, 2);
-                                  const hasMore = lengthOptions.length > 2;
+                                  const displayedOptions = isExpanded ? lengthOptions : [];
+                                  const hasLengths = lengthOptions.length > 0;
                                   
                                   return lengthOptions.length > 0 ? (
                                     <div className="space-y-1">
@@ -2414,7 +2414,7 @@ export default function FastPricing() {
                                           )}
                                         </div>
                                       ))}
-                                      {hasMore && (
+                                      {hasLengths && (
                                         <button
                                           type="button"
                                           onClick={() => setExpandedLengthOptions({
@@ -2423,7 +2423,7 @@ export default function FastPricing() {
                                           })}
                                           className="text-xs text-blue-600 hover:text-blue-800 font-medium mt-1 opacity-60"
                                         >
-                                          {isExpanded ? 'Show Less' : `Display More (${lengthOptions.length - 2} more)`}
+                                          {isExpanded ? 'Hide Lengths' : 'Display Lengths'}
                                         </button>
                                       )}
                                     </div>
