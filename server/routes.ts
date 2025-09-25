@@ -2947,5 +2947,37 @@ export async function registerRoutes(app: Express): Promise<Express> {
     }
   });
 
+  // Temporary cache clear endpoint for debugging
+  app.post("/api/clear-cache", async (req, res) => {
+    try {
+      storage.clear();
+      res.json({ message: "Cache cleared successfully" });
+    } catch (error) {
+      res.status(500).json({ message: "Failed to clear cache", error: error.message });
+    }
+  });
+
+  // Temporary endpoint to check model data directly from database
+  app.get("/api/debug/model/:modelId", async (req, res) => {
+    try {
+      const { modelId } = req.params;
+      const result = await db.execute(sql`
+        SELECT m.*, c.name as category_name, s.name as series_name
+        FROM trailer_models m
+        JOIN trailer_categories c ON m.category_id = c.id
+        LEFT JOIN trailer_series s ON m.series_id = s.id
+        WHERE m.model_id = ${modelId}
+      `);
+      
+      if (result.rows.length === 0) {
+        return res.status(404).json({ message: "Model not found" });
+      }
+      
+      res.json(result.rows[0]);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch model data", error: error.message });
+    }
+  });
+
   return app;
 }
