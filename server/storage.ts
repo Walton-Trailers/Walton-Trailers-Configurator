@@ -1309,7 +1309,7 @@ export class DatabaseStorage implements IStorage {
       // Get the updated record with series information
       const result = await db.execute(sql`
         SELECT m.id, m.category_id, m.series_id, m.model_id, m.name, m.payload,
-               m.deck_size, m.axles, m.length_options, m.pulltype_options, m.base_price, 
+               m.deck_size, m.axles, m.length_options, m.pulltype_options, m.length_price, m.length_gvwr, m.base_price, 
                m.image_url, m.features, m.is_archived, m.category_sub_type, s.name as series_name
         FROM trailer_models m
         LEFT JOIN trailer_series s ON m.series_id = s.id
@@ -1333,7 +1333,9 @@ export class DatabaseStorage implements IStorage {
         deckSize: updatedModel.deck_size,
         axles: updatedModel.axles,
         lengthOptions: updatedModel.length_options ? (typeof updatedModel.length_options === 'string' ? JSON.parse(updatedModel.length_options) : updatedModel.length_options) : null,
-        pulltypeOptions: updatedModel.pulltype_options,
+        lengthPrice: updatedModel.length_price ? (typeof updatedModel.length_price === 'string' ? JSON.parse(updatedModel.length_price) : updatedModel.length_price) : null,
+        lengthGvwr: updatedModel.length_gvwr ? (typeof updatedModel.length_gvwr === 'string' ? JSON.parse(updatedModel.length_gvwr) : updatedModel.length_gvwr) : null,
+        pulltypeOptions: updatedModel.pulltype_options ? (typeof updatedModel.pulltype_options === 'string' ? JSON.parse(updatedModel.pulltype_options) : updatedModel.pulltype_options) : null,
         basePrice: updatedModel.base_price,
         imageUrl: updatedModel.image_url,
         features: updatedModel.features || [],
