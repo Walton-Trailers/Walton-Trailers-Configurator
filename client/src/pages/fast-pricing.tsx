@@ -141,7 +141,8 @@ export default function FastPricing() {
   const [addingLengthFor, setAddingLengthFor] = useState<number | null>(null);
   const [newLengthValue, setNewLengthValue] = useState("");
   const [expandedLengthOptions, setExpandedLengthOptions] = useState<Record<number, boolean>>({});
-  const [editingLengthFor, setEditingLengthFor] = useState<{modelId: number, lengthIndex: number} | null>(null);
+  const [editingLengthFor, setEditingLengthFor] = useState<{modelId: number, lengthIndex: number, originalLength: string} | null>(null);
+  const [tempLengthValue, setTempLengthValue] = useState("");
 
   // Helper functions for managing length options and their pull types
   const addLengthOption = (modelId: number, lengthValue: string) => {
@@ -239,7 +240,9 @@ export default function FastPricing() {
   };
 
   const updateLengthValue = (modelId: number, oldLength: string, newLength: string) => {
-    if (!newLength.trim() || oldLength === newLength.trim()) return;
+    if (!newLength.trim() || oldLength === newLength.trim()) {
+      return;
+    }
     
     const currentLengthOptions = editData[modelId]?.lengthOptions || 
       (typeof (models.find(m => m.id === modelId)?.lengthOptions) === 'string' 
@@ -256,7 +259,7 @@ export default function FastPricing() {
       models.find(m => m.id === modelId)?.pulltypeOptions || {};
     
     const newPulltypeOptions = { ...currentPulltypeOptions };
-    if (newPulltypeOptions[oldLength]) {
+    if (newPulltypeOptions[oldLength] !== undefined) {
       newPulltypeOptions[newLength.trim()] = newPulltypeOptions[oldLength];
       delete newPulltypeOptions[oldLength];
     }
@@ -280,8 +283,6 @@ export default function FastPricing() {
         lengthPrice: newLengthPrice
       }
     });
-    
-    setEditingLengthFor(null);
   };
 
   const sessionId = localStorage.getItem("admin_session");
@@ -2076,26 +2077,25 @@ export default function FastPricing() {
                                     <div className="flex items-center justify-between mb-1">
                                       {editingLengthFor?.modelId === model.id && editingLengthFor?.lengthIndex === index ? (
                                         <Input
-                                          value={length}
+                                          value={tempLengthValue}
                                           onChange={(e: any) => {
-                                            // Update the displayed length immediately while editing
-                                            const newLengthOptions = [...currentLengthOptions];
-                                            newLengthOptions[index] = e.target.value;
-                                            setEditData({
-                                              ...editData,
-                                              [model.id]: { 
-                                                ...editData[model.id], 
-                                                lengthOptions: newLengthOptions
-                                              }
-                                            });
+                                            // Only update the temporary display value while typing
+                                            setTempLengthValue(e.target.value);
                                           }}
-                                          onBlur={(e: any) => updateLengthValue(model.id, length, e.target.value)}
+                                          onBlur={(e: any) => {
+                                            updateLengthValue(model.id, editingLengthFor.originalLength, e.target.value);
+                                            setEditingLengthFor(null);
+                                            setTempLengthValue("");
+                                          }}
                                           onKeyPress={(e: any) => {
                                             if (e.key === 'Enter') {
-                                              updateLengthValue(model.id, length, e.target.value);
+                                              updateLengthValue(model.id, editingLengthFor.originalLength, e.target.value);
+                                              setEditingLengthFor(null);
+                                              setTempLengthValue("");
                                             }
                                             if (e.key === 'Escape') {
                                               setEditingLengthFor(null);
+                                              setTempLengthValue("");
                                             }
                                           }}
                                           className="text-xs h-6 font-medium"
@@ -2104,7 +2104,10 @@ export default function FastPricing() {
                                       ) : (
                                         <span 
                                           className="text-xs font-medium text-blue-800 cursor-pointer hover:text-blue-600"
-                                          onClick={() => setEditingLengthFor({modelId: model.id, lengthIndex: index})}
+                                          onClick={() => {
+                                            setEditingLengthFor({modelId: model.id, lengthIndex: index, originalLength: length});
+                                            setTempLengthValue(length);
+                                          }}
                                           title="Click to edit length value"
                                         >
                                           {length}
