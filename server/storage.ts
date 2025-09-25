@@ -139,6 +139,15 @@ export interface IStorage {
   archiveSeries(id: number): Promise<any>;
   restoreSeries(id: number): Promise<any>;
   
+  // Trailer Lengths & Pull Types operations
+  getAllTrailerLengths(): Promise<any[]>;
+  getTrailerLengthsByModel(modelId: number): Promise<any[]>;
+  createTrailerLength(data: { modelId: number; length: number; pullType: string }): Promise<any>;
+  updateTrailerLength(id: number, updates: { length?: number; pullType?: string; isArchived?: boolean }): Promise<any>;
+  deleteTrailerLength(id: number): Promise<void>;
+  archiveTrailerLength(id: number): Promise<any>;
+  restoreTrailerLength(id: number): Promise<any>;
+  
   // Integration operations
   saveAirtableConfig(config: { accessToken: string; baseId: string }): Promise<void>;
   getAirtableConfig(): Promise<{ accessToken: string; baseId: string } | null>;
@@ -1837,6 +1846,195 @@ export class DatabaseStorage implements IStorage {
       };
     } catch (error) {
       console.error('Error updating category:', error);
+      throw error;
+    }
+  }
+
+  // Trailer Lengths & Pull Types operations
+  async getAllTrailerLengths(): Promise<any[]> {
+    try {
+      const result = await db.execute(sql`
+        SELECT tl.id, tl.model_id, tl.length, tl.pull_type, 
+               COALESCE(tl.is_archived, false) as is_archived,
+               tl.created_at, tl.updated_at,
+               tm.name as model_name, tm.model_id as model_series
+        FROM trailer_lengths tl
+        JOIN trailer_models tm ON tl.model_id = tm.id
+        WHERE COALESCE(tl.is_archived, false) = false
+        ORDER BY tm.name, tl.length, tl.pull_type
+      `);
+      
+      return result.rows.map((length: any) => ({
+        id: length.id,
+        modelId: length.model_id,
+        length: length.length,
+        pullType: length.pull_type,
+        isArchived: length.is_archived,
+        createdAt: length.created_at,
+        updatedAt: length.updated_at,
+        modelName: length.model_name,
+        modelSeries: length.model_series,
+      }));
+    } catch (error) {
+      console.error('Error fetching all trailer lengths:', error);
+      throw error;
+    }
+  }
+
+  async getTrailerLengthsByModel(modelId: number): Promise<any[]> {
+    try {
+      const result = await db.execute(sql`
+        SELECT id, model_id, length, pull_type, 
+               COALESCE(is_archived, false) as is_archived,
+               created_at, updated_at
+        FROM trailer_lengths
+        WHERE model_id = ${modelId} AND COALESCE(is_archived, false) = false
+        ORDER BY length, pull_type
+      `);
+      
+      return result.rows.map((length: any) => ({
+        id: length.id,
+        modelId: length.model_id,
+        length: length.length,
+        pullType: length.pull_type,
+        isArchived: length.is_archived,
+        createdAt: length.created_at,
+        updatedAt: length.updated_at,
+      }));
+    } catch (error) {
+      console.error('Error fetching trailer lengths by model:', error);
+      throw error;
+    }
+  }
+
+  async createTrailerLength(data: { modelId: number; length: number; pullType: string }): Promise<any> {
+    try {
+      const result = await db.execute(sql`
+        INSERT INTO trailer_lengths (model_id, length, pull_type)
+        VALUES (${data.modelId}, ${data.length}, ${data.pullType})
+        RETURNING id, model_id, length, pull_type, is_archived, created_at, updated_at
+      `);
+      
+      const length = result.rows[0] as any;
+      return {
+        id: length.id,
+        modelId: length.model_id,
+        length: length.length,
+        pullType: length.pull_type,
+        isArchived: length.is_archived || false,
+        createdAt: length.created_at,
+        updatedAt: length.updated_at,
+      };
+    } catch (error) {
+      console.error('Error creating trailer length:', error);
+      throw error;
+    }
+  }
+
+  async updateTrailerLength(id: number, updates: { length?: number; pullType?: string; isArchived?: boolean }): Promise<any> {
+    try {
+      const setParts = [];
+      const values = [];
+
+      if (updates.length !== undefined) {
+        setParts.push('length = $' + (values.length + 2));
+        values.push(updates.length);
+      }
+      
+      if (updates.pullType !== undefined) {
+        setParts.push('pull_type = $' + (values.length + 2));
+        values.push(updates.pullType);
+      }
+
+      if (updates.isArchived !== undefined) {
+        setParts.push('is_archived = $' + (values.length + 2));
+        values.push(updates.isArchived);
+      }
+
+      if (setParts.length === 0) {
+        throw new Error('No updates provided');
+      }
+
+      setParts.push('updated_at = CURRENT_TIMESTAMP');
+
+      const result = await db.execute(sql.raw(`
+        UPDATE trailer_lengths 
+        SET ${setParts.join(', ')}
+        WHERE id = $1
+        RETURNING id, model_id, length, pull_type, is_archived, created_at, updated_at
+      `, [id, ...values]));
+      
+      const length = result.rows[0] as any;
+      return {
+        id: length.id,
+        modelId: length.model_id,
+        length: length.length,
+        pullType: length.pull_type,
+        isArchived: length.is_archived || false,
+        createdAt: length.created_at,
+        updatedAt: length.updated_at,
+      };
+    } catch (error) {
+      console.error('Error updating trailer length:', error);
+      throw error;
+    }
+  }
+
+  async deleteTrailerLength(id: number): Promise<void> {
+    try {
+      await db.execute(sql`DELETE FROM trailer_lengths WHERE id = ${id}`);
+    } catch (error) {
+      console.error('Error deleting trailer length:', error);
+      throw error;
+    }
+  }
+
+  async archiveTrailerLength(id: number): Promise<any> {
+    try {
+      const result = await db.execute(sql`
+        UPDATE trailer_lengths 
+        SET is_archived = true, updated_at = CURRENT_TIMESTAMP
+        WHERE id = ${id}
+        RETURNING id, model_id, length, pull_type, is_archived, created_at, updated_at
+      `);
+      
+      const length = result.rows[0] as any;
+      return {
+        id: length.id,
+        modelId: length.model_id,
+        length: length.length,
+        pullType: length.pull_type,
+        isArchived: length.is_archived,
+        createdAt: length.created_at,
+        updatedAt: length.updated_at,
+      };
+    } catch (error) {
+      console.error('Error archiving trailer length:', error);
+      throw error;
+    }
+  }
+
+  async restoreTrailerLength(id: number): Promise<any> {
+    try {
+      const result = await db.execute(sql`
+        UPDATE trailer_lengths 
+        SET is_archived = false, updated_at = CURRENT_TIMESTAMP
+        WHERE id = ${id}
+        RETURNING id, model_id, length, pull_type, is_archived, created_at, updated_at
+      `);
+      
+      const length = result.rows[0] as any;
+      return {
+        id: length.id,
+        modelId: length.model_id,
+        length: length.length,
+        pullType: length.pull_type,
+        isArchived: length.is_archived,
+        createdAt: length.created_at,
+        updatedAt: length.updated_at,
+      };
+    } catch (error) {
+      console.error('Error restoring trailer length:', error);
       throw error;
     }
   }
