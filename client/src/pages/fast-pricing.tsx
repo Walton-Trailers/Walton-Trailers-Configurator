@@ -2122,7 +2122,9 @@ export default function FastPricing() {
                               : model.lengthOptions || [];
                             
                             const pulltypeOptions = model.pulltypeOptions || {};
-                            const lengthPrice = model.lengthPrice || {};
+                            const lengthPrice = typeof model.lengthPrice === 'string' 
+                              ? (model.lengthPrice ? JSON.parse(model.lengthPrice) : {})
+                              : model.lengthPrice || {};
                             
                             const isExpanded = expandedLengthOptions[model.id];
                             const displayedOptions = isExpanded ? lengthOptions : lengthOptions.slice(0, 2);
@@ -2306,7 +2308,9 @@ export default function FastPricing() {
                                     : model.lengthOptions || [];
                                   
                                   const pulltypeOptions = model.pulltypeOptions || {};
-                                  const lengthPrice = model.lengthPrice || {};
+                                  const lengthPrice = typeof model.lengthPrice === 'string' 
+                                    ? (model.lengthPrice ? JSON.parse(model.lengthPrice) : {})
+                                    : model.lengthPrice || {};
                                   
                                   const isExpanded = expandedLengthOptions[model.id];
                                   const displayedOptions = isExpanded ? lengthOptions : lengthOptions.slice(0, 2);
