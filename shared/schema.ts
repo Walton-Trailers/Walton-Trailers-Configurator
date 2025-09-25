@@ -299,6 +299,17 @@ export const mediaFiles = pgTable("media_files", {
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
+// Trailer Lengths - For managing length and pull type relationships per model
+export const trailerLengths = pgTable("trailer_lengths", {
+  id: serial("id").primaryKey(),
+  modelId: integer("model_id").notNull(), // Foreign key to trailer_models
+  length: integer("length").notNull(), // Length in feet
+  pullType: text("pull_type").notNull(), // 'bumper', 'gooseneck', 'pintle', etc.
+  isArchived: boolean("is_archived").default(false),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
 // Insert schemas
 export const insertDealerSchema = createInsertSchema(dealers).omit({ 
   id: true,
@@ -369,6 +380,11 @@ export const insertMediaFileSchema = createInsertSchema(mediaFiles).omit({
   createdAt: true,
   updatedAt: true,
 });
+export const insertTrailerLengthSchema = createInsertSchema(trailerLengths).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
 
 // Types
 export type Dealer = typeof dealers.$inferSelect;
@@ -393,6 +409,7 @@ export type PasswordResetToken = typeof passwordResetTokens.$inferSelect;
 export type CustomQuoteRequest = typeof customQuoteRequests.$inferSelect;
 export type QuoteRequest = typeof quoteRequests.$inferSelect;
 export type MediaFile = typeof mediaFiles.$inferSelect;
+export type TrailerLength = typeof trailerLengths.$inferSelect;
 export type InsertTrailerCategory = z.infer<typeof insertTrailerCategorySchema>;
 export type InsertTrailerSeries = z.infer<typeof insertTrailerSeriesSchema>;
 export type InsertTrailerModel = z.infer<typeof insertTrailerModelSchema>;
@@ -405,6 +422,7 @@ export type InsertPasswordResetToken = z.infer<typeof insertPasswordResetTokenSc
 export type InsertCustomQuoteRequest = z.infer<typeof insertCustomQuoteRequestSchema>;
 export type InsertQuoteRequest = z.infer<typeof insertQuoteRequestSchema>;
 export type InsertMediaFile = z.infer<typeof insertMediaFileSchema>;
+export type InsertTrailerLength = z.infer<typeof insertTrailerLengthSchema>;
 
 // Relations
 export const trailerCategoriesRelations = relations(trailerCategories, ({ many }) => ({
@@ -431,6 +449,7 @@ export const trailerModelsRelations = relations(trailerModels, ({ one, many }) =
   }),
   variants: many(modelVariants),
   configurations: many(userConfigurations),
+  lengths: many(trailerLengths),
 }));
 
 export const modelVariantsRelations = relations(modelVariants, ({ one }) => ({
@@ -512,5 +531,12 @@ export const mediaFilesRelations = relations(mediaFiles, ({ one }) => ({
   uploadedByUser: one(adminUsers, {
     fields: [mediaFiles.uploadedBy],
     references: [adminUsers.id],
+  }),
+}));
+
+export const trailerLengthsRelations = relations(trailerLengths, ({ one }) => ({
+  model: one(trailerModels, {
+    fields: [trailerLengths.modelId],
+    references: [trailerModels.id],
   }),
 }));
