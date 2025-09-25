@@ -1850,7 +1850,6 @@ export default function FastPricing() {
                   <TableHead>Deck Size</TableHead>
                   <TableHead>Axles</TableHead>
                   <TableHead>Length Options</TableHead>
-                  <TableHead>Pull Type Options</TableHead>
                   <TableHead>Price</TableHead>
                   <TableHead>Image</TableHead>
                   <TableHead>Actions</TableHead>
@@ -2098,11 +2097,6 @@ export default function FastPricing() {
                       )}
                     </TableCell>
                     <TableCell>
-                      <span className="text-xs text-gray-500 italic">
-                        Pull types are managed in Length Options →
-                      </span>
-                    </TableCell>
-                    <TableCell>
                       {editingModel?.id === model.id ? (
                         <Input
                           type="number"
@@ -2223,7 +2217,6 @@ export default function FastPricing() {
                           <TableHead>Deck Size</TableHead>
                           <TableHead>Axles</TableHead>
                           <TableHead>Length Options</TableHead>
-                          <TableHead>Pull Type Options</TableHead>
                           <TableHead>Price</TableHead>
                           <TableHead>Image</TableHead>
                           <TableHead>Actions</TableHead>
@@ -2263,11 +2256,6 @@ export default function FastPricing() {
                                   );
                                 })()}
                               </div>
-                            </TableCell>
-                            <TableCell>
-                              <span className="text-xs text-gray-400 italic">
-                                See Length Options
-                              </span>
                             </TableCell>
                             <TableCell>${model.basePrice?.toLocaleString()}</TableCell>
                             <TableCell>
