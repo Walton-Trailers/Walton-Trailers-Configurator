@@ -1029,7 +1029,7 @@ export class DatabaseStorage implements IStorage {
         deckSize: model.deck_size,
         axles: model.axles,
         lengthOptions: model.length_options ? (typeof model.length_options === 'string' ? JSON.parse(model.length_options) : model.length_options) : null,
-        pulltypeOptions: model.pulltype_options,
+        pulltypeOptions: model.pulltype_options ? (typeof model.pulltype_options === 'string' ? JSON.parse(model.pulltype_options) : model.pulltype_options) : null,
         basePrice: model.base_price,
         imageUrl: model.image_url,
         features: model.features || [],
@@ -1159,9 +1159,10 @@ export class DatabaseStorage implements IStorage {
         `);
       }
       if (updates.pulltypeOptions !== undefined) {
+        const pulltypeOptionsJson = updates.pulltypeOptions ? JSON.stringify(updates.pulltypeOptions) : null;
         await db.execute(sql`
           UPDATE trailer_models 
-          SET pulltype_options = ${updates.pulltypeOptions}
+          SET pulltype_options = ${pulltypeOptionsJson}
           WHERE id = ${id}
         `);
       }
@@ -1594,7 +1595,7 @@ export class DatabaseStorage implements IStorage {
     try {
       const result = await db.execute(sql`
         INSERT INTO trailer_models (category_id, series_id, model_id, name, base_price, image_url, features, gvwr, payload, deck_size, axles, length_options, pulltype_options)
-        VALUES (${data.categoryId}, ${data.seriesId || null}, ${data.modelSeries}, ${data.name}, ${data.basePrice || 0}, ${data.imageUrl}, ${JSON.stringify(data.standardFeatures)}, ${data.gvwr || null}, ${data.payload || null}, ${data.deckSize || null}, ${data.axles || null}, ${data.lengthOptions ? JSON.stringify(data.lengthOptions) : null}, ${data.pulltypeOptions || null})
+        VALUES (${data.categoryId}, ${data.seriesId || null}, ${data.modelSeries}, ${data.name}, ${data.basePrice || 0}, ${data.imageUrl}, ${JSON.stringify(data.standardFeatures)}, ${data.gvwr || null}, ${data.payload || null}, ${data.deckSize || null}, ${data.axles || null}, ${data.lengthOptions ? JSON.stringify(data.lengthOptions) : null}, ${data.pulltypeOptions ? JSON.stringify(data.pulltypeOptions) : null})
         RETURNING id, category_id, series_id, model_id, name, base_price, image_url, features, gvwr, payload, deck_size, axles, length_options, pulltype_options
       `);
       
@@ -1627,7 +1628,7 @@ export class DatabaseStorage implements IStorage {
         deckSize: model.deck_size,
         axles: model.axles,
         lengthOptions: model.length_options ? (typeof model.length_options === 'string' ? JSON.parse(model.length_options) : model.length_options) : null,
-        pulltypeOptions: model.pulltype_options,
+        pulltypeOptions: model.pulltype_options ? (typeof model.pulltype_options === 'string' ? JSON.parse(model.pulltype_options) : model.pulltype_options) : null,
         imageUrl: model.image_url,
         features: JSON.parse(model.features),
         basePrice: model.base_price || 0,

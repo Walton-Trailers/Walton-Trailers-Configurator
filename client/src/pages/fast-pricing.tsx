@@ -141,7 +141,7 @@ export default function FastPricing() {
   const [addingLengthFor, setAddingLengthFor] = useState<number | null>(null);
   const [newLengthValue, setNewLengthValue] = useState("");
 
-  // Helper functions for managing length options
+  // Helper functions for managing length options and their pull types
   const addLengthOption = (modelId: number, lengthValue: string) => {
     if (!lengthValue.trim()) return;
     
@@ -152,9 +152,22 @@ export default function FastPricing() {
     
     const newLengthOptions = [...currentLengthOptions, lengthValue.trim()];
     
+    // Initialize pull type options for this new length
+    const currentPulltypeOptions = editData[modelId]?.pulltypeOptions || 
+      models.find(m => m.id === modelId)?.pulltypeOptions || {};
+    
+    const newPulltypeOptions = {
+      ...currentPulltypeOptions,
+      [lengthValue.trim()]: "" // Initialize with empty string
+    };
+    
     setEditData({
       ...editData,
-      [modelId]: { ...editData[modelId], lengthOptions: newLengthOptions }
+      [modelId]: { 
+        ...editData[modelId], 
+        lengthOptions: newLengthOptions,
+        pulltypeOptions: newPulltypeOptions
+      }
     });
     
     setNewLengthValue("");
@@ -167,11 +180,41 @@ export default function FastPricing() {
         ? JSON.parse(models.find(m => m.id === modelId)?.lengthOptions || '[]')
         : models.find(m => m.id === modelId)?.lengthOptions || []);
     
+    const lengthToRemove = currentLengthOptions[indexToRemove];
     const newLengthOptions = currentLengthOptions.filter((_: any, index: number) => index !== indexToRemove);
+    
+    // Remove the pull type option for this length as well
+    const currentPulltypeOptions = editData[modelId]?.pulltypeOptions || 
+      models.find(m => m.id === modelId)?.pulltypeOptions || {};
+    
+    const newPulltypeOptions = { ...currentPulltypeOptions };
+    delete newPulltypeOptions[lengthToRemove];
     
     setEditData({
       ...editData,
-      [modelId]: { ...editData[modelId], lengthOptions: newLengthOptions }
+      [modelId]: { 
+        ...editData[modelId], 
+        lengthOptions: newLengthOptions,
+        pulltypeOptions: newPulltypeOptions
+      }
+    });
+  };
+
+  const updatePullTypeForLength = (modelId: number, length: string, pullType: string) => {
+    const currentPulltypeOptions = editData[modelId]?.pulltypeOptions || 
+      models.find(m => m.id === modelId)?.pulltypeOptions || {};
+    
+    const newPulltypeOptions = {
+      ...currentPulltypeOptions,
+      [length]: pullType
+    };
+    
+    setEditData({
+      ...editData,
+      [modelId]: { 
+        ...editData[modelId], 
+        pulltypeOptions: newPulltypeOptions
+      }
     });
   };
 
@@ -1946,26 +1989,37 @@ export default function FastPricing() {
                     <TableCell>
                       {editingModel?.id === model.id ? (
                         <div className="space-y-2">
-                          {/* Display existing length options as removable chips */}
+                          {/* Display existing length options with their pull types */}
                           {(() => {
                             const currentLengthOptions = editData[model.id]?.lengthOptions || 
                               (typeof model.lengthOptions === 'string' 
                                 ? (model.lengthOptions ? JSON.parse(model.lengthOptions) : [])
                                 : model.lengthOptions || []);
                             
+                            const currentPulltypeOptions = editData[model.id]?.pulltypeOptions || 
+                              model.pulltypeOptions || {};
+                            
                             return (
-                              <div className="flex flex-wrap gap-1">
+                              <div className="space-y-2">
                                 {currentLengthOptions.map((length: string, index: number) => (
-                                  <span key={index} className="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium bg-blue-100 text-blue-800">
-                                    {length}
-                                    <button
-                                      type="button"
-                                      onClick={() => removeLengthOption(model.id, index)}
-                                      className="ml-1 inline-flex items-center justify-center w-3 h-3 rounded-full text-blue-400 hover:bg-blue-200 hover:text-blue-600"
-                                    >
-                                      <X className="w-2 h-2" />
-                                    </button>
-                                  </span>
+                                  <div key={index} className="border rounded-md p-2 bg-gray-50">
+                                    <div className="flex items-center justify-between mb-1">
+                                      <span className="text-xs font-medium text-blue-800">{length}</span>
+                                      <button
+                                        type="button"
+                                        onClick={() => removeLengthOption(model.id, index)}
+                                        className="inline-flex items-center justify-center w-4 h-4 rounded-full text-red-400 hover:bg-red-100 hover:text-red-600"
+                                      >
+                                        <X className="w-3 h-3" />
+                                      </button>
+                                    </div>
+                                    <Input
+                                      placeholder="Pull types (e.g., Bumper Pull, Gooseneck)"
+                                      value={currentPulltypeOptions[length] || ""}
+                                      onChange={(e: any) => updatePullTypeForLength(model.id, length, e.target.value)}
+                                      className="text-xs h-7"
+                                    />
+                                  </div>
                                 ))}
                               </div>
                             );
@@ -2019,17 +2073,22 @@ export default function FastPricing() {
                           )}
                         </div>
                       ) : (
-                        <div className="flex flex-wrap gap-1">
+                        <div className="space-y-1">
                           {(() => {
                             const lengthOptions = typeof model.lengthOptions === 'string' 
                               ? (model.lengthOptions ? JSON.parse(model.lengthOptions) : [])
                               : model.lengthOptions || [];
                             
+                            const pulltypeOptions = model.pulltypeOptions || {};
+                            
                             return lengthOptions.length > 0 ? (
                               lengthOptions.map((length: string, index: number) => (
-                                <span key={index} className="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium bg-gray-100 text-gray-800">
-                                  {length}
-                                </span>
+                                <div key={index} className="text-xs border rounded px-2 py-1 bg-gray-50">
+                                  <div className="font-medium text-gray-800">{length}</div>
+                                  {pulltypeOptions[length] && (
+                                    <div className="text-gray-600 mt-1">{pulltypeOptions[length]}</div>
+                                  )}
+                                </div>
                               ))
                             ) : (
                               <span className="text-gray-400 text-xs">—</span>
@@ -2039,18 +2098,9 @@ export default function FastPricing() {
                       )}
                     </TableCell>
                     <TableCell>
-                      {editingModel?.id === model.id ? (
-                        <Input
-                          placeholder="Pull Type Options"
-                          value={editData[model.id]?.pulltypeOptions ?? model.pulltypeOptions ?? ""}
-                          onChange={(e: any) => setEditData({
-                            ...editData,
-                            [model.id]: { ...editData[model.id], pulltypeOptions: e.target.value || null }
-                          })}
-                        />
-                      ) : (
-                        model.pulltypeOptions || "—"
-                      )}
+                      <span className="text-xs text-gray-500 italic">
+                        Pull types are managed in Length Options →
+                      </span>
                     </TableCell>
                     <TableCell>
                       {editingModel?.id === model.id ? (
@@ -2191,17 +2241,22 @@ export default function FastPricing() {
                             <TableCell>{model.deckSize || "—"}</TableCell>
                             <TableCell>{model.axles || "—"}</TableCell>
                             <TableCell>
-                              <div className="flex flex-wrap gap-1">
+                              <div className="space-y-1">
                                 {(() => {
                                   const lengthOptions = typeof model.lengthOptions === 'string' 
                                     ? (model.lengthOptions ? JSON.parse(model.lengthOptions) : [])
                                     : model.lengthOptions || [];
                                   
+                                  const pulltypeOptions = model.pulltypeOptions || {};
+                                  
                                   return lengthOptions.length > 0 ? (
                                     lengthOptions.map((length: string, index: number) => (
-                                      <span key={index} className="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium bg-gray-100 text-gray-600">
-                                        {length}
-                                      </span>
+                                      <div key={index} className="text-xs border rounded px-2 py-1 bg-gray-50 opacity-60">
+                                        <div className="font-medium text-gray-600">{length}</div>
+                                        {pulltypeOptions[length] && (
+                                          <div className="text-gray-500 mt-1">{pulltypeOptions[length]}</div>
+                                        )}
+                                      </div>
                                     ))
                                   ) : (
                                     <span className="text-gray-400 text-xs">—</span>
@@ -2209,7 +2264,11 @@ export default function FastPricing() {
                                 })()}
                               </div>
                             </TableCell>
-                            <TableCell>{model.pulltypeOptions || "—"}</TableCell>
+                            <TableCell>
+                              <span className="text-xs text-gray-400 italic">
+                                See Length Options
+                              </span>
+                            </TableCell>
                             <TableCell>${model.basePrice?.toLocaleString()}</TableCell>
                             <TableCell>
                               {model.imageUrl ? (
