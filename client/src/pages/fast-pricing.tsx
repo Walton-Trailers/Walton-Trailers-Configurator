@@ -121,7 +121,6 @@ export default function FastPricing() {
     imageUrl: "",
     standardFeatures: [] as string[],
     basePrice: "",
-    gvwr: "",
     payload: "",
     deckSize: "",
     axles: ""
@@ -413,7 +412,6 @@ export default function FastPricing() {
         imageUrl: "",
         standardFeatures: [],
         basePrice: "",
-        gvwr: "",
         payload: "",
         deckSize: "",
         axles: ""
@@ -557,7 +555,6 @@ export default function FastPricing() {
       categoryId: data.categoryId ?? model.categoryId,
       basePrice: data.basePrice ?? model.basePrice,
       seriesId: seriesId, // Use the foreign key instead of text
-      gvwr: data.gvwr ?? model.gvwr,
       payload: data.payload ?? model.payload,
       deckSize: data.deckSize ?? model.deckSize,
       axles: data.axles ?? model.axles,
@@ -1798,14 +1795,6 @@ export default function FastPricing() {
                           </div>
                         </div>
                         <div className="grid grid-cols-2 gap-4">
-                          <div>
-                            <label className="block text-sm font-medium mb-1">GVWR</label>
-                            <Input
-                              placeholder="e.g., 14,000 lbs"
-                              value={newModelData.gvwr}
-                              onChange={(e: any) => setNewModelData({ ...newModelData, gvwr: e.target.value })}
-                            />
-                          </div>
                           <div>
                             <label className="block text-sm font-medium mb-1">Payload</label>
                             <Input
