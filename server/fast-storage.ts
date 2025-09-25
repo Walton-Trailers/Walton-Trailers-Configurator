@@ -41,7 +41,8 @@ export class FastStorage {
 
     const result = await db.execute(sql`
       SELECT m.id, m.model_id, m.name, m.gvwr, m.payload, 
-             m.deck_size, m.axles, m.base_price, m.image_url, m.features
+             m.deck_size, m.axles, m.base_price, m.image_url, m.features,
+             m.length_options, m.pulltype_options, m.length_price
       FROM trailer_models m
       JOIN trailer_categories c ON m.category_id = c.id
       WHERE c.slug = ${categorySlug} AND (m.is_archived IS NULL OR m.is_archived = false)
@@ -58,7 +59,10 @@ export class FastStorage {
       axles: model.axles,
       basePrice: model.base_price,
       imageUrl: model.image_url,
-      features: model.features || []
+      features: model.features || [],
+      lengthOptions: model.length_options || [],
+      pulltypeOptions: model.pulltype_options,
+      lengthPrice: model.length_price
     }));
     
     cache.set(cacheKey, models);
