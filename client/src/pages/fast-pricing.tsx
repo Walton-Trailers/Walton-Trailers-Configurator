@@ -141,6 +141,7 @@ export default function FastPricing() {
   const [addingLengthFor, setAddingLengthFor] = useState<number | null>(null);
   const [newLengthValue, setNewLengthValue] = useState("");
   const [expandedLengthOptions, setExpandedLengthOptions] = useState<Record<number, boolean>>({});
+  const [editingLengthFor, setEditingLengthFor] = useState<{modelId: number, lengthIndex: number} | null>(null);
 
   // Helper functions for managing length options and their pull types
   const addLengthOption = (modelId: number, lengthValue: string) => {
@@ -235,6 +236,52 @@ export default function FastPricing() {
         lengthPrice: newLengthPrice
       }
     });
+  };
+
+  const updateLengthValue = (modelId: number, oldLength: string, newLength: string) => {
+    if (!newLength.trim() || oldLength === newLength.trim()) return;
+    
+    const currentLengthOptions = editData[modelId]?.lengthOptions || 
+      (typeof (models.find(m => m.id === modelId)?.lengthOptions) === 'string' 
+        ? JSON.parse(models.find(m => m.id === modelId)?.lengthOptions || '[]')
+        : models.find(m => m.id === modelId)?.lengthOptions || []);
+    
+    // Update length options array
+    const newLengthOptions = currentLengthOptions.map((length: string) => 
+      length === oldLength ? newLength.trim() : length
+    );
+    
+    // Update pull type options (move from old key to new key)
+    const currentPulltypeOptions = editData[modelId]?.pulltypeOptions || 
+      models.find(m => m.id === modelId)?.pulltypeOptions || {};
+    
+    const newPulltypeOptions = { ...currentPulltypeOptions };
+    if (newPulltypeOptions[oldLength]) {
+      newPulltypeOptions[newLength.trim()] = newPulltypeOptions[oldLength];
+      delete newPulltypeOptions[oldLength];
+    }
+    
+    // Update length pricing (move from old key to new key)
+    const currentLengthPrice = editData[modelId]?.lengthPrice || 
+      models.find(m => m.id === modelId)?.lengthPrice || {};
+    
+    const newLengthPrice = { ...currentLengthPrice };
+    if (newLengthPrice[oldLength] !== undefined) {
+      newLengthPrice[newLength.trim()] = newLengthPrice[oldLength];
+      delete newLengthPrice[oldLength];
+    }
+    
+    setEditData({
+      ...editData,
+      [modelId]: { 
+        ...editData[modelId], 
+        lengthOptions: newLengthOptions,
+        pulltypeOptions: newPulltypeOptions,
+        lengthPrice: newLengthPrice
+      }
+    });
+    
+    setEditingLengthFor(null);
   };
 
   const sessionId = localStorage.getItem("admin_session");
