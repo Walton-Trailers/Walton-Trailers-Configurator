@@ -306,7 +306,7 @@ export default function Configurator() {
       modelId: selectedModel.modelId,
       modelName: selectedModel.name,
       modelSpecs: {
-        gvwr: selectedModel.gvwr,
+        gvwr: getDynamicGvwr(),
         payload: selectedModel.payload,
         deckSize: selectedModel.deckSize,
         axles: selectedModel.axles
@@ -420,6 +420,41 @@ export default function Configurator() {
     return selectedModel.payload || '10,432 lbs';
   };
 
+  // Calculate dynamic GVWR based on selected length option
+  const getDynamicGvwr = () => {
+    if (!selectedModel || !options) {
+      return selectedModel?.gvwr || 'N/A';
+    }
+
+    // Check if a length is selected and the model has length-specific GVWR data
+    if (selectedOptions.length && selectedModel.lengthGvwr) {
+      const lengthOptions = options.filter(opt => opt.category === 'length');
+      const selectedLengthOption = lengthOptions.find(opt => opt.id === selectedOptions.length);
+      
+      if (selectedLengthOption) {
+        // Parse lengthGvwr data (it might be string or object)
+        let lengthGvwrData = selectedModel.lengthGvwr;
+        if (typeof lengthGvwrData === 'string') {
+          try {
+            lengthGvwrData = JSON.parse(lengthGvwrData);
+          } catch (e) {
+            console.warn('Failed to parse lengthGvwr data:', e);
+            return selectedModel?.gvwr || 'N/A';
+          }
+        }
+
+        // Get GVWR for the selected length
+        const gvwrForLength = lengthGvwrData[selectedLengthOption.name];
+        if (gvwrForLength) {
+          return gvwrForLength;
+        }
+      }
+    }
+
+    // Default to model gvwr
+    return selectedModel?.gvwr || 'N/A';
+  };
+
   if (isLoading) {
     return (
       <div className="min-h-screen bg-white flex items-center justify-center">
@@ -514,7 +549,7 @@ export default function Configurator() {
 WALTON TRAILERS SPECIFICATION SHEET
 
 Model: ${selectedModel.name}
-GVWR: ${selectedModel.gvwr}
+GVWR: ${getDynamicGvwr()}
 Payload: ${getDynamicPayload()}
 Deck Size: ${selectedModel.deckSize}
 Axles: ${selectedModel.axles}
@@ -558,7 +593,7 @@ Configuration Date: ${new Date().toLocaleDateString()}
         selectedOptions,
         totalPrice,
         trailerSpecs: selectedModel ? {
-          gvwr: selectedModel.gvwr,
+          gvwr: getDynamicGvwr(),
           payload: selectedModel.payload,
           deckSize: selectedModel.deckSize,
           axles: selectedModel.axles
@@ -1161,7 +1196,7 @@ Configuration Date: ${new Date().toLocaleDateString()}
                 {seriesModels && seriesModels.length > 0 && (
                   <div className="grid grid-cols-3 gap-4 mb-6">
                     <div className="text-center">
-                      <div className="text-lg font-bold text-gray-900">{selectedModel?.gvwr || 'N/A'}</div>
+                      <div className="text-lg font-bold text-gray-900">{getDynamicGvwr()}</div>
                       <div className="text-sm text-gray-500">GVWR</div>
                     </div>
                     <div className="text-center">
@@ -1631,7 +1666,7 @@ Configuration Date: ${new Date().toLocaleDateString()}
                   <div className="grid grid-cols-2 gap-4 text-sm mb-6">
                     <div>
                       <span className="text-zinc-500">GVWR: </span>
-                      <span className="font-medium">{selectedModel.gvwr}</span>
+                      <span className="font-medium">{getDynamicGvwr()}</span>
                     </div>
                     <div>
                       <span className="text-zinc-500">Payload: </span>
@@ -1947,7 +1982,7 @@ Configuration Date: ${new Date().toLocaleDateString()}
                 <h3 className="text-lg font-semibold mb-2">{selectedModel.name}</h3>
                 <div className="grid grid-cols-2 gap-4 text-sm text-zinc-600">
                   <div>
-                    <span className="font-medium">GVWR:</span> {selectedModel.gvwr}
+                    <span className="font-medium">GVWR:</span> {getDynamicGvwr()}
                   </div>
                   <div>
                     <span className="font-medium">Payload:</span> {getDynamicPayload()}

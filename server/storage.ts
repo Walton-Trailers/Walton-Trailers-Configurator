@@ -1186,9 +1186,6 @@ export class DatabaseStorage implements IStorage {
 
   async updateModel(id: number, updates: any): Promise<TrailerModelResponse> {
     try {
-      console.log(`🐛 DEBUG: updateModel called with updates:`, JSON.stringify(updates, null, 2));
-      console.log(`🐛 DEBUG: lengthGvwr field exists?`, 'lengthGvwr' in updates);
-      console.log(`🐛 DEBUG: lengthGvwr value:`, updates.lengthGvwr);
       // Use individual SQL statements for each field to avoid parameter issues
       if (updates.basePrice !== undefined) {
         await db.execute(sql`
@@ -1265,13 +1262,11 @@ export class DatabaseStorage implements IStorage {
       }
       if (updates.lengthGvwr !== undefined) {
         const lengthGvwrJson = updates.lengthGvwr ? JSON.stringify(updates.lengthGvwr) : null;
-        console.log(`🔄 Updating length_gvwr for model ${id} with:`, lengthGvwrJson);
-        const lengthGvwrResult = await db.execute(sql`
+        await db.execute(sql`
           UPDATE trailer_models 
           SET length_gvwr = ${lengthGvwrJson}
           WHERE id = ${id}
         `);
-        console.log(`✅ length_gvwr update result:`, lengthGvwrResult);
       }
       if (updates.categoryId !== undefined) {
         await db.execute(sql`
@@ -1322,7 +1317,6 @@ export class DatabaseStorage implements IStorage {
       `);
       
       const updatedModel = result.rows[0] as any;
-      console.log(`🔍 Retrieved length_gvwr from database:`, updatedModel.length_gvwr);
       
       // Clear cache after updating model to ensure fresh data
       cache.clear();
