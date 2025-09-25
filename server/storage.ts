@@ -34,10 +34,14 @@ export interface TrailerModelResponse {
   seriesId?: number;
   modelId: string;
   name: string;
-  gvwr: string;
-  payload: string;
-  deckSize: string;
-  axles: string;
+  gvwr?: string;
+  payload?: string;
+  deckSize?: string;
+  axles?: string;
+  lengthOptions?: string[] | null;
+  lengthPrice?: Record<string, number> | null;
+  lengthGvwr?: Record<string, string> | null;
+  pulltypeOptions?: Record<string, string> | null;
   basePrice: number;
   imageUrl: string;
   features: string[];
@@ -1253,6 +1257,14 @@ export class DatabaseStorage implements IStorage {
         await db.execute(sql`
           UPDATE trailer_models 
           SET length_price = ${lengthPriceJson}
+          WHERE id = ${id}
+        `);
+      }
+      if (updates.lengthGvwr !== undefined) {
+        const lengthGvwrJson = updates.lengthGvwr ? JSON.stringify(updates.lengthGvwr) : null;
+        await db.execute(sql`
+          UPDATE trailer_models 
+          SET length_gvwr = ${lengthGvwrJson}
           WHERE id = ${id}
         `);
       }
