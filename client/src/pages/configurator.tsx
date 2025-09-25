@@ -422,24 +422,14 @@ export default function Configurator() {
 
   // Calculate dynamic GVWR based on selected length option
   const getDynamicGvwr = () => {
-    console.log('🔍 getDynamicGvwr called');
-    console.log('  - selectedModel:', selectedModel?.name);
-    console.log('  - selectedModel.lengthGvwr:', selectedModel?.lengthGvwr);
-    console.log('  - selectedOptions.length:', selectedOptions.length);
-    console.log('  - options loaded:', !!options);
-
     if (!selectedModel || !options) {
-      console.log('  - Early return: no model or options');
       return selectedModel?.gvwr || 'N/A';
     }
 
     // Check if a length is selected and the model has length-specific GVWR data
     if (selectedOptions.length && selectedModel.lengthGvwr) {
-      console.log('  - Has length selection and lengthGvwr data');
       const lengthOptions = options.filter(opt => opt.category === 'length');
-      console.log('  - Available length options:', lengthOptions.map(opt => ({ id: opt.id, name: opt.name })));
       const selectedLengthOption = lengthOptions.find(opt => opt.id === selectedOptions.length);
-      console.log('  - Selected length option:', selectedLengthOption);
       
       if (selectedLengthOption) {
         // Parse lengthGvwr data (it might be string or object)
@@ -453,24 +443,15 @@ export default function Configurator() {
           }
         }
 
-        console.log('  - Parsed lengthGvwr data:', lengthGvwrData);
-        console.log('  - Looking for key:', selectedLengthOption.name);
-
         // Get GVWR for the selected length
         const gvwrForLength = lengthGvwrData[selectedLengthOption.name];
-        console.log('  - GVWR for selected length:', gvwrForLength);
         if (gvwrForLength) {
           return gvwrForLength;
         }
       }
-    } else {
-      console.log('  - No length selected or no lengthGvwr data');
-      console.log('    - selectedOptions.length:', selectedOptions.length);
-      console.log('    - selectedModel.lengthGvwr:', selectedModel.lengthGvwr);
     }
 
     // Default to model gvwr
-    console.log('  - Returning default GVWR:', selectedModel?.gvwr || 'N/A');
     return selectedModel?.gvwr || 'N/A';
   };
 
