@@ -1585,13 +1585,10 @@ export default function FastPricing() {
                 
                 {/* Add Model Dialog */}
                 {showAddModel && (
-                  <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center z-50 overflow-y-auto">
-                    <div className="bg-white rounded-lg max-w-2xl w-full my-8 max-h-[calc(100vh-4rem)] flex flex-col">
-                      <div className="p-6 pb-4">
-                        <h3 className="text-lg font-semibold mb-4">Add New Model</h3>
-                      </div>
-                      <div className="px-6 flex-1 overflow-y-auto">
-                        <div className="space-y-4">
+                  <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+                    <div className="bg-white rounded-lg p-6 max-w-2xl w-full">
+                      <h3 className="text-lg font-semibold mb-4">Add New Model</h3>
+                      <div className="space-y-4">
                         <div className="grid grid-cols-2 gap-4">
                           <div>
                             <label className="block text-sm font-medium mb-1">Category</label>
@@ -1746,24 +1743,21 @@ export default function FastPricing() {
                           />
                         </div>
                       </div>
-                      <div className="p-6 pt-4 border-t bg-white rounded-b-lg">
-                        <div className="flex justify-end gap-3">
-                          <Button variant="outline" onClick={() => setShowAddModel(false)}>
-                            Cancel
-                          </Button>
-                          <Button 
-                            onClick={() => addModelMutation.mutate(newModelData)}
-                            disabled={addModelMutation.isPending || !newModelData.name || !newModelData.modelSeries || !newModelData.categoryId || !newModelData.seriesId || (parseFloat(newModelData.basePrice as string) || 0) < 0}
-                          >
-                            Add Model
-                          </Button>
-                        </div>
+                      <div className="flex justify-end gap-3 mt-6">
+                        <Button variant="outline" onClick={() => setShowAddModel(false)}>
+                          Cancel
+                        </Button>
+                        <Button 
+                          onClick={() => addModelMutation.mutate(newModelData)}
+                          disabled={addModelMutation.isPending || !newModelData.name || !newModelData.modelSeries || !newModelData.categoryId || !newModelData.seriesId || (parseFloat(newModelData.basePrice as string) || 0) < 0}
+                        >
+                          Add Model
+                        </Button>
                       </div>
                     </div>
                   </div>
                 )}
-                
-                <Table>
+            <Table>
               <TableHeader>
                 <TableRow>
                   <TableHead>Model ID</TableHead>
@@ -2004,6 +1998,86 @@ export default function FastPricing() {
                 </Table>
               </div>
             </Card>
+
+            {/* Archived section */}
+            {archivedModels.length > 0 && (
+              <Card className="mt-6">
+                <div className="p-6">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setShowArchived(!showArchived)}
+                    className="mb-4"
+                  >
+                    <Archive className="w-4 h-4 mr-2" />
+                    {showArchived ? 'Hide' : 'Show'} Archived ({archivedModels.length})
+                  </Button>
+                  
+                  {showArchived && (
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Model ID</TableHead>
+                          <TableHead>Name</TableHead>
+                          <TableHead>Category</TableHead>
+                          <TableHead>Series</TableHead>
+                          <TableHead>GVWR</TableHead>
+                          <TableHead>Payload</TableHead>
+                          <TableHead>Deck Size</TableHead>
+                          <TableHead>Axles</TableHead>
+                          <TableHead>Price</TableHead>
+                          <TableHead>Image</TableHead>
+                          <TableHead>Actions</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {archivedModels.map((model: any) => (
+                          <TableRow key={model.id} className="opacity-60">
+                            <TableCell>{model.modelId}</TableCell>
+                            <TableCell>{model.name}</TableCell>
+                            <TableCell>{model.categoryName}</TableCell>
+                            <TableCell>{model.seriesName ?? "No Series"}</TableCell>
+                            <TableCell>{model.gvwr ? model.gvwr.toLocaleString() : "—"}</TableCell>
+                            <TableCell>{model.payload ? model.payload.toLocaleString() : "—"}</TableCell>
+                            <TableCell>{model.deckSize || "—"}</TableCell>
+                            <TableCell>{model.axles || "—"}</TableCell>
+                            <TableCell>${model.basePrice?.toLocaleString()}</TableCell>
+                            <TableCell>
+                              {model.imageUrl ? (
+                                <div className="w-12 h-12 rounded-md overflow-hidden border border-gray-200">
+                                  <img 
+                                    src={model.imageUrl} 
+                                    alt={model.name}
+                                    className="w-full h-full object-cover opacity-60"
+                                    onError={(e: any) => {
+                                      e.target.onerror = null;
+                                      e.target.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="48" height="48" fill="none"%3E%3Crect width="48" height="48" fill="%23f3f4f6"/%3E%3Cpath stroke="%239ca3af" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M24 16v16m-8-8h16"/%3E%3C/svg%3E';
+                                    }}
+                                  />
+                                </div>
+                              ) : (
+                                <span className="text-gray-400">-</span>
+                              )}
+                            </TableCell>
+                            <TableCell>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => restoreMutation.mutate(model.id)}
+                                disabled={restoreMutation.isPending}
+                                title="Restore to active"
+                              >
+                                <RotateCcw className="w-4 h-4" />
+                              </Button>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  )}
+                </div>
+              </Card>
+            )}
           </>
         )}
 
