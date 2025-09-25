@@ -142,6 +142,7 @@ export default function FastPricing() {
   const [expandedLengthOptions, setExpandedLengthOptions] = useState<Record<number, boolean>>({});
   const [editingLengthFor, setEditingLengthFor] = useState<{modelId: number, lengthIndex: number, originalLength: string} | null>(null);
   const [tempLengthValue, setTempLengthValue] = useState("");
+  const [showOptionsPopup, setShowOptionsPopup] = useState<Record<number, boolean>>({});
 
   // Helper functions for managing length options and their pull types and GVWR
   const addLengthOption = (modelId: number, lengthValue: string) => {
@@ -2265,13 +2266,13 @@ export default function FastPricing() {
                                 {hasLengths && (
                                   <button
                                     type="button"
-                                    onClick={() => setExpandedLengthOptions({
-                                      ...expandedLengthOptions,
-                                      [model.id]: !isExpanded
+                                    onClick={() => setShowOptionsPopup({
+                                      ...showOptionsPopup,
+                                      [model.id]: true
                                     })}
                                     className="text-xs text-blue-600 hover:text-blue-800 font-medium mt-1"
                                   >
-                                    {isExpanded ? 'Hide Lengths' : 'Display Lengths'}
+                                    View Options
                                   </button>
                                 )}
                               </div>
@@ -2455,13 +2456,13 @@ export default function FastPricing() {
                                       {hasLengths && (
                                         <button
                                           type="button"
-                                          onClick={() => setExpandedLengthOptions({
-                                            ...expandedLengthOptions,
-                                            [model.id]: !isExpanded
+                                          onClick={() => setShowOptionsPopup({
+                                            ...showOptionsPopup,
+                                            [model.id]: true
                                           })}
                                           className="text-xs text-blue-600 hover:text-blue-800 font-medium mt-1 opacity-60"
                                         >
-                                          {isExpanded ? 'Hide Lengths' : 'Display Lengths'}
+                                          View Options
                                         </button>
                                       )}
                                     </div>
@@ -3005,6 +3006,134 @@ export default function FastPricing() {
               )}
             </div>
           </Card>
+        )}
+
+        {/* Model Options Popup */}
+        {Object.keys(showOptionsPopup).some(modelId => showOptionsPopup[parseInt(modelId)]) && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50 overflow-y-auto">
+            <div className="bg-white rounded-lg max-w-4xl w-full m-4 max-h-[90vh] flex flex-col">
+              {(() => {
+                const openModelId = parseInt(Object.keys(showOptionsPopup).find(modelId => showOptionsPopup[parseInt(modelId)]) || '0');
+                const model = [...activeModels, ...archivedModels].find(m => m.id === openModelId);
+                if (!model) return null;
+
+                const lengthOptions = typeof model.lengthOptions === 'string' 
+                  ? (model.lengthOptions ? JSON.parse(model.lengthOptions) : [])
+                  : model.lengthOptions || [];
+                
+                const pulltypeOptions = model.pulltypeOptions || {};
+                const lengthPrice = typeof model.lengthPrice === 'string' 
+                  ? (model.lengthPrice ? JSON.parse(model.lengthPrice) : {})
+                  : model.lengthPrice || {};
+                const lengthGvwr = typeof model.lengthGvwr === 'string' 
+                  ? (model.lengthGvwr ? JSON.parse(model.lengthGvwr) : {})
+                  : model.lengthGvwr || {};
+
+                return (
+                  <>
+                    <div className="p-6 border-b">
+                      <div className="flex justify-between items-center">
+                        <div>
+                          <h3 className="text-xl font-semibold">{model.name}</h3>
+                          <p className="text-gray-600 text-sm">Model ID: {model.modelId}</p>
+                        </div>
+                        <button
+                          onClick={() => setShowOptionsPopup({
+                            ...showOptionsPopup,
+                            [openModelId]: false
+                          })}
+                          className="p-2 hover:bg-gray-100 rounded-full"
+                        >
+                          <X className="w-5 h-5" />
+                        </button>
+                      </div>
+                    </div>
+                    
+                    <div className="flex-1 overflow-y-auto p-6">
+                      <div className="space-y-6">
+                        {/* Model Specifications */}
+                        <div>
+                          <h4 className="text-lg font-semibold mb-3">Model Specifications</h4>
+                          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                            <div>
+                              <span className="font-medium text-gray-600">Category:</span>
+                              <div>{model.categoryName}</div>
+                            </div>
+                            <div>
+                              <span className="font-medium text-gray-600">Series:</span>
+                              <div>{model.seriesName || "No Series"}</div>
+                            </div>
+                            <div>
+                              <span className="font-medium text-gray-600">Payload:</span>
+                              <div>{model.payload || "—"}</div>
+                            </div>
+                            <div>
+                              <span className="font-medium text-gray-600">Deck Size:</span>
+                              <div>{model.deckSize || "—"}</div>
+                            </div>
+                            <div>
+                              <span className="font-medium text-gray-600">Axles:</span>
+                              <div>{model.axles || "—"}</div>
+                            </div>
+                            <div>
+                              <span className="font-medium text-gray-600">Base Price:</span>
+                              <div>${model.basePrice?.toLocaleString() || "0"}</div>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Length Options */}
+                        {lengthOptions.length > 0 && (
+                          <div>
+                            <h4 className="text-lg font-semibold mb-3">Length Options</h4>
+                            <div className="grid gap-3">
+                              {lengthOptions.map((length: string, index: number) => (
+                                <div key={index} className="border rounded-lg p-4 bg-gray-50">
+                                  <div className="grid grid-cols-1 md:grid-cols-4 gap-3 text-sm">
+                                    <div>
+                                      <span className="font-medium text-gray-600">Length:</span>
+                                      <div className="font-semibold">{length}</div>
+                                    </div>
+                                    {pulltypeOptions[length] && (
+                                      <div>
+                                        <span className="font-medium text-gray-600">Pull Type:</span>
+                                        <div>{pulltypeOptions[length]}</div>
+                                      </div>
+                                    )}
+                                    {lengthGvwr[length] && (
+                                      <div>
+                                        <span className="font-medium text-gray-600">GVWR:</span>
+                                        <div className="text-blue-600 font-medium">{lengthGvwr[length]}</div>
+                                      </div>
+                                    )}
+                                    {lengthPrice[length] && lengthPrice[length] > 0 && (
+                                      <div>
+                                        <span className="font-medium text-gray-600">Price Adjustment:</span>
+                                        <div className="text-green-600 font-semibold">+${lengthPrice[length].toLocaleString()}</div>
+                                      </div>
+                                    )}
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Available Options Note */}
+                        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                          <h4 className="text-lg font-semibold mb-2 text-blue-900">Additional Options</h4>
+                          <p className="text-blue-800 text-sm">
+                            This model may have additional customizable options like tire upgrades, jack options, color choices, and accessories. 
+                            These options become available during the configuration process in the main configurator.
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  </>
+                );
+              })()}
+            </div>
+          </div>
         )}
       </div>
     </div>
