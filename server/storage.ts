@@ -1186,6 +1186,9 @@ export class DatabaseStorage implements IStorage {
 
   async updateModel(id: number, updates: any): Promise<TrailerModelResponse> {
     try {
+      console.log(`🐛 DEBUG: updateModel called with updates:`, JSON.stringify(updates, null, 2));
+      console.log(`🐛 DEBUG: lengthGvwr field exists?`, 'lengthGvwr' in updates);
+      console.log(`🐛 DEBUG: lengthGvwr value:`, updates.lengthGvwr);
       // Use individual SQL statements for each field to avoid parameter issues
       if (updates.basePrice !== undefined) {
         await db.execute(sql`
