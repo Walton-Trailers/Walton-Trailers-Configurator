@@ -2074,7 +2074,42 @@ export default function FastPricing() {
                                 {displayedOptions.map((length: string, index: number) => (
                                   <div key={index} className="border rounded-md p-2 bg-gray-50">
                                     <div className="flex items-center justify-between mb-1">
-                                      <span className="text-xs font-medium text-blue-800">{length}</span>
+                                      {editingLengthFor?.modelId === model.id && editingLengthFor?.lengthIndex === index ? (
+                                        <Input
+                                          value={length}
+                                          onChange={(e: any) => {
+                                            // Update the displayed length immediately while editing
+                                            const newLengthOptions = [...currentLengthOptions];
+                                            newLengthOptions[index] = e.target.value;
+                                            setEditData({
+                                              ...editData,
+                                              [model.id]: { 
+                                                ...editData[model.id], 
+                                                lengthOptions: newLengthOptions
+                                              }
+                                            });
+                                          }}
+                                          onBlur={(e: any) => updateLengthValue(model.id, length, e.target.value)}
+                                          onKeyPress={(e: any) => {
+                                            if (e.key === 'Enter') {
+                                              updateLengthValue(model.id, length, e.target.value);
+                                            }
+                                            if (e.key === 'Escape') {
+                                              setEditingLengthFor(null);
+                                            }
+                                          }}
+                                          className="text-xs h-6 font-medium"
+                                          autoFocus
+                                        />
+                                      ) : (
+                                        <span 
+                                          className="text-xs font-medium text-blue-800 cursor-pointer hover:text-blue-600"
+                                          onClick={() => setEditingLengthFor({modelId: model.id, lengthIndex: index})}
+                                          title="Click to edit length value"
+                                        >
+                                          {length}
+                                        </span>
+                                      )}
                                       <button
                                         type="button"
                                         onClick={() => removeLengthOption(model.id, index)}
