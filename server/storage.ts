@@ -347,11 +347,40 @@ export class MemStorage implements IStorage {
   }
 
   async getOptionsForModel(modelId: string): Promise<TrailerOptionResponse[]> {
-    // Get all options and filter by applicableModels
+    // Get non-length options from trailer_options
     const allOptions = Array.from(this.options.values()).flat();
-    return allOptions.filter(option => 
-      option.applicableModels.includes(modelId)
+    const nonLengthOptions = allOptions.filter(option => 
+      option.applicableModels.includes(modelId) && option.category !== 'length'
     );
+
+    // Get length options from the model's length_options JSON column
+    const lengthOptions: TrailerOptionResponse[] = [];
+    const model = Array.from(this.models.values()).flat().find(m => m.modelId === modelId);
+    
+    if (model && model.lengthOptions) {
+      const lengths = typeof model.lengthOptions === 'string' 
+        ? JSON.parse(model.lengthOptions) 
+        : model.lengthOptions;
+      
+      if (Array.isArray(lengths)) {
+        lengths.forEach((length: string, index: number) => {
+          lengthOptions.push({
+            id: `length_${modelId}_${index}`,
+            modelId: modelId,
+            applicableModels: [modelId],
+            name: length,
+            price: 0, // Length options from model are typically included
+            category: 'length',
+            imageUrl: null,
+            isArchived: false,
+            hexColor: null,
+            primerPrice: 0,
+          });
+        });
+      }
+    }
+
+    return [...nonLengthOptions, ...lengthOptions];
   }
 
   async saveUserConfiguration(config: InsertUserConfiguration): Promise<UserConfiguration> {
@@ -613,15 +642,17 @@ export class MemStorage implements IStorage {
 export class DatabaseStorage implements IStorage {
   async getOptionsForModel(modelId: string): Promise<TrailerOptionResponse[]> {
     try {
-      const result = await db.execute(sql`
+      // Get non-length options from trailer_options table
+      const optionsResult = await db.execute(sql`
         SELECT id, name, price, category, model_id, applicable_models, image_url, is_archived, hex_color, primer_price
         FROM trailer_options
         WHERE (is_archived IS NULL OR is_archived = false)
           AND (applicable_models IS NULL OR applicable_models @> ${JSON.stringify([modelId])})
+          AND category != 'length'
         ORDER BY category, name
       `);
       
-      return result.rows.map((option: any) => ({
+      const nonLengthOptions = optionsResult.rows.map((option: any) => ({
         id: option.id,
         modelId: option.model_id,
         applicableModels: option.applicable_models,
@@ -633,6 +664,44 @@ export class DatabaseStorage implements IStorage {
         hexColor: option.hex_color,
         primerPrice: option.primer_price,
       }));
+
+      // Get length options from the model's length_options JSON column
+      const lengthOptions: TrailerOptionResponse[] = [];
+      const modelResult = await db.execute(sql`
+        SELECT length_options
+        FROM trailer_models
+        WHERE model_id = ${modelId}
+          AND (is_archived IS NULL OR is_archived = false)
+        LIMIT 1
+      `);
+
+      if (modelResult.rows.length > 0) {
+        const model = modelResult.rows[0] as any;
+        if (model.length_options) {
+          const lengths = typeof model.length_options === 'string' 
+            ? JSON.parse(model.length_options) 
+            : model.length_options;
+          
+          if (Array.isArray(lengths)) {
+            lengths.forEach((length: string, index: number) => {
+              lengthOptions.push({
+                id: `length_${modelId}_${index}`,
+                modelId: modelId,
+                applicableModels: [modelId],
+                name: length,
+                price: 0, // Length options from model are typically included
+                category: 'length',
+                imageUrl: null,
+                isArchived: false,
+                hexColor: null,
+                primerPrice: 0,
+              });
+            });
+          }
+        }
+      }
+
+      return [...nonLengthOptions, ...lengthOptions];
     } catch (error) {
       console.error('Error fetching options for model:', error);
       throw error;
