@@ -794,7 +794,7 @@ export class DatabaseStorage implements IStorage {
         categoryId: model.category_id,
         modelId: model.model_id,
         name: model.name,
-        gvwr: model.gvwr,
+
         payload: model.payload,
         deckSize: model.deck_size,
         axles: model.axles,
@@ -830,7 +830,7 @@ export class DatabaseStorage implements IStorage {
         seriesName: model.series_name,
         modelId: model.model_id,
         name: model.name,
-        gvwr: model.gvwr,
+
         payload: model.payload,
         deckSize: model.deck_size,
         axles: model.axles,
@@ -868,7 +868,7 @@ export class DatabaseStorage implements IStorage {
         categoryId: model.category_id,
         modelId: model.model_id,
         name: model.name,
-        gvwr: model.gvwr,
+
         payload: model.payload,
         deckSize: model.deck_size,
         axles: model.axles,
@@ -1085,7 +1085,7 @@ export class DatabaseStorage implements IStorage {
   async getAllModels(): Promise<TrailerModelResponse[]> {
     try {
       const result = await db.execute(sql`
-        SELECT m.id, m.category_id, m.series_id, m.model_id, m.name, m.gvwr, m.payload,
+        SELECT m.id, m.category_id, m.series_id, m.model_id, m.name, m.payload,
                m.deck_size, m.axles, m.length_options, m.pulltype_options, m.length_price, m.length_gvwr, m.base_price, 
                m.image_url, m.features, m.is_archived, m.category_sub_type, c.name as category_name,
                s.name as series_name
@@ -1104,13 +1104,14 @@ export class DatabaseStorage implements IStorage {
         seriesName: model.series_name, // Now comes from the JOIN with trailer_series
         modelId: model.model_id,
         name: model.name,
-        gvwr: model.gvwr,
+
         payload: model.payload,
         deckSize: model.deck_size,
         axles: model.axles,
         lengthOptions: model.length_options ? (typeof model.length_options === 'string' ? JSON.parse(model.length_options) : model.length_options) : null,
         pulltypeOptions: model.pulltype_options ? (typeof model.pulltype_options === 'string' ? JSON.parse(model.pulltype_options) : model.pulltype_options) : null,
         lengthPrice: model.length_price ? (typeof model.length_price === 'string' ? JSON.parse(model.length_price) : model.length_price) : null,
+        lengthGvwr: model.length_gvwr ? (typeof model.length_gvwr === 'string' ? JSON.parse(model.length_gvwr) : model.length_gvwr) : null,
         basePrice: model.base_price,
         imageUrl: model.image_url,
         features: model.features || [],
@@ -1528,7 +1529,7 @@ export class DatabaseStorage implements IStorage {
         categoryId: model.category_id,
         modelId: model.model_id,
         name: model.name,
-        gvwr: model.gvwr,
+
         payload: model.payload,
         deckSize: model.deck_size,
         axles: model.axles,
@@ -1712,7 +1713,7 @@ export class DatabaseStorage implements IStorage {
         seriesName: seriesName,
         modelId: model.model_id,
         name: model.name,
-        gvwr: model.gvwr,
+
         payload: model.payload,
         deckSize: model.deck_size,
         axles: model.axles,
