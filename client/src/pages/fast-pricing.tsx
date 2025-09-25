@@ -1,11 +1,12 @@
 import React, { useState, useMemo, useEffect } from "react";
-import { ArrowLeft, Edit, Save, X, Archive, RotateCcw, Upload, Image, Trash2 } from "lucide-react";
+import { ArrowLeft, Edit, Save, X, Archive, RotateCcw, Upload, Image, Trash2, Plus } from "lucide-react";
 import { Link } from "wouter";
 import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query";
 import { useFastQuery } from "@/hooks/useFastQuery";
 import { ObjectUploader } from "@/components/ObjectUploader";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 // Minimal UI components for maximum performance
 const Button = ({ children, onClick, disabled, variant = 'default', size = 'default', ...props }: any) => (
@@ -30,20 +31,7 @@ const Input = ({ className = '', ...props }: any) => (
   />
 );
 
-const Select = ({ value, onValueChange, children }: any) => (
-  <select
-    value={value}
-    onChange={(e) => onValueChange(e.target.value)}
-    className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
-  >
-    {children}
-  </select>
-);
 
-const SelectTrigger = ({ children }: any) => <>{children}</>;
-const SelectValue = () => null;
-const SelectContent = ({ children }: any) => <>{children}</>;
-const SelectItem = ({ value, children }: any) => <option value={value}>{children}</option>;
 
 const Card = ({ children, className = '' }: any) => (
   <div className={`bg-white rounded-lg border shadow-sm ${className}`}>
@@ -2207,246 +2195,190 @@ export default function FastPricing() {
           <Card>
             <div className="p-6">
               <div className="flex justify-between items-center mb-4">
-                <h2 className="text-lg font-semibold">Lengths & Pull Types ({trailerLengths.length})</h2>
-                <Button onClick={() => setShowAddLength(true)} size="sm">
-                  Add Length & Pull Type
-                </Button>
+                <h2 className="text-lg font-semibold">Lengths & Pull Types Configuration</h2>
+                <div className="text-sm text-gray-600">
+                  Configure available lengths and pull types for each model
+                </div>
               </div>
               
-              {/* Add New Length Dialog */}
-              {showAddLength && (
-                <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center z-50 overflow-y-auto">
-                  <div className="bg-white rounded-lg max-w-2xl w-full my-8 max-h-[calc(100vh-4rem)] flex flex-col">
-                    <div className="p-6 pb-4">
-                      <h3 className="text-lg font-semibold mb-4">Add New Length & Pull Type</h3>
-                    </div>
-                    <div className="px-6 flex-1 overflow-y-auto">
-                      <div className="space-y-4">
-                        <div>
-                          <label className="block text-sm font-medium mb-1">Trailer Model</label>
-                          <Select
-                            value={newLengthData.modelId ? newLengthData.modelId.toString() : ""}
-                            onValueChange={(value: string) => setNewLengthData({ ...newLengthData, modelId: parseInt(value) })}
-                          >
-                            <SelectTrigger>
-                              <SelectValue placeholder="Select a model" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {activeModels.map((model: any) => (
-                                <SelectItem key={model.id} value={model.id.toString()}>
-                                  {model.modelId} - {model.name}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                        </div>
-                        <div>
-                          <label className="block text-sm font-medium mb-1">Length (feet)</label>
-                          <Input
-                            type="number"
-                            placeholder="Enter length in feet"
-                            value={newLengthData.length}
-                            onChange={(e: any) => setNewLengthData({ ...newLengthData, length: e.target.value })}
-                          />
-                        </div>
-                        <div>
-                          <label className="block text-sm font-medium mb-1">Pull Type</label>
-                          <Input
-                            placeholder="Enter pull type (e.g., Gooseneck, Bumper Pull, etc.)"
-                            value={newLengthData.pullType}
-                            onChange={(e: any) => setNewLengthData({ ...newLengthData, pullType: e.target.value })}
-                          />
-                        </div>
-                      </div>
-                    </div>
-                    <div className="p-6 pt-4 border-t bg-white rounded-b-lg">
-                      <div className="flex justify-end gap-3">
-                        <Button variant="outline" onClick={() => {
-                          setShowAddLength(false);
-                          setNewLengthData({ modelId: 0, length: "", pullType: "" });
-                        }}>
-                          Cancel
-                        </Button>
-                        <Button 
-                          onClick={() => {
-                            if (newLengthData.modelId && newLengthData.length && newLengthData.pullType) {
-                              addLengthMutation.mutate(newLengthData);
-                            }
-                          }}
-                          disabled={
-                            addLengthMutation.isPending || 
-                            !newLengthData.modelId || 
-                            !newLengthData.length || 
-                            !newLengthData.pullType
-                          }
-                        >
-                          {addLengthMutation.isPending ? "Adding..." : "Add Length"}
-                        </Button>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              )}
-              
               {lengthsLoading ? (
-                <div className="text-center py-8">Loading trailer lengths...</div>
-              ) : trailerLengths && trailerLengths.length > 0 ? (
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Model</TableHead>
-                      <TableHead>Model Series</TableHead>
-                      <TableHead>Length (ft)</TableHead>
-                      <TableHead>Pull Type</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead>Actions</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {trailerLengths
-                      .filter((trailerLength: any) => 
-                        !searchQuery || 
-                        trailerLength.modelName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                        trailerLength.modelSeries?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                        trailerLength.pullType?.toLowerCase().includes(searchQuery.toLowerCase())
-                      )
-                      .map((trailerLength: any) => (
-                      <TableRow key={trailerLength.id} className={trailerLength.isArchived ? "opacity-50" : ""}>
-                        <TableCell className="font-medium">{trailerLength.modelName}</TableCell>
-                        <TableCell>{trailerLength.modelSeries}</TableCell>
-                        <TableCell>
-                          {editingLength?.id === trailerLength.id ? (
-                            <Input
-                              type="number"
-                              value={editData[trailerLength.id]?.length ?? trailerLength.length}
-                              onChange={(e: any) =>
-                                setEditData({
-                                  ...editData,
-                                  [trailerLength.id]: {
-                                    ...editData[trailerLength.id],
-                                    length: e.target.value,
-                                  },
-                                })
-                              }
-                              className="w-20"
-                            />
-                          ) : (
-                            `${trailerLength.length}ft`
-                          )}
-                        </TableCell>
-                        <TableCell>
-                          {editingLength?.id === trailerLength.id ? (
-                            <Input
-                              value={editData[trailerLength.id]?.pullType ?? trailerLength.pullType}
-                              onChange={(e: any) =>
-                                setEditData({
-                                  ...editData,
-                                  [trailerLength.id]: {
-                                    ...editData[trailerLength.id],
-                                    pullType: e.target.value,
-                                  },
-                                })
-                              }
-                              className="w-32"
-                              placeholder="Pull type"
-                            />
-                          ) : (
-                            trailerLength.pullType
-                          )}
-                        </TableCell>
-                        <TableCell>
-                          {trailerLength.isArchived ? (
-                            <span className="text-red-600 text-sm">Archived</span>
-                          ) : (
-                            <span className="text-green-600 text-sm">Active</span>
-                          )}
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex gap-2">
-                            {editingLength?.id === trailerLength.id ? (
-                              <>
-                                <Button
-                                  size="sm"
-                                  variant="outline"
-                                  onClick={() => {
-                                    updateLengthMutation.mutate({
-                                      id: trailerLength.id,
-                                      length: editData[trailerLength.id]?.length ?? trailerLength.length,
-                                      pullType: editData[trailerLength.id]?.pullType ?? trailerLength.pullType,
-                                    });
-                                  }}
-                                  disabled={updateLengthMutation.isPending}
-                                >
-                                  <Save className="w-4 h-4" />
-                                </Button>
-                                <Button
-                                  size="sm"
-                                  variant="ghost"
-                                  onClick={() => {
-                                    setEditingLength(null);
-                                    setEditData({});
-                                  }}
-                                >
-                                  <X className="w-4 h-4" />
-                                </Button>
-                              </>
-                            ) : (
-                              <>
-                                <Button
-                                  size="sm"
-                                  variant="outline"
-                                  onClick={() => setEditingLength(trailerLength)}
-                                  disabled={!!editingLength}
-                                >
-                                  <Edit className="w-4 h-4" />
-                                </Button>
-                                {trailerLength.isArchived ? (
+                <div className="text-center py-8">Loading models...</div>
+              ) : activeModels && activeModels.length > 0 ? (
+                <div className="space-y-4">
+                  {activeModels
+                    .filter((model: any) => 
+                      !searchQuery || 
+                      model.modelId.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                      model.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                      model.modelSeries?.toLowerCase().includes(searchQuery.toLowerCase())
+                    )
+                    .map((model: any) => {
+                      // Find existing length configurations for this model
+                      const existingLengths = trailerLengths.filter((tl: any) => tl.modelId === model.id);
+                      
+                      return (
+                        <Card key={model.id} className="border-l-4 border-l-blue-500">
+                          <div className="p-4">
+                            <div className="flex items-start justify-between mb-3">
+                              <div>
+                                <h3 className="font-semibold text-lg">{model.modelId}</h3>
+                                <p className="text-gray-600 text-sm">{model.name}</p>
+                                {model.modelSeries && (
+                                  <p className="text-gray-500 text-xs">Series: {model.modelSeries}</p>
+                                )}
+                              </div>
+                              <div className="text-right text-sm text-gray-500">
+                                {existingLengths.length} configurations
+                              </div>
+                            </div>
+                            
+                            {/* Existing Length Configurations */}
+                            {existingLengths.length > 0 && (
+                              <div className="mb-3">
+                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                                  {existingLengths.map((trailerLength: any) => (
+                                    <div 
+                                      key={trailerLength.id} 
+                                      className={`p-3 bg-gray-50 rounded-md border ${trailerLength.isArchived ? 'opacity-50' : ''}`}
+                                    >
+                                      <div className="flex items-center justify-between mb-2">
+                                        <span className="font-medium">{trailerLength.length}ft</span>
+                                        <div className="flex gap-1">
+                                          <Button
+                                            size="sm"
+                                            variant="outline"
+                                            onClick={() => {
+                                              if (confirm("Archive this length configuration?")) {
+                                                archiveLengthMutation.mutate(trailerLength.id);
+                                              }
+                                            }}
+                                            disabled={archiveLengthMutation.isPending}
+                                            className="h-6 w-6 p-0"
+                                          >
+                                            <Archive className="w-3 h-3" />
+                                          </Button>
+                                          <Button
+                                            size="sm"
+                                            variant="destructive"
+                                            onClick={() => {
+                                              if (confirm("Delete this length configuration permanently?")) {
+                                                deleteLengthMutation.mutate(trailerLength.id);
+                                              }
+                                            }}
+                                            disabled={deleteLengthMutation.isPending}
+                                            className="h-6 w-6 p-0"
+                                          >
+                                            <Trash2 className="w-3 h-3" />
+                                          </Button>
+                                        </div>
+                                      </div>
+                                      <div className="text-sm text-gray-600">{trailerLength.pullType}</div>
+                                      {trailerLength.isArchived && (
+                                        <div className="text-xs text-red-600 mt-1">Archived</div>
+                                      )}
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
+                            
+                            {/* Add New Length/Pull Type Configuration */}
+                            <div className="border-t pt-3">
+                              <div className="grid grid-cols-1 md:grid-cols-3 gap-3 items-end">
+                                <div>
+                                  <label className="block text-xs font-medium mb-1 text-gray-700">Length (ft)</label>
+                                  <Select
+                                    value=""
+                                    onValueChange={(length: string) => {
+                                      // Store the selected length for this model
+                                      setEditData({
+                                        ...editData,
+                                        [`new_${model.id}`]: { ...editData[`new_${model.id}`], length }
+                                      });
+                                    }}
+                                  >
+                                    <SelectTrigger className="h-8">
+                                      <SelectValue placeholder="Select length" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                      <SelectItem value="14">14ft</SelectItem>
+                                      <SelectItem value="16">16ft</SelectItem>
+                                      <SelectItem value="18">18ft</SelectItem>
+                                      <SelectItem value="20">20ft</SelectItem>
+                                      <SelectItem value="22">22ft</SelectItem>
+                                      <SelectItem value="24">24ft</SelectItem>
+                                      <SelectItem value="26">26ft</SelectItem>
+                                      <SelectItem value="28">28ft</SelectItem>
+                                      <SelectItem value="30">30ft</SelectItem>
+                                      <SelectItem value="32">32ft</SelectItem>
+                                      <SelectItem value="35">35ft</SelectItem>
+                                      <SelectItem value="40">40ft</SelectItem>
+                                    </SelectContent>
+                                  </Select>
+                                </div>
+                                <div>
+                                  <label className="block text-xs font-medium mb-1 text-gray-700">Pull Type</label>
+                                  <Select
+                                    value=""
+                                    onValueChange={(pullType: string) => {
+                                      // Store the selected pull type for this model
+                                      setEditData({
+                                        ...editData,
+                                        [`new_${model.id}`]: { ...editData[`new_${model.id}`], pullType }
+                                      });
+                                    }}
+                                  >
+                                    <SelectTrigger className="h-8">
+                                      <SelectValue placeholder="Select pull type" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                      <SelectItem value="Gooseneck">Gooseneck</SelectItem>
+                                      <SelectItem value="Bumper Pull">Bumper Pull</SelectItem>
+                                      <SelectItem value="Fifth Wheel">Fifth Wheel</SelectItem>
+                                      <SelectItem value="Pintle Hook">Pintle Hook</SelectItem>
+                                      <SelectItem value="Straight Pull">Straight Pull</SelectItem>
+                                    </SelectContent>
+                                  </Select>
+                                </div>
+                                <div>
                                   <Button
                                     size="sm"
-                                    variant="outline"
-                                    onClick={() => restoreLengthMutation.mutate(trailerLength.id)}
-                                    disabled={restoreLengthMutation.isPending}
-                                    title="Restore length"
+                                    onClick={() => {
+                                      const newData = editData[`new_${model.id}`];
+                                      if (newData?.length && newData?.pullType) {
+                                        addLengthMutation.mutate({
+                                          modelId: model.id,
+                                          length: newData.length,
+                                          pullType: newData.pullType
+                                        });
+                                        // Clear the form
+                                        setEditData({
+                                          ...editData,
+                                          [`new_${model.id}`]: { length: "", pullType: "" }
+                                        });
+                                      }
+                                    }}
+                                    disabled={
+                                      addLengthMutation.isPending || 
+                                      !editData[`new_${model.id}`]?.length || 
+                                      !editData[`new_${model.id}`]?.pullType
+                                    }
+                                    className="h-8"
                                   >
-                                    <RotateCcw className="w-4 h-4" />
+                                    <Plus className="w-3 h-3 mr-1" />
+                                    Add
                                   </Button>
-                                ) : (
-                                  <>
-                                    <Button
-                                      size="sm"
-                                      variant="outline"
-                                      onClick={() => archiveLengthMutation.mutate(trailerLength.id)}
-                                      disabled={archiveLengthMutation.isPending}
-                                      title="Archive length"
-                                    >
-                                      <Archive className="w-4 h-4" />
-                                    </Button>
-                                    <Button
-                                      size="sm"
-                                      variant="destructive"
-                                      onClick={() => {
-                                        if (confirm("Are you sure you want to delete this trailer length? This action cannot be undone.")) {
-                                          deleteLengthMutation.mutate(trailerLength.id);
-                                        }
-                                      }}
-                                      disabled={deleteLengthMutation.isPending}
-                                      title="Delete length"
-                                    >
-                                      <Trash2 className="w-4 h-4" />
-                                    </Button>
-                                  </>
-                                )}
-                              </>
-                            )}
+                                </div>
+                              </div>
+                            </div>
                           </div>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
+                        </Card>
+                      );
+                    })}
+                </div>
               ) : (
                 <div className="text-center py-8 text-gray-500">
-                  No trailer lengths configured. Add some to get started.
+                  No models available. Add some models first to configure their lengths and pull types.
                 </div>
               )}
             </div>
