@@ -1397,7 +1397,6 @@ Configuration Date: ${new Date().toLocaleDateString()}
                                         }
                                       }
                                       
-                                      
                                       // Find pulltype for this length option
                                       const pulltype = pulltypeOptions[option.name] || '';
                                       

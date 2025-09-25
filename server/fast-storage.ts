@@ -216,6 +216,7 @@ export class FastStorage {
     return {
       id: model.id,
       categoryId: model.category_id,
+      seriesId: model.series_id,
       modelId: model.model_id,
       name: model.name,
       gvwr: model.gvwr,
@@ -225,6 +226,9 @@ export class FastStorage {
       basePrice: model.base_price,
       imageUrl: model.image_url,
       features: model.features || [],
+      lengthOptions: model.length_options || [],
+      pulltypeOptions: model.pulltype_options,
+      lengthPrice: model.length_price,
       categoryName: model.category_name,
       isArchived: model.is_archived || false
     };
