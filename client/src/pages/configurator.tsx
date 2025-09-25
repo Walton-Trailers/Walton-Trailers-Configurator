@@ -1385,6 +1385,22 @@ Configuration Date: ${new Date().toLocaleDateString()}
                                   </SelectTrigger>
                                   <SelectContent>
                                     {categoryOptions.map((option) => {
+                                      // Parse pulltype data from selectedModel
+                                      let pulltypeOptions: Record<string, string> = {};
+                                      if ((selectedModel as any)?.pulltypeOptions) {
+                                        try {
+                                          const pulltypeData = (selectedModel as any).pulltypeOptions;
+                                          pulltypeOptions = typeof pulltypeData === 'string' ? 
+                                            JSON.parse(pulltypeData) : 
+                                            pulltypeData || {};
+                                        } catch (e) {
+                                          console.warn('Failed to parse pulltype options:', e);
+                                        }
+                                      }
+                                      
+                                      // Find pulltype for this length option
+                                      const pulltype = pulltypeOptions[option.name] || '';
+                                      
                                       const formattedPrice = option.price === 0 ? 'Included' : 
                                                             option.price > 0 ? `+$${option.price.toLocaleString()}` : 
                                                             `$${option.price.toLocaleString()}`;
@@ -1396,7 +1412,7 @@ Configuration Date: ${new Date().toLocaleDateString()}
                                           data-testid={`row-length-${option.id}`}
                                         >
                                           <div className="flex items-center justify-between w-full gap-3">
-                                            <span>{option.name}</span>
+                                            <span>{`${option.name}${pulltype ? ` - ${pulltype}` : ''}`}</span>
                                             <span className="text-gray-400">{formattedPrice}</span>
                                           </div>
                                         </SelectItem>
@@ -1405,38 +1421,6 @@ Configuration Date: ${new Date().toLocaleDateString()}
                                   </SelectContent>
                                 </Select>
                                 
-                                {/* Display pulltype for selected length */}
-                                {(() => {
-                                  // Get the currently selected option
-                                  const selectedOptionId = selectedOptions[category] || categoryOptions[0]?.id;
-                                  const selectedOption = categoryOptions.find(opt => opt.id === selectedOptionId);
-                                  
-                                  if (selectedOption) {
-                                    // Parse pulltype data from selectedModel
-                                    let pulltypeOptions: Record<string, string> = {};
-                                    if ((selectedModel as any)?.pulltypeOptions) {
-                                      try {
-                                        const pulltypeData = (selectedModel as any).pulltypeOptions;
-                                        pulltypeOptions = typeof pulltypeData === 'string' ? 
-                                          JSON.parse(pulltypeData) : 
-                                          pulltypeData || {};
-                                      } catch (e) {
-                                        console.warn('Failed to parse pulltype options:', e);
-                                      }
-                                    }
-                                    
-                                    const pulltype = pulltypeOptions[selectedOption.name] || '';
-                                    
-                                    if (pulltype) {
-                                      return (
-                                        <div className="mt-2 text-sm text-gray-600">
-                                          <span className="font-medium">Pull Type:</span> {pulltype}
-                                        </div>
-                                      );
-                                    }
-                                  }
-                                  return null;
-                                })()}
                               </div>
                             ) : category === 'walls' ? (
                               // Special dropdown handling for wall height options
