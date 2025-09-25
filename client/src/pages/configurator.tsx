@@ -485,7 +485,7 @@ export default function Configurator() {
     setSelectedOptions(defaultOptions);
   };
 
-  const handleOptionChange = (category: string, optionId: number, isMultiSelect: boolean, checked: boolean) => {
+  const handleOptionChange = (category: string, optionId: string | number, isMultiSelect: boolean, checked: boolean) => {
     const newOptions = { ...selectedOptions };
     
     if (isMultiSelect) {
@@ -495,7 +495,7 @@ export default function Configurator() {
       if (checked) {
         newOptions[category] = [...newOptions[category], optionId];
       } else {
-        newOptions[category] = newOptions[category].filter((id: number) => id !== optionId);
+        newOptions[category] = newOptions[category].filter((id: string | number) => id !== optionId);
       }
     } else {
       if (checked) {
@@ -1374,7 +1374,7 @@ Configuration Date: ${new Date().toLocaleDateString()}
                               <div className="space-y-2">
                                 <select
                                   value={selectedOptions[category]?.toString() || categoryOptions[0]?.id.toString()}
-                                  onChange={(e) => handleOptionChange(category, parseInt(e.target.value), false, true)}
+                                  onChange={(e) => handleOptionChange(category, e.target.value.startsWith('length_') ? e.target.value : parseInt(e.target.value), false, true)}
                                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
                                 >
                                   {categoryOptions.map((option) => (
