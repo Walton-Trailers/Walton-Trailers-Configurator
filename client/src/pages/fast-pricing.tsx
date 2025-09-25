@@ -138,6 +138,13 @@ export default function FastPricing() {
     hexColor: "",
     primerPrice: ""
   });
+  const [editingLength, setEditingLength] = useState<any>(null);
+  const [showAddLength, setShowAddLength] = useState(false);
+  const [newLengthData, setNewLengthData] = useState({
+    modelId: 0,
+    length: "",
+    pullType: ""
+  });
 
   const sessionId = localStorage.getItem("admin_session");
   const queryClient = useQueryClient();
@@ -156,6 +163,20 @@ export default function FastPricing() {
     queryKey: ['/api/categories', 'options'],
     queryFn: async () => {
       const response = await fetch('/api/categories/options', {
+        headers: {
+          Authorization: `Bearer ${sessionId}`,
+        },
+      });
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+      return response.json();
+    },
+  });
+
+  // Fetch trailer lengths data
+  const { data: trailerLengths = [], isLoading: lengthsLoading } = useQuery({
+    queryKey: ['/api/trailer-lengths'],
+    queryFn: async () => {
+      const response = await fetch('/api/trailer-lengths', {
         headers: {
           Authorization: `Bearer ${sessionId}`,
         },
@@ -276,6 +297,92 @@ export default function FastPricing() {
     },
   });
 
+  // Trailer Lengths mutations
+  const addLengthMutation = useMutation({
+    mutationFn: (data: any) => {
+      const processedData = {
+        ...data,
+        length: parseInt(data.length) || 0,
+        modelId: parseInt(data.modelId) || 0
+      };
+      return fastMutate('/api/trailer-lengths', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${sessionId}`,
+        },
+        body: JSON.stringify(processedData),
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/trailer-lengths'] });
+      setShowAddLength(false);
+      setNewLengthData({ modelId: 0, length: "", pullType: "" });
+      toast({ title: "Success", description: "Trailer length added successfully" });
+    },
+  });
+
+  const updateLengthMutation = useMutation({
+    mutationFn: ({ id, ...data }: any) => {
+      const processedData = {
+        ...data,
+        length: data.length ? parseInt(data.length) || 0 : undefined
+      };
+      return fastMutate(`/api/trailer-lengths/${id}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${sessionId}`,
+        },
+        body: JSON.stringify(processedData),
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/trailer-lengths'] });
+      setEditingLength(null);
+      setEditData({});
+      toast({ title: "Success", description: "Trailer length updated successfully" });
+    },
+  });
+
+  const deleteLengthMutation = useMutation({
+    mutationFn: (id: number) => fastMutate(`/api/trailer-lengths/${id}`, {
+      method: 'DELETE',
+      headers: {
+        Authorization: `Bearer ${sessionId}`,
+      },
+    }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/trailer-lengths'] });
+      toast({ title: "Success", description: "Trailer length deleted successfully" });
+    },
+  });
+
+  const archiveLengthMutation = useMutation({
+    mutationFn: (id: number) => fastMutate(`/api/trailer-lengths/${id}/archive`, {
+      method: 'PATCH',
+      headers: {
+        Authorization: `Bearer ${sessionId}`,
+      },
+    }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/trailer-lengths'] });
+      toast({ title: "Success", description: "Trailer length archived successfully" });
+    },
+  });
+
+  const restoreLengthMutation = useMutation({
+    mutationFn: (id: number) => fastMutate(`/api/trailer-lengths/${id}/restore`, {
+      method: 'PATCH',
+      headers: {
+        Authorization: `Bearer ${sessionId}`,
+      },
+    }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/trailer-lengths'] });
+      toast({ title: "Success", description: "Trailer length restored successfully" });
+    },
+  });
 
   // Fast filtering with memoization
   const { activeModels, archivedModels } = useMemo(() => {
@@ -2100,11 +2207,248 @@ export default function FastPricing() {
           <Card>
             <div className="p-6">
               <div className="flex justify-between items-center mb-4">
-                <h2 className="text-lg font-semibold">Lengths & Pull Types</h2>
+                <h2 className="text-lg font-semibold">Lengths & Pull Types ({trailerLengths.length})</h2>
+                <Button onClick={() => setShowAddLength(true)} size="sm">
+                  Add Length & Pull Type
+                </Button>
               </div>
-              <div className="text-center py-12 text-gray-500">
-                <p>Content for Lengths & Pull Types coming soon...</p>
-              </div>
+              
+              {/* Add New Length Dialog */}
+              {showAddLength && (
+                <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center z-50 overflow-y-auto">
+                  <div className="bg-white rounded-lg max-w-2xl w-full my-8 max-h-[calc(100vh-4rem)] flex flex-col">
+                    <div className="p-6 pb-4">
+                      <h3 className="text-lg font-semibold mb-4">Add New Length & Pull Type</h3>
+                    </div>
+                    <div className="px-6 flex-1 overflow-y-auto">
+                      <div className="space-y-4">
+                        <div>
+                          <label className="block text-sm font-medium mb-1">Trailer Model</label>
+                          <Select
+                            value={newLengthData.modelId ? newLengthData.modelId.toString() : ""}
+                            onValueChange={(value: string) => setNewLengthData({ ...newLengthData, modelId: parseInt(value) })}
+                          >
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select a model" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {activeModels.map((model: any) => (
+                                <SelectItem key={model.id} value={model.id.toString()}>
+                                  {model.modelId} - {model.name}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium mb-1">Length (feet)</label>
+                          <Input
+                            type="number"
+                            placeholder="Enter length in feet"
+                            value={newLengthData.length}
+                            onChange={(e: any) => setNewLengthData({ ...newLengthData, length: e.target.value })}
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium mb-1">Pull Type</label>
+                          <Input
+                            placeholder="Enter pull type (e.g., Gooseneck, Bumper Pull, etc.)"
+                            value={newLengthData.pullType}
+                            onChange={(e: any) => setNewLengthData({ ...newLengthData, pullType: e.target.value })}
+                          />
+                        </div>
+                      </div>
+                    </div>
+                    <div className="p-6 pt-4 border-t bg-white rounded-b-lg">
+                      <div className="flex justify-end gap-3">
+                        <Button variant="outline" onClick={() => {
+                          setShowAddLength(false);
+                          setNewLengthData({ modelId: 0, length: "", pullType: "" });
+                        }}>
+                          Cancel
+                        </Button>
+                        <Button 
+                          onClick={() => {
+                            if (newLengthData.modelId && newLengthData.length && newLengthData.pullType) {
+                              addLengthMutation.mutate(newLengthData);
+                            }
+                          }}
+                          disabled={
+                            addLengthMutation.isPending || 
+                            !newLengthData.modelId || 
+                            !newLengthData.length || 
+                            !newLengthData.pullType
+                          }
+                        >
+                          {addLengthMutation.isPending ? "Adding..." : "Add Length"}
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+              
+              {lengthsLoading ? (
+                <div className="text-center py-8">Loading trailer lengths...</div>
+              ) : trailerLengths && trailerLengths.length > 0 ? (
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Model</TableHead>
+                      <TableHead>Model Series</TableHead>
+                      <TableHead>Length (ft)</TableHead>
+                      <TableHead>Pull Type</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead>Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {trailerLengths
+                      .filter((trailerLength: any) => 
+                        !searchQuery || 
+                        trailerLength.modelName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                        trailerLength.modelSeries?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                        trailerLength.pullType?.toLowerCase().includes(searchQuery.toLowerCase())
+                      )
+                      .map((trailerLength: any) => (
+                      <TableRow key={trailerLength.id} className={trailerLength.isArchived ? "opacity-50" : ""}>
+                        <TableCell className="font-medium">{trailerLength.modelName}</TableCell>
+                        <TableCell>{trailerLength.modelSeries}</TableCell>
+                        <TableCell>
+                          {editingLength?.id === trailerLength.id ? (
+                            <Input
+                              type="number"
+                              value={editData[trailerLength.id]?.length ?? trailerLength.length}
+                              onChange={(e: any) =>
+                                setEditData({
+                                  ...editData,
+                                  [trailerLength.id]: {
+                                    ...editData[trailerLength.id],
+                                    length: e.target.value,
+                                  },
+                                })
+                              }
+                              className="w-20"
+                            />
+                          ) : (
+                            `${trailerLength.length}ft`
+                          )}
+                        </TableCell>
+                        <TableCell>
+                          {editingLength?.id === trailerLength.id ? (
+                            <Input
+                              value={editData[trailerLength.id]?.pullType ?? trailerLength.pullType}
+                              onChange={(e: any) =>
+                                setEditData({
+                                  ...editData,
+                                  [trailerLength.id]: {
+                                    ...editData[trailerLength.id],
+                                    pullType: e.target.value,
+                                  },
+                                })
+                              }
+                              className="w-32"
+                              placeholder="Pull type"
+                            />
+                          ) : (
+                            trailerLength.pullType
+                          )}
+                        </TableCell>
+                        <TableCell>
+                          {trailerLength.isArchived ? (
+                            <span className="text-red-600 text-sm">Archived</span>
+                          ) : (
+                            <span className="text-green-600 text-sm">Active</span>
+                          )}
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex gap-2">
+                            {editingLength?.id === trailerLength.id ? (
+                              <>
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => {
+                                    updateLengthMutation.mutate({
+                                      id: trailerLength.id,
+                                      length: editData[trailerLength.id]?.length ?? trailerLength.length,
+                                      pullType: editData[trailerLength.id]?.pullType ?? trailerLength.pullType,
+                                    });
+                                  }}
+                                  disabled={updateLengthMutation.isPending}
+                                >
+                                  <Save className="w-4 h-4" />
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  variant="ghost"
+                                  onClick={() => {
+                                    setEditingLength(null);
+                                    setEditData({});
+                                  }}
+                                >
+                                  <X className="w-4 h-4" />
+                                </Button>
+                              </>
+                            ) : (
+                              <>
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => setEditingLength(trailerLength)}
+                                  disabled={!!editingLength}
+                                >
+                                  <Edit className="w-4 h-4" />
+                                </Button>
+                                {trailerLength.isArchived ? (
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    onClick={() => restoreLengthMutation.mutate(trailerLength.id)}
+                                    disabled={restoreLengthMutation.isPending}
+                                    title="Restore length"
+                                  >
+                                    <RotateCcw className="w-4 h-4" />
+                                  </Button>
+                                ) : (
+                                  <>
+                                    <Button
+                                      size="sm"
+                                      variant="outline"
+                                      onClick={() => archiveLengthMutation.mutate(trailerLength.id)}
+                                      disabled={archiveLengthMutation.isPending}
+                                      title="Archive length"
+                                    >
+                                      <Archive className="w-4 h-4" />
+                                    </Button>
+                                    <Button
+                                      size="sm"
+                                      variant="destructive"
+                                      onClick={() => {
+                                        if (confirm("Are you sure you want to delete this trailer length? This action cannot be undone.")) {
+                                          deleteLengthMutation.mutate(trailerLength.id);
+                                        }
+                                      }}
+                                      disabled={deleteLengthMutation.isPending}
+                                      title="Delete length"
+                                    >
+                                      <Trash2 className="w-4 h-4" />
+                                    </Button>
+                                  </>
+                                )}
+                              </>
+                            )}
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              ) : (
+                <div className="text-center py-8 text-gray-500">
+                  No trailer lengths configured. Add some to get started.
+                </div>
+              )}
             </div>
           </Card>
         )}
