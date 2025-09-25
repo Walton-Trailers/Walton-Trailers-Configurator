@@ -1385,17 +1385,21 @@ Configuration Date: ${new Date().toLocaleDateString()}
                                   </SelectTrigger>
                                   <SelectContent>
                                     {categoryOptions.map((option) => {
-                                      // Normalize pulltype data from selectedModel
-                                      const pulltypeOptions = selectedModel?.pulltypeOptions ? 
-                                        (typeof selectedModel.pulltypeOptions === 'string' ? 
-                                          JSON.parse(selectedModel.pulltypeOptions) : 
-                                          selectedModel.pulltypeOptions) : {};
+                                      // Parse pulltype data from selectedModel
+                                      let pulltypeOptions = {};
+                                      if (selectedModel?.pulltypeOptions) {
+                                        try {
+                                          pulltypeOptions = typeof selectedModel.pulltypeOptions === 'string' ? 
+                                            JSON.parse(selectedModel.pulltypeOptions) : 
+                                            selectedModel.pulltypeOptions;
+                                        } catch (e) {
+                                          console.warn('Failed to parse pulltype options:', e);
+                                        }
+                                      }
                                       
-                                      // Try to find pulltype using normalized keys
-                                      const pulltype = pulltypeOptions[option.name] || 
-                                                      pulltypeOptions[option.name.replace(/[\"']/g, '')] || 
-                                                      pulltypeOptions[option.name + '"'] || 
-                                                      pulltypeOptions[option.name + "'"] || '';
+                                      
+                                      // Find pulltype for this length option
+                                      const pulltype = pulltypeOptions[option.name] || '';
                                       
                                       const formattedPrice = option.price === 0 ? 'Included' : 
                                                             option.price > 0 ? `+$${option.price.toLocaleString()}` : 

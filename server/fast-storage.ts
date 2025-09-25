@@ -71,8 +71,9 @@ export class FastStorage {
     if (cached) return cached;
 
     const result = await db.execute(sql`
-      SELECT m.id, m.category_id, m.model_id, m.name, m.gvwr, m.payload,
+      SELECT m.id, m.category_id, m.series_id, m.model_id, m.name, m.gvwr, m.payload,
              m.deck_size, m.axles, m.base_price, m.image_url, m.features,
+             m.length_options, m.pulltype_options, m.length_price,
              m.is_archived, c.name as category_name
       FROM trailer_models m
       JOIN trailer_categories c ON m.category_id = c.id
@@ -82,6 +83,7 @@ export class FastStorage {
     const models = result.rows.map((model: any) => ({
       id: model.id,
       categoryId: model.category_id,
+      seriesId: model.series_id,
       modelId: model.model_id,
       name: model.name,
       gvwr: model.gvwr,
@@ -91,6 +93,9 @@ export class FastStorage {
       basePrice: model.base_price,
       imageUrl: model.image_url,
       features: model.features || [],
+      lengthOptions: model.length_options || [],
+      pulltypeOptions: model.pulltype_options,
+      lengthPrice: model.length_price,
       categoryName: model.category_name,
       isArchived: model.is_archived || false
     }));
