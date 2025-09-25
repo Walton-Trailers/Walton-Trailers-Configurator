@@ -1573,7 +1573,7 @@ export default function FastPricing() {
 
         {/* Models table */}
         {activeTab === "models" && (
-          <div>
+          <>
             <Card>
               <div className="p-6">
                 <div className="flex justify-between items-center mb-4">
@@ -1585,13 +1585,10 @@ export default function FastPricing() {
                 
                 {/* Add Model Dialog */}
                 {showAddModel && (
-                  <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center z-50 overflow-y-auto">
-                    <div className="bg-white rounded-lg max-w-2xl w-full my-8 max-h-[calc(100vh-4rem)] flex flex-col">
-                      <div className="p-6 pb-4">
-                        <h3 className="text-lg font-semibold mb-4">Add New Model</h3>
-                      </div>
-                      <div className="px-6 flex-1 overflow-y-auto">
-                        <div className="space-y-4">
+                  <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+                    <div className="bg-white rounded-lg p-6 max-w-2xl w-full">
+                      <h3 className="text-lg font-semibold mb-4">Add New Model</h3>
+                      <div className="space-y-4">
                         <div className="grid grid-cols-2 gap-4">
                           <div>
                             <label className="block text-sm font-medium mb-1">Category</label>
@@ -1746,24 +1743,21 @@ export default function FastPricing() {
                           />
                         </div>
                       </div>
-                      <div className="p-6 pt-4 border-t bg-white rounded-b-lg">
-                        <div className="flex justify-end gap-3">
-                          <Button variant="outline" onClick={() => setShowAddModel(false)}>
-                            Cancel
-                          </Button>
-                          <Button 
-                            onClick={() => addModelMutation.mutate(newModelData)}
-                            disabled={addModelMutation.isPending || !newModelData.name || !newModelData.modelSeries || !newModelData.categoryId || !newModelData.seriesId || (parseFloat(newModelData.basePrice as string) || 0) < 0}
-                          >
-                            Add Model
-                          </Button>
-                        </div>
+                      <div className="flex justify-end gap-3 mt-6">
+                        <Button variant="outline" onClick={() => setShowAddModel(false)}>
+                          Cancel
+                        </Button>
+                        <Button 
+                          onClick={() => addModelMutation.mutate(newModelData)}
+                          disabled={addModelMutation.isPending || !newModelData.name || !newModelData.modelSeries || !newModelData.categoryId || !newModelData.seriesId || (parseFloat(newModelData.basePrice as string) || 0) < 0}
+                        >
+                          Add Model
+                        </Button>
                       </div>
                     </div>
                   </div>
                 )}
-                
-                <Table>
+            <Table>
               <TableHeader>
                 <TableRow>
                   <TableHead>Model ID</TableHead>
@@ -2084,7 +2078,7 @@ export default function FastPricing() {
                 </div>
               </Card>
             )}
-          </div>
+          </>
         )}
 
         {/* Options & Extras Tab */}
