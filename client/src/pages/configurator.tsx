@@ -1392,13 +1392,19 @@ Configuration Date: ${new Date().toLocaleDateString()}
                                           pulltypeOptions = typeof selectedModel.pulltypeOptions === 'string' ? 
                                             JSON.parse(selectedModel.pulltypeOptions) : 
                                             selectedModel.pulltypeOptions;
+                                          console.log('Debug: Parsed pulltype options:', pulltypeOptions);
+                                          console.log('Debug: selectedModel full object:', selectedModel);
                                         } catch (e) {
                                           console.warn('Failed to parse pulltype options:', e);
                                         }
+                                      } else {
+                                        console.log('Debug: No pulltype options found in selectedModel');
+                                        console.log('Debug: selectedModel:', selectedModel);
                                       }
                                       
                                       // Find pulltype for this length option
                                       const pulltype = pulltypeOptions[option.name] || '';
+                                      console.log(`Debug: For option ${option.name}, found pulltype: "${pulltype}"`);
                                       
                                       const formattedPrice = option.price === 0 ? 'Included' : 
                                                             option.price > 0 ? `+$${option.price.toLocaleString()}` : 
