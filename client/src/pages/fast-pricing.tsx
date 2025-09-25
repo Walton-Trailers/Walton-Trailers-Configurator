@@ -742,7 +742,6 @@ export default function FastPricing() {
   if (isLoading) return <div className="p-8 text-center">Loading...</div>;
 
   return (
-    <>
     <div className="min-h-screen bg-gray-50">
       <div className="max-w-7xl mx-auto py-6 px-4">
         <div className="flex items-center gap-4 mb-6">
@@ -1572,15 +1571,27 @@ export default function FastPricing() {
         )}
 
 
-        {/* Add Model Dialog */}
-        {activeTab === "models" && showAddModel && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center z-50 overflow-y-auto">
-            <div className="bg-white rounded-lg max-w-2xl w-full my-8 max-h-[calc(100vh-4rem)] flex flex-col">
-              <div className="p-6 pb-4">
-                <h3 className="text-lg font-semibold mb-4">Add New Model</h3>
-              </div>
-              <div className="px-6 flex-1 overflow-y-auto">
-                <div className="space-y-4">
+        {/* Models table */}
+        {activeTab === "models" && (
+          <div>
+            <Card>
+              <div className="p-6">
+                <div className="flex justify-between items-center mb-4">
+                  <h2 className="text-lg font-semibold">Models ({activeModels.length})</h2>
+                  <Button onClick={() => setShowAddModel(true)} size="sm">
+                    Add Model
+                  </Button>
+                </div>
+                
+                {/* Add Model Dialog */}
+                {showAddModel && (
+                  <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center z-50 overflow-y-auto">
+                    <div className="bg-white rounded-lg max-w-2xl w-full my-8 max-h-[calc(100vh-4rem)] flex flex-col">
+                      <div className="p-6 pb-4">
+                        <h3 className="text-lg font-semibold mb-4">Add New Model</h3>
+                      </div>
+                      <div className="px-6 flex-1 overflow-y-auto">
+                        <div className="space-y-4">
                         <div className="grid grid-cols-2 gap-4">
                           <div>
                             <label className="block text-sm font-medium mb-1">Category</label>
@@ -1751,20 +1762,8 @@ export default function FastPricing() {
                     </div>
                   </div>
                 )}
-
-        {/* Models table */}
-        {activeTab === "models" && (
-          <div>
-            <Card>
-              <div className="p-6">
-                <div className="flex justify-between items-center mb-4">
-                  <h2 className="text-lg font-semibold">Models ({activeModels.length})</h2>
-                  <Button onClick={() => setShowAddModel(true)} size="sm">
-                    Add Model
-                  </Button>
-                </div>
                 
-            <Table>
+                <Table>
               <TableHeader>
                 <TableRow>
                   <TableHead>Model ID</TableHead>
@@ -2585,6 +2584,5 @@ export default function FastPricing() {
         )}
       </div>
     </div>
-    </>
   );
 }
