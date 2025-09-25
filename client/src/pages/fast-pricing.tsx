@@ -789,6 +789,16 @@ export default function FastPricing() {
                 Models
               </button>
               <button
+                onClick={() => setActiveTab("lengths")}
+                className={`py-2 px-1 border-b-2 font-medium text-sm ${
+                  activeTab === "lengths"
+                    ? "border-blue-500 text-blue-600"
+                    : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+                }`}
+              >
+                Lengths & Pull Types
+              </button>
+              <button
                 onClick={() => setActiveTab("options")}
                 className={`py-2 px-1 border-b-2 font-medium text-sm ${
                   activeTab === "options"
@@ -805,7 +815,13 @@ export default function FastPricing() {
         {/* Search bar */}
         <div className="mb-6">
           <Input
-            placeholder={activeTab === "categories" ? "Search categories..." : activeTab === "models" ? "Search models..." : "Search options..."}
+            placeholder={
+              activeTab === "categories" ? "Search categories..." : 
+              activeTab === "series" ? "Search series..." :
+              activeTab === "models" ? "Search models..." : 
+              activeTab === "lengths" ? "Search lengths..." : 
+              "Search options..."
+            }
             value={searchQuery}
             onChange={(e: any) => setSearchQuery(e.target.value)}
             className="max-w-md"
@@ -2077,6 +2093,20 @@ export default function FastPricing() {
               </Card>
             )}
           </>
+        )}
+
+        {/* Lengths & Pull Types Tab */}
+        {activeTab === "lengths" && (
+          <Card>
+            <div className="p-6">
+              <div className="flex justify-between items-center mb-4">
+                <h2 className="text-lg font-semibold">Lengths & Pull Types</h2>
+              </div>
+              <div className="text-center py-12 text-gray-500">
+                <p>Content for Lengths & Pull Types coming soon...</p>
+              </div>
+            </div>
+          </Card>
         )}
 
         {/* Options & Extras Tab */}
