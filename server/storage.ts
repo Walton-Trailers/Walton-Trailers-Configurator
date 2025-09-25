@@ -1006,8 +1006,8 @@ export class DatabaseStorage implements IStorage {
     try {
       const result = await db.execute(sql`
         SELECT m.id, m.category_id, m.series_id, m.model_id, m.name, m.gvwr, m.payload,
-               m.deck_size, m.axles, m.base_price, m.image_url, m.features,
-               m.is_archived, m.category_sub_type, c.name as category_name,
+               m.deck_size, m.axles, m.length_options, m.pulltype_options, m.base_price, 
+               m.image_url, m.features, m.is_archived, m.category_sub_type, c.name as category_name,
                s.name as series_name
         FROM trailer_models m
         JOIN trailer_categories c ON m.category_id = c.id
@@ -1028,6 +1028,8 @@ export class DatabaseStorage implements IStorage {
         payload: model.payload,
         deckSize: model.deck_size,
         axles: model.axles,
+        lengthOptions: model.length_options,
+        pulltypeOptions: model.pulltype_options,
         basePrice: model.base_price,
         imageUrl: model.image_url,
         features: model.features || [],
@@ -1148,6 +1150,20 @@ export class DatabaseStorage implements IStorage {
           WHERE id = ${id}
         `);
       }
+      if (updates.lengthOptions !== undefined) {
+        await db.execute(sql`
+          UPDATE trailer_models 
+          SET length_options = ${updates.lengthOptions}
+          WHERE id = ${id}
+        `);
+      }
+      if (updates.pulltypeOptions !== undefined) {
+        await db.execute(sql`
+          UPDATE trailer_models 
+          SET pulltype_options = ${updates.pulltypeOptions}
+          WHERE id = ${id}
+        `);
+      }
       if (updates.categoryId !== undefined) {
         await db.execute(sql`
           UPDATE trailer_models 
@@ -1189,8 +1205,8 @@ export class DatabaseStorage implements IStorage {
       // Get the updated record with series information
       const result = await db.execute(sql`
         SELECT m.id, m.category_id, m.series_id, m.model_id, m.name, m.gvwr, m.payload,
-               m.deck_size, m.axles, m.base_price, m.image_url, m.features, m.is_archived, 
-               m.category_sub_type, s.name as series_name
+               m.deck_size, m.axles, m.length_options, m.pulltype_options, m.base_price, 
+               m.image_url, m.features, m.is_archived, m.category_sub_type, s.name as series_name
         FROM trailer_models m
         LEFT JOIN trailer_series s ON m.series_id = s.id
         WHERE m.id = ${id}
@@ -1212,6 +1228,8 @@ export class DatabaseStorage implements IStorage {
         payload: updatedModel.payload,
         deckSize: updatedModel.deck_size,
         axles: updatedModel.axles,
+        lengthOptions: updatedModel.length_options,
+        pulltypeOptions: updatedModel.pulltype_options,
         basePrice: updatedModel.base_price,
         imageUrl: updatedModel.image_url,
         features: updatedModel.features || [],

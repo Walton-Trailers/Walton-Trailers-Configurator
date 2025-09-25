@@ -415,6 +415,8 @@ export default function FastPricing() {
       payload: data.payload ?? model.payload,
       deckSize: data.deckSize ?? model.deckSize,
       axles: data.axles ?? model.axles,
+      lengthOptions: data.lengthOptions ?? model.lengthOptions,
+      pulltypeOptions: data.pulltypeOptions ?? model.pulltypeOptions,
     });
   };
 
@@ -1768,6 +1770,8 @@ export default function FastPricing() {
                   <TableHead>Payload</TableHead>
                   <TableHead>Deck Size</TableHead>
                   <TableHead>Axles</TableHead>
+                  <TableHead>Length Options</TableHead>
+                  <TableHead>Pull Type Options</TableHead>
                   <TableHead>Price</TableHead>
                   <TableHead>Image</TableHead>
                   <TableHead>Actions</TableHead>
@@ -1906,6 +1910,45 @@ export default function FastPricing() {
                     <TableCell>
                       {editingModel?.id === model.id ? (
                         <Input
+                          placeholder="Length Options"
+                          value={editData[model.id]?.lengthOptions ? JSON.stringify(editData[model.id]?.lengthOptions) : (model.lengthOptions ? JSON.stringify(model.lengthOptions) : "")}
+                          onChange={(e: any) => {
+                            try {
+                              const parsed = e.target.value ? JSON.parse(e.target.value) : null;
+                              setEditData({
+                                ...editData,
+                                [model.id]: { ...editData[model.id], lengthOptions: parsed }
+                              });
+                            } catch {
+                              // Allow invalid JSON while typing
+                              setEditData({
+                                ...editData,
+                                [model.id]: { ...editData[model.id], lengthOptions: e.target.value }
+                              });
+                            }
+                          }}
+                        />
+                      ) : (
+                        model.lengthOptions ? (typeof model.lengthOptions === 'string' ? model.lengthOptions : JSON.stringify(model.lengthOptions)) : "—"
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      {editingModel?.id === model.id ? (
+                        <Input
+                          placeholder="Pull Type Options"
+                          value={editData[model.id]?.pulltypeOptions ?? model.pulltypeOptions ?? ""}
+                          onChange={(e: any) => setEditData({
+                            ...editData,
+                            [model.id]: { ...editData[model.id], pulltypeOptions: e.target.value || null }
+                          })}
+                        />
+                      ) : (
+                        model.pulltypeOptions || "—"
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      {editingModel?.id === model.id ? (
+                        <Input
                           type="number"
                           value={editData[model.id]?.basePrice ?? model.basePrice}
                           onChange={(e: any) => setEditData({
@@ -2023,6 +2066,8 @@ export default function FastPricing() {
                           <TableHead>Payload</TableHead>
                           <TableHead>Deck Size</TableHead>
                           <TableHead>Axles</TableHead>
+                          <TableHead>Length Options</TableHead>
+                          <TableHead>Pull Type Options</TableHead>
                           <TableHead>Price</TableHead>
                           <TableHead>Image</TableHead>
                           <TableHead>Actions</TableHead>
@@ -2039,6 +2084,8 @@ export default function FastPricing() {
                             <TableCell>{model.payload || "—"}</TableCell>
                             <TableCell>{model.deckSize || "—"}</TableCell>
                             <TableCell>{model.axles || "—"}</TableCell>
+                            <TableCell>{model.lengthOptions ? (typeof model.lengthOptions === 'string' ? model.lengthOptions : JSON.stringify(model.lengthOptions)) : "—"}</TableCell>
+                            <TableCell>{model.pulltypeOptions || "—"}</TableCell>
                             <TableCell>${model.basePrice?.toLocaleString()}</TableCell>
                             <TableCell>
                               {model.imageUrl ? (
