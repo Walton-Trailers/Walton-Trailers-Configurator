@@ -12,6 +12,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, Dialog
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { ArrowLeft, ArrowRight, Download, Mail, MapPin, RotateCcw, Info, X, Users, Phone, Building, Building2, Save, ChevronDown } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Link } from "wouter";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
@@ -1370,21 +1371,51 @@ Configuration Date: ${new Date().toLocaleDateString()}
                                 })}
                               </div>
                             ) : category === 'length' ? (
-                              // Special dropdown handling for length options
+                              // Special dropdown handling for length options with styled layout
                               <div className="space-y-2">
-                                <select
+                                <Select
                                   value={selectedOptions[category]?.toString() || categoryOptions[0]?.id.toString()}
-                                  onChange={(e) => handleOptionChange(category, e.target.value.startsWith('length_') ? e.target.value : parseInt(e.target.value), false, true)}
-                                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+                                  onValueChange={(value) => {
+                                    const parsedValue = value.startsWith('length_') ? value : parseInt(value);
+                                    handleOptionChange(category, parsedValue, false, true);
+                                  }}
                                 >
-                                  {categoryOptions.map((option) => (
-                                    <option key={option.id} value={option.id.toString()}>
-                                      {option.name} - {option.price === 0 ? 'Included' : 
-                                       option.price > 0 ? `+$${option.price.toLocaleString()}` : 
-                                       `$${option.price.toLocaleString()}`}
-                                    </option>
-                                  ))}
-                                </select>
+                                  <SelectTrigger className="w-full" data-testid="input-length">
+                                    <SelectValue placeholder="Select length" />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    {categoryOptions.map((option) => {
+                                      // Normalize pulltype data from selectedModel
+                                      const pulltypeOptions = selectedModel?.pulltypeOptions ? 
+                                        (typeof selectedModel.pulltypeOptions === 'string' ? 
+                                          JSON.parse(selectedModel.pulltypeOptions) : 
+                                          selectedModel.pulltypeOptions) : {};
+                                      
+                                      // Try to find pulltype using normalized keys
+                                      const pulltype = pulltypeOptions[option.name] || 
+                                                      pulltypeOptions[option.name.replace(/[\"']/g, '')] || 
+                                                      pulltypeOptions[option.name + '"'] || 
+                                                      pulltypeOptions[option.name + "'"] || '';
+                                      
+                                      const formattedPrice = option.price === 0 ? 'Included' : 
+                                                            option.price > 0 ? `+$${option.price.toLocaleString()}` : 
+                                                            `$${option.price.toLocaleString()}`;
+                                      
+                                      return (
+                                        <SelectItem 
+                                          key={option.id} 
+                                          value={option.id.toString()}
+                                          data-testid={`row-length-${option.id}`}
+                                        >
+                                          <div className="flex items-center justify-between w-full gap-3">
+                                            <span>{`${option.name}${pulltype ? ` - ${pulltype}` : ''}`}</span>
+                                            <span className="text-gray-400">{formattedPrice}</span>
+                                          </div>
+                                        </SelectItem>
+                                      );
+                                    })}
+                                  </SelectContent>
+                                </Select>
                               </div>
                             ) : category === 'walls' ? (
                               // Special dropdown handling for wall height options
