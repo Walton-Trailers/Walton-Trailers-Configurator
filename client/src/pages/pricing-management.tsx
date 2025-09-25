@@ -90,18 +90,6 @@ interface MediaFile {
   accessUrl: string;
 }
 
-interface TrailerLength {
-  id: number;
-  modelId: number;
-  length: number;
-  pullType: string;
-  isArchived: boolean;
-  createdAt: string;
-  updatedAt: string;
-  modelName?: string;
-  modelSeries?: string;
-}
-
 // Utility function to validate hex color format
 const isValidHex = (hex: string): boolean => {
   const hexRegex = /^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/;
@@ -150,13 +138,6 @@ export default function PricingManagement() {
   const [mediaSortBy, setMediaSortBy] = useState("created_at");
   const [mediaSortOrder, setMediaSortOrder] = useState("desc");
   const [showMediaDialog, setShowMediaDialog] = useState(false);
-  const [editingLength, setEditingLength] = useState<TrailerLength | null>(null);
-  const [showAddLength, setShowAddLength] = useState(false);
-  const [newLengthData, setNewLengthData] = useState({
-    modelId: 0,
-    length: 0,
-    pullType: ""
-  });
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -196,15 +177,6 @@ export default function PricingManagement() {
     queryKey: ["/api/categories/options"],
     queryFn: () =>
       apiRequest("/api/categories/options", {
-        headers: sessionId ? { Authorization: `Bearer ${sessionId}` } : {},
-      }),
-  });
-
-  // Fetch all trailer lengths
-  const { data: trailerLengths, isLoading: lengthsLoading } = useQuery({
-    queryKey: ["/api/trailer-lengths"],
-    queryFn: () =>
-      apiRequest("/api/trailer-lengths", {
         headers: sessionId ? { Authorization: `Bearer ${sessionId}` } : {},
       }),
   });
@@ -468,123 +440,6 @@ export default function PricingManagement() {
       toast({
         title: "Error",
         description: error.message || "Failed to archive model",
-        variant: "destructive",
-      });
-    },
-  });
-
-  // Trailer Lengths mutations
-  const createLengthMutation = useMutation({
-    mutationFn: (data: { modelId: number; length: number; pullType: string }) =>
-      apiRequest("/api/trailer-lengths", {
-        method: "POST",
-        body: data,
-        headers: sessionId ? { Authorization: `Bearer ${sessionId}` } : {},
-      }),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/trailer-lengths"] });
-      setShowAddLength(false);
-      setNewLengthData({ modelId: 0, length: 0, pullType: "" });
-      toast({
-        title: "Success",
-        description: "Trailer length created successfully",
-      });
-    },
-    onError: (error: any) => {
-      toast({
-        title: "Error",
-        description: error.message || "Failed to create trailer length",
-        variant: "destructive",
-      });
-    },
-  });
-
-  const updateLengthMutation = useMutation({
-    mutationFn: (data: { id: number; length?: number; pullType?: string; isArchived?: boolean }) =>
-      apiRequest(`/api/trailer-lengths/${data.id}`, {
-        method: "PATCH",
-        body: { length: data.length, pullType: data.pullType, isArchived: data.isArchived },
-        headers: sessionId ? { Authorization: `Bearer ${sessionId}` } : {},
-      }),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/trailer-lengths"] });
-      setEditingLength(null);
-      setEditData({});
-      toast({
-        title: "Success",
-        description: "Trailer length updated successfully",
-      });
-    },
-    onError: (error: any) => {
-      toast({
-        title: "Error",
-        description: error.message || "Failed to update trailer length",
-        variant: "destructive",
-      });
-    },
-  });
-
-  const deleteLengthMutation = useMutation({
-    mutationFn: (lengthId: number) =>
-      apiRequest(`/api/trailer-lengths/${lengthId}`, {
-        method: "DELETE",
-        headers: sessionId ? { Authorization: `Bearer ${sessionId}` } : {},
-      }),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/trailer-lengths"] });
-      toast({
-        title: "Success",
-        description: "Trailer length deleted successfully",
-      });
-    },
-    onError: (error: any) => {
-      toast({
-        title: "Error",
-        description: error.message || "Failed to delete trailer length",
-        variant: "destructive",
-      });
-    },
-  });
-
-  const archiveLengthMutation = useMutation({
-    mutationFn: (lengthId: number) =>
-      apiRequest(`/api/trailer-lengths/${lengthId}/archive`, {
-        method: "PATCH",
-        headers: sessionId ? { Authorization: `Bearer ${sessionId}` } : {},
-      }),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/trailer-lengths"] });
-      toast({
-        title: "Success",
-        description: "Trailer length archived successfully",
-      });
-    },
-    onError: (error: any) => {
-      toast({
-        title: "Error",
-        description: error.message || "Failed to archive trailer length",
-        variant: "destructive",
-      });
-    },
-  });
-
-  const restoreLengthMutation = useMutation({
-    mutationFn: (lengthId: number) =>
-      apiRequest(`/api/trailer-lengths/${lengthId}/restore`, {
-        method: "PATCH",
-        headers: sessionId ? { Authorization: `Bearer ${sessionId}` } : {},
-      }),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/trailer-lengths"] });
-      toast({
-        title: "Success",
-        description: "Trailer length restored successfully",
-      });
-    },
-    onError: (error: any) => {
-      toast({
-        title: "Error",
-        description: error.message || "Failed to restore trailer length",
         variant: "destructive",
       });
     },
@@ -964,7 +819,7 @@ export default function PricingManagement() {
 
         <Tabs defaultValue="categories" className="space-y-6">
           <div className="flex items-center justify-between mb-6">
-            <TabsList className="grid w-full max-w-[1200px] grid-cols-6">
+            <TabsList className="grid w-full max-w-[1000px] grid-cols-5">
               <TabsTrigger value="categories" className="flex items-center gap-2">
                 <Archive className="w-4 h-4" />
                 Categories
@@ -976,10 +831,6 @@ export default function PricingManagement() {
               <TabsTrigger value="models" className="flex items-center gap-2">
                 <DollarSign className="w-4 h-4" />
                 Trailer Models
-              </TabsTrigger>
-              <TabsTrigger value="lengths" className="flex items-center gap-2">
-                <Calendar className="w-4 h-4" />
-                Lengths & Pull Types
               </TabsTrigger>
               <TabsTrigger value="options" className="flex items-center gap-2">
                 <Edit className="w-4 h-4" />
@@ -2046,256 +1897,6 @@ export default function PricingManagement() {
                     )}
                   </div>
                 )}
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          <TabsContent value="lengths">
-            <Card>
-              <CardHeader>
-                <div className="flex justify-between items-center">
-                  <div>
-                    <CardTitle>Trailer Lengths & Pull Types</CardTitle>
-                    <CardDescription>
-                      Manage trailer length options and pull type specifications for each model
-                    </CardDescription>
-                  </div>
-                  <Button
-                    onClick={() => setShowAddLength(true)}
-                    className="flex items-center gap-2"
-                  >
-                    <Plus className="w-4 h-4" />
-                    Add Length & Pull Type
-                  </Button>
-                </div>
-              </CardHeader>
-              <CardContent>
-                {lengthsLoading ? (
-                  <div className="text-center py-8">Loading trailer lengths...</div>
-                ) : trailerLengths && trailerLengths.length > 0 ? (
-                  <div className="space-y-4">
-                    <Table>
-                      <TableHeader>
-                        <TableRow>
-                          <TableHead>Model</TableHead>
-                          <TableHead>Model Series</TableHead>
-                          <TableHead>Length (ft)</TableHead>
-                          <TableHead>Pull Type</TableHead>
-                          <TableHead>Status</TableHead>
-                          <TableHead>Actions</TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {trailerLengths.map((trailerLength: TrailerLength) => (
-                          <TableRow key={trailerLength.id} className={trailerLength.isArchived ? "opacity-50" : ""}>
-                            <TableCell className="font-medium">{trailerLength.modelName}</TableCell>
-                            <TableCell>{trailerLength.modelSeries}</TableCell>
-                            <TableCell>
-                              {editingLength?.id === trailerLength.id ? (
-                                <Input
-                                  type="number"
-                                  value={editData[trailerLength.id]?.length ?? trailerLength.length}
-                                  onChange={(e) =>
-                                    setEditData({
-                                      ...editData,
-                                      [trailerLength.id]: {
-                                        ...editData[trailerLength.id],
-                                        length: parseInt(e.target.value) || 0,
-                                      },
-                                    })
-                                  }
-                                  className="w-20"
-                                />
-                              ) : (
-                                `${trailerLength.length}ft`
-                              )}
-                            </TableCell>
-                            <TableCell>
-                              {editingLength?.id === trailerLength.id ? (
-                                <Input
-                                  value={editData[trailerLength.id]?.pullType ?? trailerLength.pullType}
-                                  onChange={(e) =>
-                                    setEditData({
-                                      ...editData,
-                                      [trailerLength.id]: {
-                                        ...editData[trailerLength.id],
-                                        pullType: e.target.value,
-                                      },
-                                    })
-                                  }
-                                  className="w-32"
-                                  placeholder="Pull type"
-                                />
-                              ) : (
-                                trailerLength.pullType
-                              )}
-                            </TableCell>
-                            <TableCell>
-                              {trailerLength.isArchived ? (
-                                <span className="text-red-600 text-sm">Archived</span>
-                              ) : (
-                                <span className="text-green-600 text-sm">Active</span>
-                              )}
-                            </TableCell>
-                            <TableCell>
-                              <div className="flex gap-2">
-                                {editingLength?.id === trailerLength.id ? (
-                                  <>
-                                    <Button
-                                      size="sm"
-                                      variant="outline"
-                                      onClick={() => {
-                                        updateLengthMutation.mutate({
-                                          id: trailerLength.id,
-                                          length: editData[trailerLength.id]?.length ?? trailerLength.length,
-                                          pullType: editData[trailerLength.id]?.pullType ?? trailerLength.pullType,
-                                        });
-                                      }}
-                                      disabled={updateLengthMutation.isPending}
-                                    >
-                                      <Save className="w-4 h-4" />
-                                    </Button>
-                                    <Button
-                                      size="sm"
-                                      variant="ghost"
-                                      onClick={() => {
-                                        setEditingLength(null);
-                                        setEditData({});
-                                      }}
-                                    >
-                                      <X className="w-4 h-4" />
-                                    </Button>
-                                  </>
-                                ) : (
-                                  <>
-                                    <Button
-                                      size="sm"
-                                      variant="outline"
-                                      onClick={() => setEditingLength(trailerLength)}
-                                      disabled={!!editingLength}
-                                    >
-                                      <Edit className="w-4 h-4" />
-                                    </Button>
-                                    {trailerLength.isArchived ? (
-                                      <Button
-                                        size="sm"
-                                        variant="outline"
-                                        onClick={() => restoreLengthMutation.mutate(trailerLength.id)}
-                                        disabled={restoreLengthMutation.isPending}
-                                        title="Restore length"
-                                      >
-                                        <RotateCcw className="w-4 h-4" />
-                                      </Button>
-                                    ) : (
-                                      <>
-                                        <Button
-                                          size="sm"
-                                          variant="outline"
-                                          onClick={() => archiveLengthMutation.mutate(trailerLength.id)}
-                                          disabled={archiveLengthMutation.isPending}
-                                          title="Archive length"
-                                        >
-                                          <Archive className="w-4 h-4" />
-                                        </Button>
-                                        <Button
-                                          size="sm"
-                                          variant="destructive"
-                                          onClick={() => {
-                                            if (confirm("Are you sure you want to delete this trailer length? This action cannot be undone.")) {
-                                              deleteLengthMutation.mutate(trailerLength.id);
-                                            }
-                                          }}
-                                          disabled={deleteLengthMutation.isPending}
-                                          title="Delete length"
-                                        >
-                                          <Trash2 className="w-4 h-4" />
-                                        </Button>
-                                      </>
-                                    )}
-                                  </>
-                                )}
-                              </div>
-                            </TableCell>
-                          </TableRow>
-                        ))}
-                      </TableBody>
-                    </Table>
-                  </div>
-                ) : (
-                  <div className="text-center py-8 text-gray-500">
-                    No trailer lengths configured. Add some to get started.
-                  </div>
-                )}
-
-                {/* Add New Length Dialog */}
-                <Dialog open={showAddLength} onOpenChange={setShowAddLength}>
-                  <DialogContent>
-                    <DialogHeader>
-                      <DialogTitle>Add Trailer Length & Pull Type</DialogTitle>
-                      <DialogDescription>
-                        Add a new length and pull type combination for a trailer model
-                      </DialogDescription>
-                    </DialogHeader>
-                    <div className="space-y-4">
-                      <div className="space-y-2">
-                        <Label>Trailer Model</Label>
-                        <Select
-                          value={newLengthData.modelId.toString()}
-                          onValueChange={(value) => setNewLengthData({ ...newLengthData, modelId: parseInt(value) })}
-                        >
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select a model" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {models?.map((model: TrailerModel) => (
-                              <SelectItem key={model.id} value={model.id.toString()}>
-                                {model.modelId} - {model.name}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
-                      <div className="space-y-2">
-                        <Label>Length (feet)</Label>
-                        <Input
-                          type="number"
-                          placeholder="Enter length in feet"
-                          value={newLengthData.length || ""}
-                          onChange={(e) => setNewLengthData({ ...newLengthData, length: parseInt(e.target.value) || 0 })}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label>Pull Type</Label>
-                        <Input
-                          placeholder="Enter pull type (e.g., Gooseneck, Bumper Pull, etc.)"
-                          value={newLengthData.pullType}
-                          onChange={(e) => setNewLengthData({ ...newLengthData, pullType: e.target.value })}
-                        />
-                      </div>
-                    </div>
-                    <DialogFooter>
-                      <Button
-                        variant="outline"
-                        onClick={() => {
-                          setShowAddLength(false);
-                          setNewLengthData({ modelId: 0, length: 0, pullType: "" });
-                        }}
-                      >
-                        Cancel
-                      </Button>
-                      <Button
-                        onClick={() => {
-                          if (newLengthData.modelId && newLengthData.length && newLengthData.pullType) {
-                            createLengthMutation.mutate(newLengthData);
-                          }
-                        }}
-                        disabled={createLengthMutation.isPending || !newLengthData.modelId || !newLengthData.length || !newLengthData.pullType}
-                      >
-                        {createLengthMutation.isPending ? "Adding..." : "Add Length"}
-                      </Button>
-                    </DialogFooter>
-                  </DialogContent>
-                </Dialog>
               </CardContent>
             </Card>
           </TabsContent>

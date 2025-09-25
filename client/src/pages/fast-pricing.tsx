@@ -1,12 +1,11 @@
 import React, { useState, useMemo, useEffect } from "react";
-import { ArrowLeft, Edit, Save, X, Archive, RotateCcw, Upload, Image, Trash2, Plus } from "lucide-react";
+import { ArrowLeft, Edit, Save, X, Archive, RotateCcw, Upload, Image, Trash2 } from "lucide-react";
 import { Link } from "wouter";
 import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query";
 import { useFastQuery } from "@/hooks/useFastQuery";
 import { ObjectUploader } from "@/components/ObjectUploader";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 // Minimal UI components for maximum performance
 const Button = ({ children, onClick, disabled, variant = 'default', size = 'default', ...props }: any) => (
@@ -31,7 +30,20 @@ const Input = ({ className = '', ...props }: any) => (
   />
 );
 
+const Select = ({ value, onValueChange, children }: any) => (
+  <select
+    value={value}
+    onChange={(e) => onValueChange(e.target.value)}
+    className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+  >
+    {children}
+  </select>
+);
 
+const SelectTrigger = ({ children }: any) => <>{children}</>;
+const SelectValue = () => null;
+const SelectContent = ({ children }: any) => <>{children}</>;
+const SelectItem = ({ value, children }: any) => <option value={value}>{children}</option>;
 
 const Card = ({ children, className = '' }: any) => (
   <div className={`bg-white rounded-lg border shadow-sm ${className}`}>
@@ -126,13 +138,6 @@ export default function FastPricing() {
     hexColor: "",
     primerPrice: ""
   });
-  const [editingLength, setEditingLength] = useState<any>(null);
-  const [showAddLength, setShowAddLength] = useState(false);
-  const [newLengthData, setNewLengthData] = useState({
-    modelId: 0,
-    length: "",
-    pullType: ""
-  });
 
   const sessionId = localStorage.getItem("admin_session");
   const queryClient = useQueryClient();
@@ -151,20 +156,6 @@ export default function FastPricing() {
     queryKey: ['/api/categories', 'options'],
     queryFn: async () => {
       const response = await fetch('/api/categories/options', {
-        headers: {
-          Authorization: `Bearer ${sessionId}`,
-        },
-      });
-      if (!response.ok) throw new Error(`HTTP ${response.status}`);
-      return response.json();
-    },
-  });
-
-  // Fetch trailer lengths data
-  const { data: trailerLengths = [], isLoading: lengthsLoading } = useQuery({
-    queryKey: ['/api/trailer-lengths'],
-    queryFn: async () => {
-      const response = await fetch('/api/trailer-lengths', {
         headers: {
           Authorization: `Bearer ${sessionId}`,
         },
@@ -285,92 +276,6 @@ export default function FastPricing() {
     },
   });
 
-  // Trailer Lengths mutations
-  const addLengthMutation = useMutation({
-    mutationFn: (data: any) => {
-      const processedData = {
-        ...data,
-        length: parseInt(data.length) || 0,
-        modelId: parseInt(data.modelId) || 0
-      };
-      return fastMutate('/api/trailer-lengths', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${sessionId}`,
-        },
-        body: JSON.stringify(processedData),
-      });
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/trailer-lengths'] });
-      setShowAddLength(false);
-      setNewLengthData({ modelId: 0, length: "", pullType: "" });
-      toast({ title: "Success", description: "Trailer length added successfully" });
-    },
-  });
-
-  const updateLengthMutation = useMutation({
-    mutationFn: ({ id, ...data }: any) => {
-      const processedData = {
-        ...data,
-        length: data.length ? parseInt(data.length) || 0 : undefined
-      };
-      return fastMutate(`/api/trailer-lengths/${id}`, {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${sessionId}`,
-        },
-        body: JSON.stringify(processedData),
-      });
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/trailer-lengths'] });
-      setEditingLength(null);
-      setEditData({});
-      toast({ title: "Success", description: "Trailer length updated successfully" });
-    },
-  });
-
-  const deleteLengthMutation = useMutation({
-    mutationFn: (id: number) => fastMutate(`/api/trailer-lengths/${id}`, {
-      method: 'DELETE',
-      headers: {
-        Authorization: `Bearer ${sessionId}`,
-      },
-    }),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/trailer-lengths'] });
-      toast({ title: "Success", description: "Trailer length deleted successfully" });
-    },
-  });
-
-  const archiveLengthMutation = useMutation({
-    mutationFn: (id: number) => fastMutate(`/api/trailer-lengths/${id}/archive`, {
-      method: 'PATCH',
-      headers: {
-        Authorization: `Bearer ${sessionId}`,
-      },
-    }),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/trailer-lengths'] });
-      toast({ title: "Success", description: "Trailer length archived successfully" });
-    },
-  });
-
-  const restoreLengthMutation = useMutation({
-    mutationFn: (id: number) => fastMutate(`/api/trailer-lengths/${id}/restore`, {
-      method: 'PATCH',
-      headers: {
-        Authorization: `Bearer ${sessionId}`,
-      },
-    }),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/trailer-lengths'] });
-      toast({ title: "Success", description: "Trailer length restored successfully" });
-    },
-  });
 
   // Fast filtering with memoization
   const { activeModels, archivedModels } = useMemo(() => {
@@ -884,16 +789,6 @@ export default function FastPricing() {
                 Models
               </button>
               <button
-                onClick={() => setActiveTab("lengths")}
-                className={`py-2 px-1 border-b-2 font-medium text-sm ${
-                  activeTab === "lengths"
-                    ? "border-blue-500 text-blue-600"
-                    : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
-                }`}
-              >
-                Lengths & Pull Types
-              </button>
-              <button
                 onClick={() => setActiveTab("options")}
                 className={`py-2 px-1 border-b-2 font-medium text-sm ${
                   activeTab === "options"
@@ -910,13 +805,7 @@ export default function FastPricing() {
         {/* Search bar */}
         <div className="mb-6">
           <Input
-            placeholder={
-              activeTab === "categories" ? "Search categories..." : 
-              activeTab === "series" ? "Search series..." :
-              activeTab === "models" ? "Search models..." : 
-              activeTab === "lengths" ? "Search lengths..." : 
-              "Search options..."
-            }
+            placeholder={activeTab === "categories" ? "Search categories..." : activeTab === "models" ? "Search models..." : "Search options..."}
             value={searchQuery}
             onChange={(e: any) => setSearchQuery(e.target.value)}
             className="max-w-md"
@@ -1684,7 +1573,7 @@ export default function FastPricing() {
 
         {/* Models table */}
         {activeTab === "models" && (
-          <>
+          <div>
             <Card>
               <div className="p-6">
                 <div className="flex justify-between items-center mb-4">
@@ -1696,10 +1585,13 @@ export default function FastPricing() {
                 
                 {/* Add Model Dialog */}
                 {showAddModel && (
-                  <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-                    <div className="bg-white rounded-lg p-6 max-w-2xl w-full">
-                      <h3 className="text-lg font-semibold mb-4">Add New Model</h3>
-                      <div className="space-y-4">
+                  <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center z-50 overflow-y-auto">
+                    <div className="bg-white rounded-lg max-w-2xl w-full my-8 max-h-[calc(100vh-4rem)] flex flex-col">
+                      <div className="p-6 pb-4">
+                        <h3 className="text-lg font-semibold mb-4">Add New Model</h3>
+                      </div>
+                      <div className="px-6 flex-1 overflow-y-auto">
+                        <div className="space-y-4">
                         <div className="grid grid-cols-2 gap-4">
                           <div>
                             <label className="block text-sm font-medium mb-1">Category</label>
@@ -1854,21 +1746,24 @@ export default function FastPricing() {
                           />
                         </div>
                       </div>
-                      <div className="flex justify-end gap-3 mt-6">
-                        <Button variant="outline" onClick={() => setShowAddModel(false)}>
-                          Cancel
-                        </Button>
-                        <Button 
-                          onClick={() => addModelMutation.mutate(newModelData)}
-                          disabled={addModelMutation.isPending || !newModelData.name || !newModelData.modelSeries || !newModelData.categoryId || !newModelData.seriesId || (parseFloat(newModelData.basePrice as string) || 0) < 0}
-                        >
-                          Add Model
-                        </Button>
+                      <div className="p-6 pt-4 border-t bg-white rounded-b-lg">
+                        <div className="flex justify-end gap-3">
+                          <Button variant="outline" onClick={() => setShowAddModel(false)}>
+                            Cancel
+                          </Button>
+                          <Button 
+                            onClick={() => addModelMutation.mutate(newModelData)}
+                            disabled={addModelMutation.isPending || !newModelData.name || !newModelData.modelSeries || !newModelData.categoryId || !newModelData.seriesId || (parseFloat(newModelData.basePrice as string) || 0) < 0}
+                          >
+                            Add Model
+                          </Button>
+                        </div>
                       </div>
                     </div>
                   </div>
                 )}
-            <Table>
+                
+                <Table>
               <TableHeader>
                 <TableRow>
                   <TableHead>Model ID</TableHead>
@@ -1961,11 +1856,12 @@ export default function FastPricing() {
                     <TableCell>
                       {editingModel?.id === model.id ? (
                         <Input
+                          type="number"
                           placeholder="GVWR"
                           value={editData[model.id]?.gvwr ?? model.gvwr ?? ""}
                           onChange={(e: any) => setEditData({
                             ...editData,
-                            [model.id]: { ...editData[model.id], gvwr: e.target.value || null }
+                            [model.id]: { ...editData[model.id], gvwr: e.target.value === "" ? null : parseInt(e.target.value) || null }
                           })}
                         />
                       ) : (
@@ -1975,11 +1871,12 @@ export default function FastPricing() {
                     <TableCell>
                       {editingModel?.id === model.id ? (
                         <Input
+                          type="number"
                           placeholder="Payload"
                           value={editData[model.id]?.payload ?? model.payload ?? ""}
                           onChange={(e: any) => setEditData({
                             ...editData,
-                            [model.id]: { ...editData[model.id], payload: e.target.value || null }
+                            [model.id]: { ...editData[model.id], payload: e.target.value === "" ? null : parseInt(e.target.value) || null }
                           })}
                         />
                       ) : (
@@ -2187,202 +2084,7 @@ export default function FastPricing() {
                 </div>
               </Card>
             )}
-          </>
-        )}
-
-        {/* Lengths & Pull Types Tab */}
-        {activeTab === "lengths" && (
-          <Card>
-            <div className="p-6">
-              <div className="flex justify-between items-center mb-4">
-                <h2 className="text-lg font-semibold">Lengths & Pull Types Configuration</h2>
-                <div className="text-sm text-gray-600">
-                  Configure available lengths and pull types for each model
-                </div>
-              </div>
-              
-              {lengthsLoading ? (
-                <div className="text-center py-8">Loading models...</div>
-              ) : activeModels && activeModels.length > 0 ? (
-                <div className="space-y-4">
-                  {activeModels
-                    .filter((model: any) => 
-                      !searchQuery || 
-                      model.modelId.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                      model.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                      model.modelSeries?.toLowerCase().includes(searchQuery.toLowerCase())
-                    )
-                    .map((model: any) => {
-                      // Find existing length configurations for this model
-                      const existingLengths = trailerLengths.filter((tl: any) => tl.modelId === model.id);
-                      
-                      return (
-                        <Card key={model.id} className="border-l-4 border-l-blue-500">
-                          <div className="p-4">
-                            <div className="flex items-start justify-between mb-3">
-                              <div>
-                                <h3 className="font-semibold text-lg">{model.modelId}</h3>
-                                <p className="text-gray-600 text-sm">{model.name}</p>
-                                {model.modelSeries && (
-                                  <p className="text-gray-500 text-xs">Series: {model.modelSeries}</p>
-                                )}
-                              </div>
-                              <div className="text-right text-sm text-gray-500">
-                                {existingLengths.length} configurations
-                              </div>
-                            </div>
-                            
-                            {/* Existing Length Configurations */}
-                            {existingLengths.length > 0 && (
-                              <div className="mb-3">
-                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-                                  {existingLengths.map((trailerLength: any) => (
-                                    <div 
-                                      key={trailerLength.id} 
-                                      className={`p-3 bg-gray-50 rounded-md border ${trailerLength.isArchived ? 'opacity-50' : ''}`}
-                                    >
-                                      <div className="flex items-center justify-between mb-2">
-                                        <span className="font-medium">{trailerLength.length}ft</span>
-                                        <div className="flex gap-1">
-                                          <Button
-                                            size="sm"
-                                            variant="outline"
-                                            onClick={() => {
-                                              if (confirm("Archive this length configuration?")) {
-                                                archiveLengthMutation.mutate(trailerLength.id);
-                                              }
-                                            }}
-                                            disabled={archiveLengthMutation.isPending}
-                                            className="h-6 w-6 p-0"
-                                          >
-                                            <Archive className="w-3 h-3" />
-                                          </Button>
-                                          <Button
-                                            size="sm"
-                                            variant="destructive"
-                                            onClick={() => {
-                                              if (confirm("Delete this length configuration permanently?")) {
-                                                deleteLengthMutation.mutate(trailerLength.id);
-                                              }
-                                            }}
-                                            disabled={deleteLengthMutation.isPending}
-                                            className="h-6 w-6 p-0"
-                                          >
-                                            <Trash2 className="w-3 h-3" />
-                                          </Button>
-                                        </div>
-                                      </div>
-                                      <div className="text-sm text-gray-600">{trailerLength.pullType}</div>
-                                      {trailerLength.isArchived && (
-                                        <div className="text-xs text-red-600 mt-1">Archived</div>
-                                      )}
-                                    </div>
-                                  ))}
-                                </div>
-                              </div>
-                            )}
-                            
-                            {/* Add New Length/Pull Type Configuration */}
-                            <div className="border-t pt-3">
-                              <div className="grid grid-cols-1 md:grid-cols-3 gap-3 items-end">
-                                <div>
-                                  <label className="block text-xs font-medium mb-1 text-gray-700">Length (ft)</label>
-                                  <Select
-                                    value=""
-                                    onValueChange={(length: string) => {
-                                      // Store the selected length for this model
-                                      setEditData({
-                                        ...editData,
-                                        [`new_${model.id}`]: { ...editData[`new_${model.id}`], length }
-                                      });
-                                    }}
-                                  >
-                                    <SelectTrigger className="h-8">
-                                      <SelectValue placeholder="Select length" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                      <SelectItem value="14">14ft</SelectItem>
-                                      <SelectItem value="16">16ft</SelectItem>
-                                      <SelectItem value="18">18ft</SelectItem>
-                                      <SelectItem value="20">20ft</SelectItem>
-                                      <SelectItem value="22">22ft</SelectItem>
-                                      <SelectItem value="24">24ft</SelectItem>
-                                      <SelectItem value="26">26ft</SelectItem>
-                                      <SelectItem value="28">28ft</SelectItem>
-                                      <SelectItem value="30">30ft</SelectItem>
-                                      <SelectItem value="32">32ft</SelectItem>
-                                      <SelectItem value="35">35ft</SelectItem>
-                                      <SelectItem value="40">40ft</SelectItem>
-                                    </SelectContent>
-                                  </Select>
-                                </div>
-                                <div>
-                                  <label className="block text-xs font-medium mb-1 text-gray-700">Pull Type</label>
-                                  <Select
-                                    value=""
-                                    onValueChange={(pullType: string) => {
-                                      // Store the selected pull type for this model
-                                      setEditData({
-                                        ...editData,
-                                        [`new_${model.id}`]: { ...editData[`new_${model.id}`], pullType }
-                                      });
-                                    }}
-                                  >
-                                    <SelectTrigger className="h-8">
-                                      <SelectValue placeholder="Select pull type" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                      <SelectItem value="Gooseneck">Gooseneck</SelectItem>
-                                      <SelectItem value="Bumper Pull">Bumper Pull</SelectItem>
-                                      <SelectItem value="Fifth Wheel">Fifth Wheel</SelectItem>
-                                      <SelectItem value="Pintle Hook">Pintle Hook</SelectItem>
-                                      <SelectItem value="Straight Pull">Straight Pull</SelectItem>
-                                    </SelectContent>
-                                  </Select>
-                                </div>
-                                <div>
-                                  <Button
-                                    size="sm"
-                                    onClick={() => {
-                                      const newData = editData[`new_${model.id}`];
-                                      if (newData?.length && newData?.pullType) {
-                                        addLengthMutation.mutate({
-                                          modelId: model.id,
-                                          length: newData.length,
-                                          pullType: newData.pullType
-                                        });
-                                        // Clear the form
-                                        setEditData({
-                                          ...editData,
-                                          [`new_${model.id}`]: { length: "", pullType: "" }
-                                        });
-                                      }
-                                    }}
-                                    disabled={
-                                      addLengthMutation.isPending || 
-                                      !editData[`new_${model.id}`]?.length || 
-                                      !editData[`new_${model.id}`]?.pullType
-                                    }
-                                    className="h-8"
-                                  >
-                                    <Plus className="w-3 h-3 mr-1" />
-                                    Add
-                                  </Button>
-                                </div>
-                              </div>
-                            </div>
-                          </div>
-                        </Card>
-                      );
-                    })}
-                </div>
-              ) : (
-                <div className="text-center py-8 text-gray-500">
-                  No models available. Add some models first to configure their lengths and pull types.
-                </div>
-              )}
-            </div>
-          </Card>
+          </div>
         )}
 
         {/* Options & Extras Tab */}
