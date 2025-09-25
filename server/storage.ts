@@ -840,6 +840,7 @@ export class DatabaseStorage implements IStorage {
         pulltypeOptions: model.pulltype_options,
         lengthOptions: model.length_options || [],
         lengthPrice: model.length_price,
+        lengthGvwr: model.length_gvwr,
         categoryName: model.category_name,
         categorySubType: model.category_sub_type,
         isArchived: model.is_archived || false,
@@ -1085,7 +1086,7 @@ export class DatabaseStorage implements IStorage {
     try {
       const result = await db.execute(sql`
         SELECT m.id, m.category_id, m.series_id, m.model_id, m.name, m.gvwr, m.payload,
-               m.deck_size, m.axles, m.length_options, m.pulltype_options, m.length_price, m.base_price, 
+               m.deck_size, m.axles, m.length_options, m.pulltype_options, m.length_price, m.length_gvwr, m.base_price, 
                m.image_url, m.features, m.is_archived, m.category_sub_type, c.name as category_name,
                s.name as series_name
         FROM trailer_models m
