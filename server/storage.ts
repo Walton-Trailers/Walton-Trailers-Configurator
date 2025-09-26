@@ -829,26 +829,48 @@ export class DatabaseStorage implements IStorage {
         ORDER BY m.name
       `);
       
-      return result.rows.map((model: any) => ({
-        id: model.id,
-        categoryId: model.category_id,
-        seriesId: model.series_id,
-        seriesName: model.series_name,
-        modelId: model.model_id,
-        name: model.name,
-        axles: model.axles,
-        basePrice: model.base_price,
-        imageUrl: model.image_url,
-        features: model.features || [],
-        pulltypeOptions: model.pulltype_options,
-        lengthOptions: model.length_options || [],
-        lengthPrice: model.length_price,
-        lengthGvwr: model.length_gvwr,
-        lengthPayload: model.length_payload,
-        categoryName: model.category_name,
-        categorySubType: model.category_sub_type,
-        isArchived: model.is_archived || false,
-      }));
+      return result.rows.map((model: any) => {
+        console.log(`🔍 BACKEND DEBUG - Processing model ${model.model_id}:`);
+        console.log('   - Raw deck_size from DB:', model.deck_size, 'type:', typeof model.deck_size);
+        
+        // Parse deck_size JSON data
+        let lengthDeckSize = null;
+        if (model.deck_size) {
+          try {
+            lengthDeckSize = typeof model.deck_size === 'string' ? 
+              JSON.parse(model.deck_size) : 
+              model.deck_size;
+            console.log('   - Parsed lengthDeckSize:', lengthDeckSize);
+          } catch (e) {
+            console.warn(`   - Failed to parse deck_size for model ${model.model_id}:`, e);
+          }
+        }
+        
+        const result = {
+          id: model.id,
+          categoryId: model.category_id,
+          seriesId: model.series_id,
+          seriesName: model.series_name,
+          modelId: model.model_id,
+          name: model.name,
+          axles: model.axles,
+          basePrice: model.base_price,
+          imageUrl: model.image_url,
+          features: model.features || [],
+          pulltypeOptions: model.pulltype_options,
+          lengthOptions: model.length_options || [],
+          lengthPrice: model.length_price,
+          lengthGvwr: model.length_gvwr,
+          lengthPayload: model.length_payload,
+          lengthDeckSize: lengthDeckSize,
+          categoryName: model.category_name,
+          categorySubType: model.category_sub_type,
+          isArchived: model.is_archived || false,
+        };
+        
+        console.log('   - Final result lengthDeckSize:', result.lengthDeckSize);
+        return result;
+      });
     } catch (error) {
       console.error('Error fetching models by series:', error);
       throw error;
