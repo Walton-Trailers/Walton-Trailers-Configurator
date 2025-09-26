@@ -1938,16 +1938,6 @@ export default function FastPricing() {
                         </div>
                         <div className="grid grid-cols-2 gap-4">
                           <div>
-                            <label className="block text-sm font-medium mb-1">Payload</label>
-                            <Input
-                              placeholder="e.g., 9,820 lbs"
-                              value={newModelData.payload}
-                              onChange={(e: any) => setNewModelData({ ...newModelData, payload: e.target.value })}
-                            />
-                          </div>
-                        </div>
-                        <div className="grid grid-cols-2 gap-4">
-                          <div>
                             <label className="block text-sm font-medium mb-1">Axles</label>
                             <Input
                               placeholder="e.g., Dual 7K"

@@ -454,92 +454,45 @@ export default function Configurator() {
 
   // Calculate dynamic deck size based on selected length option
   const getDynamicDeckSize = () => {
-    console.log('🔍 DECK SIZE DEBUG - Function called');
-    console.log('🔍 selectedModel:', selectedModel);
-    console.log('🔍 options:', options);
-    
     if (!selectedModel || !options) {
-      console.log('🔍 DECK SIZE DEBUG - Early return: no model or options');
       return 'N/A';
     }
 
-    console.log('🔍 DECK SIZE DEBUG - selectedModel properties:');
-    console.log('   - lengthDeckSize:', selectedModel.lengthDeckSize, 'type:', typeof selectedModel.lengthDeckSize);
-    console.log('   - deckSize:', (selectedModel as any).deckSize, 'type:', typeof (selectedModel as any).deckSize);
-
     // If model has length-specific deck size data, use it
     if (selectedModel.lengthDeckSize) {
-      console.log('🔍 DECK SIZE DEBUG - Has lengthDeckSize, processing...');
       const lengthOptions = options.filter(opt => opt.category === 'length');
-      console.log('🔍 DECK SIZE DEBUG - Length options:', lengthOptions);
       
       // Determine which length option to use
       let targetLengthOption;
       if (selectedOptions.length) {
         // Use explicitly selected length
         targetLengthOption = lengthOptions.find(opt => opt.id === selectedOptions.length);
-        console.log('🔍 DECK SIZE DEBUG - Using selected length option:', targetLengthOption);
       } else if (lengthOptions.length > 0) {
         // Use default (first) length option when no length is explicitly selected
         targetLengthOption = lengthOptions[0];
-        console.log('🔍 DECK SIZE DEBUG - Using default (first) length option:', targetLengthOption);
       }
       
       if (targetLengthOption) {
         // Parse lengthDeckSize data (it might be string or object)
         let lengthDeckSizeData = selectedModel.lengthDeckSize;
-        console.log('🔍 DECK SIZE DEBUG - Raw lengthDeckSizeData:', lengthDeckSizeData, 'type:', typeof lengthDeckSizeData);
-        
         if (typeof lengthDeckSizeData === 'string') {
           try {
             lengthDeckSizeData = JSON.parse(lengthDeckSizeData);
-            console.log('🔍 DECK SIZE DEBUG - Parsed lengthDeckSizeData:', lengthDeckSizeData);
           } catch (e) {
-            console.warn('🔍 DECK SIZE DEBUG - Failed to parse lengthDeckSize data:', e);
+            console.warn('Failed to parse lengthDeckSize data:', e);
             return 'N/A';
           }
         }
 
         // Get deck size for the target length
         const deckSizeForLength = lengthDeckSizeData[targetLengthOption.name];
-        console.log('🔍 DECK SIZE DEBUG - Looking for key:', targetLengthOption.name);
-        console.log('🔍 DECK SIZE DEBUG - Available keys:', Object.keys(lengthDeckSizeData || {}));
-        console.log('🔍 DECK SIZE DEBUG - deckSizeForLength:', deckSizeForLength);
-        
         if (deckSizeForLength) {
-          console.log('🔍 DECK SIZE DEBUG - Found deck size, returning:', deckSizeForLength);
           return deckSizeForLength;
-        }
-      }
-    } else {
-      console.log('🔍 DECK SIZE DEBUG - No lengthDeckSize found');
-      
-      // Check if there's legacy deckSize data that we can convert
-      const legacyDeckSize = (selectedModel as any).deckSize;
-      if (legacyDeckSize && typeof legacyDeckSize === 'object') {
-        console.log('🔍 DECK SIZE DEBUG - Found legacy deckSize object:', legacyDeckSize);
-        
-        const lengthOptions = options.filter(opt => opt.category === 'length');
-        if (lengthOptions.length > 0) {
-          let targetLengthOption;
-          if (selectedOptions.length) {
-            targetLengthOption = lengthOptions.find(opt => opt.id === selectedOptions.length);
-          } else {
-            targetLengthOption = lengthOptions[0];
-          }
-          
-          if (targetLengthOption) {
-            const legacyDeckSizeValue = legacyDeckSize[targetLengthOption.name];
-            console.log('🔍 DECK SIZE DEBUG - Legacy deck size for', targetLengthOption.name, ':', legacyDeckSizeValue);
-            if (legacyDeckSizeValue) {
-              return legacyDeckSizeValue;
-            }
-          }
         }
       }
     }
 
-    console.log('🔍 DECK SIZE DEBUG - Returning N/A fallback');
+    // Default fallback
     return 'N/A';
   };
 

@@ -830,9 +830,6 @@ export class DatabaseStorage implements IStorage {
       `);
       
       return result.rows.map((model: any) => {
-        console.log(`🔍 BACKEND DEBUG - Processing model ${model.model_id}:`);
-        console.log('   - Raw deck_size from DB:', model.deck_size, 'type:', typeof model.deck_size);
-        
         // Parse deck_size JSON data
         let lengthDeckSize = null;
         if (model.deck_size) {
@@ -840,13 +837,12 @@ export class DatabaseStorage implements IStorage {
             lengthDeckSize = typeof model.deck_size === 'string' ? 
               JSON.parse(model.deck_size) : 
               model.deck_size;
-            console.log('   - Parsed lengthDeckSize:', lengthDeckSize);
           } catch (e) {
-            console.warn(`   - Failed to parse deck_size for model ${model.model_id}:`, e);
+            console.warn(`Failed to parse deck_size for model ${model.model_id}:`, e);
           }
         }
         
-        const result = {
+        return {
           id: model.id,
           categoryId: model.category_id,
           seriesId: model.series_id,
@@ -867,9 +863,6 @@ export class DatabaseStorage implements IStorage {
           categorySubType: model.category_sub_type,
           isArchived: model.is_archived || false,
         };
-        
-        console.log('   - Final result lengthDeckSize:', result.lengthDeckSize);
-        return result;
       });
     } catch (error) {
       console.error('Error fetching models by series:', error);
