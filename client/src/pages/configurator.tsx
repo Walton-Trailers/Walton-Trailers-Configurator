@@ -1328,6 +1328,69 @@ Configuration Date: ${new Date().toLocaleDateString()}
                   ) : null}
                 </div>
                 
+                {/* Length Options - Moved above Standard Features */}
+                {options && options.length > 0 && (
+                  (() => {
+                    const lengthOptions = options.filter(opt => opt.category === 'length');
+                    if (lengthOptions.length === 0) return null;
+                    
+                    return (
+                      <div className="mb-6">
+                        <h4 className="text-sm font-medium text-gray-900 mb-2">Length Options</h4>
+                        <div className="space-y-2">
+                          <Select
+                            value={selectedOptions['length']?.toString() || lengthOptions[0]?.id.toString()}
+                            onValueChange={(value) => {
+                              const parsedValue = value.startsWith('length_') ? value : parseInt(value);
+                              handleOptionChange('length', parsedValue, false, true);
+                            }}
+                          >
+                            <SelectTrigger className="w-full" data-testid="input-length">
+                              <SelectValue placeholder="Select length" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {lengthOptions.map((option) => {
+                                // Parse pulltype data from selectedModel
+                                let pulltypeOptions: Record<string, string> = {};
+                                if ((selectedModel as any)?.pulltypeOptions) {
+                                  try {
+                                    const pulltypeData = (selectedModel as any).pulltypeOptions;
+                                    pulltypeOptions = typeof pulltypeData === 'string' ? 
+                                      JSON.parse(pulltypeData) : 
+                                      pulltypeData || {};
+                                  } catch (e) {
+                                    console.warn('Failed to parse pulltype options:', e);
+                                  }
+                                }
+                                
+                                // Find pulltype for this length option
+                                const pulltype = pulltypeOptions[option.name] || '';
+                                
+                                const formattedPrice = option.price === 0 ? 'Included' : 
+                                                      option.price > 0 ? `+$${option.price.toLocaleString()}` : 
+                                                      `$${option.price.toLocaleString()}`;
+                                
+                                return (
+                                  <SelectItem 
+                                    key={option.id} 
+                                    value={option.id.toString()}
+                                    data-testid={`row-length-${option.id}`}
+                                  >
+                                    <div className="flex items-center justify-between w-full gap-3">
+                                      <span>{`${option.name}${pulltype ? ` - ${pulltype}` : ''}`}</span>
+                                      <span className="text-gray-400">{formattedPrice}</span>
+                                    </div>
+                                  </SelectItem>
+                                );
+                              })}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      </div>
+                    );
+                  })()
+                )}
+
                 {/* Features that apply to all models */}
                 <div className="bg-gray-50 rounded-lg p-6 mb-6">
                   <div className="text-center mb-4">
@@ -1391,13 +1454,16 @@ Configuration Date: ${new Date().toLocaleDateString()}
                     <div className="mt-6 pb-20">
                       {Object.entries(
                         options.reduce((acc, option) => {
-                          if (!acc[option.category]) acc[option.category] = [];
-                          acc[option.category].push(option);
+                          // Exclude 'length' category since it's now above Standard Features
+                          if (option.category !== 'length') {
+                            if (!acc[option.category]) acc[option.category] = [];
+                            acc[option.category].push(option);
+                          }
                           return acc;
                         }, {} as Record<string, TrailerOption[]>)
                       ).sort(([categoryA], [categoryB]) => {
-                        // Define custom order: color first, then length, then others, extras last
-                        const order = { 'color': 0, 'length': 1, 'extras': 999 };
+                        // Define custom order: color first, then others, extras last (length removed since it's separate)
+                        const order = { 'color': 0, 'extras': 999 };
                         const orderA = order[categoryA] !== undefined ? order[categoryA] : 50;
                         const orderB = order[categoryB] !== undefined ? order[categoryB] : 50;
                         
@@ -1413,7 +1479,6 @@ Configuration Date: ${new Date().toLocaleDateString()}
                              category === 'deck' ? 'Deck Length' : 
                              category === 'walls' ? 'Wall Height' : 
                              category === 'winch' ? 'Winch Options' : 
-                             category === 'length' ? 'Length Options' :
                              category === 'jack' ? 'Jack Options' :
                              // Capitalize first letter for any unmapped categories
                              category.charAt(0).toUpperCase() + category.slice(1) + ' Options'}
@@ -1489,58 +1554,6 @@ Configuration Date: ${new Date().toLocaleDateString()}
                                     </button>
                                   );
                                 })}
-                              </div>
-                            ) : category === 'length' ? (
-                              // Special dropdown handling for length options with styled layout
-                              <div className="space-y-2">
-                                <Select
-                                  value={selectedOptions[category]?.toString() || categoryOptions[0]?.id.toString()}
-                                  onValueChange={(value) => {
-                                    const parsedValue = value.startsWith('length_') ? value : parseInt(value);
-                                    handleOptionChange(category, parsedValue, false, true);
-                                  }}
-                                >
-                                  <SelectTrigger className="w-full" data-testid="input-length">
-                                    <SelectValue placeholder="Select length" />
-                                  </SelectTrigger>
-                                  <SelectContent>
-                                    {categoryOptions.map((option) => {
-                                      // Parse pulltype data from selectedModel
-                                      let pulltypeOptions: Record<string, string> = {};
-                                      if ((selectedModel as any)?.pulltypeOptions) {
-                                        try {
-                                          const pulltypeData = (selectedModel as any).pulltypeOptions;
-                                          pulltypeOptions = typeof pulltypeData === 'string' ? 
-                                            JSON.parse(pulltypeData) : 
-                                            pulltypeData || {};
-                                        } catch (e) {
-                                          console.warn('Failed to parse pulltype options:', e);
-                                        }
-                                      }
-                                      
-                                      // Find pulltype for this length option
-                                      const pulltype = pulltypeOptions[option.name] || '';
-                                      
-                                      const formattedPrice = option.price === 0 ? 'Included' : 
-                                                            option.price > 0 ? `+$${option.price.toLocaleString()}` : 
-                                                            `$${option.price.toLocaleString()}`;
-                                      
-                                      return (
-                                        <SelectItem 
-                                          key={option.id} 
-                                          value={option.id.toString()}
-                                          data-testid={`row-length-${option.id}`}
-                                        >
-                                          <div className="flex items-center justify-between w-full gap-3">
-                                            <span>{`${option.name}${pulltype ? ` - ${pulltype}` : ''}`}</span>
-                                            <span className="text-gray-400">{formattedPrice}</span>
-                                          </div>
-                                        </SelectItem>
-                                      );
-                                    })}
-                                  </SelectContent>
-                                </Select>
-                                
                               </div>
                             ) : category === 'walls' ? (
                               // Special dropdown handling for wall height options
