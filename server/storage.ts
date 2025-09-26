@@ -1328,6 +1328,11 @@ export class DatabaseStorage implements IStorage {
       
       // Clear cache after updating model to ensure fresh data
       cache.clear();
+      console.log(`🗑️ Cache cleared - dynamic pricing updated`);
+      
+      // Debug: Log the lengthPayload data
+      console.log(`📊 Debug - lengthPayload from DB:`, updatedModel.length_payload);
+      console.log(`📊 Debug - parsed lengthPayload:`, updatedModel.length_payload ? (typeof updatedModel.length_payload === 'string' ? JSON.parse(updatedModel.length_payload) : updatedModel.length_payload) : null);
       
       return {
         id: updatedModel.id,
@@ -1343,6 +1348,7 @@ export class DatabaseStorage implements IStorage {
         lengthOptions: updatedModel.length_options ? (typeof updatedModel.length_options === 'string' ? JSON.parse(updatedModel.length_options) : updatedModel.length_options) : null,
         lengthPrice: updatedModel.length_price ? (typeof updatedModel.length_price === 'string' ? JSON.parse(updatedModel.length_price) : updatedModel.length_price) : null,
         lengthGvwr: updatedModel.length_gvwr ? (typeof updatedModel.length_gvwr === 'string' ? JSON.parse(updatedModel.length_gvwr) : updatedModel.length_gvwr) : null,
+        lengthPayload: updatedModel.length_payload ? (typeof updatedModel.length_payload === 'string' ? JSON.parse(updatedModel.length_payload) : updatedModel.length_payload) : null,
         pulltypeOptions: updatedModel.pulltype_options ? (typeof updatedModel.pulltype_options === 'string' ? JSON.parse(updatedModel.pulltype_options) : updatedModel.pulltype_options) : null,
         basePrice: updatedModel.base_price,
         imageUrl: updatedModel.image_url,
