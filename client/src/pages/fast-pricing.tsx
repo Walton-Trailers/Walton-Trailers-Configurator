@@ -3353,6 +3353,12 @@ export default function FastPricing() {
                                           <div className="text-blue-600 font-medium">{lengthGvwr[length]}</div>
                                         </div>
                                       )}
+                                      {lengthPayload[length] && (
+                                        <div>
+                                          <span className="font-medium text-gray-600">Payload:</span>
+                                          <div className="text-purple-600 font-medium">{lengthPayload[length]}</div>
+                                        </div>
+                                      )}
                                       {lengthPrice[length] && lengthPrice[length] > 0 && (
                                         <div>
                                           <span className="font-medium text-gray-600">Price Adjustment:</span>
