@@ -454,12 +454,20 @@ export default function Configurator() {
 
   // Calculate dynamic deck size based on selected length option
   const getDynamicDeckSize = () => {
+    console.log('🔍 getDynamicDeckSize called');
+    console.log('selectedModel:', selectedModel);
+    console.log('selectedModel.deckSize:', selectedModel?.deckSize, typeof selectedModel?.deckSize);
+    console.log('selectedModel.lengthDeckSize:', selectedModel?.lengthDeckSize, typeof selectedModel?.lengthDeckSize);
+    
     if (!selectedModel || !options) {
-      return selectedModel?.deckSize || 'N/A';
+      const fallback = selectedModel?.deckSize || 'N/A';
+      console.log('🔍 Early return (no model/options):', fallback, typeof fallback);
+      return String(fallback);
     }
 
     // If model has length-specific deck size data, use it
     if (selectedModel.lengthDeckSize) {
+      console.log('🔍 Has lengthDeckSize, processing...');
       const lengthOptions = options.filter(opt => opt.category === 'length');
       
       // Determine which length option to use
@@ -472,33 +480,47 @@ export default function Configurator() {
         targetLengthOption = lengthOptions[0];
       }
       
+      console.log('🔍 Target length option:', targetLengthOption);
+      
       if (targetLengthOption) {
         // Parse lengthDeckSize data (it might be string or object)
         let lengthDeckSizeData = selectedModel.lengthDeckSize;
+        console.log('🔍 Raw lengthDeckSizeData:', lengthDeckSizeData, typeof lengthDeckSizeData);
+        
         if (typeof lengthDeckSizeData === 'string') {
           try {
             lengthDeckSizeData = JSON.parse(lengthDeckSizeData);
+            console.log('🔍 Parsed lengthDeckSizeData:', lengthDeckSizeData);
           } catch (e) {
             console.warn('Failed to parse lengthDeckSize data:', e);
-            return selectedModel?.deckSize || 'N/A';
+            const fallback = selectedModel?.deckSize || 'N/A';
+            console.log('🔍 Parse error fallback:', fallback, typeof fallback);
+            return String(fallback);
           }
         }
 
         // Get deck size for the target length
         const deckSizeForLength = lengthDeckSizeData[targetLengthOption.name];
+        console.log('🔍 deckSizeForLength:', deckSizeForLength, typeof deckSizeForLength);
         if (deckSizeForLength) {
-          return deckSizeForLength;
+          console.log('🔍 Returning length-specific value:', String(deckSizeForLength));
+          return String(deckSizeForLength);
         }
       }
     }
 
     // Default to model deck size - ensure it's a string, not an object
     const fallbackDeckSize = selectedModel?.deckSize;
+    console.log('🔍 Fallback deckSize:', fallbackDeckSize, typeof fallbackDeckSize);
+    
     if (typeof fallbackDeckSize === 'object') {
-      console.warn('Deck size is an object, returning N/A:', fallbackDeckSize);
+      console.warn('🚨 Deck size is an object, returning N/A:', fallbackDeckSize);
       return 'N/A';
     }
-    return fallbackDeckSize || 'N/A';
+    
+    const result = String(fallbackDeckSize || 'N/A');
+    console.log('🔍 Final result:', result, typeof result);
+    return result;
   };
 
   // Calculate dynamic GVWR based on selected length option
