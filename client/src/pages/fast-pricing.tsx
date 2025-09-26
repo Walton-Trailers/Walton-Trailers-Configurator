@@ -2216,18 +2216,16 @@ export default function FastPricing() {
                                     />
                                   </div>
                                 ))}
-                                {hasLengths && (
-                                  <button
-                                    type="button"
-                                    onClick={() => setShowOptionsPopup({
-                                      ...showOptionsPopup,
-                                      [model.id]: true
-                                    })}
-                                    className="text-xs text-blue-600 hover:text-blue-800 font-medium"
-                                  >
-                                    Edit Options
-                                  </button>
-                                )}
+                                <button
+                                  type="button"
+                                  onClick={() => setShowOptionsPopup({
+                                    ...showOptionsPopup,
+                                    [model.id]: true
+                                  })}
+                                  className="text-xs text-blue-600 hover:text-blue-800 font-medium"
+                                >
+                                  Edit Options
+                                </button>
                               </div>
                             );
                           })()}
@@ -2255,37 +2253,37 @@ export default function FastPricing() {
                             const displayedOptions = isExpanded ? lengthOptions : [];
                             const hasLengths = lengthOptions.length > 0;
                             
-                            return lengthOptions.length > 0 ? (
+                            return (
                               <div className="space-y-1">
-                                {displayedOptions.map((length: string, index: number) => (
-                                  <div key={index} className="text-xs border rounded px-2 py-1 bg-gray-50">
-                                    <div className="font-medium text-gray-800">{length}</div>
-                                    {pulltypeOptions[length] && (
-                                      <div className="text-gray-600 mt-1">{pulltypeOptions[length]}</div>
-                                    )}
-                                    {lengthGvwr[length] && (
-                                      <div className="text-blue-600 mt-1">GVWR: {lengthGvwr[length]}</div>
-                                    )}
-                                    {lengthPrice[length] && lengthPrice[length] > 0 && (
-                                      <div className="text-green-600 mt-1 font-medium">+${lengthPrice[length].toLocaleString()}</div>
-                                    )}
-                                  </div>
-                                ))}
-                                {hasLengths && (
-                                  <button
-                                    type="button"
-                                    onClick={() => setShowOptionsPopup({
-                                      ...showOptionsPopup,
-                                      [model.id]: true
-                                    })}
-                                    className="text-xs text-blue-600 hover:text-blue-800 font-medium mt-1"
-                                  >
-                                    View Options
-                                  </button>
+                                {lengthOptions.length > 0 ? (
+                                  displayedOptions.map((length: string, index: number) => (
+                                    <div key={index} className="text-xs border rounded px-2 py-1 bg-gray-50">
+                                      <div className="font-medium text-gray-800">{length}</div>
+                                      {pulltypeOptions[length] && (
+                                        <div className="text-gray-600 mt-1">{pulltypeOptions[length]}</div>
+                                      )}
+                                      {lengthGvwr[length] && (
+                                        <div className="text-blue-600 mt-1">GVWR: {lengthGvwr[length]}</div>
+                                      )}
+                                      {lengthPrice[length] && lengthPrice[length] > 0 && (
+                                        <div className="text-green-600 mt-1 font-medium">+${lengthPrice[length].toLocaleString()}</div>
+                                      )}
+                                    </div>
+                                  ))
+                                ) : (
+                                  <span className="text-gray-400 text-xs">No length options</span>
                                 )}
+                                <button
+                                  type="button"
+                                  onClick={() => setShowOptionsPopup({
+                                    ...showOptionsPopup,
+                                    [model.id]: true
+                                  })}
+                                  className="text-xs text-blue-600 hover:text-blue-800 font-medium mt-1"
+                                >
+                                  View Options
+                                </button>
                               </div>
-                            ) : (
-                              <span className="text-gray-400 text-xs">—</span>
                             );
                           })()}
                         </div>
@@ -2444,37 +2442,37 @@ export default function FastPricing() {
                                   const displayedOptions = isExpanded ? lengthOptions : [];
                                   const hasLengths = lengthOptions.length > 0;
                                   
-                                  return lengthOptions.length > 0 ? (
+                                  return (
                                     <div className="space-y-1">
-                                      {displayedOptions.map((length: string, index: number) => (
-                                        <div key={index} className="text-xs border rounded px-2 py-1 bg-gray-50 opacity-60">
-                                          <div className="font-medium text-gray-600">{length}</div>
-                                          {pulltypeOptions[length] && (
-                                            <div className="text-gray-500 mt-1">{pulltypeOptions[length]}</div>
-                                          )}
-                                          {lengthGvwr[length] && (
-                                            <div className="text-blue-500 mt-1 opacity-75">GVWR: {lengthGvwr[length]}</div>
-                                          )}
-                                          {lengthPrice[length] && lengthPrice[length] > 0 && (
-                                            <div className="text-green-500 mt-1 font-medium opacity-75">+${lengthPrice[length].toLocaleString()}</div>
-                                          )}
-                                        </div>
-                                      ))}
-                                      {hasLengths && (
-                                        <button
-                                          type="button"
-                                          onClick={() => setShowOptionsPopup({
-                                            ...showOptionsPopup,
-                                            [model.id]: true
-                                          })}
-                                          className="text-xs text-blue-600 hover:text-blue-800 font-medium mt-1 opacity-60"
-                                        >
-                                          View Options
-                                        </button>
+                                      {lengthOptions.length > 0 ? (
+                                        displayedOptions.map((length: string, index: number) => (
+                                          <div key={index} className="text-xs border rounded px-2 py-1 bg-gray-50 opacity-60">
+                                            <div className="font-medium text-gray-600">{length}</div>
+                                            {pulltypeOptions[length] && (
+                                              <div className="text-gray-500 mt-1">{pulltypeOptions[length]}</div>
+                                            )}
+                                            {lengthGvwr[length] && (
+                                              <div className="text-blue-500 mt-1 opacity-75">GVWR: {lengthGvwr[length]}</div>
+                                            )}
+                                            {lengthPrice[length] && lengthPrice[length] > 0 && (
+                                              <div className="text-green-500 mt-1 font-medium opacity-75">+${lengthPrice[length].toLocaleString()}</div>
+                                            )}
+                                          </div>
+                                        ))
+                                      ) : (
+                                        <span className="text-gray-400 text-xs">No length options</span>
                                       )}
+                                      <button
+                                        type="button"
+                                        onClick={() => setShowOptionsPopup({
+                                          ...showOptionsPopup,
+                                          [model.id]: true
+                                        })}
+                                        className="text-xs text-blue-600 hover:text-blue-800 font-medium mt-1 opacity-60"
+                                      >
+                                        View Options
+                                      </button>
                                     </div>
-                                  ) : (
-                                    <span className="text-gray-400 text-xs">—</span>
                                   );
                                 })()}
                               </div>
