@@ -1240,7 +1240,7 @@ Configuration Date: ${new Date().toLocaleDateString()}
                       <div className="text-sm text-gray-500">GVWR</div>
                     </div>
                     <div className="text-center">
-                      <div className="text-lg font-bold text-gray-900">{selectedModel?.payload || 'N/A'}</div>
+                      <div className="text-lg font-bold text-gray-900">{getDynamicPayload()}</div>
                       <div className="text-sm text-gray-500">Payload</div>
                     </div>
                     <div className="text-center">
