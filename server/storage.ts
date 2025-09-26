@@ -41,6 +41,7 @@ export interface TrailerModelResponse {
   lengthOptions?: string[] | null;
   lengthPrice?: Record<string, number> | null;
   lengthGvwr?: Record<string, string> | null;
+  lengthPayload?: Record<string, string> | null;
   pulltypeOptions?: Record<string, string> | null;
   basePrice: number;
   imageUrl: string;
@@ -787,7 +788,7 @@ export class DatabaseStorage implements IStorage {
       const result = await db.execute(sql`
         SELECT m.id, m.category_id, m.model_id, m.name, m.payload, 
                m.deck_size, m.axles, m.base_price, m.image_url, m.features,
-               m.length_gvwr
+               m.length_gvwr, m.length_payload
         FROM trailer_models m
         JOIN trailer_categories c ON m.category_id = c.id
         WHERE c.slug = ${categorySlug} AND NOT m.is_archived
@@ -805,7 +806,8 @@ export class DatabaseStorage implements IStorage {
         basePrice: model.base_price,
         imageUrl: model.image_url,
         features: model.features || [],
-        lengthGvwr: model.length_gvwr
+        lengthGvwr: model.length_gvwr,
+        lengthPayload: model.length_payload
       }));
     } catch (error) {
       console.error('Error fetching models by category:', error);
@@ -819,7 +821,7 @@ export class DatabaseStorage implements IStorage {
         SELECT m.id, m.category_id, m.series_id, m.model_id, m.name, m.payload,
                m.deck_size, m.axles, m.base_price, m.image_url, m.features,
                m.pulltype_options, m.length_options, m.length_price,
-               m.length_gvwr, m.is_archived, m.category_sub_type, c.name as category_name,
+               m.length_gvwr, m.length_payload, m.is_archived, m.category_sub_type, c.name as category_name,
                s.name as series_name
         FROM trailer_models m
         JOIN trailer_categories c ON m.category_id = c.id
@@ -835,7 +837,6 @@ export class DatabaseStorage implements IStorage {
         seriesName: model.series_name,
         modelId: model.model_id,
         name: model.name,
-
         payload: model.payload,
         deckSize: model.deck_size,
         axles: model.axles,
@@ -846,6 +847,7 @@ export class DatabaseStorage implements IStorage {
         lengthOptions: model.length_options || [],
         lengthPrice: model.length_price,
         lengthGvwr: model.length_gvwr,
+        lengthPayload: model.length_payload,
         categoryName: model.category_name,
         categorySubType: model.category_sub_type,
         isArchived: model.is_archived || false,
@@ -860,7 +862,7 @@ export class DatabaseStorage implements IStorage {
     try {
       const result = await db.execute(sql`
         SELECT id, category_id, model_id, name, gvwr, payload, 
-               deck_size, axles, base_price, image_url, features
+               deck_size, axles, base_price, image_url, features, length_payload
         FROM trailer_models
         WHERE model_id = ${modelId}
       `);
@@ -873,13 +875,13 @@ export class DatabaseStorage implements IStorage {
         categoryId: model.category_id,
         modelId: model.model_id,
         name: model.name,
-
         payload: model.payload,
         deckSize: model.deck_size,
         axles: model.axles,
         basePrice: model.base_price,
         imageUrl: model.image_url,
-        features: model.features || []
+        features: model.features || [],
+        lengthPayload: model.length_payload
       };
     } catch (error) {
       console.error('Error fetching model:', error);
