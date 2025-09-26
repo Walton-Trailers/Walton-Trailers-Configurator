@@ -40,9 +40,9 @@ export class FastStorage {
     if (cached) return cached;
 
     const result = await db.execute(sql`
-      SELECT m.id, m.model_id, m.name, m.gvwr, m.payload, 
+      SELECT m.id, m.model_id, m.name,
              m.deck_size, m.axles, m.base_price, m.image_url, m.features,
-             m.length_options, m.pulltype_options, m.length_price
+             m.length_options, m.pulltype_options, m.length_price, m.length_payload, m.length_gvwr
       FROM trailer_models m
       JOIN trailer_categories c ON m.category_id = c.id
       WHERE c.slug = ${categorySlug} AND (m.is_archived IS NULL OR m.is_archived = false)
@@ -53,8 +53,6 @@ export class FastStorage {
       id: model.id,
       modelId: model.model_id,
       name: model.name,
-      gvwr: model.gvwr,
-      payload: model.payload,
       deckSize: model.deck_size,
       axles: model.axles,
       basePrice: model.base_price,
@@ -62,7 +60,9 @@ export class FastStorage {
       features: model.features || [],
       lengthOptions: model.length_options || [],
       pulltypeOptions: model.pulltype_options,
-      lengthPrice: model.length_price
+      lengthPrice: model.length_price,
+      lengthPayload: model.length_payload,
+      lengthGvwr: model.length_gvwr
     }));
     
     cache.set(cacheKey, models);
@@ -75,9 +75,9 @@ export class FastStorage {
     if (cached) return cached;
 
     const result = await db.execute(sql`
-      SELECT m.id, m.category_id, m.series_id, m.model_id, m.name, m.gvwr, m.payload,
+      SELECT m.id, m.category_id, m.series_id, m.model_id, m.name,
              m.deck_size, m.axles, m.base_price, m.image_url, m.features,
-             m.length_options, m.pulltype_options, m.length_price,
+             m.length_options, m.pulltype_options, m.length_price, m.length_payload, m.length_gvwr,
              m.is_archived, c.name as category_name
       FROM trailer_models m
       JOIN trailer_categories c ON m.category_id = c.id
@@ -90,8 +90,6 @@ export class FastStorage {
       seriesId: model.series_id,
       modelId: model.model_id,
       name: model.name,
-      gvwr: model.gvwr,
-      payload: model.payload,
       deckSize: model.deck_size,
       axles: model.axles,
       basePrice: model.base_price,
@@ -100,6 +98,8 @@ export class FastStorage {
       lengthOptions: model.length_options || [],
       pulltypeOptions: model.pulltype_options,
       lengthPrice: model.length_price,
+      lengthPayload: model.length_payload,
+      lengthGvwr: model.length_gvwr,
       categoryName: model.category_name,
       isArchived: model.is_archived || false
     }));
@@ -219,8 +219,6 @@ export class FastStorage {
       seriesId: model.series_id,
       modelId: model.model_id,
       name: model.name,
-      gvwr: model.gvwr,
-      payload: model.payload,
       deckSize: model.deck_size,
       axles: model.axles,
       basePrice: model.base_price,
@@ -229,6 +227,8 @@ export class FastStorage {
       lengthOptions: model.length_options || [],
       pulltypeOptions: model.pulltype_options,
       lengthPrice: model.length_price,
+      lengthPayload: model.length_payload,
+      lengthGvwr: model.length_gvwr,
       categoryName: model.category_name,
       isArchived: model.is_archived || false
     };

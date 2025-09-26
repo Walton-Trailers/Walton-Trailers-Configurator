@@ -1351,9 +1351,6 @@ export class DatabaseStorage implements IStorage {
       cache.clear();
       console.log(`🗑️ Cache cleared - dynamic pricing updated`);
       
-      // Debug: Log the lengthPayload data
-      console.log(`📊 Debug - lengthPayload from DB:`, updatedModel.length_payload);
-      console.log(`📊 Debug - parsed lengthPayload:`, updatedModel.length_payload ? (typeof updatedModel.length_payload === 'string' ? JSON.parse(updatedModel.length_payload) : updatedModel.length_payload) : null);
       
       return {
         id: updatedModel.id,
@@ -1734,9 +1731,9 @@ export class DatabaseStorage implements IStorage {
   async createModel(data: { categoryId: number; seriesId?: number; modelSeries: string; name: string; basePrice?: number; imageUrl: string; standardFeatures: string[]; gvwr?: string; payload?: string; deckSize?: string; axles?: string; lengthOptions?: string[]; pulltypeOptions?: string }): Promise<TrailerModelResponse> {
     try {
       const result = await db.execute(sql`
-        INSERT INTO trailer_models (category_id, series_id, model_id, name, base_price, image_url, features, gvwr, payload, deck_size, axles, length_options, pulltype_options, length_payload)
-        VALUES (${data.categoryId}, ${data.seriesId || null}, ${data.modelSeries}, ${data.name}, ${data.basePrice || 0}, ${data.imageUrl}, ${JSON.stringify(data.standardFeatures)}, ${data.gvwr || null}, ${data.payload || null}, ${data.deckSize || null}, ${data.axles || null}, ${data.lengthOptions ? JSON.stringify(data.lengthOptions) : null}, ${data.pulltypeOptions ? JSON.stringify(data.pulltypeOptions) : null}, ${data.lengthPayload ? JSON.stringify(data.lengthPayload) : null})
-        RETURNING id, category_id, series_id, model_id, name, base_price, image_url, features, gvwr, payload, deck_size, axles, length_options, pulltype_options, length_payload
+        INSERT INTO trailer_models (category_id, series_id, model_id, name, base_price, image_url, features, axles, length_options, pulltype_options, length_payload, length_gvwr, deck_size)
+        VALUES (${data.categoryId}, ${data.seriesId || null}, ${data.modelSeries}, ${data.name}, ${data.basePrice || 0}, ${data.imageUrl}, ${JSON.stringify(data.standardFeatures)}, ${data.axles || null}, ${data.lengthOptions ? JSON.stringify(data.lengthOptions) : null}, ${data.pulltypeOptions ? JSON.stringify(data.pulltypeOptions) : null}, ${data.lengthPayload ? JSON.stringify(data.lengthPayload) : null}, ${data.lengthGvwr ? JSON.stringify(data.lengthGvwr) : null}, ${data.lengthDeckSize ? JSON.stringify(data.lengthDeckSize) : null})
+        RETURNING id, category_id, series_id, model_id, name, base_price, image_url, features, axles, length_options, pulltype_options, length_payload, length_gvwr, deck_size
       `);
       
       const model = result.rows[0] as any;
@@ -1763,13 +1760,12 @@ export class DatabaseStorage implements IStorage {
         seriesName: seriesName,
         modelId: model.model_id,
         name: model.name,
-        payload: model.payload,
-        deckSize: model.deck_size,
         axles: model.axles,
         lengthOptions: model.length_options ? (typeof model.length_options === 'string' ? JSON.parse(model.length_options) : model.length_options) : null,
         pulltypeOptions: model.pulltype_options ? (typeof model.pulltype_options === 'string' ? JSON.parse(model.pulltype_options) : model.pulltype_options) : null,
         lengthPrice: model.length_price ? (typeof model.length_price === 'string' ? JSON.parse(model.length_price) : model.length_price) : null,
         lengthPayload: model.length_payload ? (typeof model.length_payload === 'string' ? JSON.parse(model.length_payload) : model.length_payload) : null,
+        lengthGvwr: model.length_gvwr ? (typeof model.length_gvwr === 'string' ? JSON.parse(model.length_gvwr) : model.length_gvwr) : null,
         lengthDeckSize: model.deck_size ? (typeof model.deck_size === 'string' ? JSON.parse(model.deck_size) : model.deck_size) : null,
         imageUrl: model.image_url,
         features: JSON.parse(model.features),
