@@ -2027,7 +2027,7 @@ export default function FastPricing() {
                   <TableHead>Category</TableHead>
                   <TableHead>Series</TableHead>
                   <TableHead>Axles</TableHead>
-                  <TableHead>Length Options</TableHead>
+                  <TableHead>Other Options</TableHead>
                   <TableHead>Price</TableHead>
                   <TableHead>Image</TableHead>
                   <TableHead>Actions</TableHead>
