@@ -2181,52 +2181,6 @@ export default function FastPricing() {
                             );
                           })()}
                           
-                          {/* Add new length option */}
-                          {addingLengthFor === model.id ? (
-                            <div className="flex gap-1">
-                              <Input
-                                placeholder="Enter length (e.g., 16', 20')"
-                                value={newLengthValue}
-                                onChange={(e: any) => setNewLengthValue(e.target.value)}
-                                onKeyPress={(e: any) => {
-                                  if (e.key === 'Enter') {
-                                    addLengthOption(model.id, newLengthValue);
-                                  }
-                                }}
-                                className="text-xs"
-                                autoFocus
-                              />
-                              <Button
-                                size="sm"
-                                onClick={() => addLengthOption(model.id, newLengthValue)}
-                                disabled={!newLengthValue.trim()}
-                                className="px-2 h-8"
-                              >
-                                <Save className="w-3 h-3" />
-                              </Button>
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                onClick={() => {
-                                  setAddingLengthFor(null);
-                                  setNewLengthValue("");
-                                }}
-                                className="px-2 h-8"
-                              >
-                                <X className="w-3 h-3" />
-                              </Button>
-                            </div>
-                          ) : (
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              onClick={() => setAddingLengthFor(model.id)}
-                              className="h-8 text-xs"
-                            >
-                              <Plus className="w-3 h-3 mr-1" />
-                              Add Length
-                            </Button>
-                          )}
                         </div>
                       ) : (
                         <div className="space-y-1">
