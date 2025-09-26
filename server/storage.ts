@@ -1269,12 +1269,16 @@ export class DatabaseStorage implements IStorage {
         `);
       }
       if (updates.lengthPayload !== undefined) {
+        console.log(`🎯 DEBUG: lengthPayload update triggered for model ${id}`);
+        console.log(`🎯 DEBUG: lengthPayload value:`, updates.lengthPayload);
         const lengthPayloadJson = updates.lengthPayload ? JSON.stringify(updates.lengthPayload) : null;
-        await db.execute(sql`
+        console.log(`🎯 DEBUG: lengthPayload JSON:`, lengthPayloadJson);
+        const updateResult = await db.execute(sql`
           UPDATE trailer_models 
           SET length_payload = ${lengthPayloadJson}
           WHERE id = ${id}
         `);
+        console.log(`🎯 DEBUG: lengthPayload SQL result:`, updateResult);
       }
       if (updates.categoryId !== undefined) {
         await db.execute(sql`
