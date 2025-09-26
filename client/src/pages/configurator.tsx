@@ -94,6 +94,7 @@ interface TrailerModel {
   features?: string[];
   lengthGvwr?: Record<string, string> | null;
   lengthPayload?: Record<string, string> | null;
+  lengthDeckSize?: Record<string, string> | null;
   lengthOptions?: string[] | null;
   lengthPrice?: Record<string, number> | null;
   pulltypeOptions?: Record<string, string> | null;
@@ -491,8 +492,13 @@ export default function Configurator() {
       }
     }
 
-    // Default to model deck size
-    return selectedModel?.deckSize || 'N/A';
+    // Default to model deck size - ensure it's a string, not an object
+    const fallbackDeckSize = selectedModel?.deckSize;
+    if (typeof fallbackDeckSize === 'object') {
+      console.warn('Deck size is an object, returning N/A:', fallbackDeckSize);
+      return 'N/A';
+    }
+    return fallbackDeckSize || 'N/A';
   };
 
   // Calculate dynamic GVWR based on selected length option
