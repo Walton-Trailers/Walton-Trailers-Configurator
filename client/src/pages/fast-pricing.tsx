@@ -112,6 +112,7 @@ export default function FastPricing() {
     imageUrl: ""
   });
   const [showAddModel, setShowAddModel] = useState(false);
+  const [addModelError, setAddModelError] = useState<string | null>(null);
   const [newModelData, setNewModelData] = useState({
     categoryId: 0,
     seriesId: null as number | null,
@@ -557,6 +558,21 @@ export default function FastPricing() {
         axles: ""
       });
       toast({ title: "Success", description: "Model added successfully" });
+    },
+    onError: (error: any) => {
+      console.error('Error adding model:', error);
+      let errorMessage = 'Failed to add model. Please try again.';
+      
+      // Handle specific database constraint errors
+      if (error?.message?.includes('duplicate key value violates unique constraint')) {
+        if (error.message.includes('model_id')) {
+          errorMessage = `Model ID '${newModelData.modelSeries}' already exists. Please use a different model ID.`;
+        }
+      } else if (error?.message) {
+        errorMessage = `Error: ${error.message}`;
+      }
+      
+      setAddModelError(errorMessage);
     },
   });
 
@@ -1995,7 +2011,10 @@ export default function FastPricing() {
                         </div>
                       </div>
                       <div className="flex justify-end gap-3 mt-6">
-                        <Button variant="outline" onClick={() => setShowAddModel(false)}>
+                        <Button variant="outline" onClick={() => {
+                          setShowAddModel(false);
+                          setAddModelError(null);
+                        }}>
                           Cancel
                         </Button>
                         <Button 
@@ -2008,6 +2027,36 @@ export default function FastPricing() {
                     </div>
                   </div>
                 )}
+
+                {/* Error Popup Modal */}
+                {addModelError && (
+                  <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+                    <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
+                      <div className="flex items-center mb-4">
+                        <div className="flex-shrink-0 w-10 h-10 bg-red-100 rounded-full flex items-center justify-center">
+                          <svg className="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                          </svg>
+                        </div>
+                        <div className="ml-3">
+                          <h3 className="text-lg font-medium text-gray-900">Error Adding Model</h3>
+                        </div>
+                      </div>
+                      <div className="mb-6">
+                        <p className="text-sm text-gray-700">{addModelError}</p>
+                      </div>
+                      <div className="flex justify-end">
+                        <Button 
+                          onClick={() => setAddModelError(null)}
+                          className="bg-red-600 hover:bg-red-700 text-white"
+                        >
+                          OK
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
             <Table>
               <TableHeader>
                 <TableRow>
