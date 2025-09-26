@@ -2168,13 +2168,13 @@ export default function FastPricing() {
                                 {hasLengths && (
                                   <button
                                     type="button"
-                                    onClick={() => setExpandedLengthOptions({
-                                      ...expandedLengthOptions,
-                                      [model.id]: !isExpanded
+                                    onClick={() => setShowOptionsPopup({
+                                      ...showOptionsPopup,
+                                      [model.id]: true
                                     })}
                                     className="text-xs text-blue-600 hover:text-blue-800 font-medium"
                                   >
-                                    {isExpanded ? 'Hide Lengths' : 'Display Lengths'}
+                                    Edit Options
                                   </button>
                                 )}
                               </div>
@@ -3017,17 +3017,28 @@ export default function FastPricing() {
                 const model = [...activeModels, ...archivedModels].find(m => m.id === openModelId);
                 if (!model) return null;
 
-                const lengthOptions = typeof model.lengthOptions === 'string' 
-                  ? (model.lengthOptions ? JSON.parse(model.lengthOptions) : [])
-                  : model.lengthOptions || [];
+                const isEditing = editingModel?.id === openModelId;
                 
-                const pulltypeOptions = model.pulltypeOptions || {};
-                const lengthPrice = typeof model.lengthPrice === 'string' 
-                  ? (model.lengthPrice ? JSON.parse(model.lengthPrice) : {})
-                  : model.lengthPrice || {};
-                const lengthGvwr = typeof model.lengthGvwr === 'string' 
-                  ? (model.lengthGvwr ? JSON.parse(model.lengthGvwr) : {})
-                  : model.lengthGvwr || {};
+                // Use editData if in editing mode, otherwise use model data
+                const lengthOptions = isEditing && editData[openModelId]?.lengthOptions
+                  ? editData[openModelId].lengthOptions
+                  : typeof model.lengthOptions === 'string' 
+                    ? (model.lengthOptions ? JSON.parse(model.lengthOptions) : [])
+                    : model.lengthOptions || [];
+                
+                const pulltypeOptions = isEditing && editData[openModelId]?.pulltypeOptions
+                  ? editData[openModelId].pulltypeOptions
+                  : model.pulltypeOptions || {};
+                const lengthPrice = isEditing && editData[openModelId]?.lengthPrice
+                  ? editData[openModelId].lengthPrice
+                  : typeof model.lengthPrice === 'string' 
+                    ? (model.lengthPrice ? JSON.parse(model.lengthPrice) : {})
+                    : model.lengthPrice || {};
+                const lengthGvwr = isEditing && editData[openModelId]?.lengthGvwr
+                  ? editData[openModelId].lengthGvwr
+                  : typeof model.lengthGvwr === 'string' 
+                    ? (model.lengthGvwr ? JSON.parse(model.lengthGvwr) : {})
+                    : model.lengthGvwr || {};
 
                 return (
                   <>
@@ -3035,7 +3046,7 @@ export default function FastPricing() {
                       <div className="flex justify-between items-center">
                         <div>
                           <h3 className="text-xl font-semibold">{model.name}</h3>
-                          <p className="text-gray-600 text-sm">Model ID: {model.modelId}</p>
+                          <p className="text-gray-600 text-sm">Model ID: {model.modelId} {isEditing && <span className="text-blue-600 font-medium">(Editing Mode)</span>}</p>
                         </div>
                         <button
                           onClick={() => setShowOptionsPopup({
@@ -3083,36 +3094,253 @@ export default function FastPricing() {
                         </div>
 
                         {/* Length Options */}
-                        {lengthOptions.length > 0 && (
+                        {(lengthOptions.length > 0 || isEditing) && (
                           <div>
-                            <h4 className="text-lg font-semibold mb-3">Length Options</h4>
+                            <div className="flex justify-between items-center mb-3">
+                              <h4 className="text-lg font-semibold">Length Options</h4>
+                              {isEditing && (
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => setAddingLengthFor(openModelId)}
+                                  className="text-xs"
+                                >
+                                  <Plus className="w-3 h-3 mr-1" />
+                                  Add Length
+                                </Button>
+                              )}
+                            </div>
+                            
+                            {/* Add new length input */}
+                            {isEditing && addingLengthFor === openModelId && (
+                              <div className="mb-3 p-3 border rounded-lg bg-blue-50">
+                                <div className="flex gap-2">
+                                  <Input
+                                    placeholder="Enter length (e.g., 16', 20')"
+                                    value={newLengthValue}
+                                    onChange={(e: any) => setNewLengthValue(e.target.value)}
+                                    onKeyPress={(e: any) => {
+                                      if (e.key === 'Enter') {
+                                        addLengthOption(openModelId, newLengthValue);
+                                      }
+                                    }}
+                                    className="text-sm"
+                                    autoFocus
+                                  />
+                                  <Button
+                                    size="sm"
+                                    onClick={() => addLengthOption(openModelId, newLengthValue)}
+                                    disabled={!newLengthValue.trim()}
+                                  >
+                                    <Save className="w-3 h-3" />
+                                  </Button>
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    onClick={() => {
+                                      setAddingLengthFor(null);
+                                      setNewLengthValue("");
+                                    }}
+                                  >
+                                    <X className="w-3 h-3" />
+                                  </Button>
+                                </div>
+                              </div>
+                            )}
+                            
                             <div className="grid gap-3">
                               {lengthOptions.map((length: string, index: number) => (
                                 <div key={index} className="border rounded-lg p-4 bg-gray-50">
-                                  <div className="grid grid-cols-1 md:grid-cols-4 gap-3 text-sm">
-                                    <div>
-                                      <span className="font-medium text-gray-600">Length:</span>
-                                      <div className="font-semibold">{length}</div>
+                                  {isEditing ? (
+                                    <div className="space-y-3">
+                                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                        <div>
+                                          <label className="block text-xs font-medium text-gray-600 mb-1">Length:</label>
+                                          {editingLengthFor?.modelId === openModelId && editingLengthFor?.lengthIndex === index ? (
+                                            <div className="flex gap-1">
+                                              <Input
+                                                value={tempLengthValue}
+                                                onChange={(e: any) => setTempLengthValue(e.target.value)}
+                                                className="text-sm"
+                                                autoFocus
+                                              />
+                                              <Button
+                                                size="sm"
+                                                onClick={() => {
+                                                  if (tempLengthValue.trim()) {
+                                                    const newLengthOptions = [...lengthOptions];
+                                                    const oldLength = newLengthOptions[index];
+                                                    newLengthOptions[index] = tempLengthValue.trim();
+                                                    
+                                                    // Update pull type and GVWR keys
+                                                    const newPulltypeOptions = { ...pulltypeOptions };
+                                                    const newLengthGvwr = { ...lengthGvwr };
+                                                    const newLengthPrice = { ...lengthPrice };
+                                                    
+                                                    if (oldLength !== tempLengthValue.trim()) {
+                                                      newPulltypeOptions[tempLengthValue.trim()] = newPulltypeOptions[oldLength] || "";
+                                                      newLengthGvwr[tempLengthValue.trim()] = newLengthGvwr[oldLength] || "";
+                                                      newLengthPrice[tempLengthValue.trim()] = newLengthPrice[oldLength] || 0;
+                                                      
+                                                      delete newPulltypeOptions[oldLength];
+                                                      delete newLengthGvwr[oldLength];
+                                                      delete newLengthPrice[oldLength];
+                                                    }
+                                                    
+                                                    setEditData({
+                                                      ...editData,
+                                                      [openModelId]: {
+                                                        ...editData[openModelId],
+                                                        lengthOptions: newLengthOptions,
+                                                        pulltypeOptions: newPulltypeOptions,
+                                                        lengthGvwr: newLengthGvwr,
+                                                        lengthPrice: newLengthPrice
+                                                      }
+                                                    });
+                                                    setEditingLengthFor(null);
+                                                    setTempLengthValue("");
+                                                  }
+                                                }}
+                                                className="px-2"
+                                              >
+                                                <Save className="w-3 h-3" />
+                                              </Button>
+                                              <Button
+                                                size="sm"
+                                                variant="outline"
+                                                onClick={() => {
+                                                  setEditingLengthFor(null);
+                                                  setTempLengthValue("");
+                                                }}
+                                                className="px-2"
+                                              >
+                                                <X className="w-3 h-3" />
+                                              </Button>
+                                            </div>
+                                          ) : (
+                                            <div className="flex items-center gap-2">
+                                              <span className="font-semibold">{length}</span>
+                                              <Button
+                                                size="sm"
+                                                variant="ghost"
+                                                onClick={() => {
+                                                  setEditingLengthFor({ modelId: openModelId, lengthIndex: index, originalLength: length });
+                                                  setTempLengthValue(length);
+                                                }}
+                                                className="p-1 h-6 w-6"
+                                              >
+                                                <Edit className="w-3 h-3" />
+                                              </Button>
+                                            </div>
+                                          )}
+                                        </div>
+                                        <div>
+                                          <label className="block text-xs font-medium text-gray-600 mb-1">Pull Type:</label>
+                                          <Input
+                                            value={pulltypeOptions[length] || ""}
+                                            onChange={(e: any) => {
+                                              const newPulltypeOptions = { ...pulltypeOptions, [length]: e.target.value };
+                                              setEditData({
+                                                ...editData,
+                                                [openModelId]: { ...editData[openModelId], pulltypeOptions: newPulltypeOptions }
+                                              });
+                                            }}
+                                            placeholder="e.g., Gooseneck, Bumper Pull"
+                                            className="text-sm"
+                                          />
+                                        </div>
+                                      </div>
+                                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                        <div>
+                                          <label className="block text-xs font-medium text-gray-600 mb-1">GVWR:</label>
+                                          <Input
+                                            value={lengthGvwr[length] || ""}
+                                            onChange={(e: any) => {
+                                              const newLengthGvwr = { ...lengthGvwr, [length]: e.target.value };
+                                              setEditData({
+                                                ...editData,
+                                                [openModelId]: { ...editData[openModelId], lengthGvwr: newLengthGvwr }
+                                              });
+                                            }}
+                                            placeholder="e.g., 14,000 lbs"
+                                            className="text-sm"
+                                          />
+                                        </div>
+                                        <div>
+                                          <label className="block text-xs font-medium text-gray-600 mb-1">Price Adjustment ($):</label>
+                                          <Input
+                                            type="number"
+                                            value={lengthPrice[length] || 0}
+                                            onChange={(e: any) => {
+                                              const newLengthPrice = { ...lengthPrice, [length]: parseFloat(e.target.value) || 0 };
+                                              setEditData({
+                                                ...editData,
+                                                [openModelId]: { ...editData[openModelId], lengthPrice: newLengthPrice }
+                                              });
+                                            }}
+                                            placeholder="0"
+                                            className="text-sm"
+                                          />
+                                        </div>
+                                      </div>
+                                      <div className="flex justify-end">
+                                        <Button
+                                          size="sm"
+                                          variant="outline"
+                                          onClick={() => {
+                                            const newLengthOptions = lengthOptions.filter((_, i) => i !== index);
+                                            const newPulltypeOptions = { ...pulltypeOptions };
+                                            const newLengthGvwr = { ...lengthGvwr };
+                                            const newLengthPrice = { ...lengthPrice };
+                                            
+                                            delete newPulltypeOptions[length];
+                                            delete newLengthGvwr[length];
+                                            delete newLengthPrice[length];
+                                            
+                                            setEditData({
+                                              ...editData,
+                                              [openModelId]: {
+                                                ...editData[openModelId],
+                                                lengthOptions: newLengthOptions,
+                                                pulltypeOptions: newPulltypeOptions,
+                                                lengthGvwr: newLengthGvwr,
+                                                lengthPrice: newLengthPrice
+                                              }
+                                            });
+                                          }}
+                                          className="text-red-600 hover:text-red-800"
+                                        >
+                                          <Trash2 className="w-3 h-3 mr-1" />
+                                          Remove
+                                        </Button>
+                                      </div>
                                     </div>
-                                    {pulltypeOptions[length] && (
+                                  ) : (
+                                    <div className="grid grid-cols-1 md:grid-cols-4 gap-3 text-sm">
                                       <div>
-                                        <span className="font-medium text-gray-600">Pull Type:</span>
-                                        <div>{pulltypeOptions[length]}</div>
+                                        <span className="font-medium text-gray-600">Length:</span>
+                                        <div className="font-semibold">{length}</div>
                                       </div>
-                                    )}
-                                    {lengthGvwr[length] && (
-                                      <div>
-                                        <span className="font-medium text-gray-600">GVWR:</span>
-                                        <div className="text-blue-600 font-medium">{lengthGvwr[length]}</div>
-                                      </div>
-                                    )}
-                                    {lengthPrice[length] && lengthPrice[length] > 0 && (
-                                      <div>
-                                        <span className="font-medium text-gray-600">Price Adjustment:</span>
-                                        <div className="text-green-600 font-semibold">+${lengthPrice[length].toLocaleString()}</div>
-                                      </div>
-                                    )}
-                                  </div>
+                                      {pulltypeOptions[length] && (
+                                        <div>
+                                          <span className="font-medium text-gray-600">Pull Type:</span>
+                                          <div>{pulltypeOptions[length]}</div>
+                                        </div>
+                                      )}
+                                      {lengthGvwr[length] && (
+                                        <div>
+                                          <span className="font-medium text-gray-600">GVWR:</span>
+                                          <div className="text-blue-600 font-medium">{lengthGvwr[length]}</div>
+                                        </div>
+                                      )}
+                                      {lengthPrice[length] && lengthPrice[length] > 0 && (
+                                        <div>
+                                          <span className="font-medium text-gray-600">Price Adjustment:</span>
+                                          <div className="text-green-600 font-semibold">+${lengthPrice[length].toLocaleString()}</div>
+                                        </div>
+                                      )}
+                                    </div>
+                                  )}
                                 </div>
                               ))}
                             </div>
