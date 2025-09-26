@@ -1288,7 +1288,7 @@ Configuration Date: ${new Date().toLocaleDateString()}
                       <div className="text-sm text-gray-500">Payload</div>
                     </div>
                     <div className="text-center">
-                      <div className="text-lg font-bold text-gray-900">{selectedModel?.deckSize || 'N/A'}</div>
+                      <div className="text-lg font-bold text-gray-900">{getDynamicDeckSize()}</div>
                       <div className="text-sm text-gray-500">Deck Size</div>
                     </div>
                   </div>
@@ -1758,7 +1758,7 @@ Configuration Date: ${new Date().toLocaleDateString()}
                     </div>
                     <div>
                       <span className="text-zinc-500">Deck: </span>
-                      <span className="font-medium">{selectedModel.deckSize}</span>
+                      <span className="font-medium">{getDynamicDeckSize()}</span>
                     </div>
                     <div>
                       <span className="text-zinc-500">Axles: </span>
