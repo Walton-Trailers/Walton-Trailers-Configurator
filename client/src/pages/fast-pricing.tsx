@@ -1993,17 +1993,6 @@ export default function FastPricing() {
                             )}
                           </div>
                         </div>
-                        <div>
-                          <label className="block text-sm font-medium mb-1">Standard Features (comma-separated)</label>
-                          <Input
-                            placeholder="e.g., Heavy-duty frame, LED lights, Electric brakes"
-                            value={newModelData.standardFeatures.join(", ")}
-                            onChange={(e: any) => setNewModelData({ 
-                              ...newModelData, 
-                              standardFeatures: e.target.value.split(",").map((f: string) => f.trim()).filter((f: string) => f.length > 0)
-                            })}
-                          />
-                        </div>
                       </div>
                       <div className="flex justify-end gap-3 mt-6">
                         <Button variant="outline" onClick={() => setShowAddModel(false)}>
