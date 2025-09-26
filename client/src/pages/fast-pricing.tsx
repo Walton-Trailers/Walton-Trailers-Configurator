@@ -122,7 +122,6 @@ export default function FastPricing() {
     standardFeatures: [] as string[],
     basePrice: "",
     payload: "",
-    deckSize: "",
     axles: ""
   });
   const [showAddOption, setShowAddOption] = useState(false);
@@ -508,7 +507,6 @@ export default function FastPricing() {
         standardFeatures: [],
         basePrice: "",
         payload: "",
-        deckSize: "",
         axles: ""
       });
       toast({ title: "Success", description: "Model added successfully" });
@@ -651,7 +649,6 @@ export default function FastPricing() {
       basePrice: data.basePrice ?? model.basePrice,
       seriesId: seriesId, // Use the foreign key instead of text
       payload: data.payload ?? model.payload,
-      deckSize: data.deckSize ?? model.deckSize,
       axles: data.axles ?? model.axles,
       lengthOptions: data.lengthOptions ?? model.lengthOptions,
       pulltypeOptions: data.pulltypeOptions ?? model.pulltypeOptions,
@@ -1903,14 +1900,6 @@ export default function FastPricing() {
                         </div>
                         <div className="grid grid-cols-2 gap-4">
                           <div>
-                            <label className="block text-sm font-medium mb-1">Deck Size</label>
-                            <Input
-                              placeholder="e.g., 83 x 14-16ft"
-                              value={newModelData.deckSize}
-                              onChange={(e: any) => setNewModelData({ ...newModelData, deckSize: e.target.value })}
-                            />
-                          </div>
-                          <div>
                             <label className="block text-sm font-medium mb-1">Axles</label>
                             <Input
                               placeholder="e.g., Dual 7K"
@@ -1999,7 +1988,6 @@ export default function FastPricing() {
                   <TableHead>Name</TableHead>
                   <TableHead>Category</TableHead>
                   <TableHead>Series</TableHead>
-                  <TableHead>Deck Size</TableHead>
                   <TableHead>Axles</TableHead>
                   <TableHead>Length Options</TableHead>
                   <TableHead>Price</TableHead>
@@ -2079,20 +2067,6 @@ export default function FastPricing() {
                         </Select>
                       ) : (
                         model.seriesName ?? "No Series"
-                      )}
-                    </TableCell>
-                    <TableCell>
-                      {editingModel?.id === model.id ? (
-                        <Input
-                          placeholder="Deck Size"
-                          value={editData[model.id]?.deckSize ?? model.deckSize ?? ""}
-                          onChange={(e: any) => setEditData({
-                            ...editData,
-                            [model.id]: { ...editData[model.id], deckSize: e.target.value || null }
-                          })}
-                        />
-                      ) : (
-                        model.deckSize || "—"
                       )}
                     </TableCell>
                     <TableCell>
@@ -2395,7 +2369,6 @@ export default function FastPricing() {
                           <TableHead>Name</TableHead>
                           <TableHead>Category</TableHead>
                           <TableHead>Series</TableHead>
-                          <TableHead>Deck Size</TableHead>
                           <TableHead>Axles</TableHead>
                           <TableHead>Length Options</TableHead>
                           <TableHead>Price</TableHead>
@@ -2410,7 +2383,6 @@ export default function FastPricing() {
                             <TableCell>{model.name}</TableCell>
                             <TableCell>{model.categoryName}</TableCell>
                             <TableCell>{model.seriesName ?? "No Series"}</TableCell>
-                            <TableCell>{model.deckSize || "—"}</TableCell>
                             <TableCell>{model.axles || "—"}</TableCell>
                             <TableCell>
                               <div className="space-y-1">
@@ -3075,10 +3047,6 @@ export default function FastPricing() {
                             <div>
                               <span className="font-medium text-gray-600">Series:</span>
                               <div>{model.seriesName || "No Series"}</div>
-                            </div>
-                            <div>
-                              <span className="font-medium text-gray-600">Deck Size:</span>
-                              <div>{model.deckSize || "—"}</div>
                             </div>
                             <div>
                               <span className="font-medium text-gray-600">Axles:</span>
