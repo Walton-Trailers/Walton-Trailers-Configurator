@@ -1951,7 +1951,6 @@ export default function FastPricing() {
                   <TableHead>Name</TableHead>
                   <TableHead>Category</TableHead>
                   <TableHead>Series</TableHead>
-                  <TableHead>Payload</TableHead>
                   <TableHead>Deck Size</TableHead>
                   <TableHead>Axles</TableHead>
                   <TableHead>Length Options</TableHead>
@@ -2032,20 +2031,6 @@ export default function FastPricing() {
                         </Select>
                       ) : (
                         model.seriesName ?? "No Series"
-                      )}
-                    </TableCell>
-                    <TableCell>
-                      {editingModel?.id === model.id ? (
-                        <Input
-                          placeholder="Payload"
-                          value={editData[model.id]?.payload ?? model.payload ?? ""}
-                          onChange={(e: any) => setEditData({
-                            ...editData,
-                            [model.id]: { ...editData[model.id], payload: e.target.value || null }
-                          })}
-                        />
-                      ) : (
-                        model.payload || "—"
                       )}
                     </TableCell>
                     <TableCell>
@@ -2353,7 +2338,6 @@ export default function FastPricing() {
                           <TableHead>Name</TableHead>
                           <TableHead>Category</TableHead>
                           <TableHead>Series</TableHead>
-                          <TableHead>Payload</TableHead>
                           <TableHead>Deck Size</TableHead>
                           <TableHead>Axles</TableHead>
                           <TableHead>Length Options</TableHead>
@@ -2369,7 +2353,6 @@ export default function FastPricing() {
                             <TableCell>{model.name}</TableCell>
                             <TableCell>{model.categoryName}</TableCell>
                             <TableCell>{model.seriesName ?? "No Series"}</TableCell>
-                            <TableCell>{model.payload || "—"}</TableCell>
                             <TableCell>{model.deckSize || "—"}</TableCell>
                             <TableCell>{model.axles || "—"}</TableCell>
                             <TableCell>
@@ -3027,10 +3010,6 @@ export default function FastPricing() {
                             <div>
                               <span className="font-medium text-gray-600">Series:</span>
                               <div>{model.seriesName || "No Series"}</div>
-                            </div>
-                            <div>
-                              <span className="font-medium text-gray-600">Payload:</span>
-                              <div>{model.payload || "—"}</div>
                             </div>
                             <div>
                               <span className="font-medium text-gray-600">Deck Size:</span>
