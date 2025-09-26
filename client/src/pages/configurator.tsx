@@ -314,7 +314,7 @@ export default function Configurator() {
       modelSpecs: {
         gvwr: getDynamicGvwr(),
         payload: getDynamicPayload(),
-        deckSize: selectedModel.deckSize,
+        deckSize: getDynamicDeckSize(),
         axles: selectedModel.axles
       },
       selectedOptions: selectedOptions,
@@ -449,6 +449,50 @@ export default function Configurator() {
 
     // Default to model payload
     return selectedModel?.payload || 'N/A';
+  };
+
+  // Calculate dynamic deck size based on selected length option
+  const getDynamicDeckSize = () => {
+    if (!selectedModel || !options) {
+      return selectedModel?.deckSize || 'N/A';
+    }
+
+    // If model has length-specific deck size data, use it
+    if (selectedModel.lengthDeckSize) {
+      const lengthOptions = options.filter(opt => opt.category === 'length');
+      
+      // Determine which length option to use
+      let targetLengthOption;
+      if (selectedOptions.length) {
+        // Use explicitly selected length
+        targetLengthOption = lengthOptions.find(opt => opt.id === selectedOptions.length);
+      } else if (lengthOptions.length > 0) {
+        // Use default (first) length option when no length is explicitly selected
+        targetLengthOption = lengthOptions[0];
+      }
+      
+      if (targetLengthOption) {
+        // Parse lengthDeckSize data (it might be string or object)
+        let lengthDeckSizeData = selectedModel.lengthDeckSize;
+        if (typeof lengthDeckSizeData === 'string') {
+          try {
+            lengthDeckSizeData = JSON.parse(lengthDeckSizeData);
+          } catch (e) {
+            console.warn('Failed to parse lengthDeckSize data:', e);
+            return selectedModel?.deckSize || 'N/A';
+          }
+        }
+
+        // Get deck size for the target length
+        const deckSizeForLength = lengthDeckSizeData[targetLengthOption.name];
+        if (deckSizeForLength) {
+          return deckSizeForLength;
+        }
+      }
+    }
+
+    // Default to model deck size
+    return selectedModel?.deckSize || 'N/A';
   };
 
   // Calculate dynamic GVWR based on selected length option
@@ -591,7 +635,7 @@ WALTON TRAILERS SPECIFICATION SHEET
 Model: ${selectedModel.name}
 GVWR: ${getDynamicGvwr()}
 Payload: ${getDynamicPayload()}
-Deck Size: ${selectedModel.deckSize}
+Deck Size: ${getDynamicDeckSize()}
 Axles: ${selectedModel.axles}
 
 Base Price: $${selectedModel.basePrice.toLocaleString()}
@@ -634,8 +678,8 @@ Configuration Date: ${new Date().toLocaleDateString()}
         totalPrice,
         trailerSpecs: selectedModel ? {
           gvwr: getDynamicGvwr(),
-          payload: selectedModel.payload,
-          deckSize: selectedModel.deckSize,
+          payload: getDynamicPayload(),
+          deckSize: getDynamicDeckSize(),
           axles: selectedModel.axles
         } : null
       };
@@ -2028,7 +2072,7 @@ Configuration Date: ${new Date().toLocaleDateString()}
                     <span className="font-medium">Payload:</span> {getDynamicPayload()}
                   </div>
                   <div>
-                    <span className="font-medium">Deck Size:</span> {selectedModel.deckSize}
+                    <span className="font-medium">Deck Size:</span> {getDynamicDeckSize()}
                   </div>
                   <div>
                     <span className="font-medium">Axles:</span> {selectedModel.axles}
