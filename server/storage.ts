@@ -836,7 +836,6 @@ export class DatabaseStorage implements IStorage {
         seriesName: model.series_name,
         modelId: model.model_id,
         name: model.name,
-        deckSize: model.deck_size,
         axles: model.axles,
         basePrice: model.base_price,
         imageUrl: model.image_url,
@@ -874,7 +873,6 @@ export class DatabaseStorage implements IStorage {
         modelId: model.model_id,
         name: model.name,
         payload: model.payload,
-        deckSize: model.deck_size,
         axles: model.axles,
         basePrice: model.base_price,
         imageUrl: model.image_url,
@@ -1109,7 +1107,6 @@ export class DatabaseStorage implements IStorage {
         seriesName: model.series_name, // Now comes from the JOIN with trailer_series
         modelId: model.model_id,
         name: model.name,
-        deckSize: model.deck_size,
         axles: model.axles,
         lengthOptions: model.length_options ? (typeof model.length_options === 'string' ? JSON.parse(model.length_options) : model.length_options) : null,
         pulltypeOptions: model.pulltype_options ? (typeof model.pulltype_options === 'string' ? JSON.parse(model.pulltype_options) : model.pulltype_options) : null,
