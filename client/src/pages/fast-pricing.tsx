@@ -173,13 +173,23 @@ export default function FastPricing() {
       [lengthValue.trim()]: "" // Initialize with empty string
     };
     
+    // Initialize payload options for this new length
+    const currentLengthPayload = editData[modelId]?.lengthPayload || 
+      models.find(m => m.id === modelId)?.lengthPayload || {};
+    
+    const newLengthPayload = {
+      ...currentLengthPayload,
+      [lengthValue.trim()]: "" // Initialize with empty string
+    };
+    
     setEditData({
       ...editData,
       [modelId]: { 
         ...editData[modelId], 
         lengthOptions: newLengthOptions,
         pulltypeOptions: newPulltypeOptions,
-        lengthGvwr: newLengthGvwr
+        lengthGvwr: newLengthGvwr,
+        lengthPayload: newLengthPayload
       }
     });
     
@@ -210,13 +220,21 @@ export default function FastPricing() {
     const newLengthGvwr = { ...currentLengthGvwr };
     delete newLengthGvwr[lengthToRemove];
     
+    // Remove the payload option for this length as well
+    const currentLengthPayload = editData[modelId]?.lengthPayload || 
+      models.find(m => m.id === modelId)?.lengthPayload || {};
+    
+    const newLengthPayload = { ...currentLengthPayload };
+    delete newLengthPayload[lengthToRemove];
+    
     setEditData({
       ...editData,
       [modelId]: { 
         ...editData[modelId], 
         lengthOptions: newLengthOptions,
         pulltypeOptions: newPulltypeOptions,
-        lengthGvwr: newLengthGvwr
+        lengthGvwr: newLengthGvwr,
+        lengthPayload: newLengthPayload
       }
     });
   };
@@ -275,6 +293,24 @@ export default function FastPricing() {
     });
   };
 
+  const updatePayloadForLength = (modelId: number, length: string, payload: string) => {
+    const currentLengthPayload = editData[modelId]?.lengthPayload || 
+      models.find(m => m.id === modelId)?.lengthPayload || {};
+    
+    const newLengthPayload = {
+      ...currentLengthPayload,
+      [length]: payload
+    };
+    
+    setEditData({
+      ...editData,
+      [modelId]: { 
+        ...editData[modelId], 
+        lengthPayload: newLengthPayload
+      }
+    });
+  };
+
   const updateLengthValue = (modelId: number, oldLength: string, newLength: string) => {
     if (!newLength.trim() || oldLength === newLength.trim()) {
       return;
@@ -320,6 +356,16 @@ export default function FastPricing() {
       delete newLengthGvwr[oldLength];
     }
     
+    // Update payload options (move from old key to new key)
+    const currentLengthPayload = editData[modelId]?.lengthPayload || 
+      models.find(m => m.id === modelId)?.lengthPayload || {};
+    
+    const newLengthPayload = { ...currentLengthPayload };
+    if (newLengthPayload[oldLength] !== undefined) {
+      newLengthPayload[newLength.trim()] = newLengthPayload[oldLength];
+      delete newLengthPayload[oldLength];
+    }
+    
     setEditData({
       ...editData,
       [modelId]: { 
@@ -327,7 +373,8 @@ export default function FastPricing() {
         lengthOptions: newLengthOptions,
         pulltypeOptions: newPulltypeOptions,
         lengthPrice: newLengthPrice,
-        lengthGvwr: newLengthGvwr
+        lengthGvwr: newLengthGvwr,
+        lengthPayload: newLengthPayload
       }
     });
   };
@@ -610,6 +657,7 @@ export default function FastPricing() {
       pulltypeOptions: data.pulltypeOptions ?? model.pulltypeOptions,
       lengthPrice: data.lengthPrice ?? model.lengthPrice,
       lengthGvwr: data.lengthGvwr ?? model.lengthGvwr,
+      lengthPayload: data.lengthPayload ?? model.lengthPayload,
     });
   };
 
@@ -2142,6 +2190,12 @@ export default function FastPricing() {
                                       className="text-xs h-7 mb-2"
                                     />
                                     <Input
+                                      placeholder="Payload (e.g., 10,432 lbs)"
+                                      value={(editData[model.id]?.lengthPayload || model.lengthPayload || {})[length] || ""}
+                                      onChange={(e: any) => updatePayloadForLength(model.id, length, e.target.value)}
+                                      className="text-xs h-7 mb-2"
+                                    />
+                                    <Input
                                       placeholder="Price (e.g., 1500)"
                                       type="number"
                                       value={(editData[model.id]?.lengthPrice || model.lengthPrice || {})[length] || ""}
@@ -2181,6 +2235,9 @@ export default function FastPricing() {
                             const lengthGvwr = typeof model.lengthGvwr === 'string' 
                               ? (model.lengthGvwr ? JSON.parse(model.lengthGvwr) : {})
                               : model.lengthGvwr || {};
+                            const lengthPayload = typeof model.lengthPayload === 'string' 
+                              ? (model.lengthPayload ? JSON.parse(model.lengthPayload) : {})
+                              : model.lengthPayload || {};
                             
                             const isExpanded = expandedLengthOptions[model.id];
                             const displayedOptions = isExpanded ? lengthOptions : [];
@@ -2369,6 +2426,9 @@ export default function FastPricing() {
                                   const lengthGvwr = typeof model.lengthGvwr === 'string' 
                                     ? (model.lengthGvwr ? JSON.parse(model.lengthGvwr) : {})
                                     : model.lengthGvwr || {};
+                                  const lengthPayload = typeof model.lengthPayload === 'string' 
+                                    ? (model.lengthPayload ? JSON.parse(model.lengthPayload) : {})
+                                    : model.lengthPayload || {};
                                   
                                   const isExpanded = expandedLengthOptions[model.id];
                                   const displayedOptions = isExpanded ? lengthOptions : [];
@@ -2976,6 +3036,11 @@ export default function FastPricing() {
                   : typeof model.lengthGvwr === 'string' 
                     ? (model.lengthGvwr ? JSON.parse(model.lengthGvwr) : {})
                     : model.lengthGvwr || {};
+                const lengthPayload = isEditing && editData[openModelId]?.lengthPayload
+                  ? editData[openModelId].lengthPayload
+                  : typeof model.lengthPayload === 'string' 
+                    ? (model.lengthPayload ? JSON.parse(model.lengthPayload) : {})
+                    : model.lengthPayload || {};
 
                 return (
                   <>
@@ -3108,15 +3173,18 @@ export default function FastPricing() {
                                                     // Update pull type and GVWR keys
                                                     const newPulltypeOptions = { ...pulltypeOptions };
                                                     const newLengthGvwr = { ...lengthGvwr };
+                                                    const newLengthPayload = { ...lengthPayload };
                                                     const newLengthPrice = { ...lengthPrice };
                                                     
                                                     if (oldLength !== tempLengthValue.trim()) {
                                                       newPulltypeOptions[tempLengthValue.trim()] = newPulltypeOptions[oldLength] || "";
                                                       newLengthGvwr[tempLengthValue.trim()] = newLengthGvwr[oldLength] || "";
+                                                      newLengthPayload[tempLengthValue.trim()] = newLengthPayload[oldLength] || "";
                                                       newLengthPrice[tempLengthValue.trim()] = newLengthPrice[oldLength] || 0;
                                                       
                                                       delete newPulltypeOptions[oldLength];
                                                       delete newLengthGvwr[oldLength];
+                                                      delete newLengthPayload[oldLength];
                                                       delete newLengthPrice[oldLength];
                                                     }
                                                     
@@ -3127,6 +3195,7 @@ export default function FastPricing() {
                                                         lengthOptions: newLengthOptions,
                                                         pulltypeOptions: newPulltypeOptions,
                                                         lengthGvwr: newLengthGvwr,
+                                                        lengthPayload: newLengthPayload,
                                                         lengthPrice: newLengthPrice
                                                       }
                                                     });
@@ -3183,7 +3252,7 @@ export default function FastPricing() {
                                           />
                                         </div>
                                       </div>
-                                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                      <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                                         <div>
                                           <label className="block text-xs font-medium text-gray-600 mb-1">GVWR:</label>
                                           <Input
@@ -3196,6 +3265,21 @@ export default function FastPricing() {
                                               });
                                             }}
                                             placeholder="e.g., 14,000 lbs"
+                                            className="text-sm"
+                                          />
+                                        </div>
+                                        <div>
+                                          <label className="block text-xs font-medium text-gray-600 mb-1">Payload:</label>
+                                          <Input
+                                            value={lengthPayload[length] || ""}
+                                            onChange={(e: any) => {
+                                              const newLengthPayload = { ...lengthPayload, [length]: e.target.value };
+                                              setEditData({
+                                                ...editData,
+                                                [openModelId]: { ...editData[openModelId], lengthPayload: newLengthPayload }
+                                              });
+                                            }}
+                                            placeholder="e.g., 10,432 lbs"
                                             className="text-sm"
                                           />
                                         </div>
@@ -3224,10 +3308,12 @@ export default function FastPricing() {
                                             const newLengthOptions = lengthOptions.filter((_, i) => i !== index);
                                             const newPulltypeOptions = { ...pulltypeOptions };
                                             const newLengthGvwr = { ...lengthGvwr };
+                                            const newLengthPayload = { ...lengthPayload };
                                             const newLengthPrice = { ...lengthPrice };
                                             
                                             delete newPulltypeOptions[length];
                                             delete newLengthGvwr[length];
+                                            delete newLengthPayload[length];
                                             delete newLengthPrice[length];
                                             
                                             setEditData({
@@ -3237,6 +3323,7 @@ export default function FastPricing() {
                                                 lengthOptions: newLengthOptions,
                                                 pulltypeOptions: newPulltypeOptions,
                                                 lengthGvwr: newLengthGvwr,
+                                                lengthPayload: newLengthPayload,
                                                 lengthPrice: newLengthPrice
                                               }
                                             });

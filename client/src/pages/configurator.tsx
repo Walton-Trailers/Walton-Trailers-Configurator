@@ -92,6 +92,12 @@ interface TrailerModel {
   basePrice?: number;
   imageUrl: string;
   features?: string[];
+  lengthGvwr?: Record<string, string> | null;
+  lengthPayload?: Record<string, string> | null;
+  lengthOptions?: string[] | null;
+  lengthPrice?: Record<string, number> | null;
+  pulltypeOptions?: Record<string, string> | null;
+  isArchived?: boolean;
   // Additional properties for PDF generation compatibility
   series?: string | null;
   seriesId?: number | null;
@@ -307,7 +313,7 @@ export default function Configurator() {
       modelName: selectedModel.name,
       modelSpecs: {
         gvwr: getDynamicGvwr(),
-        payload: selectedModel.payload,
+        payload: getDynamicPayload(),
         deckSize: selectedModel.deckSize,
         axles: selectedModel.axles
       },
@@ -404,20 +410,45 @@ export default function Configurator() {
   // Calculate dynamic payload based on selected length option
   const getDynamicPayload = () => {
     if (!selectedModel || !options) {
-      return selectedModel?.payload || '10,432 lbs';
+      return selectedModel?.payload || 'N/A';
     }
 
-    // For FBH models, check if a length is selected
-    if (selectedModel.name.includes('FBH') && selectedOptions.length) {
+    // If model has length-specific payload data, use it
+    if (selectedModel.lengthPayload) {
       const lengthOptions = options.filter(opt => opt.category === 'length');
-      const selectedLengthOption = lengthOptions.find(opt => opt.id === selectedOptions.length);
-      if (selectedLengthOption && selectedLengthOption.payload) {
-        return `${selectedLengthOption.payload.toLocaleString()} lbs`;
+      
+      // Determine which length option to use
+      let targetLengthOption;
+      if (selectedOptions.length) {
+        // Use explicitly selected length
+        targetLengthOption = lengthOptions.find(opt => opt.id === selectedOptions.length);
+      } else if (lengthOptions.length > 0) {
+        // Use default (first) length option when no length is explicitly selected
+        targetLengthOption = lengthOptions[0];
+      }
+      
+      if (targetLengthOption) {
+        // Parse lengthPayload data (it might be string or object)
+        let lengthPayloadData = selectedModel.lengthPayload;
+        if (typeof lengthPayloadData === 'string') {
+          try {
+            lengthPayloadData = JSON.parse(lengthPayloadData);
+          } catch (e) {
+            console.warn('Failed to parse lengthPayload data:', e);
+            return selectedModel?.payload || 'N/A';
+          }
+        }
+
+        // Get payload for the target length
+        const payloadForLength = lengthPayloadData[targetLengthOption.name];
+        if (payloadForLength) {
+          return payloadForLength;
+        }
       }
     }
 
     // Default to model payload
-    return selectedModel.payload || '10,432 lbs';
+    return selectedModel?.payload || 'N/A';
   };
 
   // Calculate dynamic GVWR based on selected length option
