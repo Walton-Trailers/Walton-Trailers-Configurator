@@ -1116,6 +1116,7 @@ export class DatabaseStorage implements IStorage {
         lengthPrice: model.length_price ? (typeof model.length_price === 'string' ? JSON.parse(model.length_price) : model.length_price) : null,
         lengthGvwr: model.length_gvwr ? (typeof model.length_gvwr === 'string' ? JSON.parse(model.length_gvwr) : model.length_gvwr) : null,
         lengthPayload: model.length_payload ? (typeof model.length_payload === 'string' ? JSON.parse(model.length_payload) : model.length_payload) : null,
+        lengthDeckSize: model.deck_size ? (typeof model.deck_size === 'string' ? JSON.parse(model.deck_size) : model.deck_size) : null,
         basePrice: model.base_price,
         imageUrl: model.image_url,
         features: model.features || [],
@@ -1276,6 +1277,14 @@ export class DatabaseStorage implements IStorage {
           WHERE id = ${id}
         `);
       }
+      if (updates.lengthDeckSize !== undefined) {
+        const lengthDeckSizeJson = updates.lengthDeckSize ? JSON.stringify(updates.lengthDeckSize) : null;
+        await db.execute(sql`
+          UPDATE trailer_models 
+          SET deck_size = ${lengthDeckSizeJson}
+          WHERE id = ${id}
+        `);
+      }
       if (updates.categoryId !== undefined) {
         await db.execute(sql`
           UPDATE trailer_models 
@@ -1349,6 +1358,7 @@ export class DatabaseStorage implements IStorage {
         lengthPrice: updatedModel.length_price ? (typeof updatedModel.length_price === 'string' ? JSON.parse(updatedModel.length_price) : updatedModel.length_price) : null,
         lengthGvwr: updatedModel.length_gvwr ? (typeof updatedModel.length_gvwr === 'string' ? JSON.parse(updatedModel.length_gvwr) : updatedModel.length_gvwr) : null,
         lengthPayload: updatedModel.length_payload ? (typeof updatedModel.length_payload === 'string' ? JSON.parse(updatedModel.length_payload) : updatedModel.length_payload) : null,
+        lengthDeckSize: updatedModel.deck_size ? (typeof updatedModel.deck_size === 'string' ? JSON.parse(updatedModel.deck_size) : updatedModel.deck_size) : null,
         pulltypeOptions: updatedModel.pulltype_options ? (typeof updatedModel.pulltype_options === 'string' ? JSON.parse(updatedModel.pulltype_options) : updatedModel.pulltype_options) : null,
         basePrice: updatedModel.base_price,
         imageUrl: updatedModel.image_url,
@@ -1748,6 +1758,7 @@ export class DatabaseStorage implements IStorage {
         pulltypeOptions: model.pulltype_options ? (typeof model.pulltype_options === 'string' ? JSON.parse(model.pulltype_options) : model.pulltype_options) : null,
         lengthPrice: model.length_price ? (typeof model.length_price === 'string' ? JSON.parse(model.length_price) : model.length_price) : null,
         lengthPayload: model.length_payload ? (typeof model.length_payload === 'string' ? JSON.parse(model.length_payload) : model.length_payload) : null,
+        lengthDeckSize: model.deck_size ? (typeof model.deck_size === 'string' ? JSON.parse(model.deck_size) : model.deck_size) : null,
         imageUrl: model.image_url,
         features: JSON.parse(model.features),
         basePrice: model.base_price || 0,
