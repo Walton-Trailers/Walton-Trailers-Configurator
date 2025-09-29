@@ -721,7 +721,7 @@ Configuration Date: ${new Date().toLocaleDateString()}
       {/* Tesla-style Header */}
       <header className="fixed top-0 left-0 right-0 bg-black z-50 border-b border-gray-800">
         <div className="max-w-7xl mx-auto px-4 md:px-8">
-          <div className="flex items-center justify-between h-16 md:h-20">
+          <div className="relative flex items-center justify-between h-16 md:h-20">
             <div className="flex items-center">
               <a 
                 href="https://waltontrailers.com/" 
@@ -840,6 +840,15 @@ Configuration Date: ${new Date().toLocaleDateString()}
                 Summary
               </button>
             </div>
+            
+            {/* Dealer mode indicator */}
+            {isDealerLoggedIn && (
+              <div className="absolute left-1/2 transform -translate-x-1/2 top-full mt-2">
+                <div className="text-xs text-gray-400 text-center font-normal">
+                  New Configuration
+                </div>
+              </div>
+            )}
             
             <div className="text-right">
               <div className="text-xs md:text-sm text-gray-400 font-normal">Est. Price</div>
