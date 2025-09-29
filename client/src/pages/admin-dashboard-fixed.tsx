@@ -70,6 +70,7 @@ export default function AdminDashboard() {
   const [selectedConfiguration, setSelectedConfiguration] = useState<any>(null);
   const [showConfigDetailModal, setShowConfigDetailModal] = useState(false);
   const [userSearchTerm, setUserSearchTerm] = useState("");
+  const [customRequestSearchTerm, setCustomRequestSearchTerm] = useState("");
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -561,13 +562,26 @@ export default function AdminDashboard() {
 
           <TabsContent value="custom-quotes" className="space-y-6">
             <div className="flex justify-between items-center">
-              <div>
+              <div className="flex-1">
                 <h3 className="text-lg font-medium">Custom Requests</h3>
                 <p className="text-sm text-gray-600">Manage custom trailer requests from customers</p>
               </div>
-              <Badge variant="outline" className="px-3 py-1">
-                {quoteRequests.length} Total Requests
-              </Badge>
+              
+              <div className="flex items-center space-x-4">
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                  <Input
+                    placeholder="Search requests..."
+                    value={customRequestSearchTerm}
+                    onChange={(e) => setCustomRequestSearchTerm(e.target.value)}
+                    className="pl-10 w-64"
+                  />
+                </div>
+                
+                <Badge variant="outline" className="px-3 py-1">
+                  {quoteRequests.length} Total Requests
+                </Badge>
+              </div>
             </div>
 
             <Card>
@@ -586,7 +600,19 @@ export default function AdminDashboard() {
                       </tr>
                     </thead>
                     <tbody className="bg-white divide-y divide-gray-200">
-                      {(quoteRequests as any[]).map((quote: any) => (
+                      {(quoteRequests as any[]).filter((quote: any) => {
+                        if (!customRequestSearchTerm) return true;
+                        const searchLower = customRequestSearchTerm.toLowerCase();
+                        return (
+                          `${quote.firstName} ${quote.lastName}`.toLowerCase().includes(searchLower) ||
+                          quote.email.toLowerCase().includes(searchLower) ||
+                          (quote.company && quote.company.toLowerCase().includes(searchLower)) ||
+                          quote.phone.includes(searchLower) ||
+                          `${quote.city}, ${quote.state} ${quote.zipCode}`.toLowerCase().includes(searchLower) ||
+                          quote.requirements.toLowerCase().includes(searchLower) ||
+                          quote.status.toLowerCase().includes(searchLower)
+                        );
+                      }).map((quote: any) => (
                         <tr key={quote.id} className="hover:bg-gray-50">
                           <td className="px-4 py-3 text-sm text-gray-900">
                             {new Date(quote.createdAt).toLocaleDateString()}
