@@ -1531,7 +1531,8 @@ Configuration Date: ${new Date().toLocaleDateString()}
                             </div>
                           ) : (
                             // Check if this category should use toggle design (jack, ramps, tires)
-                            ['jack', 'ramps', 'tires'].includes(category) && categoryOptions.length === 2 ? (
+                            (['jack', 'ramps'].includes(category) && categoryOptions.length === 2) || 
+                            (category === 'tires' && categoryOptions.length >= 1) ? (
                               <div className="bg-gray-100 p-1 rounded-lg flex">
                                 {categoryOptions.map((option, index) => {
                                   const isSelected = selectedOptions[category]?.toString() === option.id.toString() || 
