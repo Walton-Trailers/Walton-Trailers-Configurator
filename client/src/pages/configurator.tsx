@@ -722,7 +722,7 @@ Configuration Date: ${new Date().toLocaleDateString()}
       <header className="fixed top-0 left-0 right-0 bg-black z-50 border-b border-gray-800">
         <div className="max-w-7xl mx-auto px-4 md:px-8">
           <div className="relative flex items-center justify-between h-16 md:h-20">
-            <div className="flex flex-col items-start">
+            <div className="flex flex-col items-center">
               <a 
                 href="https://waltontrailers.com/" 
                 target="_blank" 
