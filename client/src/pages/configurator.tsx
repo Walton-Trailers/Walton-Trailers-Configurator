@@ -1965,12 +1965,22 @@ Configuration Date: ${new Date().toLocaleDateString()}
                         <ChevronDown className="w-4 h-4 md:w-5 md:h-5 text-zinc-400" />
                       </button>
                     </div>
-                    <Button 
-                      onClick={() => setShowQuoteModal(true)}
-                      className="bg-blue-500 hover:bg-blue-600 text-white px-6 md:px-8 py-2 md:py-3 text-sm md:text-base"
-                    >
-                      Request A Quote
-                    </Button>
+                    {isDealerLoggedIn ? (
+                      <Button 
+                        onClick={() => setShowDealerSaveDialog(true)}
+                        className="bg-green-600 hover:bg-green-700 text-white px-6 md:px-8 py-2 md:py-3 text-sm md:text-base"
+                      >
+                        <Save className="w-4 h-4 md:w-5 md:h-5 mr-2" />
+                        Save Configuration
+                      </Button>
+                    ) : (
+                      <Button 
+                        onClick={() => setShowQuoteModal(true)}
+                        className="bg-blue-500 hover:bg-blue-600 text-white px-6 md:px-8 py-2 md:py-3 text-sm md:text-base"
+                      >
+                        Request A Quote
+                      </Button>
+                    )}
                   </div>
                 </div>
               </div>
