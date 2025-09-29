@@ -71,6 +71,7 @@ export default function AdminDashboard() {
   const [showConfigDetailModal, setShowConfigDetailModal] = useState(false);
   const [userSearchTerm, setUserSearchTerm] = useState("");
   const [customRequestSearchTerm, setCustomRequestSearchTerm] = useState("");
+  const [configurationSearchTerm, setConfigurationSearchTerm] = useState("");
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -1129,13 +1130,26 @@ ${quote.notes ? `\nAdmin Notes: ${quote.notes}` : ''}`;
           {isAdmin && (
             <TabsContent value="configurations" className="space-y-6">
               <div className="flex justify-between items-center">
-                <div>
+                <div className="flex-1">
                   <h3 className="text-lg font-medium">Saved Configurations</h3>
                   <p className="text-sm text-gray-600">View all trailer configurations from dealers and public users</p>
                 </div>
-                <Badge variant="outline" className="px-3 py-1">
-                  {(configurations as any[]).length} Total Configurations
-                </Badge>
+                
+                <div className="flex items-center space-x-4">
+                  <div className="relative">
+                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                    <Input
+                      placeholder="Search configurations..."
+                      value={configurationSearchTerm}
+                      onChange={(e) => setConfigurationSearchTerm(e.target.value)}
+                      className="pl-10 w-64"
+                    />
+                  </div>
+                  
+                  <Badge variant="outline" className="px-3 py-1">
+                    {(configurations as any[]).length} Total Configurations
+                  </Badge>
+                </div>
               </div>
 
               <Card>
@@ -1157,7 +1171,21 @@ ${quote.notes ? `\nAdmin Notes: ${quote.notes}` : ''}`;
                       </thead>
                       <tbody className="bg-white divide-y divide-gray-200">
                         {(configurations as any[]).length > 0 ? (
-                          (configurations as any[]).map((config: any) => (
+                          (configurations as any[]).filter((config: any) => {
+                            if (!configurationSearchTerm) return true;
+                            const searchLower = configurationSearchTerm.toLowerCase();
+                            return (
+                              (config.dealerName && config.dealerName.toLowerCase().includes(searchLower)) ||
+                              (config.customerName && config.customerName.toLowerCase().includes(searchLower)) ||
+                              (config.customerEmail && config.customerEmail.toLowerCase().includes(searchLower)) ||
+                              (config.categoryName && config.categoryName.toLowerCase().includes(searchLower)) ||
+                              (config.categorySlug && config.categorySlug.toLowerCase().includes(searchLower)) ||
+                              (config.modelName && config.modelName.toLowerCase().includes(searchLower)) ||
+                              (config.orderNumber && config.orderNumber.toLowerCase().includes(searchLower)) ||
+                              (config.status && config.status.toLowerCase().includes(searchLower)) ||
+                              config.dealerId?.toString().includes(searchLower)
+                            );
+                          }).map((config: any) => (
                             <tr key={`${config.type}-${config.id}`} className="hover:bg-gray-50">
                               <td className="px-4 py-3 text-sm text-gray-900">
                                 {new Date(config.createdAt).toLocaleDateString()}
