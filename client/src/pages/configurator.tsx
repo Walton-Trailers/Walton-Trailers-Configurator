@@ -722,7 +722,7 @@ Configuration Date: ${new Date().toLocaleDateString()}
       <header className="fixed top-0 left-0 right-0 bg-black z-50 border-b border-gray-800">
         <div className="max-w-7xl mx-auto px-4 md:px-8">
           <div className="relative flex items-center justify-between h-16 md:h-20">
-            <div className="flex items-center">
+            <div className="flex flex-col items-start">
               <a 
                 href="https://waltontrailers.com/" 
                 target="_blank" 
@@ -735,6 +735,12 @@ Configuration Date: ${new Date().toLocaleDateString()}
                   className="h-6 md:h-8 lg:h-10 w-auto object-contain max-w-[120px] md:max-w-[150px] lg:max-w-[180px]"
                 />
               </a>
+              {/* Dealer mode indicator */}
+              {isDealerLoggedIn && (
+                <div className="text-xs text-gray-400 font-normal mt-1">
+                  Dealer Configuration
+                </div>
+              )}
             </div>
             
             {/* Mobile progress indicator - horizontal dots */}
@@ -840,15 +846,6 @@ Configuration Date: ${new Date().toLocaleDateString()}
                 Summary
               </button>
             </div>
-            
-            {/* Dealer mode indicator */}
-            {isDealerLoggedIn && (
-              <div className="absolute left-1/2 transform -translate-x-1/2 top-full mt-2">
-                <div className="text-xs text-gray-400 text-center font-normal">
-                  New Configuration
-                </div>
-              </div>
-            )}
             
             <div className="text-right">
               <div className="text-xs md:text-sm text-gray-400 font-normal">Est. Price</div>
