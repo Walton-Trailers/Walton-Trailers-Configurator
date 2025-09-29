@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { useAdminAuth } from "@/hooks/useAdminAuth";
 import { useLocation, Link } from "wouter";
 import { apiRequest } from "@/lib/queryClient";
-import { LogOut, Users, Settings, Plus, DollarSign, Edit, Save, X, Plug, Key, Mail, Database, CheckCircle, AlertCircle, Home, MessageSquare, Building2 } from "lucide-react";
+import { LogOut, Users, Settings, Plus, DollarSign, Edit, Save, X, Plug, Key, Mail, Database, CheckCircle, AlertCircle, Home, MessageSquare, Building2, Search } from "lucide-react";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -69,6 +69,7 @@ export default function AdminDashboard() {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [selectedConfiguration, setSelectedConfiguration] = useState<any>(null);
   const [showConfigDetailModal, setShowConfigDetailModal] = useState(false);
+  const [userSearchTerm, setUserSearchTerm] = useState("");
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -700,12 +701,23 @@ ${quote.notes ? `\nAdmin Notes: ${quote.notes}` : ''}`;
           {isAdmin && (
             <TabsContent value="users" className="space-y-6">
               <div className="flex justify-between items-center">
-                <div>
+                <div className="flex-1">
                   <h3 className="text-lg font-medium">User Management</h3>
                   <p className="text-sm text-gray-600">Create and manage admin users</p>
                 </div>
                 
-                <Dialog open={showCreateUser} onOpenChange={setShowCreateUser}>
+                <div className="flex items-center space-x-4">
+                  <div className="relative">
+                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                    <Input
+                      placeholder="Search users..."
+                      value={userSearchTerm}
+                      onChange={(e) => setUserSearchTerm(e.target.value)}
+                      className="pl-10 w-64"
+                    />
+                  </div>
+                  
+                  <Dialog open={showCreateUser} onOpenChange={setShowCreateUser}>
                   <DialogTrigger asChild>
                     <Button>
                       <Plus className="w-4 h-4 mr-2" />
@@ -821,6 +833,7 @@ ${quote.notes ? `\nAdmin Notes: ${quote.notes}` : ''}`;
                     </form>
                   </DialogContent>
                 </Dialog>
+                </div>
               </div>
 
               <Card>
@@ -842,7 +855,17 @@ ${quote.notes ? `\nAdmin Notes: ${quote.notes}` : ''}`;
                           </tr>
                         </thead>
                         <tbody className="bg-white divide-y divide-gray-200">
-                          {(users as AdminUser[])?.map((adminUser: AdminUser) => (
+                          {(users as AdminUser[])?.filter((adminUser: AdminUser) => {
+                            if (!userSearchTerm) return true;
+                            const searchLower = userSearchTerm.toLowerCase();
+                            return (
+                              adminUser.username.toLowerCase().includes(searchLower) ||
+                              adminUser.email.toLowerCase().includes(searchLower) ||
+                              (adminUser.firstName && adminUser.firstName.toLowerCase().includes(searchLower)) ||
+                              (adminUser.lastName && adminUser.lastName.toLowerCase().includes(searchLower)) ||
+                              adminUser.role.toLowerCase().includes(searchLower)
+                            );
+                          }).map((adminUser: AdminUser) => (
                             <tr key={adminUser.id} className="hover:bg-gray-50">
                               <td className="px-6 py-4 whitespace-nowrap">
                                 {editingUser?.id === adminUser.id ? (
