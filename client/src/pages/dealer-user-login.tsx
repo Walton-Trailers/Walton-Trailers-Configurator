@@ -7,15 +7,6 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
 import { useLocation, Link } from "wouter";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { Loader2, Users } from "lucide-react";
@@ -182,10 +173,8 @@ export default function DealerUserLogin() {
             </form>
 
             <div className="mt-4 text-center">
-              <Link href="/dealer/user/forgot-password">
-                <a className="text-sm text-blue-600 hover:text-blue-800 hover:underline" data-testid="link-forgot-password">
-                  Forgot Password?
-                </a>
+              <Link href="/dealer/user/forgot-password" className="text-sm text-blue-600 hover:text-blue-800 hover:underline" data-testid="link-forgot-password">
+                Forgot Password?
               </Link>
             </div>
 

@@ -280,6 +280,109 @@ Walton Trailers Team
     return this.sendEmail(emailContent);
   }
 
+  async sendDealerUserPasswordResetEmail(email: string, userName: string, resetToken: string): Promise<boolean> {
+    const resetUrl = `${process.env.BASE_URL || "http://localhost:5000"}/dealer/user/reset-password?token=${resetToken}`;
+    
+    const emailContent: EmailMessage = {
+      to: email,
+      subject: "Password Reset - Walton Trailers Employee Portal",
+      text: `
+Hello ${userName},
+
+We received a request to reset your password for the Walton Trailers employee portal.
+
+Click the link below to reset your password:
+${resetUrl}
+
+This link will expire in 1 hour. If you didn't request this reset, you can safely ignore this email.
+
+Best regards,
+Walton Trailers Team
+      `,
+      html: `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Password Reset - Employee Portal</title>
+  <style>
+    body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+    .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+    .header { background: #1f2937; color: white; padding: 20px; text-align: center; border-radius: 8px 8px 0 0; }
+    .header h1 { margin: 0; font-size: 24px; }
+    .content { padding: 30px; background: #f9f9f9; }
+    .button { 
+      display: inline-block; 
+      background: #3b82f6; 
+      color: white; 
+      padding: 14px 28px; 
+      text-decoration: none; 
+      border-radius: 6px; 
+      font-weight: bold;
+      text-align: center;
+      margin: 20px 0;
+    }
+    .button:hover { background: #2563eb; }
+    .warning { 
+      background: #fef3c7; 
+      border-left: 4px solid #f59e0b; 
+      padding: 15px; 
+      margin: 20px 0; 
+      border-radius: 4px;
+    }
+    .footer { 
+      padding: 20px; 
+      text-align: center; 
+      color: #666; 
+      background: #f8f9fa;
+      border-radius: 0 0 8px 8px;
+      font-size: 14px;
+    }
+    .url-break { word-break: break-all; background: #fff; padding: 10px; border: 1px solid #ddd; border-radius: 4px; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>🚛 Walton Trailers</h1>
+      <p style="margin: 5px 0 0 0;">Employee Portal - Password Reset</p>
+    </div>
+    
+    <div class="content">
+      <h2 style="color: #374151; margin-top: 0;">Hello ${userName},</h2>
+      
+      <p>We received a request to reset your password for the Walton Trailers employee portal.</p>
+      
+      <div style="text-align: center;">
+        <a href="${resetUrl}" class="button">Reset My Password</a>
+      </div>
+      
+      <p><strong>This link will expire in 1 hour</strong> for security purposes.</p>
+      
+      <div class="warning">
+        <strong>⚠️ Security Notice:</strong><br>
+        If you didn't request this password reset, please ignore this email. 
+        Your account remains secure and no changes have been made.
+      </div>
+      
+      <p>If the button doesn't work, copy and paste this link into your browser:</p>
+      <div class="url-break">${resetUrl}</div>
+    </div>
+    
+    <div class="footer">
+      <p><strong>Walton Trailers</strong><br>
+      Dealer Support Team<br>
+      <small>If you have questions, contact your dealer administrator</small></p>
+    </div>
+  </div>
+</body>
+</html>
+      `
+    };
+
+    return this.sendEmail(emailContent);
+  }
+
   async sendDealerPasswordResetEmail(email: string, dealerName: string, resetToken: string): Promise<boolean> {
     const resetUrl = `${process.env.BASE_URL || "http://localhost:5000"}/dealer/reset-password/${resetToken}`;
     
