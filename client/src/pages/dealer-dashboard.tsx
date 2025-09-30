@@ -812,157 +812,159 @@ export default function DealerDashboard() {
                       </div>
                     </div>
 
-                    {/* Password Section */}
-                    <div>
-                      <div className="flex justify-between items-center mb-4">
-                        <h3 className="text-lg font-semibold">Password</h3>
-                        {!isChangingPassword ? (
-                          <Button
-                            onClick={() => setIsChangingPassword(true)}
-                            variant="outline"
-                            size="sm"
-                          >
-                            <Key className="w-4 h-4 mr-2" />
-                            Change Password
-                          </Button>
-                        ) : (
-                          <div className="flex gap-2">
+                    {/* Password Section - Only for main dealer account */}
+                    {!profile.user && (
+                      <div>
+                        <div className="flex justify-between items-center mb-4">
+                          <h3 className="text-lg font-semibold">Password</h3>
+                          {!isChangingPassword ? (
                             <Button
-                              onClick={() => {
-                                setIsChangingPassword(false);
-                                setPasswordFormData({
-                                  currentPassword: "",
-                                  newPassword: "",
-                                  confirmPassword: "",
-                                });
-                                setShowPasswords({
-                                  current: false,
-                                  new: false,
-                                  confirm: false,
-                                });
-                              }}
+                              onClick={() => setIsChangingPassword(true)}
                               variant="outline"
                               size="sm"
                             >
-                              Cancel
+                              <Key className="w-4 h-4 mr-2" />
+                              Change Password
                             </Button>
-                            <Button
-                              onClick={() => {
-                                if (passwordFormData.newPassword !== passwordFormData.confirmPassword) {
-                                  toast({
-                                    title: "Password mismatch",
-                                    description: "New passwords don't match",
-                                    variant: "destructive",
+                          ) : (
+                            <div className="flex gap-2">
+                              <Button
+                                onClick={() => {
+                                  setIsChangingPassword(false);
+                                  setPasswordFormData({
+                                    currentPassword: "",
+                                    newPassword: "",
+                                    confirmPassword: "",
                                   });
-                                  return;
-                                }
-                                if (passwordFormData.newPassword.length < 8) {
-                                  toast({
-                                    title: "Password too short",
-                                    description: "Password must be at least 8 characters long",
-                                    variant: "destructive",
+                                  setShowPasswords({
+                                    current: false,
+                                    new: false,
+                                    confirm: false,
                                   });
-                                  return;
-                                }
-                                changePasswordMutation.mutate({
-                                  currentPassword: passwordFormData.currentPassword,
-                                  newPassword: passwordFormData.newPassword,
-                                });
-                              }}
-                              size="sm"
-                              disabled={changePasswordMutation.isPending || !passwordFormData.currentPassword || !passwordFormData.newPassword || !passwordFormData.confirmPassword}
-                            >
-                              {changePasswordMutation.isPending ? "Updating..." : "Update Password"}
-                            </Button>
+                                }}
+                                variant="outline"
+                                size="sm"
+                              >
+                                Cancel
+                              </Button>
+                              <Button
+                                onClick={() => {
+                                  if (passwordFormData.newPassword !== passwordFormData.confirmPassword) {
+                                    toast({
+                                      title: "Password mismatch",
+                                      description: "New passwords don't match",
+                                      variant: "destructive",
+                                    });
+                                    return;
+                                  }
+                                  if (passwordFormData.newPassword.length < 8) {
+                                    toast({
+                                      title: "Password too short",
+                                      description: "Password must be at least 8 characters long",
+                                      variant: "destructive",
+                                    });
+                                    return;
+                                  }
+                                  changePasswordMutation.mutate({
+                                    currentPassword: passwordFormData.currentPassword,
+                                    newPassword: passwordFormData.newPassword,
+                                  });
+                                }}
+                                size="sm"
+                                disabled={changePasswordMutation.isPending || !passwordFormData.currentPassword || !passwordFormData.newPassword || !passwordFormData.confirmPassword}
+                              >
+                                {changePasswordMutation.isPending ? "Updating..." : "Update Password"}
+                              </Button>
+                            </div>
+                          )}
+                        </div>
+                        
+                        {isChangingPassword ? (
+                          <div className="space-y-4">
+                            <div>
+                              <Label htmlFor="currentPassword" className="text-sm text-gray-600">Current Password</Label>
+                              <div className="relative">
+                                <Input
+                                  id="currentPassword"
+                                  type={showPasswords.current ? "text" : "password"}
+                                  value={passwordFormData.currentPassword}
+                                  onChange={(e) => setPasswordFormData({ ...passwordFormData, currentPassword: e.target.value })}
+                                  placeholder="Enter your current password"
+                                  className="pr-10"
+                                />
+                                <Button
+                                  type="button"
+                                  variant="ghost"
+                                  size="sm"
+                                  className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                                  onClick={() => setShowPasswords({ ...showPasswords, current: !showPasswords.current })}
+                                >
+                                  {showPasswords.current ? (
+                                    <EyeOff className="h-4 w-4 text-gray-400" />
+                                  ) : (
+                                    <Eye className="h-4 w-4 text-gray-400" />
+                                  )}
+                                </Button>
+                              </div>
+                            </div>
+                            <div>
+                              <Label htmlFor="newPassword" className="text-sm text-gray-600">New Password</Label>
+                              <div className="relative">
+                                <Input
+                                  id="newPassword"
+                                  type={showPasswords.new ? "text" : "password"}
+                                  value={passwordFormData.newPassword}
+                                  onChange={(e) => setPasswordFormData({ ...passwordFormData, newPassword: e.target.value })}
+                                  placeholder="Enter your new password (min 8 characters)"
+                                  className="pr-10"
+                                />
+                                <Button
+                                  type="button"
+                                  variant="ghost"
+                                  size="sm"
+                                  className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                                  onClick={() => setShowPasswords({ ...showPasswords, new: !showPasswords.new })}
+                                >
+                                  {showPasswords.new ? (
+                                    <EyeOff className="h-4 w-4 text-gray-400" />
+                                  ) : (
+                                    <Eye className="h-4 w-4 text-gray-400" />
+                                  )}
+                                </Button>
+                              </div>
+                            </div>
+                            <div>
+                              <Label htmlFor="confirmPassword" className="text-sm text-gray-600">Confirm New Password</Label>
+                              <div className="relative">
+                                <Input
+                                  id="confirmPassword"
+                                  type={showPasswords.confirm ? "text" : "password"}
+                                  value={passwordFormData.confirmPassword}
+                                  onChange={(e) => setPasswordFormData({ ...passwordFormData, confirmPassword: e.target.value })}
+                                  placeholder="Confirm your new password"
+                                  className="pr-10"
+                                />
+                                <Button
+                                  type="button"
+                                  variant="ghost"
+                                  size="sm"
+                                  className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                                  onClick={() => setShowPasswords({ ...showPasswords, confirm: !showPasswords.confirm })}
+                                >
+                                  {showPasswords.confirm ? (
+                                    <EyeOff className="h-4 w-4 text-gray-400" />
+                                  ) : (
+                                    <Eye className="h-4 w-4 text-gray-400" />
+                                  )}
+                                </Button>
+                              </div>
+                            </div>
                           </div>
+                        ) : (
+                          <p className="text-gray-500">••••••••</p>
                         )}
                       </div>
-                      
-                      {isChangingPassword ? (
-                        <div className="space-y-4">
-                          <div>
-                            <Label htmlFor="currentPassword" className="text-sm text-gray-600">Current Password</Label>
-                            <div className="relative">
-                              <Input
-                                id="currentPassword"
-                                type={showPasswords.current ? "text" : "password"}
-                                value={passwordFormData.currentPassword}
-                                onChange={(e) => setPasswordFormData({ ...passwordFormData, currentPassword: e.target.value })}
-                                placeholder="Enter your current password"
-                                className="pr-10"
-                              />
-                              <Button
-                                type="button"
-                                variant="ghost"
-                                size="sm"
-                                className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
-                                onClick={() => setShowPasswords({ ...showPasswords, current: !showPasswords.current })}
-                              >
-                                {showPasswords.current ? (
-                                  <EyeOff className="h-4 w-4 text-gray-400" />
-                                ) : (
-                                  <Eye className="h-4 w-4 text-gray-400" />
-                                )}
-                              </Button>
-                            </div>
-                          </div>
-                          <div>
-                            <Label htmlFor="newPassword" className="text-sm text-gray-600">New Password</Label>
-                            <div className="relative">
-                              <Input
-                                id="newPassword"
-                                type={showPasswords.new ? "text" : "password"}
-                                value={passwordFormData.newPassword}
-                                onChange={(e) => setPasswordFormData({ ...passwordFormData, newPassword: e.target.value })}
-                                placeholder="Enter your new password (min 8 characters)"
-                                className="pr-10"
-                              />
-                              <Button
-                                type="button"
-                                variant="ghost"
-                                size="sm"
-                                className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
-                                onClick={() => setShowPasswords({ ...showPasswords, new: !showPasswords.new })}
-                              >
-                                {showPasswords.new ? (
-                                  <EyeOff className="h-4 w-4 text-gray-400" />
-                                ) : (
-                                  <Eye className="h-4 w-4 text-gray-400" />
-                                )}
-                              </Button>
-                            </div>
-                          </div>
-                          <div>
-                            <Label htmlFor="confirmPassword" className="text-sm text-gray-600">Confirm New Password</Label>
-                            <div className="relative">
-                              <Input
-                                id="confirmPassword"
-                                type={showPasswords.confirm ? "text" : "password"}
-                                value={passwordFormData.confirmPassword}
-                                onChange={(e) => setPasswordFormData({ ...passwordFormData, confirmPassword: e.target.value })}
-                                placeholder="Confirm your new password"
-                                className="pr-10"
-                              />
-                              <Button
-                                type="button"
-                                variant="ghost"
-                                size="sm"
-                                className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
-                                onClick={() => setShowPasswords({ ...showPasswords, confirm: !showPasswords.confirm })}
-                              >
-                                {showPasswords.confirm ? (
-                                  <EyeOff className="h-4 w-4 text-gray-400" />
-                                ) : (
-                                  <Eye className="h-4 w-4 text-gray-400" />
-                                )}
-                              </Button>
-                            </div>
-                          </div>
-                        </div>
-                      ) : (
-                        <p className="text-gray-500">••••••••</p>
-                      )}
-                    </div>
+                    )}
                   </div>
                 )}
               </CardContent>
