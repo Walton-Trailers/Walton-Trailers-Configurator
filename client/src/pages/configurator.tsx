@@ -304,7 +304,7 @@ export default function Configurator() {
   const handleDealerSaveConfiguration = async (customerInfo: any) => {
     if (!selectedModel || !selectedCategory) return;
 
-    // Create complete options object including defaults
+    // Create complete options object including defaults for single-select only
     const completeOptions: Record<string, any> = {};
     
     if (options) {
@@ -314,24 +314,17 @@ export default function Configurator() {
         const categoryOptions = options.filter(opt => opt.category === category);
         if (categoryOptions.length > 0) {
           const selectedOptionId = selectedOptions[category];
+          const isMultiSelect = categoryOptions[0]?.isMultiSelect || category === 'extras';
           
-          // If option is selected, use it; otherwise use the first option as default
-          const selectedOption = selectedOptionId 
-            ? categoryOptions.find(opt => 
-                Array.isArray(selectedOptionId) 
-                  ? selectedOptionId.includes(opt.id)
-                  : opt.id === selectedOptionId
-              )
-            : categoryOptions[0]; // Default to first option
-          
-          if (selectedOption) {
-            // For multi-select, keep as array; for single select, keep as ID
-            if (Array.isArray(selectedOptionId)) {
-              completeOptions[category] = selectedOptionId;
-            } else {
-              completeOptions[category] = selectedOption.id;
-            }
+          // For multi-select: only save if explicitly selected
+          // For single-select: save selected value or default to first option
+          if (selectedOptionId) {
+            completeOptions[category] = selectedOptionId;
+          } else if (!isMultiSelect) {
+            // Only add default for single-select options
+            completeOptions[category] = categoryOptions[0].id;
           }
+          // If multi-select and nothing selected, don't add to completeOptions
         }
       });
     }
