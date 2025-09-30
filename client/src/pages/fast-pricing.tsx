@@ -1891,7 +1891,10 @@ export default function FastPricing() {
                 {showAddModel && (
                   <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
                     <div className="bg-white rounded-lg p-6 max-w-2xl w-full">
-                      <h3 className="text-lg font-semibold mb-4">Add New Model</h3>
+                      <h3 className="text-lg font-semibold mb-2">Add New Model</h3>
+                      <p className="text-sm text-gray-600 mb-4">
+                        Model Lengths and associated Payloads, GVWR, and deck sizes can be edited once Model has been created.
+                      </p>
                       <div className="space-y-4">
                         <div className="grid grid-cols-2 gap-4">
                           <div>
