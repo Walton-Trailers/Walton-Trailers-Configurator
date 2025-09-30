@@ -304,6 +304,38 @@ export default function Configurator() {
   const handleDealerSaveConfiguration = async (customerInfo: any) => {
     if (!selectedModel || !selectedCategory) return;
 
+    // Create complete options object including defaults
+    const completeOptions: Record<string, any> = {};
+    
+    if (options) {
+      const allCategories = [...new Set(options.map(opt => opt.category))];
+      
+      allCategories.forEach(category => {
+        const categoryOptions = options.filter(opt => opt.category === category);
+        if (categoryOptions.length > 0) {
+          const selectedOptionId = selectedOptions[category];
+          
+          // If option is selected, use it; otherwise use the first option as default
+          const selectedOption = selectedOptionId 
+            ? categoryOptions.find(opt => 
+                Array.isArray(selectedOptionId) 
+                  ? selectedOptionId.includes(opt.id)
+                  : opt.id === selectedOptionId
+              )
+            : categoryOptions[0]; // Default to first option
+          
+          if (selectedOption) {
+            // For multi-select, keep as array; for single select, keep as ID
+            if (Array.isArray(selectedOptionId)) {
+              completeOptions[category] = selectedOptionId;
+            } else {
+              completeOptions[category] = selectedOption.id;
+            }
+          }
+        }
+      });
+    }
+
     await saveOrderMutation.mutateAsync({
       customerName: customerInfo.customerName || null,
       customerEmail: customerInfo.customerEmail || null,
@@ -318,7 +350,7 @@ export default function Configurator() {
         deckSize: getDynamicDeckSize(),
         axles: selectedModel.axles
       },
-      selectedOptions: selectedOptions,
+      selectedOptions: completeOptions,
       basePrice: selectedModel.basePrice || 0,
       optionsPrice: totalPrice - (selectedModel.basePrice || 0),
       totalPrice: totalPrice,
