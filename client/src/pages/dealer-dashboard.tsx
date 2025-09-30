@@ -168,6 +168,13 @@ export default function DealerDashboard() {
     retry: false,
   });
   
+  // Get all options for displaying option names
+  const { data: allOptions = [] } = useQuery<any[]>({
+    queryKey: ["/api/options/all"],
+    enabled: !!localStorage.getItem("dealer_session"),
+    retry: false,
+  });
+  
   // Handle session expiration
   useEffect(() => {
     if (profileError?.message?.includes('401') || ordersError?.message?.includes('401')) {
@@ -448,6 +455,29 @@ export default function DealerDashboard() {
       minimumFractionDigits: 0,
       maximumFractionDigits: 0,
     }).format(price);
+  };
+
+  // Format option value - convert IDs to names
+  const formatOptionValue = (category: string, value: any): string => {
+    if (!allOptions || allOptions.length === 0) {
+      return String(value);
+    }
+
+    // Handle arrays (like extras with multiple selections)
+    if (Array.isArray(value)) {
+      const categoryOptions = allOptions.filter(opt => opt.category === category);
+      const selectedOptions = categoryOptions.filter(opt => value.includes(opt.id));
+      return selectedOptions.map(opt => opt.name).join(', ') || String(value);
+    }
+
+    // Handle single selections (option ID)
+    if (typeof value === 'number') {
+      const categoryOptions = allOptions.filter(opt => opt.category === category);
+      const selectedOption = categoryOptions.find(opt => opt.id === value);
+      return selectedOption ? selectedOption.name : String(value);
+    }
+
+    return String(value);
   };
 
   // Calculate statistics
@@ -1350,8 +1380,8 @@ export default function DealerDashboard() {
                   <div className="space-y-2">
                     {Object.entries(selectedOrder.selectedOptions).map(([key, value]) => (
                       <div key={key} className="flex justify-between text-sm">
-                        <span className="text-gray-600">{key}</span>
-                        <span className="font-medium">{String(value)}</span>
+                        <span className="text-gray-600 capitalize">{key}</span>
+                        <span className="font-medium">{formatOptionValue(key, value)}</span>
                       </div>
                     ))}
                   </div>

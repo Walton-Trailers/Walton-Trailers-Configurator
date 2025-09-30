@@ -10,7 +10,7 @@ import {
   hashPassword,
   isAdmin
 } from "./auth";
-import { insertAdminUserSchema, type AdminUser, trailerCategories, trailerModels, trailerSeries, customQuoteRequests, insertCustomQuoteRequestSchema, quoteRequests, insertQuoteRequestSchema, dealers, dealerSessions, dealerOrders, dealerUsers, dealerUserSessions, userConfigurations, mediaFiles, dealerPasswordResetTokens, type Dealer, type DealerUser, type MediaFile } from "@shared/schema";
+import { insertAdminUserSchema, type AdminUser, trailerCategories, trailerModels, trailerSeries, customQuoteRequests, insertCustomQuoteRequestSchema, quoteRequests, insertQuoteRequestSchema, dealers, dealerSessions, dealerOrders, dealerUsers, dealerUserSessions, userConfigurations, mediaFiles, dealerPasswordResetTokens, adminSessions, type Dealer, type DealerUser, type MediaFile } from "@shared/schema";
 import { z } from "zod";
 import crypto from "crypto";
 import bcrypt from "bcryptjs";
@@ -1981,8 +1981,35 @@ export async function registerRoutes(app: Express): Promise<Express> {
 
 
 
-  app.get("/api/options/all", requireAuth, async (req, res) => {
+  app.get("/api/options/all", async (req, res) => {
     try {
+      // Allow both admin and dealer authentication
+      const authHeader = req.get('authorization');
+      const sessionId = authHeader?.replace('Bearer ', '');
+      
+      if (!sessionId) {
+        return res.status(401).json({ error: "Unauthorized" });
+      }
+      
+      // Check if it's an admin session
+      const adminSession = await db.select().from(adminSessions)
+        .where(eq(adminSessions.id, sessionId))
+        .limit(1);
+      
+      // Check if it's a dealer session
+      const dealerSession = await db.select().from(dealerSessions)
+        .where(eq(dealerSessions.id, sessionId))
+        .limit(1);
+      
+      // Check if it's a dealer user session
+      const dealerUserSession = await db.select().from(dealerUserSessions)
+        .where(eq(dealerUserSessions.id, sessionId))
+        .limit(1);
+      
+      if (!adminSession[0] && !dealerSession[0] && !dealerUserSession[0]) {
+        return res.status(401).json({ error: "Unauthorized" });
+      }
+      
       const options = await storage.getAllOptions();
       res.json(options);
     } catch (error) {
