@@ -11,6 +11,7 @@ import FastPricing from "@/pages/fast-pricing";
 import PricingManagement from "@/pages/pricing-management";
 import AccountManagement from "@/pages/account-management";
 import DealerLogin from "@/pages/dealer-login";
+import DealerUserLogin from "@/pages/dealer-user-login";
 import DealerForgotPassword from "@/pages/dealer-forgot-password";
 import DealerResetPassword from "@/pages/dealer-reset-password";
 import DealerDashboard from "@/pages/dealer-dashboard";
@@ -35,6 +36,7 @@ function Router() {
       <Route path="/admin/dealers" component={AdminDealers} />
       <Route path="/admin/email-settings" component={EmailSettings} />
       <Route path="/dealer/login" component={DealerLogin} />
+      <Route path="/dealer/user/login" component={DealerUserLogin} />
       <Route path="/dealer/forgot-password" component={DealerForgotPassword} />
       <Route path="/dealer/reset-password/:token" component={DealerResetPassword} />
       <Route path="/dealer/dashboard" component={DealerDashboard} />
