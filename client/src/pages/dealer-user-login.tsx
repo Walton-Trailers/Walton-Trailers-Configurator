@@ -7,6 +7,15 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { useLocation, Link } from "wouter";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { Loader2, Users } from "lucide-react";
@@ -41,6 +50,7 @@ export default function DealerUserLogin() {
   const [, setLocation] = useLocation();
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [showForgotPasswordDialog, setShowForgotPasswordDialog] = useState(false);
 
   // Check if already logged in
   useEffect(() => {
@@ -170,6 +180,17 @@ export default function DealerUserLogin() {
                   "Sign In"
                 )}
               </Button>
+              
+              <Button
+                type="button"
+                variant="ghost"
+                className="w-full mt-2"
+                onClick={() => setShowForgotPasswordDialog(true)}
+                disabled={isLoading}
+                data-testid="button-forgot-password"
+              >
+                Forgot Password?
+              </Button>
             </form>
 
             <div className="mt-6 text-center">
@@ -204,6 +225,23 @@ export default function DealerUserLogin() {
           </div>
         </div>
       </div>
+
+      <AlertDialog open={showForgotPasswordDialog} onOpenChange={setShowForgotPasswordDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Forgot Your Password?</AlertDialogTitle>
+            <AlertDialogDescription>
+              As a dealer employee, your password can only be reset by your dealer administrator.
+              Please contact them directly for assistance with password recovery.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogAction onClick={() => setShowForgotPasswordDialog(false)}>
+              Got it
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
