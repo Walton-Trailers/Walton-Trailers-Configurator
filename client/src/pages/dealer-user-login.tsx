@@ -50,7 +50,6 @@ export default function DealerUserLogin() {
   const [, setLocation] = useLocation();
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
-  const [showForgotPasswordDialog, setShowForgotPasswordDialog] = useState(false);
 
   // Check if already logged in
   useEffect(() => {
@@ -180,18 +179,15 @@ export default function DealerUserLogin() {
                   "Sign In"
                 )}
               </Button>
-              
-              <Button
-                type="button"
-                variant="ghost"
-                className="w-full mt-2"
-                onClick={() => setShowForgotPasswordDialog(true)}
-                disabled={isLoading}
-                data-testid="button-forgot-password"
-              >
-                Forgot Password?
-              </Button>
             </form>
+
+            <div className="mt-4 text-center">
+              <Link href="/dealer/user/forgot-password">
+                <a className="text-sm text-blue-600 hover:text-blue-800 hover:underline" data-testid="link-forgot-password">
+                  Forgot Password?
+                </a>
+              </Link>
+            </div>
 
             <div className="mt-6 text-center">
               <p className="text-sm text-gray-600">
@@ -225,23 +221,6 @@ export default function DealerUserLogin() {
           </div>
         </div>
       </div>
-
-      <AlertDialog open={showForgotPasswordDialog} onOpenChange={setShowForgotPasswordDialog}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Forgot Your Password?</AlertDialogTitle>
-            <AlertDialogDescription>
-              As a dealer employee, your password can only be reset by your dealer administrator.
-              Please contact them directly for assistance with password recovery.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogAction onClick={() => setShowForgotPasswordDialog(false)}>
-              Got it
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
     </div>
   );
 }
