@@ -115,6 +115,7 @@ export default function DealerDashboard() {
   });
   const [isAddingUser, setIsAddingUser] = useState(false);
   const [editingUser, setEditingUser] = useState<DealerUser | null>(null);
+  const [deleteConfirmUser, setDeleteConfirmUser] = useState<DealerUser | null>(null);
   const [newUserData, setNewUserData] = useState({
     username: "",
     email: "",
@@ -1264,7 +1265,8 @@ export default function DealerDashboard() {
                                 <Button
                                   size="sm"
                                   variant="ghost"
-                                  onClick={() => deleteUserMutation.mutate(user.id)}
+                                  onClick={() => setDeleteConfirmUser(user)}
+                                  data-testid={`button-delete-user-${user.id}`}
                                 >
                                   <Trash2 className="w-4 h-4" />
                                 </Button>
@@ -1715,6 +1717,35 @@ export default function DealerDashboard() {
               }
             })}>
               Save Changes
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete User Confirmation Dialog */}
+      <Dialog open={!!deleteConfirmUser} onOpenChange={() => setDeleteConfirmUser(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Delete User</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to delete user "{deleteConfirmUser?.username}"? This action cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDeleteConfirmUser(null)} data-testid="button-cancel-delete-user">
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={() => {
+                if (deleteConfirmUser) {
+                  deleteUserMutation.mutate(deleteConfirmUser.id);
+                  setDeleteConfirmUser(null);
+                }
+              }}
+              data-testid="button-confirm-delete-user"
+            >
+              Delete User
             </Button>
           </DialogFooter>
         </DialogContent>
