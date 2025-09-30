@@ -54,6 +54,16 @@ interface DealerProfile {
   contactName?: string;
   email?: string;
   territory?: string;
+  // User info for dealer employees
+  user?: {
+    id: number;
+    username: string;
+    email: string;
+    firstName: string;
+    lastName: string;
+    title: string | null;
+    role: 'admin' | 'user';
+  };
 }
 
 interface DealerUser {
@@ -65,21 +75,10 @@ interface DealerUser {
   lastName: string;
   title: string | null;
   role: 'admin' | 'user';
-  createdAt: string;
-  updatedAt: string;
-}
-
-interface DealerUser {
-  id: number;
-  username: string;
-  email: string;
-  firstName: string;
-  lastName: string;
-  title: string;
-  role: 'admin' | 'user';
   isActive: boolean;
   lastLogin: string | null;
   createdAt: string;
+  updatedAt: string;
 }
 
 export default function DealerDashboard() {
@@ -147,10 +146,13 @@ export default function DealerDashboard() {
     retry: false,
   });
   
-  // Get dealer users
+  // Check if current user has admin role (for dealer employees)
+  const isUserAdmin = profile?.user?.role === 'admin' || !profile?.user;
+  
+  // Get dealer users (only if user is admin or main dealer account)
   const { data: users = [], refetch: refetchUsers } = useQuery<DealerUser[]>({
     queryKey: ["/api/dealer/users"],
-    enabled: !!localStorage.getItem("dealer_session") && activeTab === "users",
+    enabled: !!localStorage.getItem("dealer_session") && activeTab === "users" && isUserAdmin,
     retry: false,
   });
   
@@ -508,10 +510,10 @@ export default function DealerDashboard() {
 
         {/* Main Content */}
         <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="grid w-full grid-cols-3">
+          <TabsList className={`grid w-full ${isUserAdmin ? 'grid-cols-3' : 'grid-cols-2'}`}>
             <TabsTrigger value="orders">Orders</TabsTrigger>
             <TabsTrigger value="profile">Profile</TabsTrigger>
-            <TabsTrigger value="users">Users</TabsTrigger>
+            {isUserAdmin && <TabsTrigger value="users">Users</TabsTrigger>}
           </TabsList>
 
           <TabsContent value="orders" className="mt-6">
