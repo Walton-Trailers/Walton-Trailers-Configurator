@@ -24,6 +24,7 @@ import {
 interface AuthenticatedRequest extends Request {
   user?: AdminUser;
   dealer?: Dealer;
+  dealerUser?: DealerUser;
   sessionId?: string;
 }
 
@@ -63,23 +64,55 @@ const requireDealerAuth = async (req: AuthenticatedRequest, res: Response, next:
     return res.status(401).json({ error: 'Authentication required' });
   }
   try {
-    const [session] = await db.select()
+    // First, try to find a dealer session (main account)
+    const [dealerSession] = await db.select()
       .from(dealerSessions)
       .where(eq(dealerSessions.id, sessionId));
     
-    if (!session || session.expiresAt < new Date()) {
+    if (dealerSession && dealerSession.expiresAt >= new Date()) {
+      // Main dealer session found
+      const [dealer] = await db.select()
+        .from(dealers)
+        .where(eq(dealers.id, dealerSession.dealerId));
+      
+      if (!dealer || !dealer.isActive) {
+        return res.status(401).json({ error: 'Dealer account not active' });
+      }
+
+      req.dealer = dealer;
+      req.sessionId = sessionId;
+      return next();
+    }
+
+    // If no dealer session, check for dealer user session (employee)
+    const [userSession] = await db.select()
+      .from(dealerUserSessions)
+      .where(eq(dealerUserSessions.id, sessionId));
+    
+    if (!userSession || userSession.expiresAt < new Date()) {
       return res.status(401).json({ error: 'Session expired or invalid' });
     }
 
+    // Get the dealer user
+    const [dealerUser] = await db.select()
+      .from(dealerUsers)
+      .where(eq(dealerUsers.id, userSession.userId));
+
+    if (!dealerUser || !dealerUser.isActive) {
+      return res.status(401).json({ error: 'User account not active' });
+    }
+
+    // Get the dealer info for the user
     const [dealer] = await db.select()
       .from(dealers)
-      .where(eq(dealers.id, session.dealerId));
+      .where(eq(dealers.id, userSession.dealerId));
     
     if (!dealer || !dealer.isActive) {
       return res.status(401).json({ error: 'Dealer account not active' });
     }
 
     req.dealer = dealer;
+    req.dealerUser = dealerUser;
     req.sessionId = sessionId;
     next();
   } catch (error) {
@@ -763,7 +796,24 @@ export async function registerRoutes(app: Express): Promise<Express> {
   
   // Get dealer profile
   app.get("/api/dealer/profile", requireDealerAuth, async (req: AuthenticatedRequest, res) => {
-    res.json(req.dealer);
+    // If this is a dealer user session, include user info
+    if (req.dealerUser) {
+      res.json({
+        ...req.dealer,
+        user: {
+          id: req.dealerUser.id,
+          username: req.dealerUser.username,
+          email: req.dealerUser.email,
+          firstName: req.dealerUser.firstName,
+          lastName: req.dealerUser.lastName,
+          title: req.dealerUser.title,
+          role: req.dealerUser.role,
+        }
+      });
+    } else {
+      // Main dealer session
+      res.json(req.dealer);
+    }
   });
   
   // Update dealer profile
