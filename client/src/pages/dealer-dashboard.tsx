@@ -102,6 +102,17 @@ export default function DealerDashboard() {
     new: false,
     confirm: false,
   });
+  const [isChangingUserPassword, setIsChangingUserPassword] = useState(false);
+  const [userPasswordFormData, setUserPasswordFormData] = useState({
+    currentPassword: "",
+    newPassword: "",
+    confirmPassword: "",
+  });
+  const [showUserPasswords, setShowUserPasswords] = useState({
+    current: false,
+    new: false,
+    confirm: false,
+  });
   const [isAddingUser, setIsAddingUser] = useState(false);
   const [editingUser, setEditingUser] = useState<DealerUser | null>(null);
   const [newUserData, setNewUserData] = useState({
@@ -238,6 +249,7 @@ export default function DealerDashboard() {
         title: "Password changed",
         description: "Your password has been successfully updated.",
       });
+      // Reset both dealer and user password forms
       setIsChangingPassword(false);
       setPasswordFormData({
         currentPassword: "",
@@ -245,6 +257,17 @@ export default function DealerDashboard() {
         confirmPassword: "",
       });
       setShowPasswords({
+        current: false,
+        new: false,
+        confirm: false,
+      });
+      setIsChangingUserPassword(false);
+      setUserPasswordFormData({
+        currentPassword: "",
+        newPassword: "",
+        confirmPassword: "",
+      });
+      setShowUserPasswords({
         current: false,
         new: false,
         confirm: false,
@@ -618,6 +641,210 @@ export default function DealerDashboard() {
           </TabsContent>
 
           <TabsContent value="profile" className="mt-6">
+            {/* User Profile Section - Only for dealer employees */}
+            {profile?.user && (
+              <Card className="mb-6">
+                <CardHeader>
+                  <CardTitle>User Profile</CardTitle>
+                  <CardDescription>
+                    Your personal account information
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-6">
+                    {/* User Information */}
+                    <div>
+                      <h3 className="text-lg font-semibold mb-4">Account Information</h3>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                          <Label className="text-sm text-gray-600">Username</Label>
+                          <p className="font-medium">{profile.user.username}</p>
+                        </div>
+                        <div>
+                          <Label className="text-sm text-gray-600">Email</Label>
+                          <p className="font-medium">{profile.user.email}</p>
+                        </div>
+                        <div>
+                          <Label className="text-sm text-gray-600">First Name</Label>
+                          <p className="font-medium">{profile.user.firstName}</p>
+                        </div>
+                        <div>
+                          <Label className="text-sm text-gray-600">Last Name</Label>
+                          <p className="font-medium">{profile.user.lastName}</p>
+                        </div>
+                        <div>
+                          <Label className="text-sm text-gray-600">Title</Label>
+                          <p className="font-medium">{profile.user.title || "Not provided"}</p>
+                        </div>
+                        <div>
+                          <Label className="text-sm text-gray-600">Role</Label>
+                          <span className={`px-2 py-1 text-xs rounded-full ${
+                            profile.user.role === 'admin' 
+                              ? 'bg-purple-100 text-purple-700'
+                              : 'bg-gray-100 text-gray-700'
+                          }`}>
+                            {profile.user.role === 'admin' ? 'Admin' : 'User'}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* User Password Section */}
+                    <div>
+                      <div className="flex justify-between items-center mb-4">
+                        <h3 className="text-lg font-semibold">Password</h3>
+                        {!isChangingUserPassword ? (
+                          <Button
+                            onClick={() => setIsChangingUserPassword(true)}
+                            variant="outline"
+                            size="sm"
+                          >
+                            <Key className="w-4 h-4 mr-2" />
+                            Change Password
+                          </Button>
+                        ) : (
+                          <div className="flex gap-2">
+                            <Button
+                              onClick={() => {
+                                setIsChangingUserPassword(false);
+                                setUserPasswordFormData({
+                                  currentPassword: "",
+                                  newPassword: "",
+                                  confirmPassword: "",
+                                });
+                                setShowUserPasswords({
+                                  current: false,
+                                  new: false,
+                                  confirm: false,
+                                });
+                              }}
+                              variant="outline"
+                              size="sm"
+                            >
+                              Cancel
+                            </Button>
+                            <Button
+                              onClick={() => {
+                                if (userPasswordFormData.newPassword !== userPasswordFormData.confirmPassword) {
+                                  toast({
+                                    title: "Password mismatch",
+                                    description: "New passwords don't match",
+                                    variant: "destructive",
+                                  });
+                                  return;
+                                }
+                                if (userPasswordFormData.newPassword.length < 8) {
+                                  toast({
+                                    title: "Password too short",
+                                    description: "Password must be at least 8 characters long",
+                                    variant: "destructive",
+                                  });
+                                  return;
+                                }
+                                changePasswordMutation.mutate({
+                                  currentPassword: userPasswordFormData.currentPassword,
+                                  newPassword: userPasswordFormData.newPassword,
+                                });
+                              }}
+                              size="sm"
+                              disabled={changePasswordMutation.isPending || !userPasswordFormData.currentPassword || !userPasswordFormData.newPassword || !userPasswordFormData.confirmPassword}
+                            >
+                              {changePasswordMutation.isPending ? "Updating..." : "Update Password"}
+                            </Button>
+                          </div>
+                        )}
+                      </div>
+                      
+                      {isChangingUserPassword ? (
+                        <div className="space-y-4">
+                          <div>
+                            <Label htmlFor="userCurrentPassword" className="text-sm text-gray-600">Current Password</Label>
+                            <div className="relative">
+                              <Input
+                                id="userCurrentPassword"
+                                type={showUserPasswords.current ? "text" : "password"}
+                                value={userPasswordFormData.currentPassword}
+                                onChange={(e) => setUserPasswordFormData({ ...userPasswordFormData, currentPassword: e.target.value })}
+                                placeholder="Enter your current password"
+                                className="pr-10"
+                              />
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="sm"
+                                className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                                onClick={() => setShowUserPasswords({ ...showUserPasswords, current: !showUserPasswords.current })}
+                              >
+                                {showUserPasswords.current ? (
+                                  <EyeOff className="h-4 w-4 text-gray-400" />
+                                ) : (
+                                  <Eye className="h-4 w-4 text-gray-400" />
+                                )}
+                              </Button>
+                            </div>
+                          </div>
+                          <div>
+                            <Label htmlFor="userNewPassword" className="text-sm text-gray-600">New Password</Label>
+                            <div className="relative">
+                              <Input
+                                id="userNewPassword"
+                                type={showUserPasswords.new ? "text" : "password"}
+                                value={userPasswordFormData.newPassword}
+                                onChange={(e) => setUserPasswordFormData({ ...userPasswordFormData, newPassword: e.target.value })}
+                                placeholder="Enter your new password (min 8 characters)"
+                                className="pr-10"
+                              />
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="sm"
+                                className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                                onClick={() => setShowUserPasswords({ ...showUserPasswords, new: !showUserPasswords.new })}
+                              >
+                                {showUserPasswords.new ? (
+                                  <EyeOff className="h-4 w-4 text-gray-400" />
+                                ) : (
+                                  <Eye className="h-4 w-4 text-gray-400" />
+                                )}
+                              </Button>
+                            </div>
+                          </div>
+                          <div>
+                            <Label htmlFor="userConfirmPassword" className="text-sm text-gray-600">Confirm New Password</Label>
+                            <div className="relative">
+                              <Input
+                                id="userConfirmPassword"
+                                type={showUserPasswords.confirm ? "text" : "password"}
+                                value={userPasswordFormData.confirmPassword}
+                                onChange={(e) => setUserPasswordFormData({ ...userPasswordFormData, confirmPassword: e.target.value })}
+                                placeholder="Confirm your new password"
+                                className="pr-10"
+                              />
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="sm"
+                                className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                                onClick={() => setShowUserPasswords({ ...showUserPasswords, confirm: !showUserPasswords.confirm })}
+                              >
+                                {showUserPasswords.confirm ? (
+                                  <EyeOff className="h-4 w-4 text-gray-400" />
+                                ) : (
+                                  <Eye className="h-4 w-4 text-gray-400" />
+                                )}
+                              </Button>
+                            </div>
+                          </div>
+                        </div>
+                      ) : (
+                        <p className="text-gray-500">••••••••</p>
+                      )}
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+            
             <Card>
               <CardHeader>
                 <div className="flex justify-between items-start">

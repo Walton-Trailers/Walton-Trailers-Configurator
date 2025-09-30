@@ -757,7 +757,6 @@ export async function registerRoutes(app: Express): Promise<Express> {
   app.post("/api/dealer/change-password", requireDealerAuth, async (req: AuthenticatedRequest, res) => {
     try {
       const { currentPassword, newPassword } = req.body;
-      const dealer = req.dealer!;
 
       if (!currentPassword || !newPassword) {
         return res.status(400).json({ error: "Current password and new password are required" });
@@ -767,25 +766,54 @@ export async function registerRoutes(app: Express): Promise<Express> {
         return res.status(400).json({ error: "New password must be at least 8 characters long" });
       }
 
-      // Verify current password
-      const validCurrentPassword = await bcrypt.compare(currentPassword, dealer.passwordHash);
-      
-      if (!validCurrentPassword) {
-        return res.status(400).json({ error: "Current password is incorrect" });
+      // Check if this is a dealer user or main dealer
+      if (req.dealerUser) {
+        // Dealer user password change
+        const dealerUser = req.dealerUser;
+        
+        // Verify current password
+        const validCurrentPassword = await bcrypt.compare(currentPassword, dealerUser.passwordHash);
+        
+        if (!validCurrentPassword) {
+          return res.status(400).json({ error: "Current password is incorrect" });
+        }
+
+        // Hash new password
+        const hashedNewPassword = await hashPassword(newPassword);
+
+        // Update dealer user password
+        await db.update(dealerUsers)
+          .set({ 
+            passwordHash: hashedNewPassword,
+            updatedAt: new Date()
+          })
+          .where(eq(dealerUsers.id, dealerUser.id));
+
+        console.log("✅ Password changed successfully for dealer user:", dealerUser.username);
+      } else {
+        // Main dealer password change
+        const dealer = req.dealer!;
+        
+        // Verify current password
+        const validCurrentPassword = await bcrypt.compare(currentPassword, dealer.passwordHash);
+        
+        if (!validCurrentPassword) {
+          return res.status(400).json({ error: "Current password is incorrect" });
+        }
+
+        // Hash new password
+        const hashedNewPassword = await hashPassword(newPassword);
+
+        // Update dealer password
+        await db.update(dealers)
+          .set({ 
+            passwordHash: hashedNewPassword,
+            updatedAt: new Date()
+          })
+          .where(eq(dealers.id, dealer.id));
+
+        console.log("✅ Password changed successfully for dealer:", dealer.dealerId);
       }
-
-      // Hash new password
-      const hashedNewPassword = await hashPassword(newPassword);
-
-      // Update dealer password
-      await db.update(dealers)
-        .set({ 
-          passwordHash: hashedNewPassword,
-          updatedAt: new Date()
-        })
-        .where(eq(dealers.id, dealer.id));
-
-      console.log("✅ Password changed successfully for dealer:", dealer.dealerId);
 
       res.json({ message: "Password changed successfully" });
     } catch (error) {
