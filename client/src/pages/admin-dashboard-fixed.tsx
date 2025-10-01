@@ -149,8 +149,12 @@ export default function AdminDashboard() {
   });
 
   const { data: allOptions = [] } = useQuery({
-    queryKey: ["/api/options"],
-    queryFn: () => apiRequest("/api/options"),
+    queryKey: ["/api/options/all"],
+    queryFn: () => apiRequest("/api/options/all", {
+      headers: {
+        Authorization: `Bearer ${sessionId}`,
+      },
+    }),
     enabled: !!user && user.role === "admin" && !!sessionId,
   });
 
