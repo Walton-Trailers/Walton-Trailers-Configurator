@@ -693,6 +693,38 @@ Configuration Date: ${new Date().toLocaleDateString()}
     try {
       setIsSubmittingQuote(true);
       
+      // Build complete selectedOptions with defaults for single-select categories
+      const completeSelectedOptions: Record<string, any> = { ...selectedOptions };
+      
+      if (options && options.length > 0) {
+        const allCategories = [...new Set(options.map(opt => opt.category))];
+        
+        allCategories.forEach(category => {
+          const categoryOptions = options.filter(opt => opt.category === category);
+          if (categoryOptions.length === 0) return;
+          
+          // Skip if this is a multi-select category and wasn't explicitly selected
+          // Multi-select categories (like extras) only save if explicitly chosen
+          if (category.toLowerCase().includes('extra')) {
+            // Keep only if explicitly selected
+            if (!completeSelectedOptions[category] || 
+                (Array.isArray(completeSelectedOptions[category]) && completeSelectedOptions[category].length === 0)) {
+              delete completeSelectedOptions[category];
+            }
+            return;
+          }
+          
+          // For single-select categories, add default if not already selected
+          if (!completeSelectedOptions[category]) {
+            // Find default option (marked as isDefault) or use first option
+            const defaultOption = categoryOptions.find(opt => opt.isDefault) || categoryOptions[0];
+            if (defaultOption) {
+              completeSelectedOptions[category] = defaultOption.id;
+            }
+          }
+        });
+      }
+      
       const quoteData = {
         ...data,
         // Flatten configuration data to match database schema
@@ -700,7 +732,7 @@ Configuration Date: ${new Date().toLocaleDateString()}
         categoryName: selectedCategory?.name,
         modelId: selectedModel?.modelId,
         modelName: selectedModel?.name,
-        selectedOptions,
+        selectedOptions: completeSelectedOptions,
         totalPrice,
         trailerSpecs: selectedModel ? {
           gvwr: getDynamicGvwr(),
