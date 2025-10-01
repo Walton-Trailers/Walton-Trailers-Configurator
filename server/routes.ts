@@ -1708,6 +1708,15 @@ export async function registerRoutes(app: Express): Promise<Express> {
     try {
       const userData = createUserSchema.parse(req.body);
       
+      // Check if trying to create an admin user
+      // Only admin users can create other admin users
+      if (userData.role === 'admin') {
+        const currentUser = req.user;
+        if (!currentUser || currentUser.role !== 'admin') {
+          return res.status(403).json({ error: "Only administrators can create admin users" });
+        }
+      }
+      
       // Check if username or email already exists
       const existingByUsername = await storage.getAdminUserByUsername(userData.username);
       if (existingByUsername) {
@@ -1751,6 +1760,15 @@ export async function registerRoutes(app: Express): Promise<Express> {
     try {
       const userId = parseInt(req.params.id);
       const updates = req.body;
+      
+      // Check if trying to update to admin role
+      // Only admin users can promote users to admin role
+      if (updates.role === 'admin') {
+        const currentUser = req.user;
+        if (!currentUser || currentUser.role !== 'admin') {
+          return res.status(403).json({ error: "Only administrators can assign admin role" });
+        }
+      }
       
       // Handle password update if provided
       if (updates.password && updates.password.length > 0) {

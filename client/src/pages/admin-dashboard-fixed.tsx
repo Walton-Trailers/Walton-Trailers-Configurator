@@ -822,7 +822,9 @@ ${quote.notes ? `\nAdmin Notes: ${quote.notes}` : ''}`;
                           </SelectTrigger>
                           <SelectContent>
                             <SelectItem value="standard">Standard User</SelectItem>
-                            <SelectItem value="admin">Administrator</SelectItem>
+                            {isAdmin && (
+                              <SelectItem value="admin">Administrator</SelectItem>
+                            )}
                           </SelectContent>
                         </Select>
                       </div>
@@ -955,7 +957,9 @@ ${quote.notes ? `\nAdmin Notes: ${quote.notes}` : ''}`;
                                     </SelectTrigger>
                                     <SelectContent>
                                       <SelectItem value="standard">Standard</SelectItem>
-                                      <SelectItem value="admin">Admin</SelectItem>
+                                      {isAdmin && (
+                                        <SelectItem value="admin">Admin</SelectItem>
+                                      )}
                                     </SelectContent>
                                   </Select>
                                 ) : (
