@@ -969,9 +969,24 @@ ${quote.notes ? `\nAdmin Notes: ${quote.notes}` : ''}`;
                                 )}
                               </td>
                               <td className="px-6 py-4 whitespace-nowrap">
-                                <Badge variant={adminUser.isActive ? "outline" : "destructive"}>
-                                  {adminUser.isActive ? "Active" : "Inactive"}
-                                </Badge>
+                                {editingUser?.id === adminUser.id ? (
+                                  <Select
+                                    value={editData.isActive !== undefined ? (editData.isActive ? "active" : "inactive") : (adminUser.isActive ? "active" : "inactive")}
+                                    onValueChange={(value) => setEditData({ ...editData, isActive: value === "active" })}
+                                  >
+                                    <SelectTrigger className="w-28 h-8 text-sm">
+                                      <SelectValue />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                      <SelectItem value="active">Active</SelectItem>
+                                      <SelectItem value="inactive">Inactive</SelectItem>
+                                    </SelectContent>
+                                  </Select>
+                                ) : (
+                                  <Badge variant={adminUser.isActive ? "outline" : "destructive"}>
+                                    {adminUser.isActive ? "Active" : "Inactive"}
+                                  </Badge>
+                                )}
                               </td>
                               <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                                 {new Date(adminUser.createdAt).toLocaleDateString()}
