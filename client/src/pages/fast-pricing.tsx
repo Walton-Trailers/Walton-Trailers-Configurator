@@ -839,6 +839,7 @@ export default function FastPricing() {
       applicableModels: applicableModels, // New field for multiple models
       category: data.category ?? option.category,
       price: data.price ?? option.price,
+      isMultiSelect: data.isMultiSelect ?? option.isMultiSelect,
     });
     
     // Clear editing state
@@ -2918,16 +2919,24 @@ export default function FastPricing() {
                         )}
                       </TableCell>
                       <TableCell>
-                        <Switch
-                          checked={option.isMultiSelect || false}
-                          onCheckedChange={(checked: boolean) => {
-                            updateOptionMutation.mutate({
-                              id: option.id,
-                              isMultiSelect: checked
-                            });
-                          }}
-                          disabled={updateOptionMutation.isPending}
-                        />
+                        {editingOption?.id === option.id ? (
+                          <Switch
+                            checked={editData[option.id]?.isMultiSelect ?? option.isMultiSelect ?? false}
+                            onCheckedChange={(checked: boolean) => {
+                              setEditData({
+                                ...editData,
+                                [option.id]: { ...editData[option.id], isMultiSelect: checked }
+                              });
+                            }}
+                            disabled={false}
+                          />
+                        ) : (
+                          <Switch
+                            checked={option.isMultiSelect ?? false}
+                            onCheckedChange={() => {}}
+                            disabled={true}
+                          />
+                        )}
                       </TableCell>
                       <TableCell>
                         <ObjectUploader
@@ -3051,14 +3060,9 @@ export default function FastPricing() {
                             <TableCell>${option.price}</TableCell>
                             <TableCell>
                               <Switch
-                                checked={option.isMultiSelect || false}
-                                onCheckedChange={(checked: boolean) => {
-                                  updateOptionMutation.mutate({
-                                    id: option.id,
-                                    isMultiSelect: checked
-                                  });
-                                }}
-                                disabled={updateOptionMutation.isPending}
+                                checked={option.isMultiSelect ?? false}
+                                onCheckedChange={() => {}}
+                                disabled={true}
                               />
                             </TableCell>
                             <TableCell>
