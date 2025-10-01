@@ -599,12 +599,6 @@ export default function AdminDashboard() {
                   Dealers
                 </Button>
               </Link>
-              <Link href="/admin/email-settings">
-                <Button variant="ghost" size="sm" title="Email Settings">
-                  <Mail className="w-4 h-4 mr-2" />
-                  Email Settings
-                </Button>
-              </Link>
               <Button onClick={handleLogout} variant="outline" size="sm">
                 <LogOut className="w-4 h-4 mr-2" />
                 Logout
