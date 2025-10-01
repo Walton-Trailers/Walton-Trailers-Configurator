@@ -1639,7 +1639,9 @@ export default function DealerDashboard() {
                   <SelectValue placeholder="Select a role" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="admin">Admin - Full access including user management</SelectItem>
+                  {isUserAdmin && (
+                    <SelectItem value="admin">Admin - Full access including user management</SelectItem>
+                  )}
                   <SelectItem value="user">User - Can manage orders only</SelectItem>
                 </SelectContent>
               </Select>
@@ -1724,7 +1726,9 @@ export default function DealerDashboard() {
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="admin">Admin - Full access including user management</SelectItem>
+                      {isUserAdmin && (
+                        <SelectItem value="admin">Admin - Full access including user management</SelectItem>
+                      )}
                       <SelectItem value="user">User - Can manage orders only</SelectItem>
                     </SelectContent>
                   </Select>

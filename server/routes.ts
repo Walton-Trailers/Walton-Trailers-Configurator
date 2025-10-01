@@ -1003,6 +1003,15 @@ export async function registerRoutes(app: Express): Promise<Express> {
         return res.status(400).json({ error: "Missing required fields" });
       }
       
+      // Check if trying to create an admin user
+      // Only admins or main dealer accounts can create admin users
+      if (role === 'admin') {
+        const isCurrentUserAdmin = !req.dealerUser || req.dealerUser.role === 'admin';
+        if (!isCurrentUserAdmin) {
+          return res.status(403).json({ error: "Only administrators can create admin users" });
+        }
+      }
+      
       // Check if username or email already exists
       const existing = await db.select()
         .from(dealerUsers)
@@ -1050,6 +1059,15 @@ export async function registerRoutes(app: Express): Promise<Express> {
       
       if (!existingUser || existingUser.dealerId !== req.dealer!.id) {
         return res.status(404).json({ error: "User not found" });
+      }
+      
+      // Check if trying to update to admin role
+      // Only admins or main dealer accounts can set admin role
+      if (updates.role === 'admin') {
+        const isCurrentUserAdmin = !req.dealerUser || req.dealerUser.role === 'admin';
+        if (!isCurrentUserAdmin) {
+          return res.status(403).json({ error: "Only administrators can assign admin role" });
+        }
       }
       
       // Don't allow updating certain fields
