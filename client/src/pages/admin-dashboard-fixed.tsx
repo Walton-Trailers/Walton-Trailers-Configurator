@@ -72,6 +72,7 @@ export default function AdminDashboard() {
   const [userSearchTerm, setUserSearchTerm] = useState("");
   const [customRequestSearchTerm, setCustomRequestSearchTerm] = useState("");
   const [configurationSearchTerm, setConfigurationSearchTerm] = useState("");
+  const [quoteRequestSearchTerm, setQuoteRequestSearchTerm] = useState("");
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -1316,12 +1317,23 @@ ${quote.notes ? `\nAdmin Notes: ${quote.notes}` : ''}`;
           {isAdmin && (
             <TabsContent value="quote-requests" className="space-y-6">
               <div className="flex justify-between items-center">
-                <div>
+                <div className="flex-1">
                   <h3 className="text-lg font-medium">Quote Requests</h3>
                   <p className="text-sm text-gray-600">Manage quote requests from the configurator</p>
                 </div>
-                <div className="flex gap-2 items-center">
-                  <Badge variant="secondary">
+                
+                <div className="flex items-center space-x-4">
+                  <div className="relative">
+                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                    <Input
+                      placeholder="Search quote requests..."
+                      value={quoteRequestSearchTerm}
+                      onChange={(e) => setQuoteRequestSearchTerm(e.target.value)}
+                      className="pl-10 w-64"
+                    />
+                  </div>
+                  
+                  <Badge variant="secondary" className="px-3 py-1">
                     {configQuoteRequests.length} Total Requests
                   </Badge>
                 </div>
@@ -1345,7 +1357,20 @@ ${quote.notes ? `\nAdmin Notes: ${quote.notes}` : ''}`;
                             </tr>
                           </thead>
                           <tbody>
-                            {configQuoteRequests.map((request: any) => (
+                            {configQuoteRequests.filter((request: any) => {
+                              if (!quoteRequestSearchTerm) return true;
+                              const searchLower = quoteRequestSearchTerm.toLowerCase();
+                              return (
+                                `${request.firstName} ${request.lastName}`.toLowerCase().includes(searchLower) ||
+                                request.email.toLowerCase().includes(searchLower) ||
+                                (request.company && request.company.toLowerCase().includes(searchLower)) ||
+                                request.mobile.includes(searchLower) ||
+                                request.zipCode.includes(searchLower) ||
+                                (request.modelName && request.modelName.toLowerCase().includes(searchLower)) ||
+                                (request.categoryName && request.categoryName.toLowerCase().includes(searchLower)) ||
+                                request.status.toLowerCase().includes(searchLower)
+                              );
+                            }).map((request: any) => (
                               <tr key={request.id} className="border-b hover:bg-gray-50">
                                 <td className="p-2">
                                   {new Date(request.createdAt).toLocaleDateString()}
