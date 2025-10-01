@@ -2130,7 +2130,7 @@ export async function registerRoutes(app: Express): Promise<Express> {
   app.patch("/api/options/:id", requireAuth, async (req, res) => {
     try {
       const optionId = parseInt(req.params.id);
-      const { price, name, category, modelId, applicableModels, isArchived } = req.body;
+      const { price, name, category, modelId, applicableModels, isArchived, isMultiSelect } = req.body;
       
       const updatedOption = await storage.updateOption(optionId, {
         price,
@@ -2139,6 +2139,7 @@ export async function registerRoutes(app: Express): Promise<Express> {
         modelId, // Backward compatibility
         applicableModels, // New multiple models support
         isArchived,
+        isMultiSelect,
       });
       
       res.json(updatedOption);

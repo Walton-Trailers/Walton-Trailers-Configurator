@@ -45,6 +45,25 @@ const SelectValue = () => null;
 const SelectContent = ({ children }: any) => <>{children}</>;
 const SelectItem = ({ value, children }: any) => <option value={value}>{children}</option>;
 
+const Switch = ({ checked, onCheckedChange, disabled = false }: any) => (
+  <button
+    type="button"
+    role="switch"
+    aria-checked={checked}
+    onClick={() => !disabled && onCheckedChange(!checked)}
+    disabled={disabled}
+    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${
+      checked ? 'bg-blue-600' : 'bg-gray-200'
+    } ${disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
+  >
+    <span
+      className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+        checked ? 'translate-x-6' : 'translate-x-1'
+      }`}
+    />
+  </button>
+);
+
 const Card = ({ children, className = '' }: any) => (
   <div className={`bg-white rounded-lg border shadow-sm ${className}`}>
     {children}
@@ -2788,6 +2807,7 @@ export default function FastPricing() {
                     <TableHead>Model</TableHead>
                     <TableHead>Category</TableHead>
                     <TableHead>Price</TableHead>
+                    <TableHead>Multi-Select</TableHead>
                     <TableHead>Image</TableHead>
                     <TableHead>Actions</TableHead>
                   </TableRow>
@@ -2898,6 +2918,18 @@ export default function FastPricing() {
                         )}
                       </TableCell>
                       <TableCell>
+                        <Switch
+                          checked={option.isMultiSelect || false}
+                          onCheckedChange={(checked: boolean) => {
+                            updateOptionMutation.mutate({
+                              id: option.id,
+                              isMultiSelect: checked
+                            });
+                          }}
+                          disabled={updateOptionMutation.isPending}
+                        />
+                      </TableCell>
+                      <TableCell>
                         <ObjectUploader
                           onGetUploadParameters={handleGetOptionUploadParameters}
                           onComplete={(result) => handleOptionImageUploadComplete(option.id, result)}
@@ -2990,6 +3022,7 @@ export default function FastPricing() {
                           <TableHead>Models</TableHead>
                           <TableHead>Category</TableHead>
                           <TableHead>Price</TableHead>
+                          <TableHead>Multi-Select</TableHead>
                           <TableHead>Image</TableHead>
                           <TableHead>Actions</TableHead>
                         </TableRow>
@@ -3016,6 +3049,18 @@ export default function FastPricing() {
                             </TableCell>
                             <TableCell>{option.category}</TableCell>
                             <TableCell>${option.price}</TableCell>
+                            <TableCell>
+                              <Switch
+                                checked={option.isMultiSelect || false}
+                                onCheckedChange={(checked: boolean) => {
+                                  updateOptionMutation.mutate({
+                                    id: option.id,
+                                    isMultiSelect: checked
+                                  });
+                                }}
+                                disabled={updateOptionMutation.isPending}
+                              />
+                            </TableCell>
                             <TableCell>
                               {option.imageUrl ? (
                                 <div className="w-12 h-12 rounded-md overflow-hidden border border-gray-200">

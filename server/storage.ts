@@ -1398,6 +1398,7 @@ export class DatabaseStorage implements IStorage {
       if (updates.modelId !== undefined) updateData.model_id = updates.modelId;
       if (updates.applicableModels !== undefined) updateData.applicable_models = updates.applicableModels;
       if (updates.isArchived !== undefined) updateData.is_archived = updates.isArchived;
+      if (updates.isMultiSelect !== undefined) updateData.is_multi_select = updates.isMultiSelect;
       if (updates.imageUrl !== undefined) updateData.image_url = updates.imageUrl;
       
       if (Object.keys(updateData).length > 0) {
@@ -1434,6 +1435,13 @@ export class DatabaseStorage implements IStorage {
           await db.execute(sql`
             UPDATE trailer_options 
             SET is_archived = ${updates.isArchived}
+            WHERE id = ${id}
+          `);
+        }
+        if (updates.isMultiSelect !== undefined) {
+          await db.execute(sql`
+            UPDATE trailer_options 
+            SET is_multi_select = ${updates.isMultiSelect}
             WHERE id = ${id}
           `);
         }
