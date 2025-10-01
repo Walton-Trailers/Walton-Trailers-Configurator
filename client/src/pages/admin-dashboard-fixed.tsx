@@ -148,6 +148,12 @@ export default function AdminDashboard() {
     enabled: !!user && user.role === "admin" && !!sessionId,
   });
 
+  const { data: allOptions = [] } = useQuery({
+    queryKey: ["/api/options"],
+    queryFn: () => apiRequest("/api/options"),
+    enabled: !!user && user.role === "admin" && !!sessionId,
+  });
+
   // Always call useMutation hooks
   const createUserMutation = useMutation({
     mutationFn: (userData: CreateUserForm) =>
@@ -312,6 +318,72 @@ export default function AdminDashboard() {
         ...editData,
       });
     }
+  };
+
+  // Helper function to render selected options in readable format
+  const renderSelectedOptions = (selectedOptions: Record<string, any>) => {
+    if (!selectedOptions || Object.keys(selectedOptions).length === 0) {
+      return <p className="text-sm text-gray-500">No options selected</p>;
+    }
+
+    const optionsArray = allOptions as any[];
+    const optionsMap = new Map(optionsArray.map((opt: any) => [opt.id, opt]));
+
+    return (
+      <div className="space-y-3">
+        {Object.entries(selectedOptions).map(([category, value]) => {
+          if (category === 'extras' && Array.isArray(value)) {
+            // Handle extras (multi-select)
+            const extraOptions = value
+              .map((id: number) => optionsMap.get(id))
+              .filter(Boolean);
+            
+            if (extraOptions.length === 0) return null;
+            
+            return (
+              <div key={category} className="bg-white p-3 rounded border">
+                <h4 className="font-semibold text-sm mb-2 text-gray-700">Extras:</h4>
+                <ul className="space-y-1">
+                  {extraOptions.map((option: any) => (
+                    <li key={option.id} className="text-sm flex justify-between">
+                      <span>• {option.name}</span>
+                      <span className="text-gray-600">${option.price.toLocaleString()}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            );
+          } else if (typeof value === 'number') {
+            // Handle single-select options (color, tires, ramps, etc.)
+            const option = optionsMap.get(value);
+            if (!option) return null;
+            
+            return (
+              <div key={category} className="bg-white p-3 rounded border">
+                <h4 className="font-semibold text-sm mb-1 text-gray-700 capitalize">
+                  {category.replace(/([A-Z])/g, ' $1').trim()}:
+                </h4>
+                <div className="text-sm flex justify-between">
+                  <span>{option.name}</span>
+                  <span className="text-gray-600">${option.price.toLocaleString()}</span>
+                </div>
+              </div>
+            );
+          } else if (typeof value === 'string') {
+            // Handle string values (like length, pulltype)
+            return (
+              <div key={category} className="bg-white p-3 rounded border">
+                <h4 className="font-semibold text-sm mb-1 text-gray-700 capitalize">
+                  {category.replace(/([A-Z])/g, ' $1').trim()}:
+                </h4>
+                <div className="text-sm">{value}</div>
+              </div>
+            );
+          }
+          return null;
+        })}
+      </div>
+    );
   };
 
   const handleImportFromAirtable = async () => {
@@ -1598,12 +1670,8 @@ ${quote.notes ? `\nAdmin Notes: ${quote.notes}` : ''}`;
                 {/* Selected Options */}
                 {selectedQuoteRequest.selectedOptions && Object.keys(selectedQuoteRequest.selectedOptions).length > 0 && (
                   <div className="mt-4">
-                    <Label className="font-medium">Selected Options</Label>
-                    <div className="bg-white p-3 rounded border mt-2">
-                      <pre className="text-xs text-gray-700 whitespace-pre-wrap">
-                        {JSON.stringify(selectedQuoteRequest.selectedOptions, null, 2)}
-                      </pre>
-                    </div>
+                    <Label className="font-medium mb-2 block">Selected Options</Label>
+                    {renderSelectedOptions(selectedQuoteRequest.selectedOptions)}
                   </div>
                 )}
               </div>
@@ -1820,11 +1888,9 @@ ${quote.notes ? `\nAdmin Notes: ${quote.notes}` : ''}`;
                 {/* Selected Options */}
                 {selectedConfiguration.selectedOptions && Object.keys(selectedConfiguration.selectedOptions).length > 0 && (
                   <div className="mt-4">
-                    <Label className="font-medium">Selected Options</Label>
-                    <div className="bg-white p-3 rounded border mt-2 max-h-40 overflow-y-auto">
-                      <pre className="text-xs text-gray-700 whitespace-pre-wrap">
-                        {JSON.stringify(selectedConfiguration.selectedOptions, null, 2)}
-                      </pre>
+                    <Label className="font-medium mb-2 block">Selected Options</Label>
+                    <div className="max-h-60 overflow-y-auto">
+                      {renderSelectedOptions(selectedConfiguration.selectedOptions)}
                     </div>
                   </div>
                 )}
