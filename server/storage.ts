@@ -61,6 +61,7 @@ export interface TrailerOptionResponse {
   price: number;
   isRequired?: boolean;
   isMultiSelect: boolean;
+  isDefault?: boolean; // Whether this is the default option in its category
   isArchived?: boolean;
   imageUrl?: string;
   options?: any[];
@@ -651,7 +652,7 @@ export class DatabaseStorage implements IStorage {
     try {
       // Get non-length options from trailer_options table
       const optionsResult = await db.execute(sql`
-        SELECT id, name, price, category, model_id, applicable_models, image_url, is_archived, hex_color, primer_price
+        SELECT id, name, price, category, model_id, applicable_models, image_url, is_archived, hex_color, primer_price, is_multi_select, is_default
         FROM trailer_options
         WHERE (is_archived IS NULL OR is_archived = false)
           AND (applicable_models IS NULL OR applicable_models @> ${JSON.stringify([modelId])})
@@ -670,6 +671,8 @@ export class DatabaseStorage implements IStorage {
         isArchived: option.is_archived || false,
         hexColor: option.hex_color,
         primerPrice: option.primer_price,
+        isMultiSelect: option.is_multi_select || false,
+        isDefault: option.is_default || false,
       }));
 
       // Get length options from the model's length_options JSON column
@@ -706,6 +709,8 @@ export class DatabaseStorage implements IStorage {
                 isArchived: false,
                 hexColor: null,
                 primerPrice: 0,
+                isMultiSelect: false,
+                isDefault: index === 0, // First length option is default
               });
             });
           }
