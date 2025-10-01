@@ -76,6 +76,8 @@ export const trailerSeries = pgTable("trailer_series", {
 // Trailer Options - now includes TRAC codes and categories
 export const trailerOptions = pgTable("trailer_options", {
   id: serial("id").primaryKey(),
+  modelId: text("model_id"), // which specific model this option applies to
+  category: text("category"), // simplified category name (e.g., 'tires', 'jack', 'extras')
   optionCategory: text("option_category").notNull(), // e.g., 'Tire Options', 'Jack Options', 'Wall Height Options'
   optionType: text("option_type").notNull(), // e.g., 'tire_standard', 'tire_upgrade', 'jack_hydraulic'
   name: text("name").notNull(),
@@ -85,6 +87,8 @@ export const trailerOptions = pgTable("trailer_options", {
   priceUnit: text("price_unit"), // null for fixed price, 'ft' for per foot pricing
   imageUrl: text("image_url"),
   isDefault: boolean("is_default").default(false),
+  isMultiSelect: boolean("is_multi_select").default(false), // whether this option allows quantity selection
+  isArchived: boolean("is_archived").default(false),
   applicableModels: json("applicable_models").$type<string[]>(), // which model series this applies to
   payload: integer("payload"), // payload capacity for length options
   hexColor: text("hex_color"), // hex color value for color options (e.g., '#FF0000')

@@ -118,6 +118,7 @@ interface TrailerOption {
   name: string;
   price: number;
   isMultiSelect: boolean;
+  isDefault?: boolean; // Whether this is the default option in its category
   payload?: number; // Optional payload for certain options
   hexColor?: string; // Hex color value for color options (renamed from hex_color by API)
   primerPrice?: number; // Primer price for color options
@@ -397,8 +398,8 @@ export default function Configurator() {
             selected.forEach((optionId: number) => {
               const option = categoryOptions.find(opt => opt.id === optionId);
               if (option) {
-                // Check if this is D-Rings option and multiply by quantity
-                if (option.name.includes('D-Rings')) {
+                // Check if this is a multi-select option and multiply by quantity
+                if (option.isMultiSelect) {
                   const quantity = selectedOptions[`${category}_${optionId}_qty`] || 1;
                   price = (price || 0) + (option.price || 0) * quantity;
                 } else {
@@ -1566,8 +1567,8 @@ Configuration Date: ${new Date().toLocaleDateString()}
                                       {option.name}
                                     </Label>
                                     
-                                    {/* D-Rings Quantity Selector */}
-                                    {option.name.includes('D-Rings') && (selectedOptions[category]?.includes(option.id)) && (
+                                    {/* Quantity Selector for Multi-Select Options */}
+                                    {option.isMultiSelect && (selectedOptions[category]?.includes(option.id)) && (
                                       <select
                                         className="ml-2 px-2 py-1 text-xs border border-gray-300 rounded"
                                         value={selectedOptions[`${category}_${option.id}_qty`] || 1}
@@ -1578,6 +1579,7 @@ Configuration Date: ${new Date().toLocaleDateString()}
                                             [`${category}_${option.id}_qty`]: quantity
                                           }));
                                         }}
+                                        data-testid={`select-quantity-${option.id}`}
                                       >
                                         {Array.from({ length: 20 }, (_, i) => i + 1).map(num => (
                                           <option key={num} value={num}>{num}</option>
@@ -1587,7 +1589,7 @@ Configuration Date: ${new Date().toLocaleDateString()}
                                   </div>
                                   <span className="text-sm text-gray-600">
                                     {option.price === 0 ? 'Included' : 
-                                     option.name.includes('D-Rings') && (selectedOptions[category]?.includes(option.id)) ? 
+                                     option.isMultiSelect && (selectedOptions[category]?.includes(option.id)) ? 
                                        `+$${(option.price * (selectedOptions[`${category}_${option.id}_qty`] || 1)).toLocaleString()}` :
                                      option.price > 0 ? `+$${option.price.toLocaleString()}` : 
                                      `$${option.price.toLocaleString()}`}
