@@ -417,10 +417,13 @@ export default function Configurator() {
     // Add primer costs for selected primers
     if (options && Object.keys(selectedPrimer).length > 0) {
       Object.entries(selectedPrimer).forEach(([category, isPrimerSelected]) => {
-        if (isPrimerSelected && selectedOptions[category]) {
+        if (isPrimerSelected) {
           // Find the selected color option for this category
           const categoryOptions = options.filter(opt => opt.category === category);
-          const selectedColorOption = categoryOptions.find(opt => opt.id === selectedOptions[category]);
+          // Use explicitly selected option, or fall back to default (first option)
+          const selectedColorOption = selectedOptions[category]
+            ? categoryOptions.find(opt => opt.id === selectedOptions[category])
+            : categoryOptions.find(opt => opt.isDefault) || categoryOptions[0];
           
           // Add primer price if the color option has one
           if (selectedColorOption && selectedColorOption.primerPrice && selectedColorOption.primerPrice > 0) {
@@ -1689,10 +1692,10 @@ Configuration Date: ${new Date().toLocaleDateString()}
                                 
                                 {/* Primer Selection for Color Options */}
                                 {(() => {
-                                  const selectedColorOption = categoryOptions.find(opt => 
-                                    selectedOptions[category]?.toString() === opt.id.toString() || 
-                                    (!selectedOptions[category] && categoryOptions[0]?.id === opt.id)
-                                  );
+                                  // Use explicitly selected option, or fall back to default (isDefault or first option)
+                                  const selectedColorOption = selectedOptions[category]
+                                    ? categoryOptions.find(opt => opt.id === selectedOptions[category])
+                                    : categoryOptions.find(opt => opt.isDefault) || categoryOptions[0];
                                   
                                   if (selectedColorOption && selectedColorOption.primerPrice && selectedColorOption.primerPrice > 0) {
                                     const isSelected = selectedPrimer[category] || false;
