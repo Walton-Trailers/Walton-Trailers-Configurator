@@ -327,63 +327,85 @@ export default function AdminDashboard() {
     }
 
     const optionsArray = allOptions as any[];
-    const optionsMap = new Map(optionsArray.map((opt: any) => [opt.id, opt]));
+    
+    // If options aren't loaded yet, show a loading message
+    if (!optionsArray || optionsArray.length === 0) {
+      return (
+        <div className="bg-white p-3 rounded border">
+          <p className="text-sm text-gray-500">Loading options data...</p>
+          <pre className="text-xs text-gray-700 whitespace-pre-wrap mt-2">
+            {JSON.stringify(selectedOptions, null, 2)}
+          </pre>
+        </div>
+      );
+    }
 
-    return (
-      <div className="space-y-3">
-        {Object.entries(selectedOptions).map(([category, value]) => {
-          if (category === 'extras' && Array.isArray(value)) {
-            // Handle extras (multi-select)
-            const extraOptions = value
-              .map((id: number) => optionsMap.get(id))
-              .filter(Boolean);
-            
-            if (extraOptions.length === 0) return null;
-            
-            return (
-              <div key={category} className="bg-white p-3 rounded border">
-                <h4 className="font-semibold text-sm mb-2 text-gray-700">Extras:</h4>
-                <ul className="space-y-1">
-                  {extraOptions.map((option: any) => (
-                    <li key={option.id} className="text-sm flex justify-between">
-                      <span>• {option.name}</span>
-                      <span className="text-gray-600">${option.price.toLocaleString()}</span>
-                    </li>
-                  ))}
-                </ul>
+    const optionsMap = new Map(optionsArray.map((opt: any) => [opt.id, opt]));
+    const renderedItems: JSX.Element[] = [];
+
+    Object.entries(selectedOptions).map(([category, value]) => {
+      if (category === 'extras' && Array.isArray(value)) {
+        // Handle extras (multi-select)
+        const extraOptions = value
+          .map((id: number) => optionsMap.get(id))
+          .filter(Boolean);
+        
+        if (extraOptions.length > 0) {
+          renderedItems.push(
+            <div key={category} className="bg-white p-3 rounded border">
+              <h4 className="font-semibold text-sm mb-2 text-gray-700">Extras:</h4>
+              <ul className="space-y-1">
+                {extraOptions.map((option: any) => (
+                  <li key={option.id} className="text-sm flex justify-between">
+                    <span>• {option.name}</span>
+                    <span className="text-gray-600">${option.price.toLocaleString()}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          );
+        }
+      } else if (typeof value === 'number') {
+        // Handle single-select options (color, tires, ramps, etc.)
+        const option = optionsMap.get(value);
+        if (option) {
+          renderedItems.push(
+            <div key={category} className="bg-white p-3 rounded border">
+              <h4 className="font-semibold text-sm mb-1 text-gray-700 capitalize">
+                {category.replace(/([A-Z])/g, ' $1').trim()}:
+              </h4>
+              <div className="text-sm flex justify-between">
+                <span>{option.name}</span>
+                <span className="text-gray-600">${option.price.toLocaleString()}</span>
               </div>
-            );
-          } else if (typeof value === 'number') {
-            // Handle single-select options (color, tires, ramps, etc.)
-            const option = optionsMap.get(value);
-            if (!option) return null;
-            
-            return (
-              <div key={category} className="bg-white p-3 rounded border">
-                <h4 className="font-semibold text-sm mb-1 text-gray-700 capitalize">
-                  {category.replace(/([A-Z])/g, ' $1').trim()}:
-                </h4>
-                <div className="text-sm flex justify-between">
-                  <span>{option.name}</span>
-                  <span className="text-gray-600">${option.price.toLocaleString()}</span>
-                </div>
-              </div>
-            );
-          } else if (typeof value === 'string') {
-            // Handle string values (like length, pulltype)
-            return (
-              <div key={category} className="bg-white p-3 rounded border">
-                <h4 className="font-semibold text-sm mb-1 text-gray-700 capitalize">
-                  {category.replace(/([A-Z])/g, ' $1').trim()}:
-                </h4>
-                <div className="text-sm">{value}</div>
-              </div>
-            );
-          }
-          return null;
-        })}
-      </div>
-    );
+            </div>
+          );
+        }
+      } else if (typeof value === 'string') {
+        // Handle string values (like length, pulltype)
+        renderedItems.push(
+          <div key={category} className="bg-white p-3 rounded border">
+            <h4 className="font-semibold text-sm mb-1 text-gray-700 capitalize">
+              {category.replace(/([A-Z])/g, ' $1').trim()}:
+            </h4>
+            <div className="text-sm">{value}</div>
+          </div>
+        );
+      }
+    });
+
+    if (renderedItems.length === 0) {
+      return (
+        <div className="bg-white p-3 rounded border">
+          <p className="text-sm text-gray-500 mb-2">Unable to display options (options data not found)</p>
+          <pre className="text-xs text-gray-700 whitespace-pre-wrap">
+            {JSON.stringify(selectedOptions, null, 2)}
+          </pre>
+        </div>
+      );
+    }
+
+    return <div className="space-y-3">{renderedItems}</div>;
   };
 
   const handleImportFromAirtable = async () => {
