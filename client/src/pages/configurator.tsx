@@ -1978,7 +1978,7 @@ Configuration Date: ${new Date().toLocaleDateString()}
                 <Button 
                   variant="outline"
                   onClick={() => {
-                    setLocation("/dealer/login");
+                    window.location.href = "https://waltontrailers.com/locate-a-dealer/";
                   }}
                   className="py-4 md:py-6 text-sm md:text-base min-h-[48px]"
                 >
