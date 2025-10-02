@@ -73,6 +73,7 @@ export default function AdminDashboard() {
   const [customRequestSearchTerm, setCustomRequestSearchTerm] = useState("");
   const [configurationSearchTerm, setConfigurationSearchTerm] = useState("");
   const [quoteRequestSearchTerm, setQuoteRequestSearchTerm] = useState("");
+  const [activeTab, setActiveTab] = useState("products");
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -615,8 +616,26 @@ export default function AdminDashboard() {
           <p className="text-gray-600">Manage Walton Trailers administration</p>
         </div>
 
-        <Tabs defaultValue="products" className="space-y-6">
-          <TabsList>
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+          {/* Mobile Dropdown Navigation */}
+          <div className="md:hidden">
+            <Select value={activeTab} onValueChange={setActiveTab}>
+              <SelectTrigger className="w-full">
+                <SelectValue placeholder="Select a section" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="products">Product Management</SelectItem>
+                {isAdmin && <SelectItem value="users">User Management</SelectItem>}
+                {isAdmin && <SelectItem value="integrations">Integrations</SelectItem>}
+                <SelectItem value="custom-quotes">Custom Requests</SelectItem>
+                {isAdmin && <SelectItem value="configurations">Dealer Configurations</SelectItem>}
+                {isAdmin && <SelectItem value="quote-requests">Quote Requests</SelectItem>}
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* Desktop Tabs Navigation */}
+          <TabsList className="hidden md:inline-flex">
             <TabsTrigger value="products">Product Management</TabsTrigger>
             {isAdmin && <TabsTrigger value="users">User Management</TabsTrigger>}
             {isAdmin && <TabsTrigger value="integrations">Integrations</TabsTrigger>}
