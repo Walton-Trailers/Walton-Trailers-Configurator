@@ -575,34 +575,37 @@ export default function AdminDashboard() {
                 Walton Trailers Admin
               </h1>
             </div>
-            <div className="flex items-center space-x-4">
-              <div className="text-sm text-gray-600">
+            <div className="flex items-center space-x-2 md:space-x-4">
+              {/* Welcome message - hidden on mobile, shown on desktop */}
+              <div className="hidden md:block text-sm text-gray-600">
                 Welcome, {user.firstName || user.username}
                 <Badge variant={user.role === "admin" ? "default" : "secondary"} className="ml-2">
                   {user.role}
                 </Badge>
               </div>
+              
+              {/* Navigation buttons - icon only on mobile, full text on desktop */}
               <Link href="/">
-                <Button variant="ghost" size="sm" title="View Site">
-                  <Home className="w-4 h-4 mr-2" />
-                  View Site
+                <Button variant="ghost" size="sm" title="View Site" className="p-2 md:px-3">
+                  <Home className="w-4 h-4 md:mr-2" />
+                  <span className="hidden md:inline">View Site</span>
                 </Button>
               </Link>
               <Link href="/admin/account">
-                <Button variant="ghost" size="sm" title="Employees">
-                  <Users className="w-4 h-4 mr-2" />
-                  Employees
+                <Button variant="ghost" size="sm" title="Employees" className="p-2 md:px-3">
+                  <Users className="w-4 h-4 md:mr-2" />
+                  <span className="hidden md:inline">Employees</span>
                 </Button>
               </Link>
               <Link href="/admin/dealers">
-                <Button variant="ghost" size="sm" title="Dealers">
-                  <Building2 className="w-4 h-4 mr-2" />
-                  Dealers
+                <Button variant="ghost" size="sm" title="Dealers" className="p-2 md:px-3">
+                  <Building2 className="w-4 h-4 md:mr-2" />
+                  <span className="hidden md:inline">Dealers</span>
                 </Button>
               </Link>
-              <Button onClick={handleLogout} variant="outline" size="sm">
-                <LogOut className="w-4 h-4 mr-2" />
-                Logout
+              <Button onClick={handleLogout} variant="outline" size="sm" title="Logout" className="p-2 md:px-3">
+                <LogOut className="w-4 h-4 md:mr-2" />
+                <span className="hidden md:inline">Logout</span>
               </Button>
             </div>
           </div>
