@@ -43,6 +43,7 @@ export interface TrailerModelResponse {
   lengthGvwr?: Record<string, string> | null;
   lengthPayload?: Record<string, string> | null;
   pulltypeOptions?: Record<string, string> | null;
+  lengthOrder?: Record<string, number> | null;
   basePrice: number;
   imageUrl: string;
   features: string[];
@@ -369,15 +370,22 @@ export class MemStorage implements IStorage {
         : model.lengthOptions;
       
       const lengthPricing = model.lengthPrice || {};
+      const lengthOrderData = (model as any).lengthOrder || {};
       
       if (Array.isArray(lengths)) {
-        lengths.forEach((length: string, index: number) => {
+        const sortedLengths = [...lengths].sort((a: string, b: string) => {
+          const orderA = lengthOrderData[a] ?? 999;
+          const orderB = lengthOrderData[b] ?? 999;
+          return orderA - orderB;
+        });
+        
+        sortedLengths.forEach((length: string, index: number) => {
           lengthOptions.push({
             id: `length_${modelId}_${index}`,
             modelId: modelId,
             applicableModels: [modelId],
             name: length,
-            price: lengthPricing[length] || 0, // Use pricing from length_price column
+            price: lengthPricing[length] || 0,
             category: 'length',
             imageUrl: null,
             isArchived: false,
@@ -678,7 +686,7 @@ export class DatabaseStorage implements IStorage {
       // Get length options from the model's length_options JSON column
       const lengthOptions: TrailerOptionResponse[] = [];
       const modelResult = await db.execute(sql`
-        SELECT length_options, length_price
+        SELECT length_options, length_price, length_order
         FROM trailer_models
         WHERE model_id = ${modelId}
           AND (is_archived IS NULL OR is_archived = false)
@@ -696,21 +704,31 @@ export class DatabaseStorage implements IStorage {
             ? (typeof model.length_price === 'string' ? JSON.parse(model.length_price) : model.length_price)
             : {};
           
+          const lengthOrderData = model.length_order
+            ? (typeof model.length_order === 'string' ? JSON.parse(model.length_order) : model.length_order)
+            : {};
+          
           if (Array.isArray(lengths)) {
-            lengths.forEach((length: string, index: number) => {
+            const sortedLengths = [...lengths].sort((a: string, b: string) => {
+              const orderA = lengthOrderData[a] ?? 999;
+              const orderB = lengthOrderData[b] ?? 999;
+              return orderA - orderB;
+            });
+            
+            sortedLengths.forEach((length: string, index: number) => {
               lengthOptions.push({
                 id: `length_${modelId}_${index}`,
                 modelId: modelId,
                 applicableModels: [modelId],
                 name: length,
-                price: lengthPricing[length] || 0, // Use pricing from length_price column
+                price: lengthPricing[length] || 0,
                 category: 'length',
                 imageUrl: null,
                 isArchived: false,
                 hexColor: null,
                 primerPrice: 0,
                 isMultiSelect: false,
-                isDefault: index === 0, // First length option is default
+                isDefault: index === 0,
               });
             });
           }
@@ -1109,7 +1127,7 @@ export class DatabaseStorage implements IStorage {
     try {
       const result = await db.execute(sql`
         SELECT m.id, m.category_id, m.series_id, m.model_id, m.name,
-               m.deck_size, m.axles, m.length_options, m.pulltype_options, m.length_price, m.length_gvwr, m.length_payload, m.base_price, 
+               m.deck_size, m.axles, m.length_options, m.pulltype_options, m.length_price, m.length_gvwr, m.length_payload, m.length_order, m.base_price, 
                m.image_url, m.features, m.is_archived, m.category_sub_type, c.name as category_name,
                s.name as series_name
         FROM trailer_models m
@@ -1134,6 +1152,7 @@ export class DatabaseStorage implements IStorage {
         lengthGvwr: model.length_gvwr ? (typeof model.length_gvwr === 'string' ? JSON.parse(model.length_gvwr) : model.length_gvwr) : null,
         lengthPayload: model.length_payload ? (typeof model.length_payload === 'string' ? JSON.parse(model.length_payload) : model.length_payload) : null,
         lengthDeckSize: model.deck_size ? (typeof model.deck_size === 'string' ? JSON.parse(model.deck_size) : model.deck_size) : null,
+        lengthOrder: model.length_order ? (typeof model.length_order === 'string' ? JSON.parse(model.length_order) : model.length_order) : null,
         basePrice: model.base_price,
         imageUrl: model.image_url,
         features: model.features || [],
@@ -1299,6 +1318,14 @@ export class DatabaseStorage implements IStorage {
         await db.execute(sql`
           UPDATE trailer_models 
           SET deck_size = ${lengthDeckSizeJson}
+          WHERE id = ${id}
+        `);
+      }
+      if (updates.lengthOrder !== undefined) {
+        const lengthOrderJson = updates.lengthOrder ? JSON.stringify(updates.lengthOrder) : null;
+        await db.execute(sql`
+          UPDATE trailer_models 
+          SET length_order = ${lengthOrderJson}
           WHERE id = ${id}
         `);
       }

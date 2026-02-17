@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useEffect } from "react";
-import { ArrowLeft, Edit, Save, X, Archive, RotateCcw, Upload, Image, Trash2, Plus } from "lucide-react";
+import { ArrowLeft, ArrowUp, ArrowDown, Edit, Save, X, Archive, RotateCcw, Upload, Image, Trash2, Plus } from "lucide-react";
 import { Link } from "wouter";
 import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query";
 import { useFastQuery } from "@/hooks/useFastQuery";
@@ -174,6 +174,15 @@ export default function FastPricing() {
     
     const newLengthOptions = [...currentLengthOptions, lengthValue.trim()];
     
+    const rawLengthOrder = editData[modelId]?.lengthOrder || 
+      models.find(m => m.id === modelId)?.lengthOrder || {};
+    const currentLengthOrder = typeof rawLengthOrder === 'string' ? JSON.parse(rawLengthOrder) : rawLengthOrder;
+    const maxOrder = Math.max(0, ...Object.values(currentLengthOrder).map((v: any) => Number(v) || 0));
+    const newLengthOrder = {
+      ...currentLengthOrder,
+      [lengthValue.trim()]: maxOrder + 1
+    };
+    
     // Initialize pull type options for this new length
     const currentPulltypeOptions = editData[modelId]?.pulltypeOptions || 
       models.find(m => m.id === modelId)?.pulltypeOptions || {};
@@ -218,7 +227,8 @@ export default function FastPricing() {
         pulltypeOptions: newPulltypeOptions,
         lengthGvwr: newLengthGvwr,
         lengthPayload: newLengthPayload,
-        lengthDeckSize: newLengthDeckSize
+        lengthDeckSize: newLengthDeckSize,
+        lengthOrder: newLengthOrder
       }
     });
     
@@ -263,6 +273,14 @@ export default function FastPricing() {
     const newLengthDeckSize = { ...currentLengthDeckSize };
     delete newLengthDeckSize[lengthToRemove];
     
+    // Remove and recalculate length order
+    const currentLengthOrder = editData[modelId]?.lengthOrder || 
+      models.find(m => m.id === modelId)?.lengthOrder || {};
+    const newLengthOrder: Record<string, number> = {};
+    newLengthOptions.forEach((len: string, idx: number) => {
+      newLengthOrder[len] = idx + 1;
+    });
+    
     setEditData({
       ...editData,
       [modelId]: { 
@@ -271,7 +289,36 @@ export default function FastPricing() {
         pulltypeOptions: newPulltypeOptions,
         lengthGvwr: newLengthGvwr,
         lengthPayload: newLengthPayload,
-        lengthDeckSize: newLengthDeckSize
+        lengthDeckSize: newLengthDeckSize,
+        lengthOrder: newLengthOrder
+      }
+    });
+  };
+
+  const moveLengthOption = (modelId: number, fromIndex: number, toIndex: number) => {
+    const currentLengthOptions = editData[modelId]?.lengthOptions || 
+      (typeof (models.find(m => m.id === modelId)?.lengthOptions) === 'string' 
+        ? JSON.parse(models.find(m => m.id === modelId)?.lengthOptions || '[]')
+        : models.find(m => m.id === modelId)?.lengthOptions || []);
+    
+    if (toIndex < 0 || toIndex >= currentLengthOptions.length) return;
+    
+    const newLengthOptions = [...currentLengthOptions];
+    const [moved] = newLengthOptions.splice(fromIndex, 1);
+    newLengthOptions.splice(toIndex, 0, moved);
+    
+    // Rebuild length_order based on new positions
+    const newLengthOrder: Record<string, number> = {};
+    newLengthOptions.forEach((len: string, idx: number) => {
+      newLengthOrder[len] = idx + 1;
+    });
+    
+    setEditData({
+      ...editData,
+      [modelId]: { 
+        ...editData[modelId], 
+        lengthOptions: newLengthOptions,
+        lengthOrder: newLengthOrder
       }
     });
   };
@@ -738,6 +785,7 @@ export default function FastPricing() {
       lengthGvwr: data.lengthGvwr ?? model.lengthGvwr,
       lengthPayload: data.lengthPayload ?? model.lengthPayload,
       lengthDeckSize: data.lengthDeckSize ?? model.lengthDeckSize,
+      lengthOrder: data.lengthOrder ?? model.lengthOrder,
     });
   };
 
@@ -3144,6 +3192,11 @@ export default function FastPricing() {
                   : typeof model.lengthDeckSize === 'string' 
                     ? (model.lengthDeckSize ? JSON.parse(model.lengthDeckSize) : {})
                     : model.lengthDeckSize || {};
+                const lengthOrder = isEditing && editData[openModelId]?.lengthOrder
+                  ? editData[openModelId].lengthOrder
+                  : typeof model.lengthOrder === 'string' 
+                    ? (model.lengthOrder ? JSON.parse(model.lengthOrder) : {})
+                    : model.lengthOrder || {};
 
                 return (
                   <>
@@ -3246,7 +3299,11 @@ export default function FastPricing() {
                             )}
                             
                             <div className="grid gap-3">
-                              {lengthOptions.map((length: string, index: number) => (
+                              {[...lengthOptions].sort((a: string, b: string) => {
+                                const orderA = lengthOrder[a] ?? 999;
+                                const orderB = lengthOrder[b] ?? 999;
+                                return orderA - orderB;
+                              }).map((length: string, index: number) => (
                                 <div key={index} className="border rounded-lg p-4 bg-gray-50">
                                   {isEditing ? (
                                     <div className="space-y-3">
@@ -3324,6 +3381,76 @@ export default function FastPricing() {
                                             </div>
                                           ) : (
                                             <div className="flex items-center gap-2">
+                                              <div className="flex flex-col mr-1">
+                                                <Button
+                                                  size="sm"
+                                                  variant="ghost"
+                                                  onClick={() => {
+                                                    const sortedLengths = [...lengthOptions].sort((a: string, b: string) => {
+                                                      const orderA = lengthOrder[a] ?? 999;
+                                                      const orderB = lengthOrder[b] ?? 999;
+                                                      return orderA - orderB;
+                                                    });
+                                                    const currentSortedIndex = sortedLengths.indexOf(length);
+                                                    if (currentSortedIndex > 0) {
+                                                      const newOrder = { ...lengthOrder };
+                                                      const prevLength = sortedLengths[currentSortedIndex - 1];
+                                                      const tempOrder = newOrder[length] ?? currentSortedIndex + 1;
+                                                      newOrder[length] = newOrder[prevLength] ?? currentSortedIndex;
+                                                      newOrder[prevLength] = tempOrder;
+                                                      setEditData({
+                                                        ...editData,
+                                                        [openModelId]: { ...editData[openModelId], lengthOrder: newOrder }
+                                                      });
+                                                    }
+                                                  }}
+                                                  className="p-0 h-5 w-5"
+                                                  disabled={(() => {
+                                                    const sortedLengths = [...lengthOptions].sort((a: string, b: string) => {
+                                                      const orderA = lengthOrder[a] ?? 999;
+                                                      const orderB = lengthOrder[b] ?? 999;
+                                                      return orderA - orderB;
+                                                    });
+                                                    return sortedLengths.indexOf(length) === 0;
+                                                  })()}
+                                                >
+                                                  <ArrowUp className="w-3 h-3" />
+                                                </Button>
+                                                <Button
+                                                  size="sm"
+                                                  variant="ghost"
+                                                  onClick={() => {
+                                                    const sortedLengths = [...lengthOptions].sort((a: string, b: string) => {
+                                                      const orderA = lengthOrder[a] ?? 999;
+                                                      const orderB = lengthOrder[b] ?? 999;
+                                                      return orderA - orderB;
+                                                    });
+                                                    const currentSortedIndex = sortedLengths.indexOf(length);
+                                                    if (currentSortedIndex < sortedLengths.length - 1) {
+                                                      const newOrder = { ...lengthOrder };
+                                                      const nextLength = sortedLengths[currentSortedIndex + 1];
+                                                      const tempOrder = newOrder[length] ?? currentSortedIndex + 1;
+                                                      newOrder[length] = newOrder[nextLength] ?? currentSortedIndex + 2;
+                                                      newOrder[nextLength] = tempOrder;
+                                                      setEditData({
+                                                        ...editData,
+                                                        [openModelId]: { ...editData[openModelId], lengthOrder: newOrder }
+                                                      });
+                                                    }
+                                                  }}
+                                                  className="p-0 h-5 w-5"
+                                                  disabled={(() => {
+                                                    const sortedLengths = [...lengthOptions].sort((a: string, b: string) => {
+                                                      const orderA = lengthOrder[a] ?? 999;
+                                                      const orderB = lengthOrder[b] ?? 999;
+                                                      return orderA - orderB;
+                                                    });
+                                                    return sortedLengths.indexOf(length) === sortedLengths.length - 1;
+                                                  })()}
+                                                >
+                                                  <ArrowDown className="w-3 h-3" />
+                                                </Button>
+                                              </div>
                                               <span className="font-semibold">{length}</span>
                                               <Button
                                                 size="sm"
