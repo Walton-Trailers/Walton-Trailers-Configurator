@@ -1434,7 +1434,7 @@ Configuration Date: ${new Date().toLocaleDateString()}
                                 const pulltype = pulltypeOptions[option.name] || '';
                                 
                                 const formattedPrice = option.price === 0 ? 'Included' : 
-                                                      option.price > 0 ? `+$${option.price.toLocaleString()}` : 
+                                                      option.price > 0 ? `$${option.price.toLocaleString()}` : 
                                                       `$${option.price.toLocaleString()}`;
                                 
                                 return (
@@ -1535,8 +1535,8 @@ Configuration Date: ${new Date().toLocaleDateString()}
                                   <span className="text-sm text-gray-600">
                                     {option.price === 0 ? 'Included' : 
                                      option.isMultiSelect && (selectedOptions[category]?.includes(option.id)) ? 
-                                       `+$${(option.price * (selectedOptions[`${category}_${option.id}_qty`] || 1)).toLocaleString()}` :
-                                     option.price > 0 ? `+$${option.price.toLocaleString()}` : 
+                                       `$${(option.price * (selectedOptions[`${category}_${option.id}_qty`] || 1)).toLocaleString()}` :
+                                     option.price > 0 ? `$${option.price.toLocaleString()}` : 
                                      `$${option.price.toLocaleString()}`}
                                   </span>
                                 </div>
@@ -1562,7 +1562,7 @@ Configuration Date: ${new Date().toLocaleDateString()}
                                       <div className="font-medium text-sm">{option.name}</div>
                                       <div className="text-xs font-medium">
                                         {option.price === 0 ? 'Included' : 
-                                         option.price > 0 ? `+$${option.price.toLocaleString()}` : 
+                                         option.price > 0 ? `$${option.price.toLocaleString()}` : 
                                          `$${option.price.toLocaleString()}`}
                                       </div>
                                     </button>
@@ -1580,7 +1580,7 @@ Configuration Date: ${new Date().toLocaleDateString()}
                                   {categoryOptions.map((option) => (
                                     <option key={option.id} value={option.id.toString()}>
                                       {option.name} - {option.price === 0 ? 'Included' : 
-                                       option.price > 0 ? `+$${option.price.toLocaleString()}` : 
+                                       option.price > 0 ? `$${option.price.toLocaleString()}` : 
                                        `$${option.price.toLocaleString()}`}
                                     </option>
                                   ))}
@@ -1609,7 +1609,7 @@ Configuration Date: ${new Date().toLocaleDateString()}
                                             boxShadow: colorHex === '#ffffff' ? 'inset 0 0 0 1px #e5e7eb' : undefined
                                           }}
                                           title={`${option.name} - ${option.price === 0 ? 'Included' : 
-                                            option.price > 0 ? `+$${option.price.toLocaleString()}` : 
+                                            option.price > 0 ? `$${option.price.toLocaleString()}` : 
                                             `$${option.price.toLocaleString()}`}`}
                                         >
                                           {isSelected && (
@@ -1628,7 +1628,7 @@ Configuration Date: ${new Date().toLocaleDateString()}
                                           <div className="text-xs font-medium">{option.name}</div>
                                           <div className="text-xs text-gray-500">
                                             {option.price === 0 ? 'Included' : 
-                                             option.price > 0 ? `+$${option.price.toLocaleString()}` : 
+                                             option.price > 0 ? `$${option.price.toLocaleString()}` : 
                                              `$${option.price.toLocaleString()}`}
                                           </div>
                                         </div>
@@ -1676,7 +1676,7 @@ Configuration Date: ${new Date().toLocaleDateString()}
                                             </div>
                                             <span className="font-medium">Add Primer?</span>
                                             <span className="text-sm">
-                                              +${selectedColorOption.primerPrice.toLocaleString()}
+                                              ${selectedColorOption.primerPrice.toLocaleString()}
                                             </span>
                                           </div>
                                         </button>
@@ -1701,7 +1701,7 @@ Configuration Date: ${new Date().toLocaleDateString()}
                                     </div>
                                     <span className="text-sm text-gray-600">
                                       {option.price === 0 ? 'Included' : 
-                                       option.price > 0 ? `+$${option.price.toLocaleString()}` : 
+                                       option.price > 0 ? `$${option.price.toLocaleString()}` : 
                                        `$${option.price.toLocaleString()}`}
                                     </span>
                                   </div>
@@ -1817,7 +1817,7 @@ Configuration Date: ${new Date().toLocaleDateString()}
                                   <span className="text-zinc-700">{option.name}</span>
                                   <span className="font-medium text-zinc-600">
                                     {option.price === 0 ? 'Included' : 
-                                     option.price > 0 ? `+$${option.price.toLocaleString()}` : 
+                                     option.price > 0 ? `$${option.price.toLocaleString()}` : 
                                      `$${option.price.toLocaleString()}`}
                                   </span>
                                 </div>
@@ -1836,7 +1836,7 @@ Configuration Date: ${new Date().toLocaleDateString()}
                                 <span className="text-zinc-700">{selectedOption.name}</span>
                                 <span className="font-medium text-zinc-600">
                                   {selectedOption.price === 0 ? 'Included' : 
-                                   selectedOption.price > 0 ? `+$${selectedOption.price.toLocaleString()}` : 
+                                   selectedOption.price > 0 ? `$${selectedOption.price.toLocaleString()}` : 
                                    `$${selectedOption.price.toLocaleString()}`}
                                 </span>
                               </div>
@@ -1859,7 +1859,7 @@ Configuration Date: ${new Date().toLocaleDateString()}
                               <div key={`primer-${category}`} className="flex justify-between py-1 text-sm">
                                 <span className="text-zinc-700">Primer ({selectedColorOption.name})</span>
                                 <span className="font-medium text-zinc-600">
-                                  +${selectedColorOption.primerPrice.toLocaleString()}
+                                  ${selectedColorOption.primerPrice.toLocaleString()}
                                 </span>
                               </div>
                             );
@@ -2135,7 +2135,7 @@ Configuration Date: ${new Date().toLocaleDateString()}
                           <span>{option.name}</span>
                           <span className="font-medium">
                             {option.price === 0 ? 'Included' : 
-                             option.price > 0 ? `+$${option.price.toLocaleString()}` : 
+                             option.price > 0 ? `$${option.price.toLocaleString()}` : 
                              `$${option.price.toLocaleString()}`}
                           </span>
                         </div>
@@ -2157,7 +2157,7 @@ Configuration Date: ${new Date().toLocaleDateString()}
                           <div key={`primer-${category}`} className="flex justify-between py-1 text-sm">
                             <span>Primer ({selectedColorOption.name})</span>
                             <span className="font-medium">
-                              +${selectedColorOption.primerPrice.toLocaleString()}
+                              ${selectedColorOption.primerPrice.toLocaleString()}
                             </span>
                           </div>
                         );
@@ -2185,7 +2185,7 @@ Configuration Date: ${new Date().toLocaleDateString()}
                       <div key={option.id} className="flex justify-between items-center mb-2">
                         <span className="text-sm text-zinc-600">{option.name}</span>
                         <span className="text-sm">
-                          {option.price > 0 ? `+$${option.price.toLocaleString()}` : 
+                          {option.price > 0 ? `$${option.price.toLocaleString()}` : 
                            `$${option.price.toLocaleString()}`}
                         </span>
                       </div>
@@ -2208,7 +2208,7 @@ Configuration Date: ${new Date().toLocaleDateString()}
                       <div key={`pricing-primer-${category}`} className="flex justify-between items-center mb-2">
                         <span className="text-sm text-zinc-600">Primer ({selectedColorOption.name})</span>
                         <span className="text-sm">
-                          +${selectedColorOption.primerPrice.toLocaleString()}
+                          ${selectedColorOption.primerPrice.toLocaleString()}
                         </span>
                       </div>
                     );
