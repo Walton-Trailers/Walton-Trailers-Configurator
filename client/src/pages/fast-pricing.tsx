@@ -879,7 +879,7 @@ export default function FastPricing() {
   const handleOptionUpdate = (option: any) => {
     const data = editData[option.id] || {};
     const applicableModels = data.modelIds || option.applicableModels || [option.modelId];
-    const optionCategory = (data.category ?? option.category || '').toLowerCase();
+    const optionCategory = ((data.category ?? option.category) || '').toLowerCase();
     
     const mutationData: any = {
       id: option.id,
