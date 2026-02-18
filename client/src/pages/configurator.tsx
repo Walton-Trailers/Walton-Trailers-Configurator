@@ -1512,7 +1512,6 @@ Configuration Date: ${new Date().toLocaleDateString()}
                                       {option.name}
                                     </Label>
                                     
-                                    {/* Quantity Selector for Multi-Select Options */}
                                     {option.isMultiSelect && (selectedOptions[category]?.includes(option.id)) && (
                                       <select
                                         className="ml-2 px-2 py-1 text-xs border border-gray-300 rounded"
@@ -1542,172 +1541,136 @@ Configuration Date: ${new Date().toLocaleDateString()}
                                 </div>
                               ))}
                             </div>
-                          ) : (
-                            // Check if this category should use toggle design (jack, ramps, tires)
-                            (category === 'ramps' && categoryOptions.length === 2) || 
-                            (['jack', 'tires'].includes(category) && categoryOptions.length >= 1) ? (
-                              <div className="bg-gray-100 p-1 rounded-lg flex">
-                                {categoryOptions.map((option, index) => {
+                          ) : category.toLowerCase() === 'color' ? (
+                            <>
+                              <div className="flex flex-wrap justify-center gap-4">
+                                {categoryOptions.map((option) => {
                                   const isSelected = selectedOptions[category]?.toString() === option.id.toString() || 
-                                                   (!selectedOptions[category] && index === 0);
+                                                   (!selectedOptions[category] && categoryOptions[0]?.id === option.id);
+                                  const colorHex = option.hexColor || getColorHex(option.name);
+                                  
                                   return (
-                                    <button
-                                      key={option.id}
-                                      className={`flex-1 py-2 px-3 transition-all duration-300 text-center ${
-                                        isSelected ? 'border-2 border-black rounded-lg font-semibold focus-visible:outline focus-visible:outline-2 focus-visible:outline-black' : 'bg-white border-2 border-gray-200 hover:border-black rounded-lg focus-visible:outline focus-visible:outline-2 focus-visible:outline-black'
-                                      }`}
-                                      style={isSelected ? { backgroundColor: '#c3af84' } : {}}
-                                      onClick={() => handleOptionChange(category, option.id, false, true)}
-                                    >
-                                      <div className="font-medium text-sm">{option.name}</div>
-                                      <div className="text-xs font-medium">
-                                        {option.price === 0 ? 'Included' : 
-                                         option.price > 0 ? `$${option.price.toLocaleString()}` : 
-                                         `$${option.price.toLocaleString()}`}
+                                    <div key={option.id} className="flex flex-col items-center text-center">
+                                      <button
+                                        onClick={() => handleOptionChange(category, option.id, false, true)}
+                                        className={`w-16 h-16 rounded-full border-4 transition-all duration-200 hover:scale-105 focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                                          isSelected 
+                                            ? 'border-black shadow-lg' 
+                                            : 'border-gray-300 hover:border-gray-400'
+                                        }`}
+                                        style={{ 
+                                          backgroundColor: colorHex,
+                                          boxShadow: colorHex === '#ffffff' ? 'inset 0 0 0 1px #e5e7eb' : undefined
+                                        }}
+                                        title={`${option.name} - ${option.price === 0 ? 'Included' : 
+                                          option.price > 0 ? `$${option.price.toLocaleString()}` : 
+                                          `$${option.price.toLocaleString()}`}`}
+                                      >
+                                        {isSelected && (
+                                          <div className="w-full h-full rounded-full flex items-center justify-center">
+                                            <div 
+                                              className={`w-3 h-3 rounded-full ${
+                                                colorHex === '#ffffff' || colorHex === '#f5f5dc' || colorHex === '#d2b48c' 
+                                                  ? 'bg-black' 
+                                                  : 'bg-white'
+                                              }`}
+                                            />
+                                          </div>
+                                        )}
+                                      </button>
+                                      <div className="mt-1">
+                                        <div className="text-xs font-medium">{option.name}</div>
+                                        <div className="text-xs text-gray-500">
+                                          {option.price === 0 ? 'Included' : 
+                                           option.price > 0 ? `$${option.price.toLocaleString()}` : 
+                                           `$${option.price.toLocaleString()}`}
+                                        </div>
                                       </div>
-                                    </button>
+                                    </div>
                                   );
                                 })}
                               </div>
-                            ) : category === 'walls' ? (
-                              // Special dropdown handling for wall height options
-                              <div className="space-y-2">
-                                <select
-                                  value={selectedOptions[category]?.toString() || categoryOptions[0]?.id.toString()}
-                                  onChange={(e) => handleOptionChange(category, parseInt(e.target.value), false, true)}
-                                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
-                                >
-                                  {categoryOptions.map((option) => (
-                                    <option key={option.id} value={option.id.toString()}>
-                                      {option.name} - {option.price === 0 ? 'Included' : 
-                                       option.price > 0 ? `$${option.price.toLocaleString()}` : 
-                                       `$${option.price.toLocaleString()}`}
-                                    </option>
-                                  ))}
-                                </select>
-                              </div>
-                            ) : category.toLowerCase() === 'color' ? (
-                              // Special color circle handling for color options
-                              <>
-                                <div className="flex flex-wrap justify-center gap-4">
-                                  {categoryOptions.map((option) => {
-                                    const isSelected = selectedOptions[category]?.toString() === option.id.toString() || 
-                                                     (!selectedOptions[category] && categoryOptions[0]?.id === option.id);
-                                    const colorHex = option.hexColor || getColorHex(option.name);
-                                    
-                                    return (
-                                      <div key={option.id} className="flex flex-col items-center text-center">
-                                        <button
-                                          onClick={() => handleOptionChange(category, option.id, false, true)}
-                                          className={`w-16 h-16 rounded-full border-4 transition-all duration-200 hover:scale-105 focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                              
+                              {(() => {
+                                const selectedColorOption = selectedOptions[category]
+                                  ? categoryOptions.find(opt => opt.id === selectedOptions[category])
+                                  : categoryOptions.find(opt => opt.isDefault) || categoryOptions[0];
+                                
+                                if (selectedColorOption && selectedColorOption.primerPrice && selectedColorOption.primerPrice > 0) {
+                                  const isSelected = selectedPrimer[category] || false;
+                                  return (
+                                    <div className="mt-4 flex justify-center">
+                                      <button
+                                        onClick={() => setSelectedPrimer({ 
+                                          ...selectedPrimer, 
+                                          [category]: !isSelected 
+                                        })}
+                                        className={`px-4 py-2 rounded-lg border-2 transition-all duration-200 ${
+                                          isSelected
+                                            ? 'border-blue-500 bg-blue-50 text-blue-700'
+                                            : 'border-gray-300 bg-white text-gray-700 hover:border-gray-400'
+                                        }`}
+                                        data-testid={`button-primer-${category}`}
+                                      >
+                                        <div className="flex items-center space-x-2">
+                                          <div className={`w-4 h-4 border-2 rounded ${
                                             isSelected 
-                                              ? 'border-black shadow-lg' 
-                                              : 'border-gray-300 hover:border-gray-400'
-                                          }`}
-                                          style={{ 
-                                            backgroundColor: colorHex,
-                                            boxShadow: colorHex === '#ffffff' ? 'inset 0 0 0 1px #e5e7eb' : undefined
-                                          }}
-                                          title={`${option.name} - ${option.price === 0 ? 'Included' : 
-                                            option.price > 0 ? `$${option.price.toLocaleString()}` : 
-                                            `$${option.price.toLocaleString()}`}`}
-                                        >
-                                          {isSelected && (
-                                            <div className="w-full h-full rounded-full flex items-center justify-center">
-                                              <div 
-                                                className={`w-3 h-3 rounded-full ${
-                                                  colorHex === '#ffffff' || colorHex === '#f5f5dc' || colorHex === '#d2b48c' 
-                                                    ? 'bg-black' 
-                                                    : 'bg-white'
-                                                }`}
-                                              />
-                                            </div>
-                                          )}
-                                        </button>
-                                        <div className="mt-1">
-                                          <div className="text-xs font-medium">{option.name}</div>
-                                          <div className="text-xs text-gray-500">
-                                            {option.price === 0 ? 'Included' : 
-                                             option.price > 0 ? `$${option.price.toLocaleString()}` : 
-                                             `$${option.price.toLocaleString()}`}
+                                              ? 'bg-blue-500 border-blue-500' 
+                                              : 'border-gray-300'
+                                          }`}>
+                                            {isSelected && (
+                                              <div className="w-full h-full flex items-center justify-center">
+                                                <svg className="w-2.5 h-2.5 text-white" fill="currentColor" viewBox="0 0 20 20">
+                                                  <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                                                </svg>
+                                              </div>
+                                            )}
                                           </div>
+                                          <span className="font-medium">Add Primer?</span>
+                                          <span className="text-sm">
+                                            ${selectedColorOption.primerPrice.toLocaleString()}
+                                          </span>
                                         </div>
-                                      </div>
+                                      </button>
+                                    </div>
+                                  );
+                                }
+                                return null;
+                              })()}
+                            </>
+                          ) : (
+                            <div className="space-y-2">
+                              <Select
+                                value={selectedOptions[category]?.toString() || categoryOptions[0]?.id.toString()}
+                                onValueChange={(value) => {
+                                  const parsedValue = parseInt(value);
+                                  handleOptionChange(category, isNaN(parsedValue) ? value : parsedValue, false, true);
+                                }}
+                              >
+                                <SelectTrigger className="w-full" data-testid={`input-${category}`}>
+                                  <SelectValue placeholder={`Select ${category}`} />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  {categoryOptions.map((option) => {
+                                    const formattedPrice = option.price === 0 ? 'Included' : 
+                                                          option.price > 0 ? `$${option.price.toLocaleString()}` : 
+                                                          `$${option.price.toLocaleString()}`;
+                                    return (
+                                      <SelectItem 
+                                        key={option.id} 
+                                        value={option.id.toString()}
+                                        data-testid={`row-${category}-${option.id}`}
+                                      >
+                                        <div className="flex items-center justify-between w-full gap-3">
+                                          <span>{option.name}</span>
+                                          <span className="text-gray-400">{formattedPrice}</span>
+                                        </div>
+                                      </SelectItem>
                                     );
                                   })}
-                                </div>
-                                
-                                {/* Primer Selection for Color Options */}
-                                {(() => {
-                                  // Use explicitly selected option, or fall back to default (isDefault or first option)
-                                  const selectedColorOption = selectedOptions[category]
-                                    ? categoryOptions.find(opt => opt.id === selectedOptions[category])
-                                    : categoryOptions.find(opt => opt.isDefault) || categoryOptions[0];
-                                  
-                                  if (selectedColorOption && selectedColorOption.primerPrice && selectedColorOption.primerPrice > 0) {
-                                    const isSelected = selectedPrimer[category] || false;
-                                    return (
-                                      <div className="mt-4 flex justify-center">
-                                        <button
-                                          onClick={() => setSelectedPrimer({ 
-                                            ...selectedPrimer, 
-                                            [category]: !isSelected 
-                                          })}
-                                          className={`px-4 py-2 rounded-lg border-2 transition-all duration-200 ${
-                                            isSelected
-                                              ? 'border-blue-500 bg-blue-50 text-blue-700'
-                                              : 'border-gray-300 bg-white text-gray-700 hover:border-gray-400'
-                                          }`}
-                                          data-testid={`button-primer-${category}`}
-                                        >
-                                          <div className="flex items-center space-x-2">
-                                            <div className={`w-4 h-4 border-2 rounded ${
-                                              isSelected 
-                                                ? 'bg-blue-500 border-blue-500' 
-                                                : 'border-gray-300'
-                                            }`}>
-                                              {isSelected && (
-                                                <div className="w-full h-full flex items-center justify-center">
-                                                  <svg className="w-2.5 h-2.5 text-white" fill="currentColor" viewBox="0 0 20 20">
-                                                    <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                                                  </svg>
-                                                </div>
-                                              )}
-                                            </div>
-                                            <span className="font-medium">Add Primer?</span>
-                                            <span className="text-sm">
-                                              ${selectedColorOption.primerPrice.toLocaleString()}
-                                            </span>
-                                          </div>
-                                        </button>
-                                      </div>
-                                    );
-                                  }
-                                  return null;
-                                })()}
-                              </>
-                            ) : (
-                              <RadioGroup 
-                                value={selectedOptions[category]?.toString() || categoryOptions[0]?.id.toString()}
-                                onValueChange={(value) => handleOptionChange(category, parseInt(value), false, true)}
-                              >
-                                {categoryOptions.map((option) => (
-                                  <div key={option.id} className="flex items-center justify-between">
-                                    <div className="flex items-center space-x-2">
-                                      <RadioGroupItem value={option.id.toString()} id={`radio-${option.id}`} />
-                                      <Label htmlFor={`radio-${option.id}`} className="text-sm cursor-pointer">
-                                        {option.name}
-                                      </Label>
-                                    </div>
-                                    <span className="text-sm text-gray-600">
-                                      {option.price === 0 ? 'Included' : 
-                                       option.price > 0 ? `$${option.price.toLocaleString()}` : 
-                                       `$${option.price.toLocaleString()}`}
-                                    </span>
-                                  </div>
-                                ))}
-                              </RadioGroup>
-                            )
+                                </SelectContent>
+                              </Select>
+                            </div>
                           )}
                         </div>
                       ))}
