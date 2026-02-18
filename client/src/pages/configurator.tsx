@@ -852,61 +852,6 @@ Configuration Date: ${new Date().toLocaleDateString()}
               />
             </div>
             
-            {/* Desktop progress indicator */}
-            <div className="hidden md:flex items-center space-x-6 text-sm uppercase" style={{ fontFamily: 'Oswald, sans-serif', fontWeight: 700 }}>
-              <button 
-                className={`px-4 py-2 rounded-md transition-all duration-300 ${currentStep >= 1 ? 'text-white' : 'bg-gray-100 text-black'} ${currentStep > 1 ? 'cursor-pointer hover:opacity-80' : ''}`} 
-                style={currentStep >= 1 ? { backgroundColor: '#c1af89' } : {}}
-                onClick={() => {
-                  if (currentStep > 1) {
-                    setCurrentStep(1);
-                    setSelectedCategory(null);
-                    setSelectedSeries(null);
-                    setSelectedModel(null);
-                    setSelectedOptions({});
-                  }
-                }}
-                disabled={currentStep === 1}
-              >
-                Category
-              </button>
-              <button 
-                className={`px-4 py-2 rounded-md transition-all duration-300 ${currentStep >= 2 ? 'text-white' : 'bg-gray-100 text-black'} ${currentStep > 2 ? 'cursor-pointer hover:opacity-80' : ''}`} 
-                style={currentStep >= 2 ? { backgroundColor: '#c1af89' } : {}}
-                onClick={() => {
-                  if (currentStep > 2 && selectedCategory) {
-                    setCurrentStep(2);
-                    setSelectedSeries(null);
-                    setSelectedModel(null);
-                    setSelectedOptions({});
-                  }
-                }}
-                disabled={currentStep <= 2 || !selectedCategory}
-              >
-                Series
-              </button>
-              <button 
-                className={`px-4 py-2 rounded-md transition-all duration-300 ${currentStep >= 3 ? 'text-white' : 'bg-gray-100 text-black'} ${currentStep > 3 ? 'cursor-pointer hover:opacity-80' : ''}`} 
-                style={currentStep >= 3 ? { backgroundColor: '#c1af89' } : {}}
-                onClick={() => {
-                  if (currentStep > 3 && selectedCategory && selectedSeries) {
-                    setCurrentStep(3);
-                    setSelectedModel(null);
-                    setSelectedOptions({});
-                  }
-                }}
-                disabled={currentStep <= 3 || !selectedCategory || !selectedSeries}
-              >
-                Model
-              </button>
-              <button 
-                className={`px-4 py-2 rounded-md transition-all duration-300 ${currentStep >= 4 ? 'text-white' : 'bg-gray-100 text-black'}`} 
-                style={currentStep >= 4 ? { backgroundColor: '#c1af89' } : {}}
-                disabled={true}
-              >
-                Summary
-              </button>
-            </div>
             
             <div className="text-right">
               <div className="text-xs md:text-sm text-gray-400 font-normal">Est. Price</div>
