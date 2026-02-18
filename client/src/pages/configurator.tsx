@@ -793,7 +793,7 @@ Configuration Date: ${new Date().toLocaleDateString()}
                 <img 
                   src={waltonLogo} 
                   alt="Walton Trailers" 
-                  className="h-6 md:h-8 lg:h-10 w-auto object-contain max-w-[120px] md:max-w-[150px] lg:max-w-[180px]"
+                  className="h-8 md:h-11 lg:h-14 w-auto object-contain max-w-[150px] md:max-w-[180px] lg:max-w-[220px]"
                 />
               </a>
               {isDealerLoggedIn && (
