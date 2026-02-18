@@ -2987,31 +2987,59 @@ export default function FastPricing() {
                         )}
                       </TableCell>
                       <TableCell>
-                        <ObjectUploader
-                          onGetUploadParameters={handleGetOptionUploadParameters}
-                          onComplete={(result) => handleOptionImageUploadComplete(option.id, result)}
-                          buttonClassName="p-0"
-                          currentImageUrl={option.imageUrl}
-                          modelName={option.name}
-                        >
-                          {option.imageUrl ? (
-                            <div className="w-12 h-12 rounded-md overflow-hidden border border-gray-200 hover:border-gray-400 transition-colors cursor-pointer">
-                              <img 
-                                src={option.imageUrl} 
-                                alt={option.name}
-                                className="w-full h-full object-cover"
-                                onError={(e: any) => {
-                                  e.target.onerror = null;
-                                  e.target.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="48" height="48" fill="none"%3E%3Crect width="48" height="48" fill="%23f3f4f6"/%3E%3Cpath stroke="%239ca3af" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M24 16v16m-8-8h16"/%3E%3C/svg%3E';
-                                }}
+                        {(option.category || '').toLowerCase() === 'color' ? (
+                          editingOption?.id === option.id ? (
+                            <div className="flex items-center gap-2">
+                              <div
+                                className="w-10 h-10 rounded-md border border-gray-300"
+                                style={{ backgroundColor: editData[option.id]?.hexColor ?? option.hexColor ?? '#cccccc' }}
+                              />
+                              <Input
+                                value={editData[option.id]?.hexColor ?? option.hexColor ?? ''}
+                                onChange={(e: any) => setEditData({
+                                  ...editData,
+                                  [option.id]: { ...editData[option.id], hexColor: e.target.value }
+                                })}
+                                placeholder="#000000"
+                                className="w-24 text-xs"
                               />
                             </div>
                           ) : (
-                            <div className="w-12 h-12 rounded-md border-2 border-dashed border-gray-300 hover:border-gray-400 transition-colors cursor-pointer flex items-center justify-center bg-gray-50">
-                              <Upload className="w-5 h-5 text-gray-400" />
+                            <div className="flex items-center gap-2">
+                              <div
+                                className="w-10 h-10 rounded-md border border-gray-200"
+                                style={{ backgroundColor: option.hexColor || '#cccccc' }}
+                              />
+                              <span className="text-xs text-gray-500">{option.hexColor || '-'}</span>
                             </div>
-                          )}
-                        </ObjectUploader>
+                          )
+                        ) : (
+                          <ObjectUploader
+                            onGetUploadParameters={handleGetOptionUploadParameters}
+                            onComplete={(result) => handleOptionImageUploadComplete(option.id, result)}
+                            buttonClassName="p-0"
+                            currentImageUrl={option.imageUrl}
+                            modelName={option.name}
+                          >
+                            {option.imageUrl ? (
+                              <div className="w-12 h-12 rounded-md overflow-hidden border border-gray-200 hover:border-gray-400 transition-colors cursor-pointer">
+                                <img 
+                                  src={option.imageUrl} 
+                                  alt={option.name}
+                                  className="w-full h-full object-cover"
+                                  onError={(e: any) => {
+                                    e.target.onerror = null;
+                                    e.target.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="48" height="48" fill="none"%3E%3Crect width="48" height="48" fill="%23f3f4f6"/%3E%3Cpath stroke="%239ca3af" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M24 16v16m-8-8h16"/%3E%3C/svg%3E';
+                                  }}
+                                />
+                              </div>
+                            ) : (
+                              <div className="w-12 h-12 rounded-md border-2 border-dashed border-gray-300 hover:border-gray-400 transition-colors cursor-pointer flex items-center justify-center bg-gray-50">
+                                <Upload className="w-5 h-5 text-gray-400" />
+                              </div>
+                            )}
+                          </ObjectUploader>
+                        )}
                       </TableCell>
                       <TableCell>
                         {editingOption?.id === option.id ? (
@@ -3114,7 +3142,15 @@ export default function FastPricing() {
                               />
                             </TableCell>
                             <TableCell>
-                              {option.imageUrl ? (
+                              {(option.category || '').toLowerCase() === 'color' ? (
+                                <div className="flex items-center gap-2">
+                                  <div
+                                    className="w-10 h-10 rounded-md border border-gray-200"
+                                    style={{ backgroundColor: option.hexColor || '#cccccc' }}
+                                  />
+                                  <span className="text-xs text-gray-500">{option.hexColor || '-'}</span>
+                                </div>
+                              ) : option.imageUrl ? (
                                 <div className="w-12 h-12 rounded-md overflow-hidden border border-gray-200">
                                   <img 
                                     src={option.imageUrl} 
