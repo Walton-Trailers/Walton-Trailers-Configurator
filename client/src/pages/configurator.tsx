@@ -227,6 +227,7 @@ export default function Configurator() {
   const [hoveredCategory, setHoveredCategory] = useState<TrailerCategory | null>(null);
   const [hoveredModel, setHoveredModel] = useState<TrailerModel | null>(null);
   const [showCustomQuoteModal, setShowCustomQuoteModal] = useState(false);
+  const [showLearnMoreModal, setShowLearnMoreModal] = useState(false);
   const [customQuoteForm, setCustomQuoteForm] = useState({
     firstName: "",
     lastName: "",
@@ -974,6 +975,17 @@ Configuration Date: ${new Date().toLocaleDateString()}
             </div>
 
             {/* Custom Quote Modal */}
+            <Dialog open={showLearnMoreModal} onOpenChange={setShowLearnMoreModal}>
+              <DialogContent className="max-w-sm">
+                <DialogHeader>
+                  <DialogTitle>Additional Options</DialogTitle>
+                  <DialogDescription>
+                    In progress
+                  </DialogDescription>
+                </DialogHeader>
+              </DialogContent>
+            </Dialog>
+
             <Dialog open={showCustomQuoteModal} onOpenChange={setShowCustomQuoteModal}>
               <DialogContent className="max-w-lg">
                 <DialogHeader>
@@ -1529,6 +1541,14 @@ Configuration Date: ${new Date().toLocaleDateString()}
                                   )}
                                 </div>
                               ))}
+                              <div className="flex justify-center mt-4">
+                                <button
+                                  onClick={() => setShowLearnMoreModal(true)}
+                                  className="px-6 py-2 text-sm font-medium text-blue-600 border border-blue-600 rounded-md hover:bg-blue-50 transition-colors duration-200"
+                                >
+                                  Learn More
+                                </button>
+                              </div>
                             </div>
                           ) : category.toLowerCase() === 'color' ? (
                             <>
