@@ -1524,7 +1524,7 @@ Configuration Date: ${new Date().toLocaleDateString()}
                                   </div>
                                   {option.isPerFt && selectedLengthFt > 0 && selectedOptions[category]?.includes(option.id) && (
                                     <div className="ml-6 text-xs text-blue-600 font-medium">
-                                      {`+$${(option.price * selectedLengthFt * (option.isMultiSelect ? (selectedOptions[`${category}_${option.id}_qty`] || 1) : 1)).toLocaleString()} for ${selectedLengthFt}ft`}
+                                      {`$${(option.price * selectedLengthFt * (option.isMultiSelect ? (selectedOptions[`${category}_${option.id}_qty`] || 1) : 1)).toLocaleString()} for ${selectedLengthFt}ft`}
                                     </div>
                                   )}
                                 </div>
@@ -1665,7 +1665,7 @@ Configuration Date: ${new Date().toLocaleDateString()}
                                 if (selectedOpt?.isPerFt && selectedLengthFt > 0) {
                                   return (
                                     <div className="mt-1 text-xs text-blue-600 font-medium">
-                                      {`+$${(selectedOpt.price * selectedLengthFt).toLocaleString()} for ${selectedLengthFt}ft`}
+                                      {`$${(selectedOpt.price * selectedLengthFt).toLocaleString()} for ${selectedLengthFt}ft`}
                                     </div>
                                   );
                                 }
