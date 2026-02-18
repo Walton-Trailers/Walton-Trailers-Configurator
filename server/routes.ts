@@ -2095,12 +2095,12 @@ export async function registerRoutes(app: Express): Promise<Express> {
         return res.status(404).json({ message: "Category not found" });
       }
       const catName = (catResult.rows[0] as any).Name;
-      const optionsCount = await db.execute(sql`
-        SELECT COUNT(*) as count FROM trailer_options WHERE LOWER(category) = LOWER(${catName})
+      const activeCount = await db.execute(sql`
+        SELECT COUNT(*) as count FROM trailer_options WHERE LOWER(category) = LOWER(${catName}) AND (is_archived IS NULL OR is_archived = false)
       `);
-      const count = parseInt((optionsCount.rows[0] as any).count);
+      const count = parseInt((activeCount.rows[0] as any).count);
       if (count > 0) {
-        return res.status(400).json({ message: `Cannot delete: ${count} option(s) still use this category. Reassign them first.` });
+        return res.status(400).json({ message: `Cannot delete: ${count} active option(s) still use this category. Archive them first.` });
       }
       await db.execute(sql`
         DELETE FROM trailer_option_categories WHERE id = ${parseInt(id)}
