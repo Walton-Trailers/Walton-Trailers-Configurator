@@ -2901,20 +2901,22 @@ export default function FastPricing() {
                               type="checkbox"
                               id="isMultiSelect"
                               checked={newOptionData.isMultiSelect}
-                              onChange={(e) => setNewOptionData({ ...newOptionData, isMultiSelect: e.target.checked })}
+                              onChange={(e) => setNewOptionData({ ...newOptionData, isMultiSelect: e.target.checked, ...(e.target.checked ? { isPerFt: false } : {}) })}
                               className="rounded"
+                              disabled={newOptionData.isPerFt}
                             />
-                            <label htmlFor="isMultiSelect" className="text-sm">Allow multiple selections</label>
+                            <label htmlFor="isMultiSelect" className={`text-sm ${newOptionData.isPerFt ? 'text-gray-400' : ''}`}>Allow multiple selections</label>
                           </div>
                           <div className="flex items-center space-x-2">
                             <input
                               type="checkbox"
                               id="isPerFt"
                               checked={newOptionData.isPerFt}
-                              onChange={(e) => setNewOptionData({ ...newOptionData, isPerFt: e.target.checked })}
+                              onChange={(e) => setNewOptionData({ ...newOptionData, isPerFt: e.target.checked, ...(e.target.checked ? { isMultiSelect: false } : {}) })}
                               className="rounded"
+                              disabled={newOptionData.isMultiSelect}
                             />
-                            <label htmlFor="isPerFt" className="text-sm">Price is per foot</label>
+                            <label htmlFor="isPerFt" className={`text-sm ${newOptionData.isMultiSelect ? 'text-gray-400' : ''}`}>Price is per foot</label>
                           </div>
                         </>
                       )}
@@ -3171,10 +3173,10 @@ export default function FastPricing() {
                             onCheckedChange={(checked: boolean) => {
                               setEditData({
                                 ...editData,
-                                [option.id]: { ...editData[option.id], isMultiSelect: checked }
+                                [option.id]: { ...editData[option.id], isMultiSelect: checked, ...(checked ? { isPerFt: false } : {}) }
                               });
                             }}
-                            disabled={false}
+                            disabled={(editData[option.id]?.isPerFt ?? option.isPerFt) === true}
                           />
                         ) : (
                           <Switch
@@ -3191,10 +3193,10 @@ export default function FastPricing() {
                             onCheckedChange={(checked: boolean) => {
                               setEditData({
                                 ...editData,
-                                [option.id]: { ...editData[option.id], isPerFt: checked }
+                                [option.id]: { ...editData[option.id], isPerFt: checked, ...(checked ? { isMultiSelect: false } : {}) }
                               });
                             }}
-                            disabled={false}
+                            disabled={(editData[option.id]?.isMultiSelect ?? option.isMultiSelect) === true}
                           />
                         ) : (
                           <Switch
