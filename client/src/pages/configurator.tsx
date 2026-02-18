@@ -853,12 +853,6 @@ Configuration Date: ${new Date().toLocaleDateString()}
             </div>
             
             
-            <div className="text-right">
-              <div className="text-xs md:text-sm text-gray-400 font-normal">Est. Price</div>
-              <div className="text-lg md:text-2xl font-semibold text-white transition-all duration-500">
-                ${totalPrice.toLocaleString()}
-              </div>
-            </div>
           </div>
         </div>
       </header>
