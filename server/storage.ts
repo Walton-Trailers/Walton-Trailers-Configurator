@@ -1196,7 +1196,7 @@ export class DatabaseStorage implements IStorage {
   async getAllOptions(): Promise<TrailerOptionResponse[]> {
     try {
       const result = await db.execute(sql`
-        SELECT id, model_id, category, name, price, is_multi_select, is_archived, image_url, applicable_models, hex_color
+        SELECT id, model_id, category, name, price, is_multi_select, is_archived, image_url, applicable_models, hex_color, primer_price
         FROM trailer_options
         ORDER BY category, name
       `);
@@ -1214,6 +1214,7 @@ export class DatabaseStorage implements IStorage {
         imageUrl: option.image_url,
         options: [],
         hexColor: option.hex_color,
+        primerPrice: option.primer_price,
       }));
     } catch (error) {
       console.error('Error fetching all options:', error);
