@@ -89,6 +89,7 @@ export const trailerOptions = pgTable("trailer_options", {
   imageUrl: text("image_url"),
   isDefault: boolean("is_default").default(false),
   isMultiSelect: boolean("is_multi_select").default(false), // whether this option allows quantity selection
+  isPerFt: boolean("is_per_ft").default(false), // whether pricing is per foot
   isArchived: boolean("is_archived").default(false),
   applicableModels: json("applicable_models").$type<string[]>(), // which model series this applies to
   payload: integer("payload"), // payload capacity for length options

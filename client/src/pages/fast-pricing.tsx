@@ -153,6 +153,7 @@ export default function FastPricing() {
     price: "",
     imageUrl: "",
     isMultiSelect: false,
+    isPerFt: false,
     hexColor: "",
     primerPrice: ""
   });
@@ -826,6 +827,7 @@ export default function FastPricing() {
         price: "",
         imageUrl: "",
         isMultiSelect: false,
+        isPerFt: false,
         hexColor: "",
         primerPrice: ""
       });
@@ -904,6 +906,7 @@ export default function FastPricing() {
       category: data.category ?? option.category,
       price: data.price ?? option.price,
       isMultiSelect: data.isMultiSelect ?? option.isMultiSelect,
+      isPerFt: data.isPerFt ?? option.isPerFt,
     };
     
     if (optionCategory === 'color') {
@@ -2903,6 +2906,16 @@ export default function FastPricing() {
                             />
                             <label htmlFor="isMultiSelect" className="text-sm">Allow multiple selections</label>
                           </div>
+                          <div className="flex items-center space-x-2">
+                            <input
+                              type="checkbox"
+                              id="isPerFt"
+                              checked={newOptionData.isPerFt}
+                              onChange={(e) => setNewOptionData({ ...newOptionData, isPerFt: e.target.checked })}
+                              className="rounded"
+                            />
+                            <label htmlFor="isPerFt" className="text-sm">Price is per foot</label>
+                          </div>
                         </>
                       )}
                       </div>
@@ -2925,6 +2938,7 @@ export default function FastPricing() {
                             price: parseFloat(newOptionData.price as string) || 0,
                             imageUrl: newOptionData.imageUrl,
                             isMultiSelect: newOptionData.isMultiSelect,
+                            isPerFt: newOptionData.isPerFt,
                             hexColor: newOptionData.hexColor,
                             primerPrice: parseFloat(newOptionData.primerPrice as string) || 0
                           });
@@ -2951,6 +2965,7 @@ export default function FastPricing() {
                     <TableHead>Category</TableHead>
                     <TableHead>Price</TableHead>
                     <TableHead>Multi-Select</TableHead>
+                    <TableHead>Per Ft</TableHead>
                     <TableHead>Image</TableHead>
                     <TableHead>Actions</TableHead>
                   </TableRow>
@@ -3170,6 +3185,26 @@ export default function FastPricing() {
                         )}
                       </TableCell>
                       <TableCell>
+                        {editingOption?.id === option.id ? (
+                          <Switch
+                            checked={editData[option.id]?.isPerFt ?? option.isPerFt ?? false}
+                            onCheckedChange={(checked: boolean) => {
+                              setEditData({
+                                ...editData,
+                                [option.id]: { ...editData[option.id], isPerFt: checked }
+                              });
+                            }}
+                            disabled={false}
+                          />
+                        ) : (
+                          <Switch
+                            checked={option.isPerFt ?? false}
+                            onCheckedChange={() => {}}
+                            disabled={true}
+                          />
+                        )}
+                      </TableCell>
+                      <TableCell>
                         {(option.category || '').toLowerCase() === 'color' ? (
                           editingOption?.id === option.id ? (
                             <div className="flex items-center gap-2">
@@ -3291,6 +3326,7 @@ export default function FastPricing() {
                           <TableHead>Category</TableHead>
                           <TableHead>Price</TableHead>
                           <TableHead>Multi-Select</TableHead>
+                          <TableHead>Per Ft</TableHead>
                           <TableHead>Image</TableHead>
                           <TableHead>Actions</TableHead>
                         </TableRow>
@@ -3327,6 +3363,13 @@ export default function FastPricing() {
                             <TableCell>
                               <Switch
                                 checked={option.isMultiSelect ?? false}
+                                onCheckedChange={() => {}}
+                                disabled={true}
+                              />
+                            </TableCell>
+                            <TableCell>
+                              <Switch
+                                checked={option.isPerFt ?? false}
                                 onCheckedChange={() => {}}
                                 disabled={true}
                               />

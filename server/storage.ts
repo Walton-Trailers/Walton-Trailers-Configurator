@@ -62,6 +62,7 @@ export interface TrailerOptionResponse {
   price: number;
   isRequired?: boolean;
   isMultiSelect: boolean;
+  isPerFt?: boolean;
   isDefault?: boolean; // Whether this is the default option in its category
   isArchived?: boolean;
   imageUrl?: string;
@@ -660,7 +661,7 @@ export class DatabaseStorage implements IStorage {
     try {
       // Get non-length options from trailer_options table
       const optionsResult = await db.execute(sql`
-        SELECT id, name, price, category, model_id, applicable_models, image_url, is_archived, hex_color, primer_price, is_multi_select, is_default
+        SELECT id, name, price, category, model_id, applicable_models, image_url, is_archived, hex_color, primer_price, is_multi_select, is_per_ft, is_default
         FROM trailer_options
         WHERE (is_archived IS NULL OR is_archived = false)
           AND (applicable_models IS NULL OR applicable_models @> ${JSON.stringify([modelId])})
@@ -680,6 +681,7 @@ export class DatabaseStorage implements IStorage {
         hexColor: option.hex_color,
         primerPrice: option.primer_price,
         isMultiSelect: option.is_multi_select || false,
+        isPerFt: option.is_per_ft || false,
         isDefault: option.is_default || false,
       }));
 
@@ -926,7 +928,7 @@ export class DatabaseStorage implements IStorage {
   async getTrailerOptions(modelId: string): Promise<TrailerOptionResponse[]> {
     try {
       const result = await db.execute(sql`
-        SELECT id, model_id, category, name, price, is_multi_select
+        SELECT id, model_id, category, name, price, is_multi_select, is_per_ft
         FROM trailer_options
         WHERE model_id = ${modelId}
         ORDER BY category, name
@@ -938,7 +940,8 @@ export class DatabaseStorage implements IStorage {
         category: option.category,
         name: option.name,
         price: option.price,
-        isMultiSelect: option.is_multi_select || false
+        isMultiSelect: option.is_multi_select || false,
+        isPerFt: option.is_per_ft || false,
       }));
     } catch (error) {
       console.error('Error fetching options:', error);
@@ -1196,7 +1199,7 @@ export class DatabaseStorage implements IStorage {
   async getAllOptions(): Promise<TrailerOptionResponse[]> {
     try {
       const result = await db.execute(sql`
-        SELECT id, model_id, category, name, price, is_multi_select, is_archived, image_url, applicable_models, hex_color, primer_price
+        SELECT id, model_id, category, name, price, is_multi_select, is_per_ft, is_archived, image_url, applicable_models, hex_color, primer_price
         FROM trailer_options
         ORDER BY category, name
       `);
@@ -1210,6 +1213,7 @@ export class DatabaseStorage implements IStorage {
         price: option.price,
         isRequired: false,
         isMultiSelect: option.is_multi_select || false,
+        isPerFt: option.is_per_ft || false,
         isArchived: option.is_archived || false,
         imageUrl: option.image_url,
         options: [],
@@ -1501,11 +1505,18 @@ export class DatabaseStorage implements IStorage {
             WHERE id = ${id}
           `);
         }
+        if (updates.isPerFt !== undefined) {
+          await db.execute(sql`
+            UPDATE trailer_options 
+            SET is_per_ft = ${updates.isPerFt}
+            WHERE id = ${id}
+          `);
+        }
       }
       
       // Get the updated record
       result = await db.execute(sql`
-        SELECT id, model_id, category, name, price, is_multi_select, is_archived, image_url, applicable_models, hex_color, primer_price
+        SELECT id, model_id, category, name, price, is_multi_select, is_per_ft, is_archived, image_url, applicable_models, hex_color, primer_price
         FROM trailer_options WHERE id = ${id}
       `);
       
@@ -1518,6 +1529,7 @@ export class DatabaseStorage implements IStorage {
         category: updatedOption.category,
         price: updatedOption.price,
         isMultiSelect: updatedOption.is_multi_select || false,
+        isPerFt: updatedOption.is_per_ft || false,
         isArchived: updatedOption.is_archived || false,
         imageUrl: updatedOption.image_url,
         hexColor: updatedOption.hex_color,
@@ -1529,16 +1541,16 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
-  async createOption(data: { name: string; price: number; category: string; modelId?: string; applicableModels?: string[]; hexColor?: string; primerPrice?: number }): Promise<TrailerOptionResponse> {
+  async createOption(data: { name: string; price: number; category: string; modelId?: string; applicableModels?: string[]; hexColor?: string; primerPrice?: number; isPerFt?: boolean }): Promise<TrailerOptionResponse> {
     try {
       // Support both legacy modelId and new applicableModels
       const applicableModels = data.applicableModels || (data.modelId ? [data.modelId] : []);
       const modelId = data.modelId || applicableModels[0] || "";
       
       const result = await db.execute(sql`
-        INSERT INTO trailer_options (model_id, name, category, price, is_multi_select, applicable_models, hex_color, primer_price)
-        VALUES (${modelId}, ${data.name}, ${data.category}, ${data.price}, false, ${JSON.stringify(applicableModels)}, ${data.hexColor || null}, ${data.primerPrice || null})
-        RETURNING id, model_id, name, category, price, is_multi_select, applicable_models, hex_color, primer_price
+        INSERT INTO trailer_options (model_id, name, category, price, is_multi_select, is_per_ft, applicable_models, hex_color, primer_price)
+        VALUES (${modelId}, ${data.name}, ${data.category}, ${data.price}, false, ${data.isPerFt || false}, ${JSON.stringify(applicableModels)}, ${data.hexColor || null}, ${data.primerPrice || null})
+        RETURNING id, model_id, name, category, price, is_multi_select, is_per_ft, applicable_models, hex_color, primer_price
       `);
       
       const newOption = result.rows[0] as any;
@@ -1551,6 +1563,7 @@ export class DatabaseStorage implements IStorage {
         price: newOption.price,
         isRequired: false,
         isMultiSelect: newOption.is_multi_select || false,
+        isPerFt: newOption.is_per_ft || false,
         options: [],
         hexColor: newOption.hex_color,
         primerPrice: newOption.primer_price,

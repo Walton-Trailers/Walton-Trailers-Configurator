@@ -122,6 +122,7 @@ interface TrailerOption {
   payload?: number; // Optional payload for certain options
   hexColor?: string; // Hex color value for color options (renamed from hex_color by API)
   primerPrice?: number; // Primer price for color options
+  isPerFt?: boolean; // Whether the price is per foot
 }
 
 // Option Info Modal Component
@@ -385,31 +386,53 @@ export default function Configurator() {
 
     let price = selectedModel.basePrice || 0;
     
+    const getSelectedLength = (): number => {
+      if (!options) return 0;
+      const lengthOptions = options.filter(opt => opt.category === 'length');
+      const selectedLengthId = selectedOptions['length'];
+      const lengthOption = selectedLengthId
+        ? lengthOptions.find(opt => opt.id === selectedLengthId)
+        : lengthOptions.find(opt => opt.isDefault) || lengthOptions[0];
+      if (lengthOption) {
+        const match = lengthOption.name.match(/(\d+)/);
+        if (match) return parseInt(match[1], 10);
+      }
+      return 0;
+    };
+    const selectedLength = getSelectedLength();
+    
     if (options && Object.keys(selectedOptions).length > 0) {
       Object.entries(selectedOptions).forEach(([category, selected]) => {
-        // Handle custom pull options
         if (category === 'pullOption' && selected === 'Gooseneck') {
           price = (price || 0) + 2500;
         } else {
-          // Handle database options
           const categoryOptions = options.filter(opt => opt.category === category);
           
           if (Array.isArray(selected)) {
             selected.forEach((optionId: number) => {
               const option = categoryOptions.find(opt => opt.id === optionId);
               if (option) {
-                // Check if this is a multi-select option and multiply by quantity
+                let optionPrice = option.price || 0;
+                if (option.isPerFt && selectedLength > 0) {
+                  optionPrice = optionPrice * selectedLength;
+                }
                 if (option.isMultiSelect) {
                   const quantity = selectedOptions[`${category}_${optionId}_qty`] || 1;
-                  price = (price || 0) + (option.price || 0) * quantity;
+                  price = (price || 0) + optionPrice * quantity;
                 } else {
-                  price = (price || 0) + (option.price || 0);
+                  price = (price || 0) + optionPrice;
                 }
               }
             });
           } else if (selected !== undefined) {
             const option = categoryOptions.find(opt => opt.id === selected);
-            if (option) price = (price || 0) + (option.price || 0);
+            if (option) {
+              let optionPrice = option.price || 0;
+              if (option.isPerFt && selectedLength > 0) {
+                optionPrice = optionPrice * selectedLength;
+              }
+              price = (price || 0) + optionPrice;
+            }
           }
         }
       });
@@ -1371,8 +1394,8 @@ Configuration Date: ${new Date().toLocaleDateString()}
                                 const pulltype = pulltypeOptions[option.name] || '';
                                 
                                 const formattedPrice = option.price === 0 ? 'Included' : 
-                                                      option.price > 0 ? `$${option.price.toLocaleString()}` : 
-                                                      `$${option.price.toLocaleString()}`;
+                                                      option.price > 0 ? `$${option.price.toLocaleString()}${option.isPerFt ? '/ft' : ''}` : 
+                                                      `$${option.price.toLocaleString()}${option.isPerFt ? '/ft' : ''}`;
                                 
                                 return (
                                   <SelectItem 
@@ -1471,9 +1494,9 @@ Configuration Date: ${new Date().toLocaleDateString()}
                                   <span className="text-sm text-gray-600">
                                     {option.price === 0 ? 'Included' : 
                                      option.isMultiSelect && (selectedOptions[category]?.includes(option.id)) ? 
-                                       `$${(option.price * (selectedOptions[`${category}_${option.id}_qty`] || 1)).toLocaleString()}` :
-                                     option.price > 0 ? `$${option.price.toLocaleString()}` : 
-                                     `$${option.price.toLocaleString()}`}
+                                       `$${(option.price * (selectedOptions[`${category}_${option.id}_qty`] || 1)).toLocaleString()}${option.isPerFt ? '/ft' : ''}` :
+                                     option.price > 0 ? `$${option.price.toLocaleString()}${option.isPerFt ? '/ft' : ''}` : 
+                                     `$${option.price.toLocaleString()}${option.isPerFt ? '/ft' : ''}`}
                                   </span>
                                 </div>
                               ))}
@@ -1500,8 +1523,8 @@ Configuration Date: ${new Date().toLocaleDateString()}
                                           boxShadow: colorHex === '#ffffff' ? 'inset 0 0 0 1px #e5e7eb' : undefined
                                         }}
                                         title={`${option.name} - ${option.price === 0 ? 'Included' : 
-                                          option.price > 0 ? `$${option.price.toLocaleString()}` : 
-                                          `$${option.price.toLocaleString()}`}`}
+                                          option.price > 0 ? `$${option.price.toLocaleString()}${option.isPerFt ? '/ft' : ''}` : 
+                                          `$${option.price.toLocaleString()}${option.isPerFt ? '/ft' : ''}`}`}
                                       >
                                         {isSelected && (
                                           <div className="w-full h-full rounded-full flex items-center justify-center">
@@ -1519,8 +1542,8 @@ Configuration Date: ${new Date().toLocaleDateString()}
                                         <div className="text-xs font-medium">{option.name}</div>
                                         <div className="text-xs text-gray-500">
                                           {option.price === 0 ? 'Included' : 
-                                           option.price > 0 ? `$${option.price.toLocaleString()}` : 
-                                           `$${option.price.toLocaleString()}`}
+                                           option.price > 0 ? `$${option.price.toLocaleString()}${option.isPerFt ? '/ft' : ''}` : 
+                                           `$${option.price.toLocaleString()}${option.isPerFt ? '/ft' : ''}`}
                                         </div>
                                       </div>
                                     </div>
@@ -1590,8 +1613,8 @@ Configuration Date: ${new Date().toLocaleDateString()}
                                 <SelectContent>
                                   {categoryOptions.map((option) => {
                                     const formattedPrice = option.price === 0 ? 'Included' : 
-                                                          option.price > 0 ? `$${option.price.toLocaleString()}` : 
-                                                          `$${option.price.toLocaleString()}`;
+                                                          option.price > 0 ? `$${option.price.toLocaleString()}${option.isPerFt ? '/ft' : ''}` : 
+                                                          `$${option.price.toLocaleString()}${option.isPerFt ? '/ft' : ''}`;
                                     return (
                                       <SelectItem 
                                         key={option.id} 
@@ -1717,8 +1740,8 @@ Configuration Date: ${new Date().toLocaleDateString()}
                                   <span className="text-zinc-700">{option.name}</span>
                                   <span className="font-medium text-zinc-600">
                                     {option.price === 0 ? 'Included' : 
-                                     option.price > 0 ? `$${option.price.toLocaleString()}` : 
-                                     `$${option.price.toLocaleString()}`}
+                                     option.price > 0 ? `$${option.price.toLocaleString()}${option.isPerFt ? '/ft' : ''}` : 
+                                     `$${option.price.toLocaleString()}${option.isPerFt ? '/ft' : ''}`}
                                   </span>
                                 </div>
                               ));
@@ -1736,8 +1759,8 @@ Configuration Date: ${new Date().toLocaleDateString()}
                                 <span className="text-zinc-700">{selectedOption.name}</span>
                                 <span className="font-medium text-zinc-600">
                                   {selectedOption.price === 0 ? 'Included' : 
-                                   selectedOption.price > 0 ? `$${selectedOption.price.toLocaleString()}` : 
-                                   `$${selectedOption.price.toLocaleString()}`}
+                                   selectedOption.price > 0 ? `$${selectedOption.price.toLocaleString()}${selectedOption.isPerFt ? '/ft' : ''}` : 
+                                   `$${selectedOption.price.toLocaleString()}${selectedOption.isPerFt ? '/ft' : ''}`}
                                 </span>
                               </div>
                             );
@@ -2035,8 +2058,8 @@ Configuration Date: ${new Date().toLocaleDateString()}
                           <span>{option.name}</span>
                           <span className="font-medium">
                             {option.price === 0 ? 'Included' : 
-                             option.price > 0 ? `$${option.price.toLocaleString()}` : 
-                             `$${option.price.toLocaleString()}`}
+                             option.price > 0 ? `$${option.price.toLocaleString()}${option.isPerFt ? '/ft' : ''}` : 
+                             `$${option.price.toLocaleString()}${option.isPerFt ? '/ft' : ''}`}
                           </span>
                         </div>
                       ));
@@ -2085,8 +2108,8 @@ Configuration Date: ${new Date().toLocaleDateString()}
                       <div key={option.id} className="flex justify-between items-center mb-2">
                         <span className="text-sm text-zinc-600">{option.name}</span>
                         <span className="text-sm">
-                          {option.price > 0 ? `$${option.price.toLocaleString()}` : 
-                           `$${option.price.toLocaleString()}`}
+                          {option.price > 0 ? `$${option.price.toLocaleString()}${option.isPerFt ? '/ft' : ''}` : 
+                           `$${option.price.toLocaleString()}${option.isPerFt ? '/ft' : ''}`}
                         </span>
                       </div>
                     )

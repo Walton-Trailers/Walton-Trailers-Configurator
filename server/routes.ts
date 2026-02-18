@@ -2203,7 +2203,7 @@ export async function registerRoutes(app: Express): Promise<Express> {
 
   app.post("/api/options", requireAuth, async (req, res) => {
     try {
-      const { name, price, category, modelId, applicableModels, hexColor, primerPrice } = req.body;
+      const { name, price, category, modelId, applicableModels, hexColor, primerPrice, isPerFt } = req.body;
       
       console.log("Creating new option:", req.body);
       
@@ -2211,10 +2211,11 @@ export async function registerRoutes(app: Express): Promise<Express> {
         name,
         price,
         category,
-        modelId, // Backward compatibility
-        applicableModels, // New multiple models support
-        hexColor, // Hex color for color options
-        primerPrice, // Primer price for color options
+        modelId,
+        applicableModels,
+        hexColor,
+        primerPrice,
+        isPerFt,
       });
       
       console.log("Created option:", newOption);
@@ -2228,7 +2229,7 @@ export async function registerRoutes(app: Express): Promise<Express> {
   app.patch("/api/options/:id", requireAuth, async (req, res) => {
     try {
       const optionId = parseInt(req.params.id);
-      const { price, name, category, modelId, applicableModels, isArchived, isMultiSelect, hexColor, primerPrice } = req.body;
+      const { price, name, category, modelId, applicableModels, isArchived, isMultiSelect, isPerFt, hexColor, primerPrice } = req.body;
       
       const updatedOption = await storage.updateOption(optionId, {
         price,
@@ -2238,6 +2239,7 @@ export async function registerRoutes(app: Express): Promise<Express> {
         applicableModels,
         isArchived,
         isMultiSelect,
+        isPerFt,
         hexColor,
         primerPrice,
       });
