@@ -2988,8 +2988,8 @@ export default function FastPricing() {
                         ) : (
                           <div>
                             <div>${option.price?.toLocaleString()}</div>
-                            {(option.category || '').toLowerCase() === 'color' && option.primerPrice != null && (
-                              <div className="text-xs text-gray-500 mt-1">Primer: ${option.primerPrice?.toLocaleString()}</div>
+                            {(option.category || '').toLowerCase() === 'color' && (
+                              <div className="text-xs text-gray-500 mt-1">Primer: ${(option.primerPrice || 0).toLocaleString()}</div>
                             )}
                           </div>
                         )}
