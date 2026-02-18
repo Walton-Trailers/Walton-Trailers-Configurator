@@ -20,6 +20,7 @@ import { apiRequest, queryClient } from "@/lib/queryClient";
 import { getOptionInfo } from "@/lib/trailer-option-info";
 import waltonLogo from "@/assets/walton-logo-white.png";
 import { DealerSaveDialog } from "@/components/dealer-save-dialog";
+import { TrailerModelViewer } from "@/components/TrailerModelViewer";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -110,6 +111,7 @@ interface TrailerModel {
   overallWidth?: string | null;
   lengthRange?: string | null;
   standardFeatures?: string[];
+  model3dUrl?: string | null;
 }
 
 interface TrailerOption {
@@ -805,6 +807,8 @@ Configuration Date: ${new Date().toLocaleDateString()}
     selectedCategory?.imageUrl || 
     "https://images.unsplash.com/photo-1581094794329-c8112a89af12?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&h=600";
 
+  const current3dModelUrl = selectedModel?.model3dUrl || hoveredModel?.model3dUrl || null;
+
   return (
     <div className="min-h-screen bg-white text-gray-900 font-medium">
       {/* Tesla-style Header */}
@@ -1276,20 +1280,38 @@ Configuration Date: ${new Date().toLocaleDateString()}
         {currentStep === 3 && selectedCategory && selectedSeries && (
           <div className="flex flex-col lg:flex-row min-h-screen">
             {/* Mobile/Tablet Image - Sticky Top */}
-            <div className="lg:hidden sticky top-16 md:top-20 z-10 bg-gray-100 h-48 md:h-64">
-              <div className="relative w-full h-full p-4 flex items-center justify-center">
-                <div className="text-4xl font-bold text-gray-600 tracking-wider">
-                  MODEL TEST
-                </div>
+            <div className="lg:hidden sticky top-16 md:top-20 z-10 bg-gray-50 h-48 md:h-64">
+              <div className="relative w-full h-full p-4">
+                {current3dModelUrl ? (
+                  <TrailerModelViewer
+                    model3dUrl={current3dModelUrl}
+                    fallbackImageUrl={currentTrailerImage}
+                  />
+                ) : (
+                  <img
+                    src={currentTrailerImage}
+                    alt="Trailer"
+                    className="w-full h-full object-contain drop-shadow-lg"
+                  />
+                )}
               </div>
             </div>
 
             {/* Desktop Image Panel - Fixed */}
-            <div className="hidden lg:block lg:fixed left-0 top-20 w-[65%] h-[calc(100vh-5rem)] flex items-center justify-center overflow-hidden z-10 bg-gray-100">
-              <div className="relative w-full h-full max-w-5xl max-h-[80vh] mx-auto my-auto p-8 flex items-center justify-center">
-                <div className="text-6xl font-bold text-gray-600 tracking-wider">
-                  MODEL TEST
-                </div>
+            <div className="hidden lg:block lg:fixed left-0 top-20 w-[65%] h-[calc(100vh-5rem)] overflow-hidden z-10 bg-gray-50">
+              <div className="relative w-full h-full max-w-5xl max-h-[80vh] mx-auto my-auto p-8">
+                {current3dModelUrl ? (
+                  <TrailerModelViewer
+                    model3dUrl={current3dModelUrl}
+                    fallbackImageUrl={currentTrailerImage}
+                  />
+                ) : (
+                  <img
+                    src={currentTrailerImage}
+                    alt="Trailer"
+                    className="w-full h-full object-contain transition-all duration-500 ease-out drop-shadow-xl"
+                  />
+                )}
               </div>
             </div>
 
@@ -1705,22 +1727,36 @@ Configuration Date: ${new Date().toLocaleDateString()}
             {/* Mobile/Tablet Image - Sticky Top */}
             <div className="lg:hidden sticky top-16 md:top-20 z-10 bg-gray-50 h-48 md:h-64">
               <div className="relative w-full h-full p-4">
-                <img 
-                  src={currentTrailerImage}
-                  alt="Trailer"
-                  className="w-full h-full object-contain drop-shadow-lg"
-                />
+                {current3dModelUrl ? (
+                  <TrailerModelViewer
+                    model3dUrl={current3dModelUrl}
+                    fallbackImageUrl={currentTrailerImage}
+                  />
+                ) : (
+                  <img 
+                    src={currentTrailerImage}
+                    alt="Trailer"
+                    className="w-full h-full object-contain drop-shadow-lg"
+                  />
+                )}
               </div>
             </div>
 
             {/* Desktop Image Panel - Fixed */}
-            <div className="hidden lg:block lg:fixed left-0 top-20 w-[65%] h-[calc(100vh-5rem)] flex items-center justify-center overflow-hidden z-10 bg-gray-50">
+            <div className="hidden lg:block lg:fixed left-0 top-20 w-[65%] h-[calc(100vh-5rem)] overflow-hidden z-10 bg-gray-50">
               <div className="relative w-full h-full max-w-5xl max-h-[80vh] mx-auto my-auto p-8">
-                <img 
-                  src={currentTrailerImage}
-                  alt="Trailer"
-                  className="w-full h-full object-contain transition-all duration-500 ease-out drop-shadow-xl"
-                />
+                {current3dModelUrl ? (
+                  <TrailerModelViewer
+                    model3dUrl={current3dModelUrl}
+                    fallbackImageUrl={currentTrailerImage}
+                  />
+                ) : (
+                  <img 
+                    src={currentTrailerImage}
+                    alt="Trailer"
+                    className="w-full h-full object-contain transition-all duration-500 ease-out drop-shadow-xl"
+                  />
+                )}
               </div>
             </div>
 

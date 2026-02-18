@@ -39,6 +39,7 @@ export const trailerModels = pgTable("trailer_models", {
   lengthGvwr: json("length_gvwr").$type<Record<string, string>>(), // GVWR values for each length
   lengthOrder: json("length_order").$type<Record<string, number>>(), // Display order for each length option
   pulltypeOptions: json("pulltype_options").$type<Record<string, string>>(), // Pull type options as JSON
+  model3dUrl: text("model_3d_url"),
   isArchived: boolean("is_archived").default(false),
 });
 

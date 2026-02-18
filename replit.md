@@ -29,6 +29,17 @@ This is a Tesla-style trailer configurator application for Walton Trailers, desi
 - Included helpful links to Airtable Developer Hub for token generation
 - Prepared foundation for data sync operations between Airtable and database
 
+### 3D Model Viewer Integration (February 18, 2026)
+- Added interactive 3D model viewer using Three.js (@react-three/fiber + @react-three/drei)
+- Users can rotate, zoom, and pan 3D trailer models in the configurator left panel
+- Created TrailerModelViewer component with orbit controls, environment lighting, and contact shadows
+- Added `model3dUrl` column to database for storing 3D model file paths (.glb/.gltf)
+- Added PATCH `/api/models/:id/model3d` endpoint for updating 3D model URLs
+- Extended ObjectUploader to support custom file types (allowedFileTypes prop) and custom notes (noteOverride prop)
+- Added 3D model upload column in fast-pricing admin page with green "3D" indicator badge
+- Falls back to trailer image display when no 3D model is uploaded
+- 3D viewer shows interaction hints on hover (drag to rotate, scroll to zoom, reset button)
+
 ### Category Image Upload Fix (August 22, 2025)
 - Fixed critical image upload issue where images weren't being saved correctly
 - Created dedicated `/api/categories/:id/image` endpoint for proper image handling

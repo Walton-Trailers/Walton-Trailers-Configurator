@@ -30,6 +30,8 @@ interface ObjectUploaderProps {
   children: ReactNode;
   currentImageUrl?: string;
   modelName?: string;
+  allowedFileTypes?: string[];
+  noteOverride?: string;
 }
 
 /**
@@ -69,6 +71,8 @@ export function ObjectUploader({
   children,
   currentImageUrl,
   modelName,
+  allowedFileTypes,
+  noteOverride,
 }: ObjectUploaderProps) {
   const [showPreviewModal, setShowPreviewModal] = useState(false);
   const [showUploadModal, setShowUploadModal] = useState(false);
@@ -77,7 +81,7 @@ export function ObjectUploader({
       restrictions: {
         maxNumberOfFiles,
         maxFileSize,
-        allowedFileTypes: ['image/*'], // Only allow images for model photos
+        allowedFileTypes: allowedFileTypes || ['image/*'],
       },
       autoProceed: false,
     })
@@ -92,9 +96,9 @@ export function ObjectUploader({
       })
   );
 
-  const noteMessage = currentImageUrl 
+  const noteMessage = noteOverride || (currentImageUrl 
     ? `⚠️ Replacing existing image for ${modelName || 'this model'}. Recommended dimensions: 1600x1200px or 4:3 aspect ratio (max 10MB)`
-    : `Upload an image for ${modelName || 'this model'}. Recommended dimensions: 1600x1200px or 4:3 aspect ratio (max 10MB)`;
+    : `Upload an image for ${modelName || 'this model'}. Recommended dimensions: 1600x1200px or 4:3 aspect ratio (max 10MB)`);
 
   const handleButtonClick = () => {
     if (currentImageUrl) {

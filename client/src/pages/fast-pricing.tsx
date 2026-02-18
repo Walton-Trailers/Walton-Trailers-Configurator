@@ -977,6 +977,39 @@ export default function FastPricing() {
     }
   };
 
+  const handle3DModelUploadComplete = async (modelId: number, result: any) => {
+    try {
+      const uploadedFile = result.successful?.[0];
+      if (!uploadedFile) {
+        throw new Error("No file uploaded");
+      }
+
+      const model3dUrl = uploadedFile.uploadURL;
+      
+      await apiRequest(`/api/models/${modelId}/model3d`, {
+        method: "PATCH",
+        body: { model3dUrl },
+        headers: {
+          Authorization: `Bearer ${sessionId}`,
+        },
+      });
+
+      queryClient.invalidateQueries({ queryKey: ['admin', 'models'] });
+      
+      toast({
+        title: "Success",
+        description: "3D model uploaded successfully",
+      });
+    } catch (error) {
+      console.error("Error uploading 3D model:", error);
+      toast({
+        title: "Error",
+        description: "Failed to upload 3D model",
+        variant: "destructive",
+      });
+    }
+  };
+
   // Option image upload handlers
   const handleGetCategoryUploadParameters = async () => {
     const response = await apiRequest("/api/categories/upload-url", {
@@ -2169,6 +2202,7 @@ export default function FastPricing() {
                   <TableHead>Other Options</TableHead>
                   <TableHead>Price</TableHead>
                   <TableHead>Image</TableHead>
+                  <TableHead>3D Model</TableHead>
                   <TableHead>Actions</TableHead>
                 </TableRow>
               </TableHeader>
@@ -2465,6 +2499,26 @@ export default function FastPricing() {
                         ) : (
                           <div className="w-12 h-12 rounded-md border-2 border-dashed border-gray-300 hover:border-gray-400 transition-colors cursor-pointer flex items-center justify-center bg-gray-50">
                             <Upload className="w-5 h-5 text-gray-400" />
+                          </div>
+                        )}
+                      </ObjectUploader>
+                    </TableCell>
+                    <TableCell>
+                      <ObjectUploader
+                        onGetUploadParameters={handleGetUploadParameters}
+                        onComplete={(result) => handle3DModelUploadComplete(model.id, result)}
+                        buttonClassName="p-0"
+                        allowedFileTypes={['.glb', '.gltf']}
+                        maxFileSize={52428800}
+                        noteOverride="Upload a 3D model file (.glb or .gltf format, max 50MB)"
+                      >
+                        {model.model3dUrl ? (
+                          <div className="w-12 h-12 rounded-md overflow-hidden border border-green-300 hover:border-green-500 transition-colors cursor-pointer flex items-center justify-center bg-green-50">
+                            <span className="text-xs font-bold text-green-700">3D</span>
+                          </div>
+                        ) : (
+                          <div className="w-12 h-12 rounded-md border-2 border-dashed border-gray-300 hover:border-gray-400 transition-colors cursor-pointer flex items-center justify-center bg-gray-50">
+                            <span className="text-xs text-gray-400">3D</span>
                           </div>
                         )}
                       </ObjectUploader>

@@ -2503,6 +2503,45 @@ export async function registerRoutes(app: Express): Promise<Express> {
     }
   });
 
+  app.patch("/api/models/:id/model3d", requireAuth, async (req, res) => {
+    try {
+      const modelId = parseInt(req.params.id);
+      const { model3dUrl } = req.body;
+
+      console.log(`Updating 3D model for model ${modelId}, new URL: ${model3dUrl}`);
+
+      if (!model3dUrl) {
+        return res.status(400).json({ error: "model3dUrl is required" });
+      }
+
+      const objectStorageService = new ObjectStorageService();
+      const objectPath = await objectStorageService.trySetObjectEntityAclPolicy(
+        model3dUrl,
+        {
+          owner: "admin",
+          visibility: "public",
+        }
+      );
+
+      console.log(`3D model object path after ACL policy: ${objectPath}`);
+
+      const updatedModel = await storage.updateModel(modelId, {
+        model3dUrl: objectPath,
+      });
+
+      console.log(`Updated model with 3D URL:`, updatedModel);
+
+      res.json({
+        success: true,
+        model3dUrl: objectPath,
+        model: updatedModel,
+      });
+    } catch (error) {
+      console.error("Error updating 3D model:", error);
+      res.status(500).json({ error: "Failed to update 3D model" });
+    }
+  });
+
   // Option image upload routes
   app.post("/api/options/upload-url", requireAuth, async (req, res) => {
     try {
