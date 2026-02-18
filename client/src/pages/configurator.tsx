@@ -891,11 +891,28 @@ Configuration Date: ${new Date().toLocaleDateString()}
               </p>
             </div>
 
-            <div className="flex flex-wrap justify-center gap-4 max-w-5xl mx-auto">
-              {categories?.map((category, index) => (
+            <div className="max-w-5xl mx-auto">
+              {(() => {
+                if (!categories) return null;
+                const rows: any[][] = [];
+                for (let i = 0; i < categories.length; i += 4) {
+                  rows.push(categories.slice(i, i + 4));
+                }
+                return rows.map((row, rowIndex) => {
+                  const isLastRow = rowIndex === rows.length - 1;
+                  const isPartialRow = isLastRow && row.length < 4;
+                  return (
+                  <div key={rowIndex} className={`${rowIndex > 0 ? 'mt-4' : ''} ${
+                    isPartialRow 
+                      ? 'flex flex-wrap justify-center items-stretch gap-4' 
+                      : 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4'
+                  }`}>
+                    {row.map((category: any, colIndex: number) => {
+                      const index = rowIndex * 4 + colIndex;
+                      return (
                 <div
                   key={category.id}
-                  className="animate-in slide-in-from-bottom duration-700 h-full w-full md:w-[calc(50%-0.5rem)] lg:w-[calc(25%-0.75rem)]"
+                  className={`animate-in slide-in-from-bottom duration-700 ${isPartialRow ? 'w-full md:w-[calc(50%-0.5rem)] lg:w-[calc(25%-0.75rem)]' : ''}`}
                   style={{ animationDelay: `${index * 150}ms` }}
                 >
                   <button
@@ -935,7 +952,12 @@ Configuration Date: ${new Date().toLocaleDateString()}
                     </div>
                   </button>
                 </div>
-              ))}
+                      );
+                    })}
+                  </div>
+                  );
+                });
+              })()}
             </div>
 
             {/* Subtle CTA for custom quotes */}
