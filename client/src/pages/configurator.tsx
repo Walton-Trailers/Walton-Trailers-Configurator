@@ -1823,7 +1823,7 @@ Configuration Date: ${new Date().toLocaleDateString()}
                 <Button 
                   variant="outline"
                   onClick={() => {
-                    window.location.href = "https://waltontrailers.com/locate-a-dealer/";
+                    window.open("https://waltontrailers.com/locate-a-dealer/", "_blank");
                   }}
                   className="py-4 md:py-6 text-sm md:text-base min-h-[48px]"
                 >
