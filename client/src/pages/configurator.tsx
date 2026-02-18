@@ -891,11 +891,11 @@ Configuration Date: ${new Date().toLocaleDateString()}
               </p>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="flex flex-wrap justify-center gap-4 max-w-5xl mx-auto">
               {categories?.map((category, index) => (
                 <div
                   key={category.id}
-                  className="animate-in slide-in-from-bottom duration-700 h-full"
+                  className="animate-in slide-in-from-bottom duration-700 h-full w-full md:w-[calc(50%-0.5rem)] lg:w-[calc(25%-0.75rem)]"
                   style={{ animationDelay: `${index * 150}ms` }}
                 >
                   <button
