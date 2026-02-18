@@ -12,6 +12,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, Dialog
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { ArrowLeft, ArrowRight, Download, Mail, MapPin, RotateCcw, Info, X, Users, Phone, Building, Building2, Save, ChevronDown, ChevronLeft, ChevronRight, Package } from "lucide-react";
+import waltonDefaultImg from "@assets/walton_1771452814610.png";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Link } from "wouter";
 import { useToast } from "@/hooks/use-toast";
@@ -2416,10 +2417,11 @@ Configuration Date: ${new Date().toLocaleDateString()}
                     className="w-full h-full object-cover"
                   />
                 ) : (
-                  <div className="w-full h-full flex flex-col items-center justify-center text-gray-400">
-                    <Package className="w-16 h-16 mb-2" />
-                    <span className="text-sm">No image available</span>
-                  </div>
+                  <img
+                    src={waltonDefaultImg}
+                    alt="Walton Trailers"
+                    className="w-full h-full object-cover"
+                  />
                 )}
               </div>
               <div className="px-6 py-4 border-t">
