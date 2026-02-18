@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useEffect } from "react";
-import { ArrowLeft, ArrowUp, ArrowDown, Edit, Save, X, Archive, RotateCcw, Upload, Image, Trash2, Plus } from "lucide-react";
+import { ArrowLeft, ArrowUp, ArrowDown, Edit, Save, X, Archive, RotateCcw, Upload, Image, Trash2, Plus, Pencil } from "lucide-react";
 import { Link } from "wouter";
 import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query";
 import { useFastQuery } from "@/hooks/useFastQuery";
@@ -164,6 +164,9 @@ export default function FastPricing() {
   const [showOptionsPopup, setShowOptionsPopup] = useState<Record<number, boolean>>({});
   const [creatingNewCategory, setCreatingNewCategory] = useState(false);
   const [newCategoryName, setNewCategoryName] = useState("");
+  const [showEditCategories, setShowEditCategories] = useState(false);
+  const [editingCatId, setEditingCatId] = useState<number | null>(null);
+  const [editingCatName, setEditingCatName] = useState("");
 
   // Helper functions for managing length options and their pull types and GVWR
   const addLengthOption = (modelId: number, lengthValue: string) => {
@@ -506,7 +509,6 @@ export default function FastPricing() {
   const activeOptions = options.filter(option => !option.isArchived);
   const archivedOptions = options.filter(option => option.isArchived);
   
-  // Fetch option categories dynamically from database
   const { data: optionCategories = [] } = useQuery({
     queryKey: ['/api/categories', 'options'],
     queryFn: async () => {
@@ -514,6 +516,17 @@ export default function FastPricing() {
         headers: {
           Authorization: `Bearer ${sessionId}`,
         },
+      });
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+      return response.json();
+    },
+  });
+
+  const { data: categoryDetails = [], isLoading: categoryDetailsLoading } = useQuery<any[]>({
+    queryKey: ['/api/categories/options/details'],
+    queryFn: async () => {
+      const response = await fetch('/api/categories/options/details', {
+        headers: { Authorization: `Bearer ${sessionId}` },
       });
       if (!response.ok) throw new Error(`HTTP ${response.status}`);
       return response.json();
@@ -2737,6 +2750,13 @@ export default function FastPricing() {
                             </Select>
                           </div>
                         )}
+                        <button
+                          type="button"
+                          className="text-xs text-blue-600 hover:text-blue-800 underline mt-1"
+                          onClick={() => setShowEditCategories(true)}
+                        >
+                          Edit Categories
+                        </button>
                       </div>
                       <div>
                         <label className="block text-sm font-medium mb-1">Price ($)</label>
@@ -3850,6 +3870,116 @@ export default function FastPricing() {
           </div>
         )}
       </div>
+
+      {showEditCategories && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg shadow-xl w-full max-w-md mx-4">
+            <div className="flex items-center justify-between p-4 border-b">
+              <h3 className="text-lg font-semibold">Edit Categories</h3>
+              <Button variant="ghost" size="sm" onClick={() => { setShowEditCategories(false); setEditingCatId(null); }}>
+                <X className="w-4 h-4" />
+              </Button>
+            </div>
+            <div className="p-4 max-h-96 overflow-y-auto">
+              {categoryDetailsLoading ? (
+                <div className="text-center py-4 text-gray-500">Loading...</div>
+              ) : categoryDetails.length === 0 ? (
+                <div className="text-center py-4 text-gray-500">No categories found</div>
+              ) : (
+                <div className="space-y-2">
+                  {categoryDetails.map((cat: any) => (
+                      <div key={cat.id} className="flex items-center gap-2 p-2 border rounded-md">
+                        {editingCatId === cat.id ? (
+                          <>
+                            <Input
+                              value={editingCatName}
+                              onChange={(e: any) => setEditingCatName(e.target.value)}
+                              className="flex-1 text-sm"
+                              autoFocus
+                            />
+                            <Button
+                              size="sm"
+                              className="px-2"
+                              disabled={!editingCatName.trim() || editingCatName.trim().toLowerCase() === cat.name.toLowerCase()}
+                              onClick={async () => {
+                                try {
+                                  const response = await fetch(`/api/categories/options/${cat.id}`, {
+                                    method: 'PATCH',
+                                    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${sessionId}` },
+                                    body: JSON.stringify({ name: editingCatName }),
+                                  });
+                                  if (!response.ok) {
+                                    const data = await response.json();
+                                    toast({ title: "Error", description: data.message, variant: "destructive" });
+                                    return;
+                                  }
+                                  queryClient.invalidateQueries({ queryKey: ['/api/categories/options/details'] });
+                                  queryClient.invalidateQueries({ queryKey: ['/api/categories', 'options'] });
+                                  queryClient.invalidateQueries({ queryKey: ['/api/options/all'] });
+                                  setEditingCatId(null);
+                                  toast({ title: "Success", description: "Category renamed" });
+                                } catch {
+                                  toast({ title: "Error", description: "Failed to rename category", variant: "destructive" });
+                                }
+                              }}
+                            >
+                              <Save className="w-3 h-3" />
+                            </Button>
+                            <Button size="sm" variant="outline" className="px-2" onClick={() => setEditingCatId(null)}>
+                              <X className="w-3 h-3" />
+                            </Button>
+                          </>
+                        ) : (
+                          <>
+                            <span className="flex-1 text-sm font-medium">{cat.name.charAt(0).toUpperCase() + cat.name.slice(1)}</span>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="px-2"
+                              onClick={() => { setEditingCatId(cat.id); setEditingCatName(cat.name); }}
+                            >
+                              <Pencil className="w-3 h-3" />
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="px-2 text-red-600 hover:text-red-700"
+                              onClick={async () => {
+                                try {
+                                  const response = await fetch(`/api/categories/options/${cat.id}`, {
+                                    method: 'DELETE',
+                                    headers: { Authorization: `Bearer ${sessionId}` },
+                                  });
+                                  if (!response.ok) {
+                                    const data = await response.json();
+                                    toast({ title: "Cannot Delete", description: data.message, variant: "destructive" });
+                                    return;
+                                  }
+                                  queryClient.invalidateQueries({ queryKey: ['/api/categories/options/details'] });
+                                  queryClient.invalidateQueries({ queryKey: ['/api/categories', 'options'] });
+                                  toast({ title: "Success", description: "Category deleted" });
+                                } catch {
+                                  toast({ title: "Error", description: "Failed to delete category", variant: "destructive" });
+                                }
+                              }}
+                            >
+                              <Trash2 className="w-3 h-3" />
+                            </Button>
+                          </>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+              )}
+            </div>
+            <div className="p-4 border-t">
+              <Button variant="outline" className="w-full" onClick={() => { setShowEditCategories(false); setEditingCatId(null); }}>
+                Close
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

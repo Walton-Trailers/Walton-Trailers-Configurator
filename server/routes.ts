@@ -2038,6 +2038,80 @@ export async function registerRoutes(app: Express): Promise<Express> {
     }
   });
 
+  app.get("/api/categories/options/details", requireAuth, async (req, res) => {
+    try {
+      const result = await db.execute(sql`
+        SELECT id, "Name" FROM trailer_option_categories ORDER BY "Name"
+      `);
+      const categories = result.rows.map((row: any) => ({ id: row.id, name: row.Name }));
+      res.json(categories);
+    } catch (error) {
+      console.error("Error fetching option category details:", error);
+      res.status(500).json({ message: "Failed to fetch categories" });
+    }
+  });
+
+  app.patch("/api/categories/options/:id", requireAuth, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { name } = req.body;
+      if (!name || !name.trim()) {
+        return res.status(400).json({ message: "Category name is required" });
+      }
+      const newName = name.trim().toLowerCase();
+      const existing = await db.execute(sql`
+        SELECT id FROM trailer_option_categories WHERE LOWER("Name") = ${newName} AND id != ${parseInt(id)}
+      `);
+      if (existing.rows.length > 0) {
+        return res.status(409).json({ message: "A category with that name already exists" });
+      }
+      const oldResult = await db.execute(sql`
+        SELECT "Name" FROM trailer_option_categories WHERE id = ${parseInt(id)}
+      `);
+      if (oldResult.rows.length === 0) {
+        return res.status(404).json({ message: "Category not found" });
+      }
+      const oldName = (oldResult.rows[0] as any).Name;
+      await db.execute(sql`
+        UPDATE trailer_option_categories SET "Name" = ${newName} WHERE id = ${parseInt(id)}
+      `);
+      await db.execute(sql`
+        UPDATE trailer_options SET category = ${newName} WHERE LOWER(category) = LOWER(${oldName})
+      `);
+      res.json({ success: true, name: newName });
+    } catch (error) {
+      console.error("Error updating option category:", error);
+      res.status(500).json({ message: "Failed to update category" });
+    }
+  });
+
+  app.delete("/api/categories/options/:id", requireAuth, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const catResult = await db.execute(sql`
+        SELECT "Name" FROM trailer_option_categories WHERE id = ${parseInt(id)}
+      `);
+      if (catResult.rows.length === 0) {
+        return res.status(404).json({ message: "Category not found" });
+      }
+      const catName = (catResult.rows[0] as any).Name;
+      const optionsCount = await db.execute(sql`
+        SELECT COUNT(*) as count FROM trailer_options WHERE LOWER(category) = LOWER(${catName})
+      `);
+      const count = parseInt((optionsCount.rows[0] as any).count);
+      if (count > 0) {
+        return res.status(400).json({ message: `Cannot delete: ${count} option(s) still use this category. Reassign them first.` });
+      }
+      await db.execute(sql`
+        DELETE FROM trailer_option_categories WHERE id = ${parseInt(id)}
+      `);
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error deleting option category:", error);
+      res.status(500).json({ message: "Failed to delete category" });
+    }
+  });
+
 
 
   app.get("/api/options/all", async (req, res) => {
