@@ -2823,6 +2823,7 @@ export default function FastPricing() {
                         </>
                       )}
                       </div>
+                      <div className="pb-6"></div>
                     </div>
                     <div className="p-6 pt-4 border-t bg-white rounded-b-lg">
                       <div className="flex justify-end gap-3">
