@@ -2131,7 +2131,7 @@ export async function registerRoutes(app: Express): Promise<Express> {
   app.patch("/api/options/:id", requireAuth, async (req, res) => {
     try {
       const optionId = parseInt(req.params.id);
-      const { price, name, category, modelId, applicableModels, isArchived, isMultiSelect, hexColor } = req.body;
+      const { price, name, category, modelId, applicableModels, isArchived, isMultiSelect, hexColor, primerPrice } = req.body;
       
       const updatedOption = await storage.updateOption(optionId, {
         price,
@@ -2142,6 +2142,7 @@ export async function registerRoutes(app: Express): Promise<Express> {
         isArchived,
         isMultiSelect,
         hexColor,
+        primerPrice,
       });
       
       res.json(updatedOption);

@@ -893,6 +893,7 @@ export default function FastPricing() {
     
     if (optionCategory === 'color') {
       mutationData.hexColor = data.hexColor ?? option.hexColor;
+      mutationData.primerPrice = data.primerPrice ?? option.primerPrice;
     }
     
     updateOptionMutation.mutate(mutationData);
@@ -2961,16 +2962,36 @@ export default function FastPricing() {
                       </TableCell>
                       <TableCell>
                         {editingOption?.id === option.id ? (
-                          <Input
-                            type="number"
-                            value={editData[option.id]?.price ?? option.price}
-                            onChange={(e: any) => setEditData({
-                              ...editData,
-                              [option.id]: { ...editData[option.id], price: e.target.value === "" ? "" : parseFloat(e.target.value) || 0 }
-                            })}
-                          />
+                          <div className="space-y-2">
+                            <Input
+                              type="number"
+                              value={editData[option.id]?.price ?? option.price}
+                              onChange={(e: any) => setEditData({
+                                ...editData,
+                                [option.id]: { ...editData[option.id], price: e.target.value === "" ? "" : parseFloat(e.target.value) || 0 }
+                              })}
+                            />
+                            {((editData[option.id]?.category ?? option.category) || '').toLowerCase() === 'color' && (
+                              <div>
+                                <label className="text-xs text-gray-500">Primer Price</label>
+                                <Input
+                                  type="number"
+                                  value={editData[option.id]?.primerPrice ?? option.primerPrice ?? ""}
+                                  onChange={(e: any) => setEditData({
+                                    ...editData,
+                                    [option.id]: { ...editData[option.id], primerPrice: e.target.value === "" ? "" : parseFloat(e.target.value) || 0 }
+                                  })}
+                                />
+                              </div>
+                            )}
+                          </div>
                         ) : (
-                          `$${option.price?.toLocaleString()}`
+                          <div>
+                            <div>${option.price?.toLocaleString()}</div>
+                            {(option.category || '').toLowerCase() === 'color' && option.primerPrice != null && (
+                              <div className="text-xs text-gray-500 mt-1">Primer: ${option.primerPrice?.toLocaleString()}</div>
+                            )}
+                          </div>
                         )}
                       </TableCell>
                       <TableCell>
@@ -3140,7 +3161,14 @@ export default function FastPricing() {
                               </div>
                             </TableCell>
                             <TableCell>{option.category}</TableCell>
-                            <TableCell>${option.price}</TableCell>
+                            <TableCell>
+                              <div>
+                                <div>${option.price}</div>
+                                {(option.category || '').toLowerCase() === 'color' && option.primerPrice != null && (
+                                  <div className="text-xs text-gray-500 mt-1">Primer: ${option.primerPrice?.toLocaleString()}</div>
+                                )}
+                              </div>
+                            </TableCell>
                             <TableCell>
                               <Switch
                                 checked={option.isMultiSelect ?? false}

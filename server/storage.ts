@@ -1493,11 +1493,18 @@ export class DatabaseStorage implements IStorage {
             WHERE id = ${id}
           `);
         }
+        if (updates.primerPrice !== undefined) {
+          await db.execute(sql`
+            UPDATE trailer_options 
+            SET primer_price = ${updates.primerPrice}
+            WHERE id = ${id}
+          `);
+        }
       }
       
       // Get the updated record
       result = await db.execute(sql`
-        SELECT id, model_id, category, name, price, is_multi_select, is_archived, image_url, applicable_models, hex_color
+        SELECT id, model_id, category, name, price, is_multi_select, is_archived, image_url, applicable_models, hex_color, primer_price
         FROM trailer_options WHERE id = ${id}
       `);
       
@@ -1513,6 +1520,7 @@ export class DatabaseStorage implements IStorage {
         isArchived: updatedOption.is_archived || false,
         imageUrl: updatedOption.image_url,
         hexColor: updatedOption.hex_color,
+        primerPrice: updatedOption.primer_price,
       };
     } catch (error) {
       console.error('Error updating option:', error);
