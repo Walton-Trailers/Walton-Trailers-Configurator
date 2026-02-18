@@ -850,6 +850,10 @@ export default function FastPricing() {
       queryClient.invalidateQueries({ queryKey: ['/api/categories', 'options'] });
       setEditingOption(null);
       setEditData({});
+      toast({ title: "Update Successful", description: "Option updated successfully" });
+    },
+    onError: () => {
+      toast({ title: "Error", description: "Failed to update option", variant: "destructive" });
     },
   });
 
@@ -914,9 +918,9 @@ export default function FastPricing() {
       mutationData.primerPrice = data.primerPrice ?? option.primerPrice;
     }
     
+    toast({ title: "Updating...", description: "Saving your changes" });
     updateOptionMutation.mutate(mutationData);
     
-    // Clear editing state
     setEditingOption(null);
     setEditData({});
   };
