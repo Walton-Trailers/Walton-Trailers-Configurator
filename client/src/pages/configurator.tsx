@@ -377,6 +377,20 @@ export default function Configurator() {
     enabled: !!selectedSeries?.id
   });
 
+  const selectedLengthFt = (() => {
+    if (!options) return 0;
+    const lengthOptions = options.filter(opt => opt.category === 'length');
+    const selectedLengthId = selectedOptions['length'];
+    const lengthOption = selectedLengthId
+      ? lengthOptions.find(opt => opt.id === selectedLengthId)
+      : lengthOptions.find(opt => opt.isDefault) || lengthOptions[0];
+    if (lengthOption) {
+      const match = lengthOption.name.match(/(\d+)/);
+      if (match) return parseInt(match[1], 10);
+    }
+    return 0;
+  })();
+
   // Calculate total price
   useEffect(() => {
     if (!selectedModel) {
@@ -385,21 +399,7 @@ export default function Configurator() {
     }
 
     let price = selectedModel.basePrice || 0;
-    
-    const getSelectedLength = (): number => {
-      if (!options) return 0;
-      const lengthOptions = options.filter(opt => opt.category === 'length');
-      const selectedLengthId = selectedOptions['length'];
-      const lengthOption = selectedLengthId
-        ? lengthOptions.find(opt => opt.id === selectedLengthId)
-        : lengthOptions.find(opt => opt.isDefault) || lengthOptions[0];
-      if (lengthOption) {
-        const match = lengthOption.name.match(/(\d+)/);
-        if (match) return parseInt(match[1], 10);
-      }
-      return 0;
-    };
-    const selectedLength = getSelectedLength();
+    const selectedLength = selectedLengthFt;
     
     if (options && Object.keys(selectedOptions).length > 0) {
       Object.entries(selectedOptions).forEach(([category, selected]) => {
@@ -1459,45 +1459,52 @@ Configuration Date: ${new Date().toLocaleDateString()}
                           {categoryOptions[0]?.isMultiSelect || category === 'extras' ? (
                             <div className="space-y-2">
                               {categoryOptions.map((option) => (
-                                <div key={option.id} className="flex items-center justify-between">
-                                  <div className="flex items-center space-x-2">
-                                    <Checkbox
-                                      id={`option-${option.id}`}
-                                      checked={selectedOptions[category]?.includes(option.id) || false}
-                                      onCheckedChange={(checked) => 
-                                        handleOptionChange(category, option.id, true, checked as boolean)
-                                      }
-                                    />
-                                    <Label htmlFor={`option-${option.id}`} className="text-sm cursor-pointer">
-                                      {option.name}
-                                    </Label>
-                                    
-                                    {option.isMultiSelect && (selectedOptions[category]?.includes(option.id)) && (
-                                      <select
-                                        className="ml-2 px-2 py-1 text-xs border border-gray-300 rounded"
-                                        value={selectedOptions[`${category}_${option.id}_qty`] || 1}
-                                        onChange={(e) => {
-                                          const quantity = parseInt(e.target.value);
-                                          setSelectedOptions(prev => ({
-                                            ...prev,
-                                            [`${category}_${option.id}_qty`]: quantity
-                                          }));
-                                        }}
-                                        data-testid={`select-quantity-${option.id}`}
-                                      >
-                                        {Array.from({ length: 20 }, (_, i) => i + 1).map(num => (
-                                          <option key={num} value={num}>{num}</option>
-                                        ))}
-                                      </select>
-                                    )}
+                                <div key={option.id}>
+                                  <div className="flex items-center justify-between">
+                                    <div className="flex items-center space-x-2">
+                                      <Checkbox
+                                        id={`option-${option.id}`}
+                                        checked={selectedOptions[category]?.includes(option.id) || false}
+                                        onCheckedChange={(checked) => 
+                                          handleOptionChange(category, option.id, true, checked as boolean)
+                                        }
+                                      />
+                                      <Label htmlFor={`option-${option.id}`} className="text-sm cursor-pointer">
+                                        {option.name}
+                                      </Label>
+                                      
+                                      {option.isMultiSelect && (selectedOptions[category]?.includes(option.id)) && (
+                                        <select
+                                          className="ml-2 px-2 py-1 text-xs border border-gray-300 rounded"
+                                          value={selectedOptions[`${category}_${option.id}_qty`] || 1}
+                                          onChange={(e) => {
+                                            const quantity = parseInt(e.target.value);
+                                            setSelectedOptions(prev => ({
+                                              ...prev,
+                                              [`${category}_${option.id}_qty`]: quantity
+                                            }));
+                                          }}
+                                          data-testid={`select-quantity-${option.id}`}
+                                        >
+                                          {Array.from({ length: 20 }, (_, i) => i + 1).map(num => (
+                                            <option key={num} value={num}>{num}</option>
+                                          ))}
+                                        </select>
+                                      )}
+                                    </div>
+                                    <span className="text-sm text-gray-600">
+                                      {option.price === 0 ? 'Included' : 
+                                       option.isMultiSelect && (selectedOptions[category]?.includes(option.id)) ? 
+                                         `$${(option.price * (selectedOptions[`${category}_${option.id}_qty`] || 1)).toLocaleString()}${option.isPerFt ? '/ft' : ''}` :
+                                       option.price > 0 ? `$${option.price.toLocaleString()}${option.isPerFt ? '/ft' : ''}` : 
+                                       `$${option.price.toLocaleString()}${option.isPerFt ? '/ft' : ''}`}
+                                    </span>
                                   </div>
-                                  <span className="text-sm text-gray-600">
-                                    {option.price === 0 ? 'Included' : 
-                                     option.isMultiSelect && (selectedOptions[category]?.includes(option.id)) ? 
-                                       `$${(option.price * (selectedOptions[`${category}_${option.id}_qty`] || 1)).toLocaleString()}${option.isPerFt ? '/ft' : ''}` :
-                                     option.price > 0 ? `$${option.price.toLocaleString()}${option.isPerFt ? '/ft' : ''}` : 
-                                     `$${option.price.toLocaleString()}${option.isPerFt ? '/ft' : ''}`}
-                                  </span>
+                                  {option.isPerFt && selectedLengthFt > 0 && selectedOptions[category]?.includes(option.id) && (
+                                    <div className="ml-6 text-xs text-blue-600 font-medium">
+                                      {`+$${(option.price * selectedLengthFt * (option.isMultiSelect ? (selectedOptions[`${category}_${option.id}_qty`] || 1) : 1)).toLocaleString()} for ${selectedLengthFt}ft`}
+                                    </div>
+                                  )}
                                 </div>
                               ))}
                             </div>
@@ -1630,6 +1637,18 @@ Configuration Date: ${new Date().toLocaleDateString()}
                                   })}
                                 </SelectContent>
                               </Select>
+                              {(() => {
+                                const selectedId = selectedOptions[category] || categoryOptions[0]?.id;
+                                const selectedOpt = categoryOptions.find(opt => opt.id === selectedId);
+                                if (selectedOpt?.isPerFt && selectedLengthFt > 0) {
+                                  return (
+                                    <div className="mt-1 text-xs text-blue-600 font-medium">
+                                      {`+$${(selectedOpt.price * selectedLengthFt).toLocaleString()} for ${selectedLengthFt}ft`}
+                                    </div>
+                                  );
+                                }
+                                return null;
+                              })()}
                             </div>
                           )}
                         </div>
