@@ -1943,7 +1943,7 @@ Configuration Date: ${new Date().toLocaleDateString()}
                         <div className="text-2xl md:text-3xl font-bold">
                           ${totalPrice.toLocaleString()}
                         </div>
-                        <div className="text-xs md:text-sm text-zinc-500">Vehicle Price</div>
+                        <div className="text-xs md:text-sm text-zinc-500">Trailer Price</div>
                       </div>
                       <button 
                         onClick={() => setShowPricingModal(true)}
