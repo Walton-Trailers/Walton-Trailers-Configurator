@@ -2396,7 +2396,7 @@ Configuration Date: ${new Date().toLocaleDateString()}
       </Dialog>
 
       <Dialog open={learnMoreOptions.length > 0} onOpenChange={(open) => { if (!open) setLearnMoreOptions([]); }}>
-        <DialogContent className="max-w-lg p-0 overflow-hidden">
+        <DialogContent className="max-w-lg p-0 overflow-hidden max-h-[calc(100vh-4rem)] flex flex-col">
           <DialogHeader className="px-6 pt-6 pb-2">
             <DialogTitle>
               {learnMoreCategory === 'extras' ? 'Additional Options' :
@@ -2407,8 +2407,8 @@ Configuration Date: ${new Date().toLocaleDateString()}
             </DialogDescription>
           </DialogHeader>
           {learnMoreOptions.length > 0 && (
-            <div className="relative">
-              <div className="w-full aspect-[4/3] bg-gray-100 flex items-center justify-center overflow-hidden">
+            <div className="relative flex-1 min-h-0 flex flex-col">
+              <div className="w-full flex-1 min-h-0 bg-gray-100 flex items-center justify-center overflow-hidden">
                 {learnMoreOptions[learnMoreIndex]?.imageUrl ? (
                   <img
                     src={learnMoreOptions[learnMoreIndex].imageUrl!}
