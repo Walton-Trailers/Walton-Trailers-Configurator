@@ -2408,7 +2408,7 @@ Configuration Date: ${new Date().toLocaleDateString()}
           </DialogHeader>
           {learnMoreOptions.length > 0 && (
             <div className="relative flex-1 min-h-0 flex flex-col">
-              <div className="w-full flex-1 min-h-0 bg-gray-100 flex items-center justify-center overflow-hidden">
+              <div className="w-full bg-gray-100 overflow-hidden" style={{ aspectRatio: '1600 / 1200' }}>
                 {learnMoreOptions[learnMoreIndex]?.imageUrl ? (
                   <img
                     src={learnMoreOptions[learnMoreIndex].imageUrl!}
@@ -2416,7 +2416,7 @@ Configuration Date: ${new Date().toLocaleDateString()}
                     className="w-full h-full object-cover"
                   />
                 ) : (
-                  <div className="flex flex-col items-center justify-center text-gray-400">
+                  <div className="w-full h-full flex flex-col items-center justify-center text-gray-400">
                     <Package className="w-16 h-16 mb-2" />
                     <span className="text-sm">No image available</span>
                   </div>
