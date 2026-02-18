@@ -879,16 +879,23 @@ export default function FastPricing() {
   const handleOptionUpdate = (option: any) => {
     const data = editData[option.id] || {};
     const applicableModels = data.modelIds || option.applicableModels || [option.modelId];
+    const optionCategory = (data.category ?? option.category || '').toLowerCase();
     
-    updateOptionMutation.mutate({
+    const mutationData: any = {
       id: option.id,
       name: data.name ?? option.name,
-      modelId: applicableModels[0] || option.modelId, // Legacy field for backward compatibility
-      applicableModels: applicableModels, // New field for multiple models
+      modelId: applicableModels[0] || option.modelId,
+      applicableModels: applicableModels,
       category: data.category ?? option.category,
       price: data.price ?? option.price,
       isMultiSelect: data.isMultiSelect ?? option.isMultiSelect,
-    });
+    };
+    
+    if (optionCategory === 'color') {
+      mutationData.hexColor = data.hexColor ?? option.hexColor;
+    }
+    
+    updateOptionMutation.mutate(mutationData);
     
     // Clear editing state
     setEditingOption(null);
