@@ -782,7 +782,7 @@ Configuration Date: ${new Date().toLocaleDateString()}
       {/* Tesla-style Header */}
       <header className="fixed top-0 left-0 right-0 bg-black z-50 border-b border-gray-800">
         <div className="max-w-7xl mx-auto px-4 md:px-8">
-          <div className="relative flex items-center justify-between h-16 md:h-20">
+          <div className="relative flex items-center justify-center h-16 md:h-20">
             <div className="flex flex-col items-center">
               <a 
                 href="https://waltontrailers.com/" 
@@ -796,7 +796,6 @@ Configuration Date: ${new Date().toLocaleDateString()}
                   className="h-6 md:h-8 lg:h-10 w-auto object-contain max-w-[120px] md:max-w-[150px] lg:max-w-[180px]"
                 />
               </a>
-              {/* Dealer mode indicator */}
               {isDealerLoggedIn && (
                 <div className="text-xs text-gray-400 font-normal mt-1">
                   Dealer Configuration
@@ -804,8 +803,7 @@ Configuration Date: ${new Date().toLocaleDateString()}
               )}
             </div>
             
-            {/* Mobile progress indicator - horizontal dots */}
-            <div className="flex md:hidden items-center space-x-2">
+            <div className="absolute right-0 flex md:hidden items-center space-x-2">
               <button 
                 className={`w-3 h-3 rounded-full transition-all duration-300 ${currentStep > 1 ? 'cursor-pointer hover:scale-110' : ''}`} 
                 style={currentStep >= 1 ? { backgroundColor: '#c1af89' } : { backgroundColor: '#6B7280' }}
