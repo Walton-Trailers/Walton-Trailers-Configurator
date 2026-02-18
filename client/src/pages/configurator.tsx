@@ -977,74 +977,6 @@ Configuration Date: ${new Date().toLocaleDateString()}
               </p>
             </div>
 
-            {/* Custom Quote Modal */}
-            <Dialog open={learnMoreOptions.length > 0} onOpenChange={(open) => { if (!open) setLearnMoreOptions([]); }}>
-              <DialogContent className="max-w-lg p-0 overflow-hidden">
-                <DialogHeader className="px-6 pt-6 pb-2">
-                  <DialogTitle>
-                    {learnMoreCategory === 'extras' ? 'Additional Options' :
-                     learnMoreCategory.charAt(0).toUpperCase() + learnMoreCategory.slice(1) + ' Options'}
-                  </DialogTitle>
-                  <DialogDescription>
-                    {learnMoreIndex + 1} of {learnMoreOptions.length}
-                  </DialogDescription>
-                </DialogHeader>
-                {learnMoreOptions.length > 0 && (
-                  <div className="relative">
-                    <div className="w-full aspect-[4/3] bg-gray-100 flex items-center justify-center overflow-hidden">
-                      {learnMoreOptions[learnMoreIndex]?.imageUrl ? (
-                        <img
-                          src={learnMoreOptions[learnMoreIndex].imageUrl!}
-                          alt={learnMoreOptions[learnMoreIndex].name}
-                          className="w-full h-full object-cover"
-                        />
-                      ) : (
-                        <div className="flex flex-col items-center justify-center text-gray-400">
-                          <Package className="w-16 h-16 mb-2" />
-                          <span className="text-sm">No image available</span>
-                        </div>
-                      )}
-                    </div>
-                    <div className="px-6 py-4 border-t">
-                      <h3 className="text-lg font-semibold text-gray-900">
-                        {learnMoreOptions[learnMoreIndex]?.name}
-                      </h3>
-                      <p className="text-sm text-blue-600 font-medium mt-1">
-                        {learnMoreOptions[learnMoreIndex]?.price === 0
-                          ? 'Included'
-                          : `$${learnMoreOptions[learnMoreIndex]?.price.toLocaleString()}${learnMoreOptions[learnMoreIndex]?.isPerFt ? '/ft' : ''}`}
-                      </p>
-                    </div>
-                    <div className="flex items-center justify-between px-6 pb-4">
-                      <button
-                        onClick={() => setLearnMoreIndex((prev) => Math.max(0, prev - 1))}
-                        disabled={learnMoreIndex === 0}
-                        className="p-2 rounded-full border border-gray-300 hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
-                      >
-                        <ChevronLeft className="w-5 h-5" />
-                      </button>
-                      <div className="flex gap-1.5">
-                        {learnMoreOptions.map((_, i) => (
-                          <button
-                            key={i}
-                            onClick={() => setLearnMoreIndex(i)}
-                            className={`w-2 h-2 rounded-full transition-colors ${i === learnMoreIndex ? 'bg-blue-600' : 'bg-gray-300'}`}
-                          />
-                        ))}
-                      </div>
-                      <button
-                        onClick={() => setLearnMoreIndex((prev) => Math.min(learnMoreOptions.length - 1, prev + 1))}
-                        disabled={learnMoreIndex === learnMoreOptions.length - 1}
-                        className="p-2 rounded-full border border-gray-300 hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
-                      >
-                        <ChevronRight className="w-5 h-5" />
-                      </button>
-                    </div>
-                  </div>
-                )}
-              </DialogContent>
-            </Dialog>
-
             <Dialog open={showCustomQuoteModal} onOpenChange={setShowCustomQuoteModal}>
               <DialogContent className="max-w-lg">
                 <DialogHeader>
@@ -2460,6 +2392,73 @@ Configuration Date: ${new Date().toLocaleDateString()}
               </div>
             </form>
           </Form>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={learnMoreOptions.length > 0} onOpenChange={(open) => { if (!open) setLearnMoreOptions([]); }}>
+        <DialogContent className="max-w-lg p-0 overflow-hidden">
+          <DialogHeader className="px-6 pt-6 pb-2">
+            <DialogTitle>
+              {learnMoreCategory === 'extras' ? 'Additional Options' :
+               learnMoreCategory.charAt(0).toUpperCase() + learnMoreCategory.slice(1) + ' Options'}
+            </DialogTitle>
+            <DialogDescription>
+              {learnMoreIndex + 1} of {learnMoreOptions.length}
+            </DialogDescription>
+          </DialogHeader>
+          {learnMoreOptions.length > 0 && (
+            <div className="relative">
+              <div className="w-full aspect-[4/3] bg-gray-100 flex items-center justify-center overflow-hidden">
+                {learnMoreOptions[learnMoreIndex]?.imageUrl ? (
+                  <img
+                    src={learnMoreOptions[learnMoreIndex].imageUrl!}
+                    alt={learnMoreOptions[learnMoreIndex].name}
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <div className="flex flex-col items-center justify-center text-gray-400">
+                    <Package className="w-16 h-16 mb-2" />
+                    <span className="text-sm">No image available</span>
+                  </div>
+                )}
+              </div>
+              <div className="px-6 py-4 border-t">
+                <h3 className="text-lg font-semibold text-gray-900">
+                  {learnMoreOptions[learnMoreIndex]?.name}
+                </h3>
+                <p className="text-sm text-blue-600 font-medium mt-1">
+                  {learnMoreOptions[learnMoreIndex]?.price === 0
+                    ? 'Included'
+                    : `$${learnMoreOptions[learnMoreIndex]?.price.toLocaleString()}${learnMoreOptions[learnMoreIndex]?.isPerFt ? '/ft' : ''}`}
+                </p>
+              </div>
+              <div className="flex items-center justify-between px-6 pb-4">
+                <button
+                  onClick={() => setLearnMoreIndex((prev) => Math.max(0, prev - 1))}
+                  disabled={learnMoreIndex === 0}
+                  className="p-2 rounded-full border border-gray-300 hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                >
+                  <ChevronLeft className="w-5 h-5" />
+                </button>
+                <div className="flex gap-1.5">
+                  {learnMoreOptions.map((_, i) => (
+                    <button
+                      key={i}
+                      onClick={() => setLearnMoreIndex(i)}
+                      className={`w-2 h-2 rounded-full transition-colors ${i === learnMoreIndex ? 'bg-blue-600' : 'bg-gray-300'}`}
+                    />
+                  ))}
+                </div>
+                <button
+                  onClick={() => setLearnMoreIndex((prev) => Math.min(learnMoreOptions.length - 1, prev + 1))}
+                  disabled={learnMoreIndex === learnMoreOptions.length - 1}
+                  className="p-2 rounded-full border border-gray-300 hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                >
+                  <ChevronRight className="w-5 h-5" />
+                </button>
+              </div>
+            </div>
+          )}
         </DialogContent>
       </Dialog>
     </div>
