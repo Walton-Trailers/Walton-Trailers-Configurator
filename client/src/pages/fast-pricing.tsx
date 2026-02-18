@@ -162,6 +162,8 @@ export default function FastPricing() {
   const [editingLengthFor, setEditingLengthFor] = useState<{modelId: number, lengthIndex: number, originalLength: string} | null>(null);
   const [tempLengthValue, setTempLengthValue] = useState("");
   const [showOptionsPopup, setShowOptionsPopup] = useState<Record<number, boolean>>({});
+  const [creatingNewCategory, setCreatingNewCategory] = useState(false);
+  const [newCategoryName, setNewCategoryName] = useState("");
 
   // Helper functions for managing length options and their pull types and GVWR
   const addLengthOption = (modelId: number, lengthValue: string) => {
@@ -2664,16 +2666,77 @@ export default function FastPricing() {
                       </div>
                       <div>
                         <label className="block text-sm font-medium mb-1">Category</label>
-                        <Select
-                          value={newOptionData.category}
-                          onValueChange={(value: string) => setNewOptionData({ ...newOptionData, category: value })}
-                        >
-                          {optionCategories.map((category: string) => (
-                            <option key={category} value={category}>
-                              {category.charAt(0).toUpperCase() + category.slice(1)}
-                            </option>
-                          ))}
-                        </Select>
+                        {creatingNewCategory ? (
+                          <div className="flex gap-2">
+                            <Input
+                              placeholder="Enter new category name"
+                              value={newCategoryName}
+                              onChange={(e: any) => setNewCategoryName(e.target.value)}
+                              autoFocus
+                            />
+                            <Button
+                              size="sm"
+                              disabled={!newCategoryName.trim()}
+                              onClick={async () => {
+                                try {
+                                  const response = await fetch('/api/categories/options', {
+                                    method: 'POST',
+                                    headers: {
+                                      'Content-Type': 'application/json',
+                                      Authorization: `Bearer ${sessionId}`,
+                                    },
+                                    body: JSON.stringify({ name: newCategoryName }),
+                                  });
+                                  if (!response.ok) {
+                                    const data = await response.json();
+                                    toast({ title: "Error", description: data.message || "Failed to create category", variant: "destructive" });
+                                    return;
+                                  }
+                                  const data = await response.json();
+                                  queryClient.invalidateQueries({ queryKey: ['/api/categories', 'options'] });
+                                  setNewOptionData({ ...newOptionData, category: data.name });
+                                  setCreatingNewCategory(false);
+                                  setNewCategoryName("");
+                                  toast({ title: "Success", description: "Category created" });
+                                } catch (error) {
+                                  toast({ title: "Error", description: "Failed to create category", variant: "destructive" });
+                                }
+                              }}
+                            >
+                              <Save className="w-4 h-4" />
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => {
+                                setCreatingNewCategory(false);
+                                setNewCategoryName("");
+                              }}
+                            >
+                              <X className="w-4 h-4" />
+                            </Button>
+                          </div>
+                        ) : (
+                          <div className="flex gap-2">
+                            <Select
+                              value={newOptionData.category}
+                              onValueChange={(value: string) => {
+                                if (value === '__create_new__') {
+                                  setCreatingNewCategory(true);
+                                } else {
+                                  setNewOptionData({ ...newOptionData, category: value });
+                                }
+                              }}
+                            >
+                              {optionCategories.map((category: string) => (
+                                <option key={category} value={category}>
+                                  {category.charAt(0).toUpperCase() + category.slice(1)}
+                                </option>
+                              ))}
+                              <option value="__create_new__">+ Create New</option>
+                            </Select>
+                          </div>
+                        )}
                       </div>
                       <div>
                         <label className="block text-sm font-medium mb-1">Price ($)</label>
@@ -2946,19 +3009,88 @@ export default function FastPricing() {
                       </TableCell>
                       <TableCell>
                         {editingOption?.id === option.id ? (
-                          <Select
-                            value={editData[option.id]?.category ?? option.category}
-                            onValueChange={(value: string) => setEditData({
-                              ...editData,
-                              [option.id]: { ...editData[option.id], category: value }
-                            })}
-                          >
-                            {optionCategories.map((category: string) => (
-                              <SelectItem key={category} value={category}>
-                                {category.charAt(0).toUpperCase() + category.slice(1)}
-                              </SelectItem>
-                            ))}
-                          </Select>
+                          editData[option.id]?._creatingCategory ? (
+                            <div className="flex gap-1">
+                              <Input
+                                placeholder="New category"
+                                value={editData[option.id]?._newCatName || ''}
+                                onChange={(e: any) => setEditData({
+                                  ...editData,
+                                  [option.id]: { ...editData[option.id], _newCatName: e.target.value }
+                                })}
+                                className="text-xs w-24"
+                                autoFocus
+                              />
+                              <Button
+                                size="sm"
+                                className="px-2"
+                                disabled={!(editData[option.id]?._newCatName || '').trim()}
+                                onClick={async () => {
+                                  try {
+                                    const response = await fetch('/api/categories/options', {
+                                      method: 'POST',
+                                      headers: {
+                                        'Content-Type': 'application/json',
+                                        Authorization: `Bearer ${sessionId}`,
+                                      },
+                                      body: JSON.stringify({ name: editData[option.id]?._newCatName }),
+                                    });
+                                    if (!response.ok) {
+                                      const data = await response.json();
+                                      toast({ title: "Error", description: data.message || "Failed to create category", variant: "destructive" });
+                                      return;
+                                    }
+                                    const data = await response.json();
+                                    queryClient.invalidateQueries({ queryKey: ['/api/categories', 'options'] });
+                                    setEditData({
+                                      ...editData,
+                                      [option.id]: { ...editData[option.id], category: data.name, _creatingCategory: false, _newCatName: '' }
+                                    });
+                                    toast({ title: "Success", description: "Category created" });
+                                  } catch (error) {
+                                    toast({ title: "Error", description: "Failed to create category", variant: "destructive" });
+                                  }
+                                }}
+                              >
+                                <Save className="w-3 h-3" />
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                className="px-2"
+                                onClick={() => setEditData({
+                                  ...editData,
+                                  [option.id]: { ...editData[option.id], _creatingCategory: false, _newCatName: '' }
+                                })}
+                              >
+                                <X className="w-3 h-3" />
+                              </Button>
+                            </div>
+                          ) : (
+                            <Select
+                              value={editData[option.id]?.category ?? option.category}
+                              onValueChange={(value: string) => {
+                                if (value === '__create_new__') {
+                                  setEditData({
+                                    ...editData,
+                                    [option.id]: { ...editData[option.id], _creatingCategory: true, _newCatName: '' }
+                                  });
+                                } else {
+                                  setEditData({
+                                    ...editData,
+                                    [option.id]: { ...editData[option.id], category: value }
+                                  });
+                                }
+                              }}
+                            >
+                              {optionCategories.map((category: string) => (
+                                <SelectItem key={category} value={category}>
+                                  {category.charAt(0).toUpperCase() + category.slice(1)}
+                                </SelectItem>
+                              ))}
+                              <SelectItem value="__create_new__">+ Create New</SelectItem>
+                            </Select>
+                          )
                         ) : (
                           option.category
                         )}

@@ -2007,11 +2007,34 @@ export async function registerRoutes(app: Express): Promise<Express> {
       const result = await db.execute(sql`
         SELECT "Name" FROM trailer_option_categories ORDER BY "Name"
       `);
-      const categories = result.rows.map((row: any) => row.Name).filter((name: string) => name); // Filter out null values
+      const categories = result.rows.map((row: any) => row.Name).filter((name: string) => name);
       res.json(categories);
     } catch (error) {
       console.error("Error fetching option categories:", error);
       res.status(500).json({ message: "Failed to fetch categories" });
+    }
+  });
+
+  app.post("/api/categories/options", requireAuth, async (req, res) => {
+    try {
+      const { name } = req.body;
+      if (!name || !name.trim()) {
+        return res.status(400).json({ message: "Category name is required" });
+      }
+      const categoryName = name.trim().toLowerCase();
+      const existing = await db.execute(sql`
+        SELECT id FROM trailer_option_categories WHERE LOWER("Name") = ${categoryName}
+      `);
+      if (existing.rows.length > 0) {
+        return res.status(409).json({ message: "Category already exists" });
+      }
+      await db.execute(sql`
+        INSERT INTO trailer_option_categories ("Name") VALUES (${categoryName})
+      `);
+      res.json({ success: true, name: categoryName });
+    } catch (error) {
+      console.error("Error creating option category:", error);
+      res.status(500).json({ message: "Failed to create category" });
     }
   });
 
