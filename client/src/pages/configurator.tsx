@@ -1218,11 +1218,11 @@ Configuration Date: ${new Date().toLocaleDateString()}
                 <p className="text-gray-500">Loading series options...</p>
               </div>
             ) : categorySeries && categorySeries.length > 0 ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-6xl mx-auto">
+              <div className="flex flex-wrap justify-center gap-6 max-w-6xl mx-auto">
                 {categorySeries.map((series, index) => (
-                    <div key={series.id} className="animate-in slide-in-from-bottom duration-700" style={{ animationDelay: `${index * 150}ms` }}>
+                    <div key={series.id} className="w-full md:w-[calc(50%-0.75rem)] lg:w-[calc(33.333%-1rem)] animate-in slide-in-from-bottom duration-700" style={{ animationDelay: `${index * 150}ms` }}>
                       <button
-                        className="w-full text-left group relative overflow-hidden rounded-md border border-gray-200 bg-white hover:border-gray-300 hover:shadow-xl transition-all duration-500 hover:scale-[1.02]"
+                        className="w-full group relative overflow-hidden rounded-md border border-gray-200 bg-white hover:border-gray-300 hover:shadow-xl transition-all duration-500 hover:scale-[1.02]"
                         onClick={() => handleSeriesSelect(series)}
                       >
                         <div className="flex flex-col">
