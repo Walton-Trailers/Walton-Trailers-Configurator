@@ -1490,7 +1490,7 @@ Configuration Date: ${new Date().toLocaleDateString()}
                                   )}
                                 </div>
                               ))}
-                              <div className="flex justify-center mt-4">
+                              <div className="flex justify-center mt-8">
                                 <button
                                   onClick={() => {
                                     setLearnMoreOptions(categoryOptions);
