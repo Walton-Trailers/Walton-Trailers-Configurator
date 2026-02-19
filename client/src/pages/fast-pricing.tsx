@@ -2740,83 +2740,26 @@ export default function FastPricing() {
                       </div>
                       <div>
                         <label className="block text-sm font-medium mb-1">Category</label>
-                        {creatingNewCategory ? (
-                          <div className="flex gap-2">
-                            <Input
-                              placeholder="Enter new category name"
-                              value={newCategoryName}
-                              onChange={(e: any) => setNewCategoryName(e.target.value)}
-                              autoFocus
-                            />
-                            <Button
-                              size="sm"
-                              disabled={!newCategoryName.trim()}
-                              onClick={async () => {
-                                try {
-                                  const response = await fetch('/api/categories/options', {
-                                    method: 'POST',
-                                    headers: {
-                                      'Content-Type': 'application/json',
-                                      Authorization: `Bearer ${sessionId}`,
-                                    },
-                                    body: JSON.stringify({ name: newCategoryName }),
-                                  });
-                                  if (!response.ok) {
-                                    const data = await response.json();
-                                    toast({ title: "Error", description: data.message || "Failed to create category", variant: "destructive" });
-                                    return;
-                                  }
-                                  const data = await response.json();
-                                  queryClient.invalidateQueries({ queryKey: ['/api/categories', 'options'] });
-                                  setNewOptionData({ ...newOptionData, category: data.name });
-                                  setCreatingNewCategory(false);
-                                  setNewCategoryName("");
-                                  toast({ title: "Success", description: "Category created" });
-                                } catch (error) {
-                                  toast({ title: "Error", description: "Failed to create category", variant: "destructive" });
-                                }
-                              }}
-                            >
-                              <Save className="w-4 h-4" />
-                            </Button>
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              onClick={() => {
-                                setCreatingNewCategory(false);
-                                setNewCategoryName("");
-                              }}
-                            >
-                              <X className="w-4 h-4" />
-                            </Button>
-                          </div>
-                        ) : (
-                          <div className="flex gap-2">
-                            <Select
-                              value={newOptionData.category}
-                              onValueChange={(value: string) => {
-                                if (value === '__create_new__') {
-                                  setCreatingNewCategory(true);
-                                } else {
-                                  setNewOptionData({ ...newOptionData, category: value });
-                                }
-                              }}
-                            >
-                              {optionCategories.map((category: string) => (
-                                <option key={category} value={category}>
-                                  {category.charAt(0).toUpperCase() + category.slice(1)}
-                                </option>
-                              ))}
-                              <option value="__create_new__">+ Create New</option>
-                            </Select>
-                          </div>
-                        )}
+                        <div className="flex gap-2">
+                          <Select
+                            value={newOptionData.category}
+                            onValueChange={(value: string) => {
+                              setNewOptionData({ ...newOptionData, category: value });
+                            }}
+                          >
+                            {optionCategories.map((category: string) => (
+                              <option key={category} value={category}>
+                                {category.charAt(0).toUpperCase() + category.slice(1)}
+                              </option>
+                            ))}
+                          </Select>
+                        </div>
                         <button
                           type="button"
                           className="text-xs text-blue-600 hover:text-blue-800 underline mt-1"
                           onClick={() => setShowEditCategories(true)}
                         >
-                          Edit Categories
+                          Edit/Add Categories
                         </button>
                       </div>
                       <div>
@@ -3978,10 +3921,51 @@ export default function FastPricing() {
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg shadow-xl w-full max-w-md mx-4">
             <div className="flex items-center justify-between p-4 border-b">
-              <h3 className="text-lg font-semibold">Edit Categories</h3>
+              <h3 className="text-lg font-semibold">Edit/Add Categories</h3>
               <Button variant="ghost" size="sm" onClick={() => { setShowEditCategories(false); setEditingCatId(null); }}>
                 <X className="w-4 h-4" />
               </Button>
+            </div>
+            <div className="p-4 border-b">
+              <label className="block text-sm font-medium mb-2">Add New Category</label>
+              <div className="flex gap-2">
+                <Input
+                  placeholder="Enter category name"
+                  value={newCategoryName}
+                  onChange={(e: any) => setNewCategoryName(e.target.value)}
+                />
+                <Button
+                  size="sm"
+                  disabled={!newCategoryName.trim()}
+                  onClick={async () => {
+                    try {
+                      const response = await fetch('/api/categories/options', {
+                        method: 'POST',
+                        headers: {
+                          'Content-Type': 'application/json',
+                          Authorization: `Bearer ${sessionId}`,
+                        },
+                        body: JSON.stringify({ name: newCategoryName }),
+                      });
+                      if (!response.ok) {
+                        const data = await response.json();
+                        toast({ title: "Error", description: data.message || "Failed to create category", variant: "destructive" });
+                        return;
+                      }
+                      const data = await response.json();
+                      queryClient.invalidateQueries({ queryKey: ['/api/categories', 'options'] });
+                      queryClient.invalidateQueries({ queryKey: ['/api/categories/options/details'] });
+                      setNewOptionData({ ...newOptionData, category: data.name });
+                      setNewCategoryName("");
+                      toast({ title: "Success", description: "Category created" });
+                    } catch (error) {
+                      toast({ title: "Error", description: "Failed to create category", variant: "destructive" });
+                    }
+                  }}
+                >
+                  <Plus className="w-4 h-4" />
+                </Button>
+              </div>
             </div>
             <div className="p-4 max-h-96 overflow-y-auto">
               {categoryDetailsLoading ? (
