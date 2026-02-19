@@ -942,12 +942,12 @@ Configuration Date: ${new Date().toLocaleDateString()}
                       </div>
                       
                       {/* Bottom - Content */}
-                      <div className="w-full p-4 md:p-5 flex-1 flex flex-col justify-between">
-                        <div className="flex items-center justify-between mb-2 md:mb-3">
+                      <div className="w-full p-4 md:p-5 flex-1 flex flex-col justify-between text-center">
+                        <div className="flex items-center justify-center mb-2 md:mb-3">
                           <h3 className="text-lg md:text-xl font-semibold text-gray-900 group-hover:text-blue-600 transition-colors duration-300">
                             {category.name}
                           </h3>
-                          <ArrowRight className="w-4 h-4 text-gray-400 group-hover:text-blue-500 group-hover:translate-x-1 transition-all duration-300" />
+                          <ArrowRight className="w-4 h-4 ml-2 text-gray-400 group-hover:text-blue-500 group-hover:translate-x-1 transition-all duration-300" />
                         </div>
                         
                         <p className="text-gray-600 mb-3 md:mb-4 leading-relaxed text-sm line-clamp-2 md:line-clamp-none">
@@ -1247,12 +1247,12 @@ Configuration Date: ${new Date().toLocaleDateString()}
                           </div>
                           
                           {/* Bottom - Content */}
-                          <div className="w-full p-6 md:p-8">
-                            <div className="flex items-center justify-between mb-3 md:mb-4">
+                          <div className="w-full p-6 md:p-8 text-center">
+                            <div className="flex items-center justify-center mb-3 md:mb-4">
                               <h3 className="text-xl md:text-2xl font-semibold text-gray-900 group-hover:text-blue-600 transition-colors duration-300">
                                 {series.name}
                               </h3>
-                              <ArrowRight className="w-5 h-5 text-gray-400 group-hover:text-blue-500 group-hover:translate-x-1 transition-all duration-300" />
+                              <ArrowRight className="w-5 h-5 ml-2 text-gray-400 group-hover:text-blue-500 group-hover:translate-x-1 transition-all duration-300" />
                             </div>
                             
                             <p className="text-gray-600 mb-4 md:mb-6 leading-relaxed">
