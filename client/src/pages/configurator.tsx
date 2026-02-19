@@ -230,6 +230,7 @@ export default function Configurator() {
   const [totalPrice, setTotalPrice] = useState(0);
   const [hoveredCategory, setHoveredCategory] = useState<TrailerCategory | null>(null);
   const [hoveredModel, setHoveredModel] = useState<TrailerModel | null>(null);
+  const [viewMode, setViewMode] = useState<'3d' | 'image'>('3d');
   const [showCustomQuoteModal, setShowCustomQuoteModal] = useState(false);
   const [learnMoreOptions, setLearnMoreOptions] = useState<TrailerOption[]>([]);
   const [learnMoreCategory, setLearnMoreCategory] = useState<string>('');
@@ -1282,7 +1283,13 @@ Configuration Date: ${new Date().toLocaleDateString()}
             {/* Mobile/Tablet Image - Sticky Top */}
             <div className="lg:hidden sticky top-16 md:top-20 z-10 bg-gray-50 h-48 md:h-64">
               <div className="relative w-full h-full p-4">
-                {current3dModelUrl ? (
+                {current3dModelUrl && currentTrailerImage && (
+                  <div className="absolute top-2 left-2 z-20 flex bg-white/90 backdrop-blur-sm rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+                    <button onClick={() => setViewMode('3d')} className={`px-3 py-1 text-xs font-medium transition-colors ${viewMode === '3d' ? 'bg-gray-900 text-white' : 'text-gray-600 hover:bg-gray-100'}`}>3D Model</button>
+                    <button onClick={() => setViewMode('image')} className={`px-3 py-1 text-xs font-medium transition-colors ${viewMode === 'image' ? 'bg-gray-900 text-white' : 'text-gray-600 hover:bg-gray-100'}`}>Image</button>
+                  </div>
+                )}
+                {current3dModelUrl && viewMode === '3d' ? (
                   <TrailerModelViewer
                     model3dUrl={current3dModelUrl}
                     fallbackImageUrl={currentTrailerImage}
@@ -1300,7 +1307,13 @@ Configuration Date: ${new Date().toLocaleDateString()}
             {/* Desktop Image Panel - Fixed */}
             <div className="hidden lg:block lg:fixed left-0 top-20 w-[65%] h-[calc(100vh-5rem)] overflow-hidden z-10 bg-gray-50">
               <div className="relative w-full h-full max-w-5xl max-h-[80vh] mx-auto my-auto p-8">
-                {current3dModelUrl ? (
+                {current3dModelUrl && currentTrailerImage && (
+                  <div className="absolute top-4 left-4 z-20 flex bg-white/90 backdrop-blur-sm rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+                    <button onClick={() => setViewMode('3d')} className={`px-4 py-1.5 text-sm font-medium transition-colors ${viewMode === '3d' ? 'bg-gray-900 text-white' : 'text-gray-600 hover:bg-gray-100'}`}>3D Model</button>
+                    <button onClick={() => setViewMode('image')} className={`px-4 py-1.5 text-sm font-medium transition-colors ${viewMode === 'image' ? 'bg-gray-900 text-white' : 'text-gray-600 hover:bg-gray-100'}`}>Image</button>
+                  </div>
+                )}
+                {current3dModelUrl && viewMode === '3d' ? (
                   <TrailerModelViewer
                     model3dUrl={current3dModelUrl}
                     fallbackImageUrl={currentTrailerImage}
@@ -1707,7 +1720,13 @@ Configuration Date: ${new Date().toLocaleDateString()}
             {/* Mobile/Tablet Image - Sticky Top */}
             <div className="lg:hidden sticky top-16 md:top-20 z-10 bg-gray-50 h-48 md:h-64">
               <div className="relative w-full h-full p-4">
-                {current3dModelUrl ? (
+                {current3dModelUrl && currentTrailerImage && (
+                  <div className="absolute top-2 left-2 z-20 flex bg-white/90 backdrop-blur-sm rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+                    <button onClick={() => setViewMode('3d')} className={`px-3 py-1 text-xs font-medium transition-colors ${viewMode === '3d' ? 'bg-gray-900 text-white' : 'text-gray-600 hover:bg-gray-100'}`}>3D Model</button>
+                    <button onClick={() => setViewMode('image')} className={`px-3 py-1 text-xs font-medium transition-colors ${viewMode === 'image' ? 'bg-gray-900 text-white' : 'text-gray-600 hover:bg-gray-100'}`}>Image</button>
+                  </div>
+                )}
+                {current3dModelUrl && viewMode === '3d' ? (
                   <TrailerModelViewer
                     model3dUrl={current3dModelUrl}
                     fallbackImageUrl={currentTrailerImage}
@@ -1725,7 +1744,13 @@ Configuration Date: ${new Date().toLocaleDateString()}
             {/* Desktop Image Panel - Fixed */}
             <div className="hidden lg:block lg:fixed left-0 top-20 w-[65%] h-[calc(100vh-5rem)] overflow-hidden z-10 bg-gray-50">
               <div className="relative w-full h-full max-w-5xl max-h-[80vh] mx-auto my-auto p-8">
-                {current3dModelUrl ? (
+                {current3dModelUrl && currentTrailerImage && (
+                  <div className="absolute top-4 left-4 z-20 flex bg-white/90 backdrop-blur-sm rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+                    <button onClick={() => setViewMode('3d')} className={`px-4 py-1.5 text-sm font-medium transition-colors ${viewMode === '3d' ? 'bg-gray-900 text-white' : 'text-gray-600 hover:bg-gray-100'}`}>3D Model</button>
+                    <button onClick={() => setViewMode('image')} className={`px-4 py-1.5 text-sm font-medium transition-colors ${viewMode === 'image' ? 'bg-gray-900 text-white' : 'text-gray-600 hover:bg-gray-100'}`}>Image</button>
+                  </div>
+                )}
+                {current3dModelUrl && viewMode === '3d' ? (
                   <TrailerModelViewer
                     model3dUrl={current3dModelUrl}
                     fallbackImageUrl={currentTrailerImage}
