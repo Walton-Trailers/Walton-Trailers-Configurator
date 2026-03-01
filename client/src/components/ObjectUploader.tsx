@@ -32,6 +32,7 @@ interface ObjectUploaderProps {
   modelName?: string;
   allowedFileTypes?: string[];
   noteOverride?: string;
+  skipPreview?: boolean;
 }
 
 /**
@@ -73,6 +74,7 @@ export function ObjectUploader({
   modelName,
   allowedFileTypes,
   noteOverride,
+  skipPreview = false,
 }: ObjectUploaderProps) {
   const [showPreviewModal, setShowPreviewModal] = useState(false);
   const [showUploadModal, setShowUploadModal] = useState(false);
@@ -101,7 +103,7 @@ export function ObjectUploader({
     : `Upload an image for ${modelName || 'this model'}. Recommended dimensions: 1600x1200px or 4:3 aspect ratio (max 10MB)`);
 
   const handleButtonClick = () => {
-    if (currentImageUrl) {
+    if (currentImageUrl && !skipPreview) {
       setShowPreviewModal(true);
     } else {
       setShowUploadModal(true);

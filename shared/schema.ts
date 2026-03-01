@@ -41,6 +41,7 @@ export const trailerModels = pgTable("trailer_models", {
   categoryOrder: json("category_order").$type<Record<string, number>>(), // Display order for option categories (model-specific)
   pulltypeOptions: json("pulltype_options").$type<Record<string, string>>(), // Pull type options as JSON
   model3dUrl: text("model_3d_url"),
+  imageUrls: json("image_urls").$type<string[]>(), // Gallery of images
   isArchived: boolean("is_archived").default(false),
 });
 

@@ -2634,6 +2634,48 @@ export async function registerRoutes(app: Express): Promise<Express> {
     }
   });
 
+  // Model gallery image endpoints
+  app.post("/api/models/:id/images", requireAuth, async (req, res) => {
+    try {
+      const modelId = parseInt(req.params.id);
+      const { url } = req.body;
+      if (!url) return res.status(400).json({ message: "url is required" });
+      const objectStorageService = new ObjectStorageService();
+      const objectPath = await objectStorageService.trySetObjectEntityAclPolicy(url, { owner: "admin", visibility: "public" });
+      const updatedModel = await storage.addModelImage(modelId, objectPath);
+      res.json(updatedModel);
+    } catch (error) {
+      console.error("Error adding model image:", error);
+      res.status(500).json({ message: "Failed to add image" });
+    }
+  });
+
+  app.delete("/api/models/:id/images", requireAuth, async (req, res) => {
+    try {
+      const modelId = parseInt(req.params.id);
+      const { url } = req.body;
+      if (!url) return res.status(400).json({ message: "url is required" });
+      const updatedModel = await storage.removeModelImage(modelId, url);
+      res.json(updatedModel);
+    } catch (error) {
+      console.error("Error removing model image:", error);
+      res.status(500).json({ message: "Failed to remove image" });
+    }
+  });
+
+  app.patch("/api/models/:id/images/reorder", requireAuth, async (req, res) => {
+    try {
+      const modelId = parseInt(req.params.id);
+      const { urls } = req.body;
+      if (!Array.isArray(urls)) return res.status(400).json({ message: "urls array is required" });
+      const updatedModel = await storage.reorderModelImages(modelId, urls);
+      res.json(updatedModel);
+    } catch (error) {
+      console.error("Error reordering model images:", error);
+      res.status(500).json({ message: "Failed to reorder images" });
+    }
+  });
+
   // Option image upload routes
   app.post("/api/options/upload-url", requireAuth, async (req, res) => {
     try {

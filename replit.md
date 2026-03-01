@@ -41,6 +41,17 @@ This is a Tesla-style trailer configurator application for Walton Trailers, desi
 - New PATCH `/api/categories/options/:id/position` endpoint swaps adjacent positions
 - New public GET `/api/categories/options/positions` endpoint for configurator ordering
 
+### Multi-Image Gallery (March 1, 2026)
+- Added `image_urls` JSONB column to `trailer_models` table for storing ordered image arrays
+- Three new API endpoints: `POST /api/models/:id/images`, `DELETE /api/models/:id/images`, `PATCH /api/models/:id/images/reorder`
+- Storage methods: `addModelImage`, `removeModelImage`, `reorderModelImages` — all keep `imageUrl` synced to gallery[0]
+- Admin model detail panel now has a "Model Image Gallery" section with thumbnail grid
+- First image always shows a "Primary" badge (this is the hero image used by the configurator)
+- Hovering over a thumbnail reveals: X button to remove, left/right arrows to reorder
+- "Add Image" button uses the same Uppy upload flow as the single-image uploader
+- `ObjectUploader` now accepts `skipPreview` prop to bypass the replace-image dialog flow
+- Backwards compatible: models with no `imageUrls` fall back to displaying their existing `imageUrl`
+
 ### 3D Model Viewer Integration (February 18, 2026)
 - Added interactive 3D model viewer using Three.js (@react-three/fiber + @react-three/drei)
 - Users can rotate, zoom, and pan 3D trailer models in the configurator left panel

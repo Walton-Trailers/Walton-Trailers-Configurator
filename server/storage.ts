@@ -47,6 +47,7 @@ export interface TrailerModelResponse {
   categoryOrder?: Record<string, number> | null;
   basePrice: number;
   imageUrl: string;
+  imageUrls?: string[] | null;
   model3dUrl?: string | null;
   features: string[];
   categoryName?: string;
@@ -1139,7 +1140,7 @@ export class DatabaseStorage implements IStorage {
       const result = await db.execute(sql`
         SELECT m.id, m.category_id, m.series_id, m.model_id, m.name,
                m.deck_size, m.axles, m.length_options, m.pulltype_options, m.length_price, m.length_gvwr, m.length_payload, m.length_order, m.category_order, m.base_price, 
-               m.image_url, m.model_3d_url, m.features, m.is_archived, m.category_sub_type, c.name as category_name,
+               m.image_url, m.image_urls, m.model_3d_url, m.features, m.is_archived, m.category_sub_type, c.name as category_name,
                s.name as series_name
         FROM trailer_models m
         JOIN trailer_categories c ON m.category_id = c.id
@@ -1167,6 +1168,7 @@ export class DatabaseStorage implements IStorage {
         categoryOrder: model.category_order ? (typeof model.category_order === 'string' ? JSON.parse(model.category_order) : model.category_order) : null,
         basePrice: model.base_price,
         imageUrl: model.image_url,
+        imageUrls: model.image_urls ? (typeof model.image_urls === 'string' ? JSON.parse(model.image_urls) : model.image_urls) : null,
         model3dUrl: model.model_3d_url,
         features: model.features || [],
         categoryName: model.category_name,
@@ -1433,6 +1435,7 @@ export class DatabaseStorage implements IStorage {
         pulltypeOptions: updatedModel.pulltype_options ? (typeof updatedModel.pulltype_options === 'string' ? JSON.parse(updatedModel.pulltype_options) : updatedModel.pulltype_options) : null,
         basePrice: updatedModel.base_price,
         imageUrl: updatedModel.image_url,
+        imageUrls: updatedModel.image_urls ? (typeof updatedModel.image_urls === 'string' ? JSON.parse(updatedModel.image_urls) : updatedModel.image_urls) : null,
         model3dUrl: updatedModel.model_3d_url,
         features: updatedModel.features || [],
         categorySubType: updatedModel.category_sub_type,
@@ -1440,6 +1443,61 @@ export class DatabaseStorage implements IStorage {
       };
     } catch (error) {
       console.error('Error updating model:', error);
+      throw error;
+    }
+  }
+
+  async addModelImage(id: number, url: string): Promise<TrailerModelResponse> {
+    try {
+      const current = await db.execute(sql`SELECT image_urls, image_url FROM trailer_models WHERE id = ${id}`);
+      if (current.rows.length === 0) throw new Error('Model not found');
+      const row = current.rows[0] as any;
+      const existing: string[] = row.image_urls ? (typeof row.image_urls === 'string' ? JSON.parse(row.image_urls) : row.image_urls) : (row.image_url ? [row.image_url] : []);
+      const newUrls = existing.includes(url) ? existing : [...existing, url];
+      const newUrlsJson = JSON.stringify(newUrls);
+      const primary = newUrls[0] || null;
+      await db.execute(sql`UPDATE trailer_models SET image_urls = ${newUrlsJson}::jsonb, image_url = ${primary} WHERE id = ${id}`);
+      cache.clear();
+      const result = await db.execute(sql`SELECT m.*, s.name as series_name FROM trailer_models m LEFT JOIN trailer_series s ON m.series_id = s.id WHERE m.id = ${id}`);
+      const m = result.rows[0] as any;
+      return { id: m.id, categoryId: m.category_id, seriesId: m.series_id, seriesName: m.series_name, modelId: m.model_id, name: m.name, basePrice: m.base_price, imageUrl: m.image_url, imageUrls: newUrls, model3dUrl: m.model_3d_url, features: m.features || [], isArchived: m.is_archived || false };
+    } catch (error) {
+      console.error('Error adding model image:', error);
+      throw error;
+    }
+  }
+
+  async removeModelImage(id: number, url: string): Promise<TrailerModelResponse> {
+    try {
+      const current = await db.execute(sql`SELECT image_urls, image_url FROM trailer_models WHERE id = ${id}`);
+      if (current.rows.length === 0) throw new Error('Model not found');
+      const row = current.rows[0] as any;
+      const existing: string[] = row.image_urls ? (typeof row.image_urls === 'string' ? JSON.parse(row.image_urls) : row.image_urls) : (row.image_url ? [row.image_url] : []);
+      const newUrls = existing.filter((u: string) => u !== url);
+      const newUrlsJson = newUrls.length > 0 ? JSON.stringify(newUrls) : null;
+      const primary = newUrls[0] || null;
+      await db.execute(sql`UPDATE trailer_models SET image_urls = ${newUrlsJson}::jsonb, image_url = ${primary} WHERE id = ${id}`);
+      cache.clear();
+      const result = await db.execute(sql`SELECT m.*, s.name as series_name FROM trailer_models m LEFT JOIN trailer_series s ON m.series_id = s.id WHERE m.id = ${id}`);
+      const m = result.rows[0] as any;
+      return { id: m.id, categoryId: m.category_id, seriesId: m.series_id, seriesName: m.series_name, modelId: m.model_id, name: m.name, basePrice: m.base_price, imageUrl: m.image_url, imageUrls: newUrls, model3dUrl: m.model_3d_url, features: m.features || [], isArchived: m.is_archived || false };
+    } catch (error) {
+      console.error('Error removing model image:', error);
+      throw error;
+    }
+  }
+
+  async reorderModelImages(id: number, urls: string[]): Promise<TrailerModelResponse> {
+    try {
+      const newUrlsJson = urls.length > 0 ? JSON.stringify(urls) : null;
+      const primary = urls[0] || null;
+      await db.execute(sql`UPDATE trailer_models SET image_urls = ${newUrlsJson}::jsonb, image_url = ${primary} WHERE id = ${id}`);
+      cache.clear();
+      const result = await db.execute(sql`SELECT m.*, s.name as series_name FROM trailer_models m LEFT JOIN trailer_series s ON m.series_id = s.id WHERE m.id = ${id}`);
+      const m = result.rows[0] as any;
+      return { id: m.id, categoryId: m.category_id, seriesId: m.series_id, seriesName: m.series_name, modelId: m.model_id, name: m.name, basePrice: m.base_price, imageUrl: m.image_url, imageUrls: urls, model3dUrl: m.model_3d_url, features: m.features || [], isArchived: m.is_archived || false };
+    } catch (error) {
+      console.error('Error reordering model images:', error);
       throw error;
     }
   }
