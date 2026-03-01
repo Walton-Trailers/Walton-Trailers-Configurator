@@ -815,7 +815,7 @@ export class DatabaseStorage implements IStorage {
     try {
       const result = await db.execute(sql`
         SELECT m.id, m.category_id, m.model_id, m.name, 
-               m.deck_size, m.axles, m.base_price, m.image_url, m.model_3d_url, m.features,
+               m.deck_size, m.axles, m.base_price, m.image_url, m.image_urls, m.model_3d_url, m.features,
                m.length_gvwr, m.length_payload, m.category_order
         FROM trailer_models m
         JOIN trailer_categories c ON m.category_id = c.id
@@ -832,6 +832,7 @@ export class DatabaseStorage implements IStorage {
         axles: model.axles,
         basePrice: model.base_price,
         imageUrl: model.image_url,
+        imageUrls: model.image_urls ? (typeof model.image_urls === 'string' ? JSON.parse(model.image_urls) : model.image_urls) : null,
         model3dUrl: model.model_3d_url,
         features: model.features || [],
         lengthGvwr: model.length_gvwr,
@@ -848,7 +849,7 @@ export class DatabaseStorage implements IStorage {
     try {
       const result = await db.execute(sql`
         SELECT m.id, m.category_id, m.series_id, m.model_id, m.name,
-               m.deck_size, m.axles, m.base_price, m.image_url, m.model_3d_url, m.features,
+               m.deck_size, m.axles, m.base_price, m.image_url, m.image_urls, m.model_3d_url, m.features,
                m.pulltype_options, m.length_options, m.length_price,
                m.length_gvwr, m.length_payload, m.is_archived, m.category_sub_type, m.category_order,
                c.name as category_name, s.name as series_name
@@ -882,6 +883,7 @@ export class DatabaseStorage implements IStorage {
           axles: model.axles,
           basePrice: model.base_price,
           imageUrl: model.image_url,
+          imageUrls: model.image_urls ? (typeof model.image_urls === 'string' ? JSON.parse(model.image_urls) : model.image_urls) : null,
           features: model.features || [],
           pulltypeOptions: model.pulltype_options,
           lengthOptions: model.length_options || [],
@@ -906,7 +908,7 @@ export class DatabaseStorage implements IStorage {
     try {
       const result = await db.execute(sql`
         SELECT id, category_id, model_id, name, gvwr, payload, 
-               deck_size, axles, base_price, image_url, model_3d_url, features, length_payload, category_order
+               deck_size, axles, base_price, image_url, image_urls, model_3d_url, features, length_payload, category_order
         FROM trailer_models
         WHERE model_id = ${modelId}
       `);
@@ -923,6 +925,7 @@ export class DatabaseStorage implements IStorage {
         axles: model.axles,
         basePrice: model.base_price,
         imageUrl: model.image_url,
+        imageUrls: model.image_urls ? (typeof model.image_urls === 'string' ? JSON.parse(model.image_urls) : model.image_urls) : null,
         model3dUrl: model.model_3d_url,
         features: model.features || [],
         lengthPayload: model.length_payload,
