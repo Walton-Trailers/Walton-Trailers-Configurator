@@ -1318,7 +1318,7 @@ Configuration Date: ${new Date().toLocaleDateString()}
                     className="w-full h-full object-contain drop-shadow-lg"
                   />
                 )}
-                {selectedModelGallery.length > 1 && (
+                {selectedModelGallery.length > 1 && !(current3dModelUrl && viewMode === '3d') && (
                   <>
                     <button
                       onClick={() => setGalleryIndex(i => Math.max(0, i - 1))}
@@ -1369,7 +1369,7 @@ Configuration Date: ${new Date().toLocaleDateString()}
                     className="w-full h-full object-contain transition-all duration-500 ease-out drop-shadow-xl"
                   />
                 )}
-                {selectedModelGallery.length > 1 && (
+                {selectedModelGallery.length > 1 && !(current3dModelUrl && viewMode === '3d') && (
                   <>
                     <button
                       onClick={() => setGalleryIndex(i => Math.max(0, i - 1))}
@@ -1821,7 +1821,7 @@ Configuration Date: ${new Date().toLocaleDateString()}
                     className="w-full h-full object-contain drop-shadow-lg"
                   />
                 )}
-                {selectedModelGallery.length > 1 && (
+                {selectedModelGallery.length > 1 && !(current3dModelUrl && viewMode === '3d') && (
                   <>
                     <button
                       onClick={() => setGalleryIndex(i => Math.max(0, i - 1))}
@@ -1872,7 +1872,7 @@ Configuration Date: ${new Date().toLocaleDateString()}
                     className="w-full h-full object-contain transition-all duration-500 ease-out drop-shadow-xl"
                   />
                 )}
-                {selectedModelGallery.length > 1 && (
+                {selectedModelGallery.length > 1 && !(current3dModelUrl && viewMode === '3d') && (
                   <>
                     <button
                       onClick={() => setGalleryIndex(i => Math.max(0, i - 1))}
