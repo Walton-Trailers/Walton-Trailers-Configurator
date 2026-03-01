@@ -113,6 +113,7 @@ interface TrailerModel {
   standardFeatures?: string[];
   model3dUrl?: string | null;
   categoryOrder?: Record<string, number> | null;
+  imageUrls?: string[] | null;
 }
 
 interface TrailerOption {
@@ -232,6 +233,7 @@ export default function Configurator() {
   const [hoveredCategory, setHoveredCategory] = useState<TrailerCategory | null>(null);
   const [hoveredModel, setHoveredModel] = useState<TrailerModel | null>(null);
   const [viewMode, setViewMode] = useState<'3d' | 'image'>('3d');
+  const [galleryIndex, setGalleryIndex] = useState(0);
   const [showCustomQuoteModal, setShowCustomQuoteModal] = useState(false);
   const [learnMoreOptions, setLearnMoreOptions] = useState<TrailerOption[]>([]);
   const [learnMoreCategory, setLearnMoreCategory] = useState<string>('');
@@ -473,6 +475,10 @@ export default function Configurator() {
     
     setTotalPrice(price);
   }, [selectedModel, selectedOptions, selectedPrimer, options]);
+
+  useEffect(() => {
+    setGalleryIndex(0);
+  }, [selectedModel?.id]);
 
   // Calculate dynamic payload based on selected length option
   const getDynamicPayload = () => {
@@ -808,11 +814,16 @@ Configuration Date: ${new Date().toLocaleDateString()}
     }
   };
 
-  const currentTrailerImage = selectedModel?.imageUrl || 
-    hoveredModel?.imageUrl ||
-    hoveredCategory?.imageUrl || 
-    selectedCategory?.imageUrl || 
-    "https://images.unsplash.com/photo-1581094794329-c8112a89af12?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&h=600";
+  const selectedModelGallery: string[] = selectedModel
+    ? (selectedModel.imageUrls && selectedModel.imageUrls.length > 0
+        ? selectedModel.imageUrls
+        : selectedModel.imageUrl ? [selectedModel.imageUrl] : [])
+    : [];
+
+  const currentTrailerImage = selectedModel
+    ? (selectedModelGallery[galleryIndex] || selectedModel.imageUrl || "https://images.unsplash.com/photo-1581094794329-c8112a89af12?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&h=600")
+    : (hoveredModel?.imageUrl || hoveredCategory?.imageUrl || selectedCategory?.imageUrl ||
+       "https://images.unsplash.com/photo-1581094794329-c8112a89af12?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&h=600");
 
   const current3dModelUrl = selectedModel?.model3dUrl || hoveredModel?.model3dUrl || null;
 
@@ -1307,6 +1318,33 @@ Configuration Date: ${new Date().toLocaleDateString()}
                     className="w-full h-full object-contain drop-shadow-lg"
                   />
                 )}
+                {selectedModelGallery.length > 1 && (
+                  <>
+                    <button
+                      onClick={() => setGalleryIndex(i => Math.max(0, i - 1))}
+                      disabled={galleryIndex === 0}
+                      className="absolute left-1 top-1/2 -translate-y-1/2 z-20 w-7 h-7 flex items-center justify-center rounded-full bg-white/80 hover:bg-white shadow-md border border-gray-200 disabled:opacity-30 transition-all"
+                    >
+                      <ArrowLeft className="w-3.5 h-3.5 text-gray-700" />
+                    </button>
+                    <button
+                      onClick={() => setGalleryIndex(i => Math.min(selectedModelGallery.length - 1, i + 1))}
+                      disabled={galleryIndex === selectedModelGallery.length - 1}
+                      className="absolute right-1 top-1/2 -translate-y-1/2 z-20 w-7 h-7 flex items-center justify-center rounded-full bg-white/80 hover:bg-white shadow-md border border-gray-200 disabled:opacity-30 transition-all"
+                    >
+                      <ArrowRight className="w-3.5 h-3.5 text-gray-700" />
+                    </button>
+                    <div className="absolute bottom-2 left-1/2 -translate-x-1/2 z-20 flex gap-1">
+                      {selectedModelGallery.map((_, i) => (
+                        <button
+                          key={i}
+                          onClick={() => setGalleryIndex(i)}
+                          className={`w-1.5 h-1.5 rounded-full transition-all ${i === galleryIndex ? 'bg-gray-800 scale-110' : 'bg-gray-400 hover:bg-gray-600'}`}
+                        />
+                      ))}
+                    </div>
+                  </>
+                )}
               </div>
             </div>
 
@@ -1330,6 +1368,33 @@ Configuration Date: ${new Date().toLocaleDateString()}
                     alt="Trailer"
                     className="w-full h-full object-contain transition-all duration-500 ease-out drop-shadow-xl"
                   />
+                )}
+                {selectedModelGallery.length > 1 && (
+                  <>
+                    <button
+                      onClick={() => setGalleryIndex(i => Math.max(0, i - 1))}
+                      disabled={galleryIndex === 0}
+                      className="absolute left-2 top-1/2 -translate-y-1/2 z-20 w-10 h-10 flex items-center justify-center rounded-full bg-white/80 hover:bg-white shadow-md border border-gray-200 disabled:opacity-30 transition-all"
+                    >
+                      <ArrowLeft className="w-5 h-5 text-gray-700" />
+                    </button>
+                    <button
+                      onClick={() => setGalleryIndex(i => Math.min(selectedModelGallery.length - 1, i + 1))}
+                      disabled={galleryIndex === selectedModelGallery.length - 1}
+                      className="absolute right-2 top-1/2 -translate-y-1/2 z-20 w-10 h-10 flex items-center justify-center rounded-full bg-white/80 hover:bg-white shadow-md border border-gray-200 disabled:opacity-30 transition-all"
+                    >
+                      <ArrowRight className="w-5 h-5 text-gray-700" />
+                    </button>
+                    <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-20 flex gap-1.5">
+                      {selectedModelGallery.map((_, i) => (
+                        <button
+                          key={i}
+                          onClick={() => setGalleryIndex(i)}
+                          className={`w-2 h-2 rounded-full transition-all ${i === galleryIndex ? 'bg-gray-800 scale-110' : 'bg-gray-400 hover:bg-gray-600'}`}
+                        />
+                      ))}
+                    </div>
+                  </>
                 )}
               </div>
             </div>
@@ -1756,6 +1821,33 @@ Configuration Date: ${new Date().toLocaleDateString()}
                     className="w-full h-full object-contain drop-shadow-lg"
                   />
                 )}
+                {selectedModelGallery.length > 1 && (
+                  <>
+                    <button
+                      onClick={() => setGalleryIndex(i => Math.max(0, i - 1))}
+                      disabled={galleryIndex === 0}
+                      className="absolute left-1 top-1/2 -translate-y-1/2 z-20 w-7 h-7 flex items-center justify-center rounded-full bg-white/80 hover:bg-white shadow-md border border-gray-200 disabled:opacity-30 transition-all"
+                    >
+                      <ArrowLeft className="w-3.5 h-3.5 text-gray-700" />
+                    </button>
+                    <button
+                      onClick={() => setGalleryIndex(i => Math.min(selectedModelGallery.length - 1, i + 1))}
+                      disabled={galleryIndex === selectedModelGallery.length - 1}
+                      className="absolute right-1 top-1/2 -translate-y-1/2 z-20 w-7 h-7 flex items-center justify-center rounded-full bg-white/80 hover:bg-white shadow-md border border-gray-200 disabled:opacity-30 transition-all"
+                    >
+                      <ArrowRight className="w-3.5 h-3.5 text-gray-700" />
+                    </button>
+                    <div className="absolute bottom-2 left-1/2 -translate-x-1/2 z-20 flex gap-1">
+                      {selectedModelGallery.map((_, i) => (
+                        <button
+                          key={i}
+                          onClick={() => setGalleryIndex(i)}
+                          className={`w-1.5 h-1.5 rounded-full transition-all ${i === galleryIndex ? 'bg-gray-800 scale-110' : 'bg-gray-400 hover:bg-gray-600'}`}
+                        />
+                      ))}
+                    </div>
+                  </>
+                )}
               </div>
             </div>
 
@@ -1779,6 +1871,33 @@ Configuration Date: ${new Date().toLocaleDateString()}
                     alt="Trailer"
                     className="w-full h-full object-contain transition-all duration-500 ease-out drop-shadow-xl"
                   />
+                )}
+                {selectedModelGallery.length > 1 && (
+                  <>
+                    <button
+                      onClick={() => setGalleryIndex(i => Math.max(0, i - 1))}
+                      disabled={galleryIndex === 0}
+                      className="absolute left-2 top-1/2 -translate-y-1/2 z-20 w-10 h-10 flex items-center justify-center rounded-full bg-white/80 hover:bg-white shadow-md border border-gray-200 disabled:opacity-30 transition-all"
+                    >
+                      <ArrowLeft className="w-5 h-5 text-gray-700" />
+                    </button>
+                    <button
+                      onClick={() => setGalleryIndex(i => Math.min(selectedModelGallery.length - 1, i + 1))}
+                      disabled={galleryIndex === selectedModelGallery.length - 1}
+                      className="absolute right-2 top-1/2 -translate-y-1/2 z-20 w-10 h-10 flex items-center justify-center rounded-full bg-white/80 hover:bg-white shadow-md border border-gray-200 disabled:opacity-30 transition-all"
+                    >
+                      <ArrowRight className="w-5 h-5 text-gray-700" />
+                    </button>
+                    <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-20 flex gap-1.5">
+                      {selectedModelGallery.map((_, i) => (
+                        <button
+                          key={i}
+                          onClick={() => setGalleryIndex(i)}
+                          className={`w-2 h-2 rounded-full transition-all ${i === galleryIndex ? 'bg-gray-800 scale-110' : 'bg-gray-400 hover:bg-gray-600'}`}
+                        />
+                      ))}
+                    </div>
+                  </>
                 )}
               </div>
             </div>
