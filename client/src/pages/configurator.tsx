@@ -373,6 +373,11 @@ export default function Configurator() {
     enabled: !!selectedModel?.modelId
   });
 
+  // Fetch category positions for option ordering (public endpoint)
+  const { data: categoryPositions } = useQuery<{ name: string; position: number }[]>({
+    queryKey: ['/api/categories/options/positions'],
+  });
+
   // Fetch series for any selected category (dynamic)
   const { data: categorySeries, isLoading: isSeriesLoading } = useQuery<any[]>({
     queryKey: ['/api/categories', selectedCategory?.slug, 'series'],
@@ -1429,13 +1434,17 @@ Configuration Date: ${new Date().toLocaleDateString()}
                           return acc;
                         }, {} as Record<string, TrailerOption[]>)
                       ).sort(([categoryA], [categoryB]) => {
-                        // Define custom order: color first, length second, then others, extras last
-                        const order: Record<string, number> = { 'color': 0, 'length': 1, 'extras': 999 };
-                        const orderA = order[categoryA] !== undefined ? order[categoryA] : 50;
-                        const orderB = order[categoryB] !== undefined ? order[categoryB] : 50;
-                        
+                        // Use positions from DB; length is always second after whatever is first
+                        const posMap: Record<string, number> = {};
+                        if (categoryPositions) {
+                          categoryPositions.forEach(({ name, position }) => {
+                            posMap[name] = position ?? 999;
+                          });
+                        }
+                        const orderA = posMap[categoryA] !== undefined ? posMap[categoryA] : 999;
+                        const orderB = posMap[categoryB] !== undefined ? posMap[categoryB] : 999;
                         if (orderA !== orderB) return orderA - orderB;
-                        return categoryA.localeCompare(categoryB); // Alphabetical for same priority
+                        return categoryA.localeCompare(categoryB);
                       }).map(([category, categoryOptions]) => (
                         <div key={category} className="mb-4">
                           <h4 className="text-sm font-medium text-gray-900 mb-2">

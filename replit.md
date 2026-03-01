@@ -29,6 +29,14 @@ This is a Tesla-style trailer configurator application for Walton Trailers, desi
 - Included helpful links to Airtable Developer Hub for token generation
 - Prepared foundation for data sync operations between Airtable and database
 
+### Category Position Ordering (March 1, 2026)
+- Added `position` column to `trailer_option_categories` table for user-defined display ordering
+- Admin "Edit/Add Categories" popup now shows up/down arrow buttons to reorder categories
+- New PATCH `/api/categories/options/:id/position` endpoint swaps adjacent positions
+- New public GET `/api/categories/options/positions` endpoint for configurator ordering
+- Configurator now uses DB-driven positions instead of hardcoded priority logic
+- New categories automatically get the next available position on creation
+
 ### 3D Model Viewer Integration (February 18, 2026)
 - Added interactive 3D model viewer using Three.js (@react-three/fiber + @react-three/drei)
 - Users can rotate, zoom, and pan 3D trailer models in the configurator left panel

@@ -3974,8 +3974,63 @@ export default function FastPricing() {
                 <div className="text-center py-4 text-gray-500">No categories found</div>
               ) : (
                 <div className="space-y-2">
-                  {categoryDetails.map((cat: any) => (
-                      <div key={cat.id} className="flex items-center gap-2 p-2 border rounded-md">
+                  {categoryDetails.map((cat: any, idx: number) => (
+                      <div key={cat.id} className="flex items-center gap-1 p-2 border rounded-md">
+                        {/* Position arrows */}
+                        <div className="flex flex-col gap-0.5 mr-1">
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            className="px-1 py-0 h-5 w-5"
+                            disabled={idx === 0}
+                            onClick={async () => {
+                              try {
+                                const response = await fetch(`/api/categories/options/${cat.id}/position`, {
+                                  method: 'PATCH',
+                                  headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${sessionId}` },
+                                  body: JSON.stringify({ direction: 'up' }),
+                                });
+                                if (!response.ok) {
+                                  const data = await response.json();
+                                  toast({ title: "Error", description: data.message, variant: "destructive" });
+                                  return;
+                                }
+                                queryClient.invalidateQueries({ queryKey: ['/api/categories/options/details'] });
+                                queryClient.invalidateQueries({ queryKey: ['/api/categories', 'options'] });
+                              } catch {
+                                toast({ title: "Error", description: "Failed to reorder", variant: "destructive" });
+                              }
+                            }}
+                          >
+                            <ArrowUp className="w-3 h-3" />
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            className="px-1 py-0 h-5 w-5"
+                            disabled={idx === categoryDetails.length - 1}
+                            onClick={async () => {
+                              try {
+                                const response = await fetch(`/api/categories/options/${cat.id}/position`, {
+                                  method: 'PATCH',
+                                  headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${sessionId}` },
+                                  body: JSON.stringify({ direction: 'down' }),
+                                });
+                                if (!response.ok) {
+                                  const data = await response.json();
+                                  toast({ title: "Error", description: data.message, variant: "destructive" });
+                                  return;
+                                }
+                                queryClient.invalidateQueries({ queryKey: ['/api/categories/options/details'] });
+                                queryClient.invalidateQueries({ queryKey: ['/api/categories', 'options'] });
+                              } catch {
+                                toast({ title: "Error", description: "Failed to reorder", variant: "destructive" });
+                              }
+                            }}
+                          >
+                            <ArrowDown className="w-3 h-3" />
+                          </Button>
+                        </div>
                         {editingCatId === cat.id ? (
                           <>
                             <Input

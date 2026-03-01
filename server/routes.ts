@@ -2001,11 +2001,25 @@ export async function registerRoutes(app: Express): Promise<Express> {
 
 
 
+  // Public endpoint for category positions (used by configurator for ordering)
+  app.get("/api/categories/options/positions", async (req, res) => {
+    try {
+      const result = await db.execute(sql`
+        SELECT "Name", position FROM trailer_option_categories ORDER BY position NULLS LAST, "Name"
+      `);
+      const positions = result.rows.map((row: any) => ({ name: row.Name, position: row.position }));
+      res.json(positions);
+    } catch (error) {
+      console.error("Error fetching option category positions:", error);
+      res.status(500).json({ message: "Failed to fetch category positions" });
+    }
+  });
+
   // Get all categories for dropdown from trailer_option_categories table
   app.get("/api/categories/options", requireAuth, async (req, res) => {
     try {
       const result = await db.execute(sql`
-        SELECT "Name" FROM trailer_option_categories ORDER BY "Name"
+        SELECT "Name" FROM trailer_option_categories ORDER BY position NULLS LAST, "Name"
       `);
       const categories = result.rows.map((row: any) => row.Name).filter((name: string) => name);
       res.json(categories);
@@ -2028,8 +2042,12 @@ export async function registerRoutes(app: Express): Promise<Express> {
       if (existing.rows.length > 0) {
         return res.status(409).json({ message: "Category already exists" });
       }
+      const maxPos = await db.execute(sql`
+        SELECT COALESCE(MAX(position), 0) + 1 as next_pos FROM trailer_option_categories
+      `);
+      const nextPos = (maxPos.rows[0] as any).next_pos;
       await db.execute(sql`
-        INSERT INTO trailer_option_categories ("Name") VALUES (${categoryName})
+        INSERT INTO trailer_option_categories ("Name", position) VALUES (${categoryName}, ${nextPos})
       `);
       res.json({ success: true, name: categoryName });
     } catch (error) {
@@ -2041,13 +2059,64 @@ export async function registerRoutes(app: Express): Promise<Express> {
   app.get("/api/categories/options/details", requireAuth, async (req, res) => {
     try {
       const result = await db.execute(sql`
-        SELECT id, "Name" FROM trailer_option_categories ORDER BY "Name"
+        SELECT id, "Name", position FROM trailer_option_categories ORDER BY position NULLS LAST, "Name"
       `);
-      const categories = result.rows.map((row: any) => ({ id: row.id, name: row.Name }));
+      const categories = result.rows.map((row: any) => ({ id: row.id, name: row.Name, position: row.position }));
       res.json(categories);
     } catch (error) {
       console.error("Error fetching option category details:", error);
       res.status(500).json({ message: "Failed to fetch categories" });
+    }
+  });
+
+  // Reorder a category by swapping its position with the adjacent one
+  app.patch("/api/categories/options/:id/position", requireAuth, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { direction } = req.body; // 'up' or 'down'
+      if (direction !== 'up' && direction !== 'down') {
+        return res.status(400).json({ message: "Direction must be 'up' or 'down'" });
+      }
+      const catResult = await db.execute(sql`
+        SELECT id, position FROM trailer_option_categories WHERE id = ${parseInt(id)}
+      `);
+      if (catResult.rows.length === 0) {
+        return res.status(404).json({ message: "Category not found" });
+      }
+      const currentPos = (catResult.rows[0] as any).position;
+      // Find the adjacent category to swap with
+      let adjacentResult;
+      if (direction === 'up') {
+        adjacentResult = await db.execute(sql`
+          SELECT id, position FROM trailer_option_categories
+          WHERE position < ${currentPos}
+          ORDER BY position DESC NULLS LAST
+          LIMIT 1
+        `);
+      } else {
+        adjacentResult = await db.execute(sql`
+          SELECT id, position FROM trailer_option_categories
+          WHERE position > ${currentPos}
+          ORDER BY position ASC NULLS LAST
+          LIMIT 1
+        `);
+      }
+      if (adjacentResult.rows.length === 0) {
+        return res.json({ success: true, message: "Already at boundary" });
+      }
+      const adjacentId = (adjacentResult.rows[0] as any).id;
+      const adjacentPos = (adjacentResult.rows[0] as any).position;
+      // Swap positions
+      await db.execute(sql`
+        UPDATE trailer_option_categories SET position = ${adjacentPos} WHERE id = ${parseInt(id)}
+      `);
+      await db.execute(sql`
+        UPDATE trailer_option_categories SET position = ${currentPos} WHERE id = ${adjacentId}
+      `);
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error reordering option category:", error);
+      res.status(500).json({ message: "Failed to reorder category" });
     }
   });
 
