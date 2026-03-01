@@ -4031,7 +4031,12 @@ export default function FastPricing() {
                             <ArrowDown className="w-3 h-3" />
                           </Button>
                         </div>
-                        {editingCatId === cat.id ? (
+                        {cat.isSystem ? (
+                          <div className="flex items-center flex-1 gap-2">
+                            <span className="flex-1 text-sm font-medium text-gray-700">{cat.name.charAt(0).toUpperCase() + cat.name.slice(1)}</span>
+                            <span className="text-xs px-1.5 py-0.5 rounded bg-blue-100 text-blue-700 font-medium">Built-in</span>
+                          </div>
+                        ) : editingCatId === cat.id ? (
                           <>
                             <Input
                               value={editingCatName}

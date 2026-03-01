@@ -2019,7 +2019,7 @@ export async function registerRoutes(app: Express): Promise<Express> {
   app.get("/api/categories/options", requireAuth, async (req, res) => {
     try {
       const result = await db.execute(sql`
-        SELECT "Name" FROM trailer_option_categories ORDER BY position NULLS LAST, "Name"
+        SELECT "Name" FROM trailer_option_categories WHERE is_system IS NOT TRUE ORDER BY position NULLS LAST, "Name"
       `);
       const categories = result.rows.map((row: any) => row.Name).filter((name: string) => name);
       res.json(categories);
@@ -2059,9 +2059,9 @@ export async function registerRoutes(app: Express): Promise<Express> {
   app.get("/api/categories/options/details", requireAuth, async (req, res) => {
     try {
       const result = await db.execute(sql`
-        SELECT id, "Name", position FROM trailer_option_categories ORDER BY position NULLS LAST, "Name"
+        SELECT id, "Name", position, is_system FROM trailer_option_categories ORDER BY position NULLS LAST, "Name"
       `);
-      const categories = result.rows.map((row: any) => ({ id: row.id, name: row.Name, position: row.position }));
+      const categories = result.rows.map((row: any) => ({ id: row.id, name: row.Name, position: row.position, isSystem: row.is_system }));
       res.json(categories);
     } catch (error) {
       console.error("Error fetching option category details:", error);
@@ -2135,10 +2135,13 @@ export async function registerRoutes(app: Express): Promise<Express> {
         return res.status(409).json({ message: "A category with that name already exists" });
       }
       const oldResult = await db.execute(sql`
-        SELECT "Name" FROM trailer_option_categories WHERE id = ${parseInt(id)}
+        SELECT "Name", is_system FROM trailer_option_categories WHERE id = ${parseInt(id)}
       `);
       if (oldResult.rows.length === 0) {
         return res.status(404).json({ message: "Category not found" });
+      }
+      if ((oldResult.rows[0] as any).is_system) {
+        return res.status(403).json({ message: "System categories cannot be renamed" });
       }
       const oldName = (oldResult.rows[0] as any).Name;
       await db.execute(sql`
@@ -2158,10 +2161,13 @@ export async function registerRoutes(app: Express): Promise<Express> {
     try {
       const { id } = req.params;
       const catResult = await db.execute(sql`
-        SELECT "Name" FROM trailer_option_categories WHERE id = ${parseInt(id)}
+        SELECT "Name", is_system FROM trailer_option_categories WHERE id = ${parseInt(id)}
       `);
       if (catResult.rows.length === 0) {
         return res.status(404).json({ message: "Category not found" });
+      }
+      if ((catResult.rows[0] as any).is_system) {
+        return res.status(403).json({ message: "System categories cannot be deleted" });
       }
       const catName = (catResult.rows[0] as any).Name;
       const activeCount = await db.execute(sql`
