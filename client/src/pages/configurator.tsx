@@ -281,6 +281,40 @@ export default function Configurator() {
     setIsDealerLoggedIn(!!dealerSession);
   }, []);
 
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const modelIdParam = params.get("model");
+    if (!modelIdParam) return;
+
+    const load = async () => {
+      try {
+        const [modelRes, catsRes] = await Promise.all([
+          fetch(`/api/models/${encodeURIComponent(modelIdParam)}`),
+          fetch("/api/categories"),
+        ]);
+        if (!modelRes.ok) return;
+        const model = await modelRes.json();
+        const categories = catsRes.ok ? await catsRes.json() : [];
+
+        const category = categories.find((c: any) => c.id === model.categoryId) ?? null;
+        const series = model.seriesId
+          ? { id: model.seriesId, name: model.seriesName ?? "", imageUrl: null, slug: "", description: "", startingPrice: 0, orderIndex: 0 }
+          : null;
+
+        if (category) setSelectedCategory(category);
+        if (series) setSelectedSeries(series);
+        setSelectedModel(model);
+        setCurrentStep(4);
+
+        window.history.replaceState({}, "", "/");
+      } catch {
+        // silently ignore — user just sees the normal step 1
+      }
+    };
+
+    load();
+  }, []);
+
   // Save order mutation for dealers
   const saveOrderMutation = useMutation({
     mutationFn: async (orderData: any) => {

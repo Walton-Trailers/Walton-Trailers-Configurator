@@ -907,10 +907,12 @@ export class DatabaseStorage implements IStorage {
   async getTrailerModel(modelId: string): Promise<TrailerModelResponse | undefined> {
     try {
       const result = await db.execute(sql`
-        SELECT id, category_id, model_id, name, gvwr, payload, 
-               deck_size, axles, base_price, image_url, image_urls, model_3d_url, features, length_payload, category_order
-        FROM trailer_models
-        WHERE model_id = ${modelId}
+        SELECT m.id, m.category_id, m.model_id, m.name,
+               m.deck_size, m.axles, m.base_price, m.image_url, m.image_urls, m.model_3d_url,
+               m.features, m.length_payload, m.category_order, m.series_id, s.name as series_name
+        FROM trailer_models m
+        LEFT JOIN trailer_series s ON m.series_id = s.id
+        WHERE m.model_id = ${modelId}
       `);
       
       if (result.rows.length === 0) return undefined;
@@ -919,6 +921,8 @@ export class DatabaseStorage implements IStorage {
       return {
         id: model.id,
         categoryId: model.category_id,
+        seriesId: model.series_id,
+        seriesName: model.series_name,
         modelId: model.model_id,
         name: model.name,
         payload: model.payload,

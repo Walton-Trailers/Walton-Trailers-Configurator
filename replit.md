@@ -29,6 +29,14 @@ This is a Tesla-style trailer configurator application for Walton Trailers, desi
 - Included helpful links to Airtable Developer Hub for token generation
 - Prepared foundation for data sync operations between Airtable and database
 
+### Deep-Link Support (March 1, 2026)
+- External websites can link directly to a specific model via `/?model=FBH207` URL parameter
+- On mount, configurator reads the `model` query parameter and fetches model + categories in parallel
+- Auto-selects category, reconstructs minimal series object, sets model, and jumps to step 4
+- URL is cleaned with `history.replaceState` so a page refresh doesn't re-trigger auto-navigation
+- Fixed `getTrailerModel` SQL to JOIN `trailer_series` and return `seriesId`/`seriesName`
+- Also fixed non-existent columns (`gvwr`, `payload`) that were in the SELECT but don't exist in the actual DB
+
 ### Category Position Ordering (March 1, 2026)
 - Added `position` column to `trailer_option_categories` table for user-defined display ordering
 - Added `is_system` flag to protect built-in categories (Model, Length) from rename/delete
