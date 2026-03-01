@@ -4187,6 +4187,11 @@ export default function FastPricing() {
                   </div>
               )}
             </div>
+            <div className="px-4 pb-3 pt-2 border-t bg-amber-50 border-amber-200">
+              <p className="text-xs text-amber-800">
+                <span className="font-semibold">Note:</span> Changing order here only affects the default category order when creating a new model. To change the order for an existing model, go to the <span className="font-semibold">Models tab</span> and open a model's edit panel.
+              </p>
+            </div>
             <div className="p-4 border-t">
               <Button variant="outline" className="w-full" onClick={() => { setShowEditCategories(false); setEditingCatId(null); }}>
                 Close
