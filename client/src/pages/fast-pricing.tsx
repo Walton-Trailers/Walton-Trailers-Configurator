@@ -168,6 +168,7 @@ export default function FastPricing() {
   const [showEditCategories, setShowEditCategories] = useState(false);
   const [editingCatId, setEditingCatId] = useState<number | null>(null);
   const [editingCatName, setEditingCatName] = useState("");
+  const [localCategoryOrder, setLocalCategoryOrder] = useState<Record<number, Record<string, number>>>({});
 
   // Helper functions for managing length options and their pull types and GVWR
   const addLengthOption = (modelId: number, lengthValue: string) => {
@@ -717,11 +718,17 @@ export default function FastPricing() {
       },
       body: JSON.stringify(data),
     }),
-    onSuccess: () => {
+    onSuccess: (_data: any, variables: any) => {
       queryClient.invalidateQueries({ queryKey: ['admin', 'models'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/models'] });
       setEditingModel(null);
       setEditData({});
-      setSeriesSelection({}); // Clear series selection state
+      setSeriesSelection({});
+      setLocalCategoryOrder(prev => {
+        const next = { ...prev };
+        delete next[variables.id];
+        return next;
+      });
     },
   });
 
@@ -785,6 +792,11 @@ export default function FastPricing() {
       const foundSeries = seriesData.find(series => series.name === selectedSeriesName);
       seriesId = foundSeries ? foundSeries.id : null;
     }
+
+    // Include local draft category order if the user reordered categories
+    const categoryOrder = localCategoryOrder[model.id] !== undefined
+      ? localCategoryOrder[model.id]
+      : model.categoryOrder ?? null;
     
     updateMutation.mutate({
       id: model.id,
@@ -792,7 +804,7 @@ export default function FastPricing() {
       name: data.name ?? model.name,
       categoryId: data.categoryId ?? model.categoryId,
       basePrice: data.basePrice ?? model.basePrice,
-      seriesId: seriesId, // Use the foreign key instead of text
+      seriesId: seriesId,
       payload: data.payload ?? model.payload,
       axles: data.axles ?? model.axles,
       lengthOptions: data.lengthOptions ?? model.lengthOptions,
@@ -802,6 +814,7 @@ export default function FastPricing() {
       lengthPayload: data.lengthPayload ?? model.lengthPayload,
       lengthDeckSize: data.lengthDeckSize ?? model.lengthDeckSize,
       lengthOrder: data.lengthOrder ?? model.lengthOrder,
+      categoryOrder,
     });
   };
 
@@ -3901,38 +3914,23 @@ export default function FastPricing() {
 
                         {/* Category Display Order */}
                         {(() => {
-                          // Build sorted list using model-specific order, falling back to global position
-                          const modelCategoryOrder: Record<string, number> = model.categoryOrder || {};
+                          // Build sorted list using local draft order, then model-specific order, then global position
+                          const effectiveCategoryOrder: Record<string, number> = localCategoryOrder[openModelId] ?? model.categoryOrder ?? {};
                           const sortedCategories = [...categoryDetails].sort((a: any, b: any) => {
-                            const posA = modelCategoryOrder[a.name] !== undefined ? modelCategoryOrder[a.name] : a.position ?? 999;
-                            const posB = modelCategoryOrder[b.name] !== undefined ? modelCategoryOrder[b.name] : b.position ?? 999;
+                            const posA = effectiveCategoryOrder[a.name] !== undefined ? effectiveCategoryOrder[a.name] : a.position ?? 999;
+                            const posB = effectiveCategoryOrder[b.name] !== undefined ? effectiveCategoryOrder[b.name] : b.position ?? 999;
                             return posA - posB;
                           });
 
-                          const moveCategory = async (catName: string, direction: 'up' | 'down') => {
+                          const moveCategory = (catName: string, direction: 'up' | 'down') => {
                             const currentIdx = sortedCategories.findIndex((c: any) => c.name === catName);
                             const swapIdx = direction === 'up' ? currentIdx - 1 : currentIdx + 1;
                             if (swapIdx < 0 || swapIdx >= sortedCategories.length) return;
-                            // Build new order by swapping positions
                             const newSorted = [...sortedCategories];
                             [newSorted[currentIdx], newSorted[swapIdx]] = [newSorted[swapIdx], newSorted[currentIdx]];
                             const newCategoryOrder: Record<string, number> = {};
                             newSorted.forEach((c: any, idx: number) => { newCategoryOrder[c.name] = idx * 10; });
-                            try {
-                              const response = await fetch(`/api/models/${openModelId}/category-order`, {
-                                method: 'PATCH',
-                                headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${sessionId}` },
-                                body: JSON.stringify({ categoryOrder: newCategoryOrder }),
-                              });
-                              if (!response.ok) {
-                                const data = await response.json();
-                                toast({ title: "Error", description: data.message, variant: "destructive" });
-                                return;
-                              }
-                              queryClient.invalidateQueries({ queryKey: ['/api/models'] });
-                            } catch {
-                              toast({ title: "Error", description: "Failed to reorder categories", variant: "destructive" });
-                            }
+                            setLocalCategoryOrder(prev => ({ ...prev, [openModelId]: newCategoryOrder }));
                           };
 
                           return (
