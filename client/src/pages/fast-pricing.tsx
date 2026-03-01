@@ -4068,7 +4068,7 @@ export default function FastPricing() {
                 </Button>
               </div>
               <div className="p-5">
-                <div className="flex flex-wrap gap-3">
+                <div className="flex flex-wrap gap-3 items-center">
                   {gallery.map((url, idx) => (
                     <div key={url} className="relative group w-24 h-24">
                       <img

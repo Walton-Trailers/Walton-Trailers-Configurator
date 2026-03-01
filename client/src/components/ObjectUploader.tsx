@@ -117,16 +117,14 @@ export function ObjectUploader({
 
   return (
     <div>
-      <Button 
+      <button
         type="button"
-        onClick={handleButtonClick} 
+        onClick={handleButtonClick}
         className={buttonClassName}
-        variant="outline"
-        size="sm"
         title={currentImageUrl ? "Click to view/replace existing image" : "Click to upload image"}
       >
         {children}
-      </Button>
+      </button>
 
       {/* Preview Modal for Existing Image */}
       <Dialog open={showPreviewModal} onOpenChange={setShowPreviewModal}>
