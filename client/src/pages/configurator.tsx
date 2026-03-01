@@ -112,6 +112,7 @@ interface TrailerModel {
   lengthRange?: string | null;
   standardFeatures?: string[];
   model3dUrl?: string | null;
+  categoryOrder?: Record<string, number> | null;
 }
 
 interface TrailerOption {
@@ -1434,11 +1435,19 @@ Configuration Date: ${new Date().toLocaleDateString()}
                           return acc;
                         }, {} as Record<string, TrailerOption[]>)
                       ).sort(([categoryA], [categoryB]) => {
-                        // Use positions from DB; length is always second after whatever is first
+                        // Build position map: model-specific order takes priority, fall back to global
                         const posMap: Record<string, number> = {};
+                        // Start with global positions as baseline
                         if (categoryPositions) {
                           categoryPositions.forEach(({ name, position }) => {
                             posMap[name] = position ?? 999;
+                          });
+                        }
+                        // Override with model-specific order if present
+                        const modelOrder = selectedModel?.categoryOrder as Record<string, number> | null | undefined;
+                        if (modelOrder) {
+                          Object.entries(modelOrder).forEach(([name, pos]) => {
+                            posMap[name] = pos;
                           });
                         }
                         const orderA = posMap[categoryA] !== undefined ? posMap[categoryA] : 999;

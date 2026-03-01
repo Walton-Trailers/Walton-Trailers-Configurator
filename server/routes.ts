@@ -2238,6 +2238,22 @@ export async function registerRoutes(app: Express): Promise<Express> {
     }
   });
 
+  // Update per-model category display order
+  app.patch("/api/models/:id/category-order", requireAuth, async (req, res) => {
+    try {
+      const modelId = parseInt(req.params.id);
+      const { categoryOrder } = req.body;
+      if (!categoryOrder || typeof categoryOrder !== 'object') {
+        return res.status(400).json({ message: "categoryOrder must be an object mapping category names to positions" });
+      }
+      const updatedModel = await storage.updateModel(modelId, { categoryOrder });
+      res.json({ success: true, categoryOrder: updatedModel.categoryOrder });
+    } catch (error) {
+      console.error("Error updating model category order:", error);
+      res.status(500).json({ message: "Failed to update category order" });
+    }
+  });
+
   app.patch("/api/models/:id", requireAuth, async (req, res) => {
     try {
       const modelId = parseInt(req.params.id);

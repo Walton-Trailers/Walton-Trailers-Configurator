@@ -31,11 +31,15 @@ This is a Tesla-style trailer configurator application for Walton Trailers, desi
 
 ### Category Position Ordering (March 1, 2026)
 - Added `position` column to `trailer_option_categories` table for user-defined display ordering
-- Admin "Edit/Add Categories" popup now shows up/down arrow buttons to reorder categories
+- Added `is_system` flag to protect built-in categories (Model, Length) from rename/delete
+- Admin "Edit/Add Categories" popup shows up/down arrow buttons to reorder categories globally
+- Added per-model category order: `category_order` JSON column on `trailer_models`
+- Model detail panel in admin has "Option Display Order" section with arrow reordering
+- New PATCH `/api/models/:id/category-order` endpoint saves model-specific order
+- Configurator uses model-specific order when set, falls back to global order
+- New models with no custom order automatically use the global default (nothing breaks)
 - New PATCH `/api/categories/options/:id/position` endpoint swaps adjacent positions
 - New public GET `/api/categories/options/positions` endpoint for configurator ordering
-- Configurator now uses DB-driven positions instead of hardcoded priority logic
-- New categories automatically get the next available position on creation
 
 ### 3D Model Viewer Integration (February 18, 2026)
 - Added interactive 3D model viewer using Three.js (@react-three/fiber + @react-three/drei)

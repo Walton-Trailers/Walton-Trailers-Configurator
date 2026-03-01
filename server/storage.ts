@@ -44,6 +44,7 @@ export interface TrailerModelResponse {
   lengthPayload?: Record<string, string> | null;
   pulltypeOptions?: Record<string, string> | null;
   lengthOrder?: Record<string, number> | null;
+  categoryOrder?: Record<string, number> | null;
   basePrice: number;
   imageUrl: string;
   model3dUrl?: string | null;
@@ -1134,7 +1135,7 @@ export class DatabaseStorage implements IStorage {
     try {
       const result = await db.execute(sql`
         SELECT m.id, m.category_id, m.series_id, m.model_id, m.name,
-               m.deck_size, m.axles, m.length_options, m.pulltype_options, m.length_price, m.length_gvwr, m.length_payload, m.length_order, m.base_price, 
+               m.deck_size, m.axles, m.length_options, m.pulltype_options, m.length_price, m.length_gvwr, m.length_payload, m.length_order, m.category_order, m.base_price, 
                m.image_url, m.model_3d_url, m.features, m.is_archived, m.category_sub_type, c.name as category_name,
                s.name as series_name
         FROM trailer_models m
@@ -1160,6 +1161,7 @@ export class DatabaseStorage implements IStorage {
         lengthPayload: model.length_payload ? (typeof model.length_payload === 'string' ? JSON.parse(model.length_payload) : model.length_payload) : null,
         lengthDeckSize: model.deck_size ? (typeof model.deck_size === 'string' ? JSON.parse(model.deck_size) : model.deck_size) : null,
         lengthOrder: model.length_order ? (typeof model.length_order === 'string' ? JSON.parse(model.length_order) : model.length_order) : null,
+        categoryOrder: model.category_order ? (typeof model.category_order === 'string' ? JSON.parse(model.category_order) : model.category_order) : null,
         basePrice: model.base_price,
         imageUrl: model.image_url,
         model3dUrl: model.model_3d_url,
@@ -1336,6 +1338,14 @@ export class DatabaseStorage implements IStorage {
         await db.execute(sql`
           UPDATE trailer_models 
           SET length_order = ${lengthOrderJson}
+          WHERE id = ${id}
+        `);
+      }
+      if (updates.categoryOrder !== undefined) {
+        const categoryOrderJson = updates.categoryOrder ? JSON.stringify(updates.categoryOrder) : null;
+        await db.execute(sql`
+          UPDATE trailer_models 
+          SET category_order = ${categoryOrderJson}
           WHERE id = ${id}
         `);
       }

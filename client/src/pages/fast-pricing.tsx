@@ -3899,6 +3899,76 @@ export default function FastPricing() {
                           </div>
                         )}
 
+                        {/* Category Display Order */}
+                        {(() => {
+                          // Build sorted list using model-specific order, falling back to global position
+                          const modelCategoryOrder: Record<string, number> = model.categoryOrder || {};
+                          const sortedCategories = [...categoryDetails].sort((a: any, b: any) => {
+                            const posA = modelCategoryOrder[a.name] !== undefined ? modelCategoryOrder[a.name] : a.position ?? 999;
+                            const posB = modelCategoryOrder[b.name] !== undefined ? modelCategoryOrder[b.name] : b.position ?? 999;
+                            return posA - posB;
+                          });
+
+                          const moveCategory = async (catName: string, direction: 'up' | 'down') => {
+                            const currentIdx = sortedCategories.findIndex((c: any) => c.name === catName);
+                            const swapIdx = direction === 'up' ? currentIdx - 1 : currentIdx + 1;
+                            if (swapIdx < 0 || swapIdx >= sortedCategories.length) return;
+                            // Build new order by swapping positions
+                            const newSorted = [...sortedCategories];
+                            [newSorted[currentIdx], newSorted[swapIdx]] = [newSorted[swapIdx], newSorted[currentIdx]];
+                            const newCategoryOrder: Record<string, number> = {};
+                            newSorted.forEach((c: any, idx: number) => { newCategoryOrder[c.name] = idx * 10; });
+                            try {
+                              const response = await fetch(`/api/models/${openModelId}/category-order`, {
+                                method: 'PATCH',
+                                headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${sessionId}` },
+                                body: JSON.stringify({ categoryOrder: newCategoryOrder }),
+                              });
+                              if (!response.ok) {
+                                const data = await response.json();
+                                toast({ title: "Error", description: data.message, variant: "destructive" });
+                                return;
+                              }
+                              queryClient.invalidateQueries({ queryKey: ['/api/models'] });
+                            } catch {
+                              toast({ title: "Error", description: "Failed to reorder categories", variant: "destructive" });
+                            }
+                          };
+
+                          return (
+                            <div className="border border-gray-200 rounded-lg p-4">
+                              <h4 className="text-sm font-semibold text-gray-900 mb-1">Option Display Order</h4>
+                              <p className="text-xs text-gray-500 mb-3">Control the order options appear in the configurator for this model.</p>
+                              <div className="space-y-1">
+                                {sortedCategories.map((cat: any, idx: number) => (
+                                  <div key={cat.id} className="flex items-center gap-1 py-1 px-2 rounded bg-gray-50 border border-gray-100">
+                                    <div className="flex flex-col gap-0.5 mr-1">
+                                      <button
+                                        disabled={idx === 0}
+                                        onClick={() => moveCategory(cat.name, 'up')}
+                                        className={`w-5 h-4 flex items-center justify-center rounded text-gray-500 hover:bg-gray-200 disabled:opacity-30 disabled:cursor-not-allowed`}
+                                      >
+                                        <ArrowUp className="w-3 h-3" />
+                                      </button>
+                                      <button
+                                        disabled={idx === sortedCategories.length - 1}
+                                        onClick={() => moveCategory(cat.name, 'down')}
+                                        className={`w-5 h-4 flex items-center justify-center rounded text-gray-500 hover:bg-gray-200 disabled:opacity-30 disabled:cursor-not-allowed`}
+                                      >
+                                        <ArrowDown className="w-3 h-3" />
+                                      </button>
+                                    </div>
+                                    <span className="text-sm flex-1">{cat.name.charAt(0).toUpperCase() + cat.name.slice(1)}</span>
+                                    {cat.isSystem && (
+                                      <span className="text-xs px-1.5 py-0.5 rounded bg-blue-100 text-blue-700">Built-in</span>
+                                    )}
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          );
+                        })()}
+
                         {/* Available Options Note */}
                         <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
                           <h4 className="text-lg font-semibold mb-2 text-blue-900">Additional Options</h4>
