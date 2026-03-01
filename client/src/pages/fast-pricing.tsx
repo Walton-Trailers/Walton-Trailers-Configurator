@@ -163,6 +163,7 @@ export default function FastPricing() {
   const [editingLengthFor, setEditingLengthFor] = useState<{modelId: number, lengthIndex: number, originalLength: string} | null>(null);
   const [tempLengthValue, setTempLengthValue] = useState("");
   const [showOptionsPopup, setShowOptionsPopup] = useState<Record<number, boolean>>({});
+  const [galleryModelId, setGalleryModelId] = useState<number | null>(null);
   const [creatingNewCategory, setCreatingNewCategory] = useState(false);
   const [newCategoryName, setNewCategoryName] = useState("");
   const [showEditCategories, setShowEditCategories] = useState(false);
@@ -2516,12 +2517,11 @@ export default function FastPricing() {
                       )}
                     </TableCell>
                     <TableCell>
-                      <ObjectUploader
-                        onGetUploadParameters={handleGetUploadParameters}
-                        onComplete={(result) => handleImageUploadComplete(model.id, result)}
-                        buttonClassName="p-0"
-                        currentImageUrl={model.imageUrl}
-                        modelName={model.name}
+                      <button
+                        type="button"
+                        onClick={() => setGalleryModelId(model.id)}
+                        className="p-0 relative"
+                        title="Manage images"
                       >
                         {model.imageUrl ? (
                           <div className="w-12 h-12 rounded-md overflow-hidden border border-gray-200 hover:border-gray-400 transition-colors cursor-pointer">
@@ -2534,13 +2534,18 @@ export default function FastPricing() {
                                 e.target.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="48" height="48" fill="none"%3E%3Crect width="48" height="48" fill="%23f3f4f6"/%3E%3Cpath stroke="%239ca3af" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M24 16v16m-8-8h16"/%3E%3C/svg%3E';
                               }}
                             />
+                            {model.imageUrls && model.imageUrls.length > 1 && (
+                              <span className="absolute bottom-0.5 right-0.5 text-[9px] px-1 py-0.5 bg-black/60 text-white rounded font-medium leading-none">
+                                {model.imageUrls.length}
+                              </span>
+                            )}
                           </div>
                         ) : (
                           <div className="w-12 h-12 rounded-md border-2 border-dashed border-gray-300 hover:border-gray-400 transition-colors cursor-pointer flex items-center justify-center bg-gray-50">
                             <Upload className="w-5 h-5 text-gray-400" />
                           </div>
                         )}
-                      </ObjectUploader>
+                      </button>
                     </TableCell>
                     <TableCell>
                       <ObjectUploader
@@ -3938,101 +3943,6 @@ export default function FastPricing() {
                           </div>
                         )}
 
-                        {/* Model Image Gallery */}
-                        {(() => {
-                          const gallery: string[] = model.imageUrls && model.imageUrls.length > 0
-                            ? model.imageUrls
-                            : model.imageUrl ? [model.imageUrl] : [];
-
-                          const removeImage = async (url: string) => {
-                            try {
-                              await apiRequest(`/api/models/${openModelId}/images`, {
-                                method: 'DELETE',
-                                body: { url },
-                                headers: { Authorization: `Bearer ${sessionId}` },
-                              });
-                              queryClient.invalidateQueries({ queryKey: ['admin', 'models'] });
-                              toast({ title: "Success", description: "Image removed" });
-                            } catch {
-                              toast({ title: "Error", description: "Failed to remove image", variant: "destructive" });
-                            }
-                          };
-
-                          const moveImage = async (idx: number, direction: 'left' | 'right') => {
-                            const swapIdx = direction === 'left' ? idx - 1 : idx + 1;
-                            if (swapIdx < 0 || swapIdx >= gallery.length) return;
-                            const newUrls = [...gallery];
-                            [newUrls[idx], newUrls[swapIdx]] = [newUrls[swapIdx], newUrls[idx]];
-                            try {
-                              await apiRequest(`/api/models/${openModelId}/images/reorder`, {
-                                method: 'PATCH',
-                                body: { urls: newUrls },
-                                headers: { Authorization: `Bearer ${sessionId}` },
-                              });
-                              queryClient.invalidateQueries({ queryKey: ['admin', 'models'] });
-                            } catch {
-                              toast({ title: "Error", description: "Failed to reorder images", variant: "destructive" });
-                            }
-                          };
-
-                          return (
-                            <div className="border border-gray-200 rounded-lg p-4">
-                              <h4 className="text-sm font-semibold text-gray-900 mb-1">Model Image Gallery</h4>
-                              <p className="text-xs text-gray-500 mb-3">The first image is the primary image shown in the configurator.</p>
-                              <div className="flex flex-wrap gap-2 mb-3">
-                                {gallery.map((url, idx) => (
-                                  <div key={url} className="relative group w-20 h-20">
-                                    <img
-                                      src={url}
-                                      alt={`Gallery image ${idx + 1}`}
-                                      className="w-full h-full object-cover rounded-md border border-gray-200"
-                                      onError={(e: any) => {
-                                        e.target.onerror = null;
-                                        e.target.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="80" height="80" fill="none"%3E%3Crect width="80" height="80" fill="%23f3f4f6"/%3E%3Cpath stroke="%239ca3af" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M40 32v16m-8-8h16"/%3E%3C/svg%3E';
-                                      }}
-                                    />
-                                    {idx === 0 && (
-                                      <span className="absolute top-0.5 left-0.5 text-[9px] px-1 py-0.5 bg-blue-600 text-white rounded font-medium leading-none">Primary</span>
-                                    )}
-                                    <button
-                                      onClick={() => removeImage(url)}
-                                      className="absolute top-0.5 right-0.5 w-4 h-4 bg-red-500 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
-                                    >
-                                      <X className="w-2.5 h-2.5" />
-                                    </button>
-                                    <div className="absolute bottom-0.5 left-0 right-0 flex justify-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
-                                      <button
-                                        disabled={idx === 0}
-                                        onClick={() => moveImage(idx, 'left')}
-                                        className="w-5 h-4 bg-white/90 rounded flex items-center justify-center disabled:opacity-30 hover:bg-white"
-                                      >
-                                        <ArrowLeft className="w-3 h-3" />
-                                      </button>
-                                      <button
-                                        disabled={idx === gallery.length - 1}
-                                        onClick={() => moveImage(idx, 'right')}
-                                        className="w-5 h-4 bg-white/90 rounded flex items-center justify-center disabled:opacity-30 hover:bg-white"
-                                      >
-                                        <ArrowRight className="w-3 h-3" />
-                                      </button>
-                                    </div>
-                                  </div>
-                                ))}
-                                <ObjectUploader
-                                  onGetUploadParameters={handleGetUploadParameters}
-                                  onComplete={(result) => handleGalleryImageUploadComplete(openModelId, result)}
-                                  skipPreview
-                                >
-                                  <div className="w-20 h-20 rounded-md border-2 border-dashed border-gray-300 hover:border-gray-400 transition-colors cursor-pointer flex flex-col items-center justify-center bg-gray-50 gap-1">
-                                    <Plus className="w-5 h-5 text-gray-400" />
-                                    <span className="text-[10px] text-gray-400">Add Image</span>
-                                  </div>
-                                </ObjectUploader>
-                              </div>
-                            </div>
-                          );
-                        })()}
-
                         {/* Category Display Order */}
                         {(() => {
                           // Build sorted list using local draft order, then model-specific order, then global position
@@ -4105,6 +4015,120 @@ export default function FastPricing() {
           </div>
         )}
       </div>
+
+      {/* Image Gallery Modal */}
+      {galleryModelId !== null && (() => {
+        const gModel = [...activeModels, ...archivedModels].find((m: any) => m.id === galleryModelId);
+        if (!gModel) return null;
+        const gallery: string[] = gModel.imageUrls && gModel.imageUrls.length > 0
+          ? gModel.imageUrls
+          : gModel.imageUrl ? [gModel.imageUrl] : [];
+
+        const removeImage = async (url: string) => {
+          try {
+            await apiRequest(`/api/models/${galleryModelId}/images`, {
+              method: 'DELETE',
+              body: { url },
+              headers: { Authorization: `Bearer ${sessionId}` },
+            });
+            queryClient.invalidateQueries({ queryKey: ['admin', 'models'] });
+            toast({ title: "Success", description: "Image removed" });
+          } catch {
+            toast({ title: "Error", description: "Failed to remove image", variant: "destructive" });
+          }
+        };
+
+        const moveImage = async (idx: number, direction: 'left' | 'right') => {
+          const swapIdx = direction === 'left' ? idx - 1 : idx + 1;
+          if (swapIdx < 0 || swapIdx >= gallery.length) return;
+          const newUrls = [...gallery];
+          [newUrls[idx], newUrls[swapIdx]] = [newUrls[swapIdx], newUrls[idx]];
+          try {
+            await apiRequest(`/api/models/${galleryModelId}/images/reorder`, {
+              method: 'PATCH',
+              body: { urls: newUrls },
+              headers: { Authorization: `Bearer ${sessionId}` },
+            });
+            queryClient.invalidateQueries({ queryKey: ['admin', 'models'] });
+          } catch {
+            toast({ title: "Error", description: "Failed to reorder images", variant: "destructive" });
+          }
+        };
+
+        return (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div className="bg-white rounded-lg shadow-xl w-full max-w-lg mx-4">
+              <div className="flex items-center justify-between p-4 border-b">
+                <div>
+                  <h3 className="text-lg font-semibold">Image Gallery</h3>
+                  <p className="text-xs text-gray-500 mt-0.5">{gModel.name} — the first image is the primary shown in the configurator.</p>
+                </div>
+                <Button variant="ghost" size="sm" onClick={() => setGalleryModelId(null)}>
+                  <X className="w-4 h-4" />
+                </Button>
+              </div>
+              <div className="p-5">
+                <div className="flex flex-wrap gap-3">
+                  {gallery.map((url, idx) => (
+                    <div key={url} className="relative group w-24 h-24">
+                      <img
+                        src={url}
+                        alt={`Gallery image ${idx + 1}`}
+                        className="w-full h-full object-cover rounded-md border border-gray-200"
+                        onError={(e: any) => {
+                          e.target.onerror = null;
+                          e.target.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="80" height="80" fill="none"%3E%3Crect width="80" height="80" fill="%23f3f4f6"/%3E%3Cpath stroke="%239ca3af" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M40 32v16m-8-8h16"/%3E%3C/svg%3E';
+                        }}
+                      />
+                      {idx === 0 && (
+                        <span className="absolute top-0.5 left-0.5 text-[9px] px-1 py-0.5 bg-blue-600 text-white rounded font-medium leading-none">Primary</span>
+                      )}
+                      <button
+                        onClick={() => removeImage(url)}
+                        className="absolute top-0.5 right-0.5 w-5 h-5 bg-red-500 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                      >
+                        <X className="w-3 h-3" />
+                      </button>
+                      <div className="absolute bottom-0.5 left-0 right-0 flex justify-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <button
+                          disabled={idx === 0}
+                          onClick={() => moveImage(idx, 'left')}
+                          className="w-6 h-5 bg-white/90 rounded flex items-center justify-center disabled:opacity-30 hover:bg-white shadow-sm"
+                        >
+                          <ArrowLeft className="w-3 h-3" />
+                        </button>
+                        <button
+                          disabled={idx === gallery.length - 1}
+                          onClick={() => moveImage(idx, 'right')}
+                          className="w-6 h-5 bg-white/90 rounded flex items-center justify-center disabled:opacity-30 hover:bg-white shadow-sm"
+                        >
+                          <ArrowRight className="w-3 h-3" />
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                  <ObjectUploader
+                    onGetUploadParameters={handleGetUploadParameters}
+                    onComplete={(result) => handleGalleryImageUploadComplete(galleryModelId, result)}
+                    skipPreview
+                  >
+                    <div className="w-24 h-24 rounded-md border-2 border-dashed border-gray-300 hover:border-gray-400 transition-colors cursor-pointer flex flex-col items-center justify-center bg-gray-50 gap-1">
+                      <Plus className="w-5 h-5 text-gray-400" />
+                      <span className="text-xs text-gray-400">Add Image</span>
+                    </div>
+                  </ObjectUploader>
+                </div>
+                {gallery.length === 0 && (
+                  <p className="text-sm text-gray-500 mt-2">No images yet. Click "Add Image" to upload the first one.</p>
+                )}
+              </div>
+              <div className="p-4 border-t flex justify-end">
+                <Button variant="outline" onClick={() => setGalleryModelId(null)}>Done</Button>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
 
       {showEditCategories && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
