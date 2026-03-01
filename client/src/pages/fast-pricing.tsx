@@ -169,6 +169,7 @@ export default function FastPricing() {
   const [editingCatId, setEditingCatId] = useState<number | null>(null);
   const [editingCatName, setEditingCatName] = useState("");
   const [localCategoryOrder, setLocalCategoryOrder] = useState<Record<number, Record<string, number>>>({});
+  const [localGlobalCatOrder, setLocalGlobalCatOrder] = useState<any[]>([]);
 
   // Helper functions for managing length options and their pull types and GVWR
   const addLengthOption = (modelId: number, lengthValue: string) => {
@@ -552,6 +553,13 @@ export default function FastPricing() {
       fetchSeries();
     }
   }, [activeTab]);
+
+  // Keep local global category order in sync with fetched data
+  useEffect(() => {
+    if (categoryDetails.length > 0) {
+      setLocalGlobalCatOrder(categoryDetails);
+    }
+  }, [categoryDetails]);
 
   // Series mutations
   const addSeriesMutation = useMutation({
@@ -4038,11 +4046,11 @@ export default function FastPricing() {
             <div className="p-4 max-h-96 overflow-y-auto">
               {categoryDetailsLoading ? (
                 <div className="text-center py-4 text-gray-500">Loading...</div>
-              ) : categoryDetails.length === 0 ? (
+              ) : localGlobalCatOrder.length === 0 ? (
                 <div className="text-center py-4 text-gray-500">No categories found</div>
               ) : (
                 <div className="space-y-2">
-                  {categoryDetails.map((cat: any, idx: number) => (
+                  {localGlobalCatOrder.map((cat: any, idx: number) => (
                       <div key={cat.id} className="flex items-center gap-1 p-2 border rounded-md">
                         {/* Position arrows */}
                         <div className="flex flex-col gap-0.5 mr-1">
@@ -4052,6 +4060,12 @@ export default function FastPricing() {
                             className="px-1 py-0 h-5 w-5"
                             disabled={idx === 0}
                             onClick={async () => {
+                              // Update UI immediately
+                              setLocalGlobalCatOrder(prev => {
+                                const next = [...prev];
+                                [next[idx], next[idx - 1]] = [next[idx - 1], next[idx]];
+                                return next;
+                              });
                               try {
                                 const response = await fetch(`/api/categories/options/${cat.id}/position`, {
                                   method: 'PATCH',
@@ -4061,12 +4075,13 @@ export default function FastPricing() {
                                 if (!response.ok) {
                                   const data = await response.json();
                                   toast({ title: "Error", description: data.message, variant: "destructive" });
+                                  queryClient.invalidateQueries({ queryKey: ['/api/categories/options/details'] });
                                   return;
                                 }
-                                queryClient.invalidateQueries({ queryKey: ['/api/categories/options/details'] });
                                 queryClient.invalidateQueries({ queryKey: ['/api/categories', 'options'] });
                               } catch {
                                 toast({ title: "Error", description: "Failed to reorder", variant: "destructive" });
+                                queryClient.invalidateQueries({ queryKey: ['/api/categories/options/details'] });
                               }
                             }}
                           >
@@ -4076,8 +4091,14 @@ export default function FastPricing() {
                             size="sm"
                             variant="ghost"
                             className="px-1 py-0 h-5 w-5"
-                            disabled={idx === categoryDetails.length - 1}
+                            disabled={idx === localGlobalCatOrder.length - 1}
                             onClick={async () => {
+                              // Update UI immediately
+                              setLocalGlobalCatOrder(prev => {
+                                const next = [...prev];
+                                [next[idx], next[idx + 1]] = [next[idx + 1], next[idx]];
+                                return next;
+                              });
                               try {
                                 const response = await fetch(`/api/categories/options/${cat.id}/position`, {
                                   method: 'PATCH',
@@ -4087,12 +4108,13 @@ export default function FastPricing() {
                                 if (!response.ok) {
                                   const data = await response.json();
                                   toast({ title: "Error", description: data.message, variant: "destructive" });
+                                  queryClient.invalidateQueries({ queryKey: ['/api/categories/options/details'] });
                                   return;
                                 }
-                                queryClient.invalidateQueries({ queryKey: ['/api/categories/options/details'] });
                                 queryClient.invalidateQueries({ queryKey: ['/api/categories', 'options'] });
                               } catch {
                                 toast({ title: "Error", description: "Failed to reorder", variant: "destructive" });
+                                queryClient.invalidateQueries({ queryKey: ['/api/categories/options/details'] });
                               }
                             }}
                           >
