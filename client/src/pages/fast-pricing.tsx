@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useEffect } from "react";
-import { ArrowLeft, ArrowUp, ArrowDown, Edit, Save, X, Archive, RotateCcw, Upload, Image, Trash2, Plus, Pencil } from "lucide-react";
+import { ArrowLeft, ArrowRight, ArrowUp, ArrowDown, Edit, Save, X, Archive, RotateCcw, Upload, Image, Trash2, Plus, Pencil } from "lucide-react";
 import { Link } from "wouter";
 import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query";
 import { useFastQuery } from "@/hooks/useFastQuery";
