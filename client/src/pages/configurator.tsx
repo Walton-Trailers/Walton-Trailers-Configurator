@@ -305,8 +305,6 @@ export default function Configurator() {
         if (series) setSelectedSeries(series);
         setSelectedModel(model);
         setCurrentStep(4);
-
-        window.history.replaceState({}, "", "/");
       } catch {
         // silently ignore — user just sees the normal step 1
       }
@@ -314,6 +312,15 @@ export default function Configurator() {
 
     load();
   }, []);
+
+  // Keep URL in sync: /?model=MODELID when on step 4, clean URL otherwise
+  useEffect(() => {
+    if (selectedModel && currentStep >= 4) {
+      window.history.replaceState({}, "", `/?model=${encodeURIComponent(selectedModel.modelId)}`);
+    } else {
+      window.history.replaceState({}, "", "/");
+    }
+  }, [selectedModel, currentStep]);
 
   // Save order mutation for dealers
   const saveOrderMutation = useMutation({
