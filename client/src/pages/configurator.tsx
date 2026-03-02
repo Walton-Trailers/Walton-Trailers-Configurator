@@ -304,7 +304,7 @@ export default function Configurator() {
         if (category) setSelectedCategory(category);
         if (series) setSelectedSeries(series);
         setSelectedModel(model);
-        setCurrentStep(4);
+        setCurrentStep(3);
       } catch {
         // silently ignore — user just sees the normal step 1
       }
