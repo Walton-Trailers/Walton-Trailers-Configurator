@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
@@ -227,6 +227,7 @@ export default function Configurator() {
   const [selectedCategory, setSelectedCategory] = useState<TrailerCategory | null>(null);
   const [selectedSeries, setSelectedSeries] = useState<TrailerSeries | null>(null);
   const [selectedModel, setSelectedModel] = useState<TrailerModel | null>(null);
+  const isInitialMount = useRef(true);
   const [selectedOptions, setSelectedOptions] = useState<Record<string, any>>({});
   const [selectedPrimer, setSelectedPrimer] = useState<Record<string, boolean>>({});
   const [totalPrice, setTotalPrice] = useState(0);
@@ -313,8 +314,14 @@ export default function Configurator() {
     load();
   }, []);
 
-  // Keep URL in sync: /?model=MODELID whenever a model is selected, clean URL otherwise
+  // Keep URL in sync: /?model=MODELID when a model is selected, / when deselected.
+  // Skip the very first render so the deep-link's ?model= param isn't erased
+  // before the async fetch completes.
   useEffect(() => {
+    if (isInitialMount.current) {
+      isInitialMount.current = false;
+      return;
+    }
     if (selectedModel) {
       window.history.replaceState({}, "", `/?model=${encodeURIComponent(selectedModel.modelId)}`);
     } else {
