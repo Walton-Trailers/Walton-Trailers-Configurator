@@ -313,14 +313,14 @@ export default function Configurator() {
     load();
   }, []);
 
-  // Keep URL in sync: /?model=MODELID when on step 4, clean URL otherwise
+  // Keep URL in sync: /?model=MODELID whenever a model is selected, clean URL otherwise
   useEffect(() => {
-    if (selectedModel && currentStep >= 4) {
+    if (selectedModel) {
       window.history.replaceState({}, "", `/?model=${encodeURIComponent(selectedModel.modelId)}`);
     } else {
       window.history.replaceState({}, "", "/");
     }
-  }, [selectedModel, currentStep]);
+  }, [selectedModel]);
 
   // Save order mutation for dealers
   const saveOrderMutation = useMutation({
