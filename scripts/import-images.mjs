@@ -24,31 +24,68 @@ const SIDECAR_ENDPOINT = 'http://127.0.0.1:1106';
 const INPUT_DIR = 'image-export';
 const ACL_POLICY_METADATA_KEY = 'custom:aclPolicy';
 
+// ─── GCS client factory ───────────────────────────────────────────────────────
+
+function makeStorageClient() {
+  return new Storage({
+    credentials: {
+      audience: 'replit',
+      subject_token_type: 'access_token',
+      token_url: `${SIDECAR_ENDPOINT}/token`,
+      type: 'external_account',
+      credential_source: {
+        url: `${SIDECAR_ENDPOINT}/credential`,
+        format: { type: 'json', subject_token_field_name: 'access_token' },
+      },
+      universe_domain: 'googleapis.com',
+    },
+    projectId: '',
+  });
+}
+
+// ─── Discover mode — list real bucket names ───────────────────────────────────
+
+if (process.argv[2] === '--discover') {
+  console.log('🔍  Discovering buckets this Replit has access to…\n');
+  try {
+    const client = makeStorageClient();
+    const [buckets] = await client.getBuckets();
+    if (buckets.length === 0) {
+      console.log('No buckets found. Make sure Object Storage is set up for this Replit.');
+    } else {
+      console.log('Found buckets:');
+      buckets.forEach(b => console.log(`  ${b.name}`));
+      console.log(`\nUse the bucket name above to run the import:`);
+      console.log(`  node import-images.mjs ${buckets[0].name}`);
+    }
+  } catch (err) {
+    console.error('Could not list buckets:', err.message);
+  }
+  process.exit(0);
+}
+
 // ─── Resolve private object dir ───────────────────────────────────────────────
 
 // Priority: command-line arg > PRIVATE_OBJECT_DIR env var
-const bucketArg = process.argv[2]; // e.g. "imagesbucket"
+const bucketArg = process.argv[2]; // actual GCS bucket name
 
 let privateObjectDir = process.env.PRIVATE_OBJECT_DIR || '';
 
 if (bucketArg && !bucketArg.startsWith('--')) {
   // User passed bucket name directly — build the path the same way Replit does
   privateObjectDir = `/${bucketArg}/.private`;
-  console.log(`🪣  Using bucket from argument: ${privateObjectDir}`);
+  console.log(`🪣  Using bucket: ${privateObjectDir}`);
 } else if (privateObjectDir) {
   console.log(`🪣  Using bucket from PRIVATE_OBJECT_DIR: ${privateObjectDir}`);
 } else {
   console.error(`
 ❌  No bucket specified.
 
-    Pass your bucket name as an argument:
-      node import-images.mjs imagesbucket
+    First, discover your real bucket name by running:
+      node import-images.mjs --discover
 
-    Replace "imagesbucket" with whatever name is shown at the top of
-    the Object Storage tool in your Replit sidebar.
-
-    Or, if you know your PRIVATE_OBJECT_DIR value, set it in Secrets
-    and re-run without arguments.
+    Then run the import with that name:
+      node import-images.mjs replit-objstore-xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
 `);
   process.exit(1);
 }
