@@ -160,11 +160,26 @@ export async function registerRoutes(app: Express): Promise<Express> {
     try {
       console.log("POST /api/categories req.body:", JSON.stringify(req.body));
       const { slug, name, description, imageUrl, startingPrice, orderIndex } = req.body;
+      
+      let normalizedImageUrl = imageUrl || "";
+      if (normalizedImageUrl && normalizedImageUrl.includes('storage.googleapis.com')) {
+        try {
+          const objectStorageService = new ObjectStorageService();
+          normalizedImageUrl = await objectStorageService.trySetObjectEntityAclPolicy(
+            normalizedImageUrl,
+            { owner: "admin", visibility: "public" }
+          );
+          console.log(`Normalized category image URL: ${normalizedImageUrl}`);
+        } catch (err) {
+          console.error("Failed to normalize image URL:", err);
+        }
+      }
+      
       const result = await db.insert(trailerCategories).values({
         slug: slug || "",
         name: name || "",
         description: description || "",
-        imageUrl: imageUrl || "",
+        imageUrl: normalizedImageUrl,
         startingPrice: startingPrice || 0,
         orderIndex: orderIndex ?? 0,
         isArchived: false

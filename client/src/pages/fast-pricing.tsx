@@ -1366,6 +1366,7 @@ export default function FastPricing() {
                               onChange={async (e) => {
                                 const file = e.target.files?.[0];
                                 if (file) {
+                                  setUploadingCategoryId(-1);
                                   try {
                                     const uploadParams = await handleGetCategoryUploadParameters();
                                     const response = await fetch(uploadParams.url, {
@@ -1386,11 +1387,16 @@ export default function FastPricing() {
                                       description: "Failed to upload image",
                                       variant: "destructive",
                                     });
+                                  } finally {
+                                    setUploadingCategoryId(null);
                                   }
                                 }
                               }}
                               className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-medium file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
                             />
+                            {uploadingCategoryId === -1 && !newCategoryData.imageUrl && (
+                              <span className="text-sm text-blue-600">Uploading...</span>
+                            )}
                             {newCategoryData.imageUrl && (
                               <div className="flex items-center gap-2">
                                 <img 
@@ -1421,6 +1427,7 @@ export default function FastPricing() {
                     <div className="flex justify-end gap-2 mt-6">
                       <Button variant="outline" onClick={() => setShowAddCategory(false)}>Cancel</Button>
                       <Button 
+                        disabled={uploadingCategoryId === -1}
                         onClick={async () => {
                           try {
                             const processedData = {
