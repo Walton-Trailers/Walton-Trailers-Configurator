@@ -165,6 +165,7 @@ export async function registerRoutes(app: Express): Promise<Express> {
         description,
         imageUrl,
         startingPrice,
+        orderIndex: orderIndex ?? 0,
         isArchived: false
       }).returning();
       res.json(result[0]);
@@ -174,11 +175,29 @@ export async function registerRoutes(app: Express): Promise<Express> {
     }
   });
 
+  app.patch("/api/categories/reorder", requireAuth, async (req, res) => {
+    try {
+      const { orderedIds } = req.body;
+      if (!Array.isArray(orderedIds)) {
+        return res.status(400).json({ message: "orderedIds must be an array" });
+      }
+      for (let i = 0; i < orderedIds.length; i++) {
+        await db.execute(sql`
+          UPDATE trailer_categories SET order_index = ${i + 1} WHERE id = ${orderedIds[i]}
+        `);
+      }
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error reordering categories:", error);
+      res.status(500).json({ message: "Failed to reorder categories" });
+    }
+  });
+
   // Update a category
   app.patch("/api/categories/:id", requireAuth, async (req, res) => {
     try {
       const categoryId = parseInt(req.params.id);
-      const { slug, name, description, imageUrl, startingPrice } = req.body;
+      const { slug, name, description, imageUrl, startingPrice, orderIndex } = req.body;
       
       console.log(`🔍 UPDATE REQUEST - Category ID: ${categoryId}`);
       console.log(`📨 Request Body:`, JSON.stringify(req.body, null, 2));
@@ -189,6 +208,7 @@ export async function registerRoutes(app: Express): Promise<Express> {
       if (description !== undefined) updateData.description = description;
       if (imageUrl !== undefined) updateData.imageUrl = imageUrl;
       if (startingPrice !== undefined) updateData.startingPrice = startingPrice;
+      if (orderIndex !== undefined) updateData.orderIndex = orderIndex;
       
       console.log(`📝 Update Data:`, JSON.stringify(updateData, null, 2));
       

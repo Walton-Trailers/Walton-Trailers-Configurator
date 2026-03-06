@@ -755,13 +755,14 @@ export class DatabaseStorage implements IStorage {
         SELECT 
           c.id, c.slug, c.name, c.description, c.image_url,
           COALESCE(c.is_archived, false) as is_archived,
+          COALESCE(c.order_index, 0) as order_index,
           COALESCE(MIN(m.base_price), c.starting_price) as starting_price
         FROM trailer_categories c
         LEFT JOIN trailer_models m ON c.id = m.category_id 
           AND (m.is_archived IS NULL OR m.is_archived = false)
         WHERE COALESCE(c.is_archived, false) = false
-        GROUP BY c.id, c.slug, c.name, c.description, c.image_url, c.starting_price, c.is_archived
-        ORDER BY c.id
+        GROUP BY c.id, c.slug, c.name, c.description, c.image_url, c.starting_price, c.is_archived, c.order_index
+        ORDER BY COALESCE(c.order_index, 0), c.id
       `);
       
       return result.rows.map((cat: any) => ({
@@ -771,7 +772,7 @@ export class DatabaseStorage implements IStorage {
         description: cat.description,
         imageUrl: cat.image_url,
         startingPrice: cat.starting_price,
-        orderIndex: 0,
+        orderIndex: cat.order_index ?? 0,
         isArchived: cat.is_archived
       }));
     } catch (error) {
@@ -787,12 +788,13 @@ export class DatabaseStorage implements IStorage {
         SELECT 
           c.id, c.slug, c.name, c.description, c.image_url,
           COALESCE(c.is_archived, false) as is_archived,
+          COALESCE(c.order_index, 0) as order_index,
           COALESCE(MIN(m.base_price), c.starting_price) as starting_price
         FROM trailer_categories c
         LEFT JOIN trailer_models m ON c.id = m.category_id 
           AND (m.is_archived IS NULL OR m.is_archived = false)
-        GROUP BY c.id, c.slug, c.name, c.description, c.image_url, c.starting_price, c.is_archived
-        ORDER BY c.id
+        GROUP BY c.id, c.slug, c.name, c.description, c.image_url, c.starting_price, c.is_archived, c.order_index
+        ORDER BY COALESCE(c.order_index, 0), c.id
       `);
       
       return result.rows.map((cat: any) => ({
@@ -802,7 +804,7 @@ export class DatabaseStorage implements IStorage {
         description: cat.description,
         imageUrl: cat.image_url,
         startingPrice: cat.starting_price,
-        orderIndex: 0,
+        orderIndex: cat.order_index ?? 0,
         isArchived: cat.is_archived
       }));
     } catch (error) {
@@ -2138,6 +2140,13 @@ export class DatabaseStorage implements IStorage {
         await db.execute(sql`
           UPDATE trailer_categories 
           SET starting_price = ${updates.startingPrice}
+          WHERE id = ${id}
+        `);
+      }
+      if (updates.orderIndex !== undefined) {
+        await db.execute(sql`
+          UPDATE trailer_categories 
+          SET order_index = ${updates.orderIndex}
           WHERE id = ${id}
         `);
       }

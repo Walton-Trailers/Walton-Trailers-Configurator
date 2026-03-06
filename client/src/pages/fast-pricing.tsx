@@ -774,6 +774,32 @@ export default function FastPricing() {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['categories'] }),
   });
 
+  const handleMoveCategoryOrder = async (categoryId: number, direction: 'up' | 'down') => {
+    const currentIndex = activeCategories.findIndex((c: any) => c.id === categoryId);
+    if (currentIndex === -1) return;
+    if (direction === 'up' && currentIndex === 0) return;
+    if (direction === 'down' && currentIndex === activeCategories.length - 1) return;
+
+    const newList = [...activeCategories];
+    const swapIndex = direction === 'up' ? currentIndex - 1 : currentIndex + 1;
+    [newList[currentIndex], newList[swapIndex]] = [newList[swapIndex], newList[currentIndex]];
+
+    const orderedIds = newList.map((c: any) => c.id);
+    try {
+      await fastMutate('/api/categories/reorder', {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${sessionId}`,
+        },
+        body: JSON.stringify({ orderedIds }),
+      });
+      queryClient.invalidateQueries({ queryKey: ['categories'] });
+    } catch (error) {
+      console.error('Failed to reorder categories:', error);
+    }
+  };
+
   // Series archive/restore mutations
   const archiveSeriesMutation = useMutation({
     mutationFn: (id: number) => fastMutate(`/api/series/${id}/archive`, {
@@ -1391,15 +1417,6 @@ export default function FastPricing() {
                           />
                         </div>
                       </div>
-                      <div>
-                        <label className="block text-sm font-medium mb-1">Order Index</label>
-                        <Input
-                          type="number"
-                          placeholder="0"
-                          value={newCategoryData.orderIndex}
-                          onChange={(e: any) => setNewCategoryData({ ...newCategoryData, orderIndex: parseInt(e.target.value) || 0 })}
-                        />
-                      </div>
                     </div>
                     <div className="flex justify-end gap-2 mt-6">
                       <Button variant="outline" onClick={() => setShowAddCategory(false)}>Cancel</Button>
@@ -1458,22 +1475,27 @@ export default function FastPricing() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {activeCategories.map((category: any) => (
+                  {activeCategories.map((category: any, catIdx: number) => (
                       <TableRow key={category.id}>
                         <TableCell>
-                          {editingCategory?.id === category.id ? (
-                            <Input
-                              type="number"
-                              value={editData[category.id]?.orderIndex ?? category.orderIndex ?? 0}
-                              onChange={(e: any) => setEditData((prev: any) => ({
-                                ...prev,
-                                [category.id]: { ...prev[category.id], orderIndex: parseInt(e.target.value) || 0 }
-                              }))}
-                              className="w-20"
-                            />
-                          ) : (
-                            category.orderIndex ?? 0
-                          )}
+                          <div className="flex flex-col items-center gap-0.5">
+                            <button
+                              type="button"
+                              onClick={() => handleMoveCategoryOrder(category.id, 'up')}
+                              disabled={catIdx === 0}
+                              className="p-0.5 rounded hover:bg-gray-100 disabled:opacity-20 disabled:cursor-not-allowed"
+                            >
+                              <ArrowUp className="w-4 h-4" />
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleMoveCategoryOrder(category.id, 'down')}
+                              disabled={catIdx === activeCategories.length - 1}
+                              className="p-0.5 rounded hover:bg-gray-100 disabled:opacity-20 disabled:cursor-not-allowed"
+                            >
+                              <ArrowDown className="w-4 h-4" />
+                            </button>
+                          </div>
                         </TableCell>
                         <TableCell>
                           <ObjectUploader

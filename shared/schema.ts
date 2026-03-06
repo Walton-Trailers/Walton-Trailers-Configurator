@@ -11,6 +11,7 @@ export const trailerCategories = pgTable("trailer_categories", {
   description: text("description").notNull(),
   imageUrl: text("image_url").notNull(),
   startingPrice: integer("starting_price").notNull(),
+  orderIndex: integer("order_index").default(0),
   isArchived: boolean("is_archived").default(false),
 });
 
