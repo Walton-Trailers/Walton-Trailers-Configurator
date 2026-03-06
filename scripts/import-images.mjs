@@ -2,17 +2,23 @@
  * IMPORT SCRIPT — Run this on the NEW Replit after copying image-export/ here.
  *
  * Prerequisites:
- *   1. The image-export/ folder must be in the root of this project.
- *   2. An Object Storage bucket must be created and linked to this Replit.
+ *   1. The image-export/ folder (from export-images.mjs) must be in the project root.
+ *   2. An Object Storage bucket must be created on this Replit.
+ *   3. PRIVATE_OBJECT_DIR must be set (Replit sets it when a bucket is created).
  *
- * First, confirm your bucket is linked (open a NEW shell after creating the bucket):
- *   node import-images.mjs --info
+ * Usage:
+ *   node scripts/import-images.mjs --info         # check your env vars first
+ *   node scripts/import-images.mjs --dry-run      # preview what will be uploaded
+ *   node scripts/import-images.mjs                # run the actual import
  *
- * Then run the import:
- *   node import-images.mjs
+ * How it works:
+ *   The DB stores paths like "/objects/models/{uuid}".
+ *   The app resolves them to bucket paths like:
+ *     PRIVATE_OBJECT_DIR + "/" + "models/{uuid}"
+ *     e.g. "/<bucket>/.private/models/{uuid}"
  *
- * Or override the bucket if PRIVATE_OBJECT_DIR is not set yet:
- *   node import-images.mjs replit-objstore-xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
+ *   This script recreates that exact structure in the new bucket so all
+ *   existing DB records work without modification.
  */
 
 import { Storage } from '@google-cloud/storage';
@@ -34,64 +40,65 @@ if (process.argv[2] === '--info') {
   console.log(`  PUBLIC_OBJECT_SEARCH_PATHS = ${pub}`);
   if (priv === '(not set)') {
     console.log(`
-  ⚠️  PRIVATE_OBJECT_DIR is not set in this shell session.
-     Try opening a NEW shell tab (after the bucket was created) and re-running.
-     Or add it manually in the Secrets tab — the value is the real GCS bucket name,
-     formatted as:  /replit-objstore-<uuid>/.private
+  PRIVATE_OBJECT_DIR is not set in this shell session.
+
+  Try one of these:
+    1. Open a NEW shell tab (after creating the bucket) and re-run this.
+    2. Run: printenv | grep OBJECT
+       to find the actual value, then add it to Secrets manually.
+    3. The value should look like: /replit-objstore-<uuid>/.private
 `);
   } else {
-    const bucket = priv.split('/').filter(Boolean)[0];
-    console.log(`\n  ✅ Bucket ready. Run the import with:\n     node import-images.mjs\n`);
-    console.log(`  Also make sure these are saved in your Secrets tab:`);
+    const parts = priv.split('/').filter(Boolean);
+    const bucket = parts[0];
+    const prefix = parts.slice(1).join('/');
+    console.log(`\n  Bucket name : ${bucket}`);
+    console.log(`  Prefix      : ${prefix}`);
+    console.log(`\n  This means images will be stored at:`);
+    console.log(`    ${bucket}:${prefix}/models/{uuid}\n`);
+    console.log(`  Make sure these are saved in your Secrets tab:`);
     console.log(`    PRIVATE_OBJECT_DIR         = ${priv}`);
     console.log(`    PUBLIC_OBJECT_SEARCH_PATHS = /${bucket}/public\n`);
   }
   process.exit(0);
 }
 
-// ─── Resolve bucket name ──────────────────────────────────────────────────────
+// ─── Resolve PRIVATE_OBJECT_DIR ───────────────────────────────────────────────
 
-const bucketArg = process.argv[2];
 let privateObjectDir = process.env.PRIVATE_OBJECT_DIR || '';
 
-if (bucketArg && !bucketArg.startsWith('--')) {
-  privateObjectDir = `/${bucketArg}/.private`;
-  console.log(`Using bucket from argument: ${privateObjectDir}`);
-} else if (privateObjectDir) {
-  console.log(`Using bucket from PRIVATE_OBJECT_DIR: ${privateObjectDir}`);
-} else {
+if (!privateObjectDir) {
   console.error(`
-❌  Cannot determine bucket.
+PRIVATE_OBJECT_DIR is not set.
 
-  Option 1 — open a NEW shell tab (picks up env vars set after bucket creation):
+  Run this first to check your environment:
     node import-images.mjs --info
 
-  Option 2 — pass the real GCS bucket name directly:
-    node import-images.mjs replit-objstore-xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
-
-  The real bucket name is NOT the display name you see in the UI.
-  Find it by opening a fresh shell and running:  printenv | grep OBJECT
+  If the variable is not available, open a fresh shell tab or
+  add it to Secrets manually. It should look like:
+    /replit-objstore-<uuid>/.private
 `);
   process.exit(1);
 }
 
 if (!privateObjectDir.endsWith('/')) privateObjectDir += '/';
 
-// Parse bucket name and object prefix from PRIVATE_OBJECT_DIR
-// Format: /<bucket-name>/.private/
 const dirParts = privateObjectDir.split('/').filter(Boolean);
 const BUCKET_NAME = dirParts[0];
-const OBJECT_PREFIX = dirParts.slice(1).join('/'); // e.g. ".private"
+const PRIVATE_PREFIX = dirParts.slice(1).join('/');
+
+console.log(`\nBucket         : ${BUCKET_NAME}`);
+console.log(`Private prefix : ${PRIVATE_PREFIX}`);
 
 // ─── Check manifest ───────────────────────────────────────────────────────────
 
 const manifestPath = path.join(INPUT_DIR, 'manifest.json');
 if (!fs.existsSync(manifestPath)) {
-  console.error(`❌  ${manifestPath} not found. Copy the image-export/ folder here first.`);
+  console.error(`\n${manifestPath} not found. Copy the image-export/ folder here first.`);
   process.exit(1);
 }
 
-// ─── GCS client (used only for setting metadata after upload) ─────────────────
+// ─── GCS client (for setting ACL metadata after upload) ───────────────────────
 
 const storageClient = new Storage({
   credentials: {
@@ -107,6 +114,23 @@ const storageClient = new Storage({
   },
   projectId: '',
 });
+
+// ─── Path mapping (matches server/objectStorage.ts getObjectEntityFile) ───────
+
+function dbPathToBucketObject(originalPath) {
+  // originalPath = "/objects/models/{uuid}"
+  // App strips "/objects/" → "models/{uuid}"
+  // Then prepends PRIVATE_OBJECT_DIR → "/<bucket>/.private/models/{uuid}"
+  // So the GCS object name = ".private/models/{uuid}"
+
+  if (!originalPath.startsWith('/objects/')) {
+    throw new Error(`Unexpected path format: ${originalPath} (expected /objects/...)`);
+  }
+
+  const entityId = originalPath.slice('/objects/'.length); // "models/{uuid}"
+  const objectName = PRIVATE_PREFIX ? `${PRIVATE_PREFIX}/${entityId}` : entityId;
+  return objectName;
+}
 
 // ─── Upload via sidecar signed PUT URL ────────────────────────────────────────
 
@@ -130,11 +154,11 @@ async function getSignedPutUrl(objectName) {
   return signed_url;
 }
 
-async function uploadContent(signedUrl, fileBuffer, contentType = 'application/octet-stream') {
+async function uploadContent(signedUrl, fileBuffer) {
   const res = await fetch(signedUrl, {
     method: 'PUT',
     body: fileBuffer,
-    headers: { 'Content-Type': contentType },
+    headers: { 'Content-Type': 'application/octet-stream' },
   });
   if (!res.ok) {
     const text = await res.text().catch(() => '');
@@ -149,50 +173,66 @@ async function setAclMetadata(objectName) {
   });
 }
 
-async function uploadFile(localFilePath, uuid) {
-  const objectName = `${OBJECT_PREFIX}/models/${uuid}`;
-  const fileBuffer = fs.readFileSync(localFilePath);
+async function uploadFile(localFilePath, originalPath) {
+  const objectName = dbPathToBucketObject(originalPath);
 
   // Step 1: upload content via signed URL (no bucket-level permissions needed)
   const signedUrl = await getSignedPutUrl(objectName);
+  const fileBuffer = fs.readFileSync(localFilePath);
   await uploadContent(signedUrl, fileBuffer);
 
-  // Step 2: set ACL metadata so the app can serve the image
-  // Uses storage.objects.update — separate permission from storage.buckets.get
-  await setAclMetadata(objectName);
+  // Step 2: set ACL metadata so the app can serve the image publicly
+  try {
+    await setAclMetadata(objectName);
+  } catch (err) {
+    throw new Error(`Uploaded OK, but metadata failed: ${err.message}`);
+  }
+
+  return objectName;
 }
 
 // ─── Main ─────────────────────────────────────────────────────────────────────
 
 async function main() {
+  const isDryRun = process.argv[2] === '--dry-run';
   const manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
   const entries = manifest.filter(e => !e.error);
   const skipped = manifest.length - entries.length;
 
-  console.log(`\n📋  ${entries.length} file(s) to import${skipped ? `, ${skipped} skipped (export errors)` : ''}.`);
-  console.log(`🪣  Bucket: ${BUCKET_NAME}\n`);
+  console.log(`\n${entries.length} file(s) to import${skipped ? `, ${skipped} skipped (had export errors)` : ''}.`);
 
-  // Quick sidecar check — get one signed URL to verify the sidecar is reachable
-  // and the bucket name is correct, before processing all files
-  console.log('🔌  Checking sidecar connection…');
+  if (isDryRun) {
+    console.log('\n--- DRY RUN (no files will be uploaded) ---\n');
+    console.log('Path mapping (DB path → bucket object):');
+    for (const entry of entries) {
+      const objectName = dbPathToBucketObject(entry.originalPath);
+      const localFile = path.join(INPUT_DIR, entry.filename);
+      const exists = fs.existsSync(localFile);
+      const size = exists ? `${(fs.statSync(localFile).size / 1024).toFixed(1)} KB` : 'MISSING';
+      console.log(`  ${entry.originalPath}`);
+      console.log(`    → ${BUCKET_NAME}/${objectName}  (${size})`);
+    }
+    console.log(`\n--- End dry run. Run without --dry-run to upload. ---\n`);
+    process.exit(0);
+  }
+
+  // Quick sidecar check
+  console.log('\nChecking sidecar connection…');
   try {
-    await getSignedPutUrl(`${OBJECT_PREFIX}/.connection-test`);
-    console.log('✅  Sidecar reachable and bucket confirmed.\n');
+    const testObject = PRIVATE_PREFIX ? `${PRIVATE_PREFIX}/.connection-test` : '.connection-test';
+    await getSignedPutUrl(testObject);
+    console.log('Sidecar reachable and bucket confirmed.\n');
   } catch (err) {
     console.error(`
-❌  Could not reach the sidecar or bucket.
+Could not reach the sidecar or the bucket name is wrong.
 
   Error: ${err.message}
 
-  Things to check:
-    1. The bucket name is correct — run:  node import-images.mjs --info
-       The value in PRIVATE_OBJECT_DIR must match the real GCS bucket name,
-       NOT the display name shown in the Object Storage UI.
-    2. The app workflow must be running (Sidecar is part of the running app).
-    3. If you passed a bucket name manually, make sure it's the internal name
-       (starts with replit-objstore-...) not the human-readable display name.
+  Run:  node import-images.mjs --info
+  to verify your PRIVATE_OBJECT_DIR is correct.
 
-  Current bucket attempted: ${BUCKET_NAME}
+  The bucket name must be the real GCS name (like replit-objstore-xxx),
+  NOT the display name shown in the Object Storage UI.
 `);
     process.exit(1);
   }
@@ -202,57 +242,55 @@ async function main() {
   let failed = 0;
 
   for (let i = 0; i < entries.length; i++) {
-    const { filename } = entries[i];
+    const { filename, originalPath } = entries[i];
     const localFilePath = path.join(INPUT_DIR, filename);
 
-    process.stdout.write(`  [${String(i + 1).padStart(2)}/${entries.length}] ${filename} … `);
+    process.stdout.write(`  [${String(i + 1).padStart(2)}/${entries.length}] ${originalPath} … `);
 
     if (!fs.existsSync(localFilePath)) {
-      console.log('❌  SKIPPED — local file not found');
+      console.log('SKIPPED — local file not found');
       failed++;
       continue;
     }
 
     try {
-      await uploadFile(localFilePath, filename);
+      const objectName = await uploadFile(localFilePath, originalPath);
       succeeded++;
       const sizeKb = (fs.statSync(localFilePath).size / 1024).toFixed(1);
-      console.log(`✅  (${sizeKb} KB)`);
+      console.log(`OK (${sizeKb} KB) → ${objectName}`);
     } catch (err) {
-      // If only the metadata step failed, the file IS uploaded — warn but count separately
-      if (err.message.includes('metadata') || err.message.includes('setMetadata')) {
+      if (err.message.startsWith('Uploaded OK, but metadata failed')) {
         metadataFailed++;
-        console.log(`⚠️   UPLOADED but metadata not set — ${err.message}`);
+        console.log(`WARN — ${err.message}`);
       } else {
         failed++;
-        console.log(`❌  FAILED — ${err.message}`);
+        console.log(`FAILED — ${err.message}`);
       }
     }
   }
 
-  const bucket = BUCKET_NAME;
   console.log(`
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-${failed === 0 && metadataFailed === 0 ? '✅' : '⚠️ '}  Import complete!
-   Uploaded OK   : ${succeeded}
-   Metadata warn : ${metadataFailed}
-   Failed        : ${failed}
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  Import complete!
+    Uploaded OK      : ${succeeded}
+    Metadata warnings: ${metadataFailed}
+    Failed           : ${failed}
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 `);
 
   if (succeeded > 0 || metadataFailed > 0) {
-    console.log('Make sure these are saved in your Secrets tab so the app can serve images:');
-    console.log(`  PRIVATE_OBJECT_DIR         = /${bucket}/.private`);
-    console.log(`  PUBLIC_OBJECT_SEARCH_PATHS = /${bucket}/public\n`);
+    console.log('Verify these are in your Secrets tab so the app serves images correctly:');
+    console.log(`  PRIVATE_OBJECT_DIR         = /${BUCKET_NAME}/${PRIVATE_PREFIX}`);
+    console.log(`  PUBLIC_OBJECT_SEARCH_PATHS = /${BUCKET_NAME}/public\n`);
   }
 
   if (metadataFailed > 0) {
-    console.log(`⚠️  ${metadataFailed} file(s) uploaded but missing ACL metadata.`);
-    console.log('   Images may not be served until you set visibility via the admin panel.\n');
+    console.log(`${metadataFailed} file(s) uploaded but ACL metadata not set.`);
+    console.log('  These images may not load until you re-upload them via the admin panel.\n');
   }
 
   if (failed > 0) {
-    console.log(`${failed} file(s) failed. Safe to re-run — files already uploaded are overwritten.\n`);
+    console.log(`${failed} file(s) failed. Safe to re-run — existing files are overwritten.\n`);
   }
 }
 
