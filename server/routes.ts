@@ -158,16 +158,18 @@ export async function registerRoutes(app: Express): Promise<Express> {
   // Create a new category
   app.post("/api/categories", requireAuth, async (req, res) => {
     try {
+      console.log("POST /api/categories req.body:", JSON.stringify(req.body));
       const { slug, name, description, imageUrl, startingPrice, orderIndex } = req.body;
       const result = await db.insert(trailerCategories).values({
-        slug,
-        name,
-        description,
-        imageUrl,
-        startingPrice,
+        slug: slug || "",
+        name: name || "",
+        description: description || "",
+        imageUrl: imageUrl || "",
+        startingPrice: startingPrice || 0,
         orderIndex: orderIndex ?? 0,
         isArchived: false
       }).returning();
+      console.log("POST /api/categories result:", JSON.stringify(result[0]));
       res.json(result[0]);
     } catch (error) {
       console.error("Error creating category:", error);

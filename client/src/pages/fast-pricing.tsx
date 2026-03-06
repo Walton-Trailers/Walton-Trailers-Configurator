@@ -1373,7 +1373,7 @@ export default function FastPricing() {
                                       body: file,
                                     });
                                     if (response.ok) {
-                                      setNewCategoryData({ ...newCategoryData, imageUrl: uploadParams.url });
+                                      setNewCategoryData(prev => ({ ...prev, imageUrl: uploadParams.url }));
                                       toast({
                                         title: "Success",
                                         description: "Image uploaded successfully",
