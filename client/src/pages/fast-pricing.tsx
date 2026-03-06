@@ -1347,6 +1347,7 @@ export default function FastPricing() {
                             }}
                             currentImageUrl={newCategoryData.imageUrl}
                             modelName="New Category"
+                            skipPreview
                           >
                             {newCategoryData.imageUrl ? (
                               <div className="w-full h-20 rounded-md overflow-hidden border border-gray-200 hover:border-gray-400 transition-colors cursor-pointer">
