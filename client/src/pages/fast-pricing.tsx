@@ -1332,40 +1332,54 @@ export default function FastPricing() {
                       </div>
                       <div className="grid grid-cols-2 gap-4">
                         <div>
-                          <label className="block text-sm font-medium mb-1">Image</label>
-                          <ObjectUploader
-                            onGetUploadParameters={handleGetCategoryUploadParameters}
-                            onComplete={(result) => {
-                              const uploadedFile = result.successful?.[0];
-                              if (uploadedFile) {
-                                setNewCategoryData({ ...newCategoryData, imageUrl: uploadedFile.uploadURL });
-                                toast({
-                                  title: "Success",
-                                  description: "Image uploaded successfully",
-                                });
-                              }
-                            }}
-                            currentImageUrl={newCategoryData.imageUrl}
-                            modelName="New Category"
-                            skipPreview
-                          >
-                            {newCategoryData.imageUrl ? (
-                              <div className="w-full h-20 rounded-md overflow-hidden border border-gray-200 hover:border-gray-400 transition-colors cursor-pointer">
+                          <label className="block text-sm font-medium mb-1">Image (Optional)</label>
+                          <div className="space-y-2">
+                            <input
+                              type="file"
+                              accept="image/*"
+                              onChange={async (e) => {
+                                const file = e.target.files?.[0];
+                                if (file) {
+                                  try {
+                                    const uploadParams = await handleGetCategoryUploadParameters();
+                                    const response = await fetch(uploadParams.url, {
+                                      method: uploadParams.method,
+                                      body: file,
+                                    });
+                                    if (response.ok) {
+                                      setNewCategoryData({ ...newCategoryData, imageUrl: uploadParams.url });
+                                      toast({
+                                        title: "Success",
+                                        description: "Image uploaded successfully",
+                                      });
+                                    }
+                                  } catch (error) {
+                                    console.error('Upload failed:', error);
+                                    toast({
+                                      title: "Error",
+                                      description: "Failed to upload image",
+                                      variant: "destructive",
+                                    });
+                                  }
+                                }
+                              }}
+                              className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-medium file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+                            />
+                            {newCategoryData.imageUrl && (
+                              <div className="flex items-center gap-2">
                                 <img 
                                   src={newCategoryData.imageUrl} 
-                                  alt="Category Preview"
-                                  className="w-full h-full object-cover"
+                                  alt="Preview"
+                                  className="w-12 h-12 object-cover rounded-md border border-gray-200"
+                                  onError={(e: any) => {
+                                    e.target.onerror = null;
+                                    e.target.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="48" height="48" fill="none"%3E%3Crect width="48" height="48" fill="%23f3f4f6"/%3E%3Cpath stroke="%239ca3af" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M24 16v16m-8-8h16"/%3E%3C/svg%3E';
+                                  }}
                                 />
-                              </div>
-                            ) : (
-                              <div className="w-full h-20 rounded-md border-2 border-dashed border-gray-300 hover:border-gray-400 transition-colors cursor-pointer flex items-center justify-center bg-gray-50">
-                                <div className="text-center">
-                                  <Upload className="w-6 h-6 text-gray-400 mx-auto mb-1" />
-                                  <span className="text-xs text-gray-500">Click to upload</span>
-                                </div>
+                                <span className="text-sm text-gray-600">Image uploaded</span>
                               </div>
                             )}
-                          </ObjectUploader>
+                          </div>
                         </div>
                         <div>
                           <label className="block text-sm font-medium mb-1">Starting Price</label>
