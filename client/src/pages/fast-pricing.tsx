@@ -1332,12 +1332,39 @@ export default function FastPricing() {
                       </div>
                       <div className="grid grid-cols-2 gap-4">
                         <div>
-                          <label className="block text-sm font-medium mb-1">Image URL</label>
-                          <Input
-                            placeholder="https://..."
-                            value={newCategoryData.imageUrl}
-                            onChange={(e: any) => setNewCategoryData({ ...newCategoryData, imageUrl: e.target.value })}
-                          />
+                          <label className="block text-sm font-medium mb-1">Image</label>
+                          <ObjectUploader
+                            onGetUploadParameters={handleGetCategoryUploadParameters}
+                            onComplete={(result) => {
+                              const uploadedFile = result.successful?.[0];
+                              if (uploadedFile) {
+                                setNewCategoryData({ ...newCategoryData, imageUrl: uploadedFile.uploadURL });
+                                toast({
+                                  title: "Success",
+                                  description: "Image uploaded successfully",
+                                });
+                              }
+                            }}
+                            currentImageUrl={newCategoryData.imageUrl}
+                            modelName="New Category"
+                          >
+                            {newCategoryData.imageUrl ? (
+                              <div className="w-full h-20 rounded-md overflow-hidden border border-gray-200 hover:border-gray-400 transition-colors cursor-pointer">
+                                <img 
+                                  src={newCategoryData.imageUrl} 
+                                  alt="Category Preview"
+                                  className="w-full h-full object-cover"
+                                />
+                              </div>
+                            ) : (
+                              <div className="w-full h-20 rounded-md border-2 border-dashed border-gray-300 hover:border-gray-400 transition-colors cursor-pointer flex items-center justify-center bg-gray-50">
+                                <div className="text-center">
+                                  <Upload className="w-6 h-6 text-gray-400 mx-auto mb-1" />
+                                  <span className="text-xs text-gray-500">Click to upload</span>
+                                </div>
+                              </div>
+                            )}
+                          </ObjectUploader>
                         </div>
                         <div>
                           <label className="block text-sm font-medium mb-1">Starting Price</label>
