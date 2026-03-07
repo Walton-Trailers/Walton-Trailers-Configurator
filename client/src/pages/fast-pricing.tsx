@@ -1814,42 +1814,57 @@ export default function FastPricing() {
                       <div>
                         <label className="block text-sm font-medium mb-1">Image (Optional)</label>
                         <div className="space-y-2">
-                          <ObjectUploader
-                            onGetUploadParameters={handleGetSeriesUploadParameters}
-                            onComplete={(result) => {
-                              const uploadedFile = result.successful?.[0];
-                              if (uploadedFile) {
-                                setNewSeriesData({ ...newSeriesData, imageUrl: uploadedFile.uploadURL });
-                                toast({
-                                  title: "Success",
-                                  description: "Image uploaded successfully",
-                                });
+                          <input
+                            type="file"
+                            accept="image/*"
+                            onChange={async (e) => {
+                              const file = e.target.files?.[0];
+                              if (file) {
+                                setUploadingCategoryId(-2);
+                                try {
+                                  const uploadParams = await handleGetSeriesUploadParameters();
+                                  const response = await fetch(uploadParams.url, {
+                                    method: uploadParams.method,
+                                    body: file,
+                                  });
+                                  if (response.ok) {
+                                    setNewSeriesData(prev => ({ ...prev, imageUrl: uploadParams.url }));
+                                    toast({
+                                      title: "Success",
+                                      description: "Image uploaded successfully",
+                                    });
+                                  }
+                                } catch (error) {
+                                  console.error('Upload failed:', error);
+                                  toast({
+                                    title: "Error",
+                                    description: "Failed to upload image",
+                                    variant: "destructive",
+                                  });
+                                } finally {
+                                  setUploadingCategoryId(null);
+                                }
                               }
                             }}
-                            currentImageUrl={newSeriesData.imageUrl}
-                            modelName="New Series"
-                          >
-                            {newSeriesData.imageUrl ? (
-                              <div className="w-full h-20 rounded-md overflow-hidden border border-gray-200 hover:border-gray-400 transition-colors cursor-pointer">
-                                <img 
-                                  src={newSeriesData.imageUrl} 
-                                  alt="Series Preview"
-                                  className="w-full h-full object-cover"
-                                  onError={(e: any) => {
-                                    e.target.onerror = null;
-                                    e.target.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="400" height="80" fill="none"%3E%3Crect width="400" height="80" fill="%23f3f4f6"/%3E%3Cpath stroke="%239ca3af" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M200 30v20m-10-10h20"/%3E%3C/svg%3E';
-                                  }}
-                                />
-                              </div>
-                            ) : (
-                              <div className="w-full h-20 rounded-md border-2 border-dashed border-gray-300 hover:border-gray-400 transition-colors cursor-pointer flex items-center justify-center bg-gray-50">
-                                <div className="text-center">
-                                  <Upload className="w-8 h-8 text-gray-400 mx-auto mb-1" />
-                                  <span className="text-sm text-gray-600">Click to upload image</span>
-                                </div>
-                              </div>
-                            )}
-                          </ObjectUploader>
+                            className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-medium file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+                          />
+                          {uploadingCategoryId === -2 && !newSeriesData.imageUrl && (
+                            <span className="text-sm text-blue-600">Uploading...</span>
+                          )}
+                          {newSeriesData.imageUrl && (
+                            <div className="flex items-center gap-2">
+                              <img 
+                                src={newSeriesData.imageUrl} 
+                                alt="Preview"
+                                className="w-12 h-12 object-cover rounded-md border border-gray-200"
+                                onError={(e: any) => {
+                                  e.target.onerror = null;
+                                  e.target.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="48" height="48" fill="none"%3E%3Crect width="48" height="48" fill="%23f3f4f6"/%3E%3Cpath stroke="%239ca3af" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M24 16v16m-8-8h16"/%3E%3C/svg%3E';
+                                }}
+                              />
+                              <span className="text-sm text-gray-600">Image uploaded</span>
+                            </div>
+                          )}
                         </div>
                       </div>
                       <div>
@@ -1868,7 +1883,7 @@ export default function FastPricing() {
                       </Button>
                       <Button 
                         onClick={() => addSeriesMutation.mutate(newSeriesData)}
-                        disabled={addSeriesMutation.isPending || !newSeriesData.name || !newSeriesData.categoryId}
+                        disabled={addSeriesMutation.isPending || !newSeriesData.name || !newSeriesData.categoryId || uploadingCategoryId === -2}
                       >
                         Add Series
                       </Button>

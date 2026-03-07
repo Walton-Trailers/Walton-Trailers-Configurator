@@ -301,13 +301,27 @@ export async function registerRoutes(app: Express): Promise<Express> {
   app.post("/api/series", requireAuth, async (req, res) => {
     try {
       const { categoryId, name, description, slug, basePrice, imageUrl } = req.body;
+      
+      let normalizedImageUrl = imageUrl || "";
+      if (normalizedImageUrl && normalizedImageUrl.includes('storage.googleapis.com')) {
+        try {
+          const objectStorageService = new ObjectStorageService();
+          normalizedImageUrl = await objectStorageService.trySetObjectEntityAclPolicy(
+            normalizedImageUrl,
+            { owner: "admin", visibility: "public" }
+          );
+        } catch (err) {
+          console.error("Failed to normalize series image URL:", err);
+        }
+      }
+      
       const result = await storage.createSeries({
         categoryId,
         name,
         description,
         slug,
         basePrice,
-        imageUrl,
+        imageUrl: normalizedImageUrl,
       });
       res.json(result);
     } catch (error) {
