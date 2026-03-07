@@ -132,7 +132,7 @@ export interface IStorage {
   getAllOptions(): Promise<TrailerOptionResponse[]>;
   updateModel(id: number, updates: any): Promise<TrailerModelResponse>;
   updateOption(id: number, updates: any): Promise<TrailerOptionResponse>;
-  createOption(data: { name: string; price: number; category: string; modelId?: string; applicableModels?: string[]; hexColor?: string }): Promise<TrailerOptionResponse>;
+  createOption(data: { name: string; price: number; category: string; modelId?: string; applicableModels?: string[]; hexColor?: string; imageUrl?: string; isMultiSelect?: boolean; isPerFt?: boolean; primerPrice?: number }): Promise<TrailerOptionResponse>;
   deleteOption(id: number): Promise<void>;
   archiveOption(id: number): Promise<void>;
   archiveModel(id: number): Promise<void>;
@@ -1634,16 +1634,16 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
-  async createOption(data: { name: string; price: number; category: string; modelId?: string; applicableModels?: string[]; hexColor?: string; primerPrice?: number; isPerFt?: boolean }): Promise<TrailerOptionResponse> {
+  async createOption(data: { name: string; price: number; category: string; modelId?: string; applicableModels?: string[]; hexColor?: string; primerPrice?: number; isPerFt?: boolean; imageUrl?: string; isMultiSelect?: boolean }): Promise<TrailerOptionResponse> {
     try {
       // Support both legacy modelId and new applicableModels
       const applicableModels = data.applicableModels || (data.modelId ? [data.modelId] : []);
       const modelId = data.modelId || applicableModels[0] || "";
       
       const result = await db.execute(sql`
-        INSERT INTO trailer_options (model_id, name, category, price, is_multi_select, is_per_ft, applicable_models, hex_color, primer_price)
-        VALUES (${modelId}, ${data.name}, ${data.category}, ${data.price}, false, ${data.isPerFt || false}, ${JSON.stringify(applicableModels)}, ${data.hexColor || null}, ${data.primerPrice || null})
-        RETURNING id, model_id, name, category, price, is_multi_select, is_per_ft, applicable_models, hex_color, primer_price
+        INSERT INTO trailer_options (model_id, name, category, price, is_multi_select, is_per_ft, applicable_models, hex_color, primer_price, image_url)
+        VALUES (${modelId}, ${data.name}, ${data.category}, ${data.price}, ${data.isMultiSelect || false}, ${data.isPerFt || false}, ${JSON.stringify(applicableModels)}, ${data.hexColor || null}, ${data.primerPrice || null}, ${data.imageUrl || null})
+        RETURNING id, model_id, name, category, price, is_multi_select, is_per_ft, applicable_models, hex_color, primer_price, image_url
       `);
       
       const newOption = result.rows[0] as any;
@@ -1660,6 +1660,7 @@ export class DatabaseStorage implements IStorage {
         options: [],
         hexColor: newOption.hex_color,
         primerPrice: newOption.primer_price,
+        imageUrl: newOption.image_url,
       };
     } catch (error) {
       console.error('Error creating option:', error);
