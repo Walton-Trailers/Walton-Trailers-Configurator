@@ -395,13 +395,27 @@ export async function registerRoutes(app: Express): Promise<Express> {
   app.post("/api/models", requireAuth, async (req, res) => {
     try {
       const { categoryId, seriesId, modelSeries, name, basePrice, imageUrl, standardFeatures, gvwr, payload, deckSize, axles, lengthOptions, pulltypeOptions } = req.body;
+      
+      let normalizedImageUrl = imageUrl || '/objects/models/default-model.png';
+      if (normalizedImageUrl && normalizedImageUrl.includes('storage.googleapis.com')) {
+        try {
+          const objectStorageService = new ObjectStorageService();
+          normalizedImageUrl = await objectStorageService.trySetObjectEntityAclPolicy(
+            normalizedImageUrl,
+            { owner: "admin", visibility: "public" }
+          );
+        } catch (err) {
+          console.error("Failed to normalize model image URL:", err);
+        }
+      }
+      
       const result = await storage.createModel({
         categoryId,
         seriesId,
         modelSeries,
         name,
         basePrice: basePrice || 0,
-        imageUrl: imageUrl || '/objects/models/default-model.png',
+        imageUrl: normalizedImageUrl,
         standardFeatures: standardFeatures || [],
         gvwr,
         payload,

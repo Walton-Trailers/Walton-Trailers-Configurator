@@ -2294,28 +2294,37 @@ export default function FastPricing() {
                               onChange={async (e) => {
                                 const file = e.target.files?.[0];
                                 if (file) {
+                                  setUploadingCategoryId(-3);
                                   try {
                                     const uploadParams = await handleGetUploadParameters();
-                                    const formData = new FormData();
-                                    formData.append("file", file);
-                                    
                                     const response = await fetch(uploadParams.url, {
                                       method: uploadParams.method,
-                                      body: formData,
+                                      body: file,
                                     });
-                                    
                                     if (response.ok) {
-                                      // Use the upload URL from the parameters, not the response
-                                      // This will be processed properly by the backend when the model is created
-                                      setNewModelData({ ...newModelData, imageUrl: uploadParams.url });
+                                      setNewModelData(prev => ({ ...prev, imageUrl: uploadParams.url }));
+                                      toast({
+                                        title: "Success",
+                                        description: "Image uploaded successfully",
+                                      });
                                     }
                                   } catch (error) {
                                     console.error('Upload failed:', error);
+                                    toast({
+                                      title: "Error",
+                                      description: "Failed to upload image",
+                                      variant: "destructive",
+                                    });
+                                  } finally {
+                                    setUploadingCategoryId(null);
                                   }
                                 }
                               }}
                               className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-medium file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
                             />
+                            {uploadingCategoryId === -3 && !newModelData.imageUrl && (
+                              <span className="text-sm text-blue-600">Uploading...</span>
+                            )}
                             {newModelData.imageUrl && (
                               <div className="flex items-center gap-2">
                                 <img 
@@ -2342,7 +2351,7 @@ export default function FastPricing() {
                         </Button>
                         <Button 
                           onClick={() => addModelMutation.mutate(newModelData)}
-                          disabled={addModelMutation.isPending || !newModelData.name || !newModelData.modelSeries || !newModelData.categoryId || !newModelData.seriesId || (parseFloat(newModelData.basePrice as string) || 0) < 0}
+                          disabled={addModelMutation.isPending || !newModelData.name || !newModelData.modelSeries || !newModelData.categoryId || !newModelData.seriesId || (parseFloat(newModelData.basePrice as string) || 0) < 0 || uploadingCategoryId === -3}
                         >
                           Add Model
                         </Button>
