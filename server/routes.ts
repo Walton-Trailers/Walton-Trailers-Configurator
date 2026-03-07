@@ -2374,9 +2374,22 @@ export async function registerRoutes(app: Express): Promise<Express> {
 
   app.post("/api/options", requireAuth, async (req, res) => {
     try {
-      const { name, price, category, modelId, applicableModels, hexColor, primerPrice, isPerFt } = req.body;
+      const { name, price, category, modelId, applicableModels, hexColor, primerPrice, isPerFt, imageUrl, isMultiSelect } = req.body;
       
       console.log("Creating new option:", req.body);
+      
+      let normalizedImageUrl = imageUrl || "";
+      if (normalizedImageUrl && normalizedImageUrl.includes('storage.googleapis.com')) {
+        try {
+          const objectStorageService = new ObjectStorageService();
+          normalizedImageUrl = await objectStorageService.trySetObjectEntityAclPolicy(
+            normalizedImageUrl,
+            { owner: "admin", visibility: "public" }
+          );
+        } catch (err) {
+          console.error("Failed to normalize option image URL:", err);
+        }
+      }
       
       const newOption = await storage.createOption({
         name,
@@ -2387,6 +2400,8 @@ export async function registerRoutes(app: Express): Promise<Express> {
         hexColor,
         primerPrice,
         isPerFt,
+        imageUrl: normalizedImageUrl || undefined,
+        isMultiSelect,
       });
       
       console.log("Created option:", newOption);
