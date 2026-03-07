@@ -93,7 +93,14 @@ const isValidHex = (hex: string): boolean => {
 // Fast mutations with minimal overhead
 const fastMutate = async (url: string, options: RequestInit) => {
   const response = await fetch(url, options);
-  if (!response.ok) throw new Error(`HTTP ${response.status}`);
+  if (!response.ok) {
+    let errorMessage = `HTTP ${response.status}`;
+    try {
+      const errorData = await response.json();
+      if (errorData?.message) errorMessage = errorData.message;
+    } catch {}
+    throw new Error(errorMessage);
+  }
   return response.json();
 };
 

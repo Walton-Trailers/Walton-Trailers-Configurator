@@ -324,8 +324,15 @@ export async function registerRoutes(app: Express): Promise<Express> {
         imageUrl: normalizedImageUrl,
       });
       res.json(result);
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error creating series:", error);
+      if (error?.code === '23505') {
+        const detail = error?.detail || '';
+        if (detail.includes('slug')) {
+          return res.status(409).json({ message: `A series with that slug already exists. Please use a unique slug.` });
+        }
+        return res.status(409).json({ message: `A duplicate entry was found: ${detail}` });
+      }
       res.status(500).json({ message: "Failed to create series" });
     }
   });
@@ -425,8 +432,15 @@ export async function registerRoutes(app: Express): Promise<Express> {
         pulltypeOptions,
       });
       res.json(result);
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error creating model:", error);
+      if (error?.code === '23505') {
+        const detail = error?.detail || '';
+        if (detail.includes('model_id')) {
+          return res.status(409).json({ message: `A model with that Model ID already exists. Please use a unique Model ID.` });
+        }
+        return res.status(409).json({ message: `A duplicate entry was found: ${detail}` });
+      }
       res.status(500).json({ message: "Failed to create model" });
     }
   });
