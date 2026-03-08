@@ -2,7 +2,7 @@
 -- PostgreSQL database dump
 --
 
-\restrict iVyJrcaFeruvUL3YL5V1n3o1ER4VniafbMj2ODh6WqnLHy8QEZTPoEXznCG3DcH
+\restrict Cn3P2SJ6TUdxDIOKNdbzsPxddMOtbjCqaguMe6wFfasdOTjIJmj8Zc1NRLU8mKo
 
 -- Dumped from database version 16.12 (6d3029c)
 -- Dumped by pg_dump version 16.10
@@ -495,7 +495,8 @@ CREATE TABLE public.trailer_categories (
     description text NOT NULL,
     image_url text NOT NULL,
     starting_price integer NOT NULL,
-    is_archived boolean NOT NULL
+    is_archived boolean NOT NULL,
+    order_index integer DEFAULT 0
 );
 
 
@@ -873,11 +874,11 @@ ed8123fc7af8c6bfa489c76b9b3f6893555c9f4dee7d9ea85d35d2ff9f8ea868	1	2025-09-12 20
 d211befda43fdd30b0a885ecae439b8651b87f9eb11960414df0e78d0dba2b73	1	2026-02-25 03:12:53.787	2026-02-24 03:12:53.983316
 ebcb08d6737eb7ab8a3578df09dda01459c044dc3f191a011d9681b9d16e44ca	1	2026-02-25 03:15:08.046	2026-02-24 03:15:08.198612
 881fff59f62f646e6db8406813ab7995548c04b4a5cd5f5cb063899d00a4b570	1	2026-03-02 21:43:05.373	2026-03-01 21:43:05.540638
-906d94e1bd4e86796f6325cb139bc0d023e2273268bb5cc7a33ccaebe0b04f0c	1	2026-03-02 22:40:51.565	2026-03-01 22:40:51.744035
 9a4e920c6dc2e224376999ac0bc3f28f11bf2281a0e024f472b901ef4a771861	5	2026-03-03 19:25:08.215	2026-03-02 19:25:08.232677
 9370f4c2d08b34edb82c2e26998dba964c1c576082f9324068bd268bd9197c1d	1	2026-03-04 17:43:55.729	2026-03-03 17:43:55.832075
 b03f661c195cf66dd262e79918ca1387ce1c1be863e5a126a24e2e287303de6d	1	2025-09-19 19:41:27.041	2025-09-18 19:41:27.219193
 04add9d44209f355bee45108ef3b5d216d9ca4b5ab02f4ea1072b25c1539d975	1	2025-09-20 13:41:06.854	2025-09-19 13:41:07.026179
+176326cac3de881b35bd1458ac98b602b1f1b1d1b874f308c568043ec82e322d	1	2026-03-09 19:52:55.658	2026-03-08 19:52:55.832394
 70af0c0a4426cb221db80fa8eef951650cc7604eead2566700ed946ec031ba60	1	2025-09-20 19:11:22.057	2025-09-19 19:11:22.221129
 ec378523da65c2672e74faf1d84fc10506fee4f2e6f6c6746b386e9497976bf7	1	2025-09-20 19:35:39.67	2025-09-19 19:35:39.835153
 0b1d1a7abe5a8d2148ae2543c8b072cbfcb60b84fc1373113f6df4f80611711a	1	2025-09-21 04:00:28.554	2025-09-20 04:00:28.728988
@@ -896,7 +897,7 @@ COPY public.admin_users (id, username, email, password_hash, first_name, last_na
 8	jordanwilliams	jordan@waltontrailers.com	$2b$12$ATjIFt.XSbzO8qpTeDzgCuPh6bLuzM83jql95WhEIE7KAfyGMHHp.	Jordan	Williams	admin	t	2026-02-06 14:58:08.241	2025-09-29 17:55:00.814063	2026-02-06 14:58:08.242
 9	gavinbrush	purchasing@waltontrailers.com	$2b$12$GkPDh2IVf3UHhLDfg8tLYObV3wJYe7Mz35Wwv0XoWyYnkUT5yI/t.	Gavin	Brush	admin	t	2025-09-29 19:01:50.356	2025-09-29 17:59:44.939922	2025-09-29 19:01:50.356
 5	taylornielsen	taylor@waltontrailers.com	$2b$12$8vJ5NXCPjbksrt7Ks7dIze3u7TYbHzzty8u2QGZUz4i0bwvTcN7/a	Taylor	Nielsen	admin	t	2026-03-02 19:25:08.18	2025-08-22 22:50:36.329634	2026-03-02 19:25:08.181
-1	Stuart D	stuart@relloagency.com	$2b$10$NDhNMbwnRlQpgnUhxSd/meFAbR5KKxHaaLNLBicuKr0N1v0to4RqC	Stuart	Derman	admin	t	2026-03-03 17:43:55.689	2025-07-30 02:46:12.126717	2026-03-03 17:43:55.689
+1	Stuart D	stuart@relloagency.com	$2b$10$NDhNMbwnRlQpgnUhxSd/meFAbR5KKxHaaLNLBicuKr0N1v0to4RqC	Stuart	Derman	admin	t	2026-03-08 19:52:55.594	2025-07-30 02:46:12.126717	2026-03-08 19:52:55.594
 2	employee	employee@waltontrailers.com	$2b$12$LpwqWwV04mO7Iv/mLSF6o.vyrQD2Xq6ofQvepDwShk6g7DYYXZpKS	Standard	Employee	standard	f	2025-08-22 15:52:38.06	2025-07-30 02:46:12.56326	2025-10-01 03:12:31.574
 3	rello	digital@relloagency.com	$2b$12$BYBV7AGwuOSGs55cTZD2te4fS8XY9.rHU2xaVGSXiHqkdSnPFcPjm	RELLO	Team	admin	t	2025-08-22 20:59:56.478	2025-07-30 02:51:00.89734	2025-10-01 03:17:37.557
 \.
@@ -1064,6 +1065,10 @@ COPY public.media_files (id, filename, original_name, object_path, mime_type, fi
 67	9823739f-678b-4134-82a3-bab27cbecc3c	FBH210 - Super Single Wheel Gooseneck Deckover 20K_model_image	/objects/models/9823739f-678b-4134-82a3-bab27cbecc3c	image/jpeg	0	\N	\N	FBH210 - Super Single Wheel Gooseneck Deckover 20K model image	Model image for FBH210 - Super Single Wheel Gooseneck Deckover 20K	["model", "FBH210"]	5	1	t	2026-02-12 19:27:47.09957	2026-02-12 19:27:47.09957
 68	306d898f-7647-4c89-91a9-e264ad38c166	Torque Tube_option_image	/objects/models/306d898f-7647-4c89-91a9-e264ad38c166	image/jpeg	0	\N	\N	Torque Tube option image	Option image for Torque Tube	["option", "extras"]	5	1	t	2026-02-12 19:53:42.576382	2026-02-12 19:53:42.576382
 69	587be062-5c84-4ce0-880b-ed41fc576ddc	LED Light Bar_option_image	/objects/models/587be062-5c84-4ce0-880b-ed41fc576ddc	image/jpeg	0	\N	\N	LED Light Bar option image	Option image for LED Light Bar	["option", "extras"]	5	1	t	2026-02-12 19:56:44.680773	2026-02-12 19:56:44.680773
+70	1c90738f-138a-4e12-a7d7-5dd573c9cebd	Under Deck Storage Box (37” x 10” x 12”)_option_image	/objects/models/1c90738f-138a-4e12-a7d7-5dd573c9cebd	image/jpeg	0	\N	\N	Under Deck Storage Box (37” x 10” x 12”) option image	Option image for Under Deck Storage Box (37” x 10” x 12”)	["option", "extras"]	1	1	t	2026-03-06 15:51:11.435527	2026-03-06 15:51:11.435527
+71	1a70d16f-2692-49f4-847c-77f37631d6d6	Under Deck Storage Box (37” x 10” x 12”)_option_image	/objects/models/1a70d16f-2692-49f4-847c-77f37631d6d6	image/jpeg	0	\N	\N	Under Deck Storage Box (37” x 10” x 12”) option image	Option image for Under Deck Storage Box (37” x 10” x 12”)	["option", "extras"]	1	1	t	2026-03-06 23:18:44.65195	2026-03-06 23:18:44.65195
+72	4dafb90f-8af8-4432-875c-30c062595cdd	asdf_category_image	/objects/models/4dafb90f-8af8-4432-875c-30c062595cdd	image/jpeg	0	\N	\N	asdf category image	Category image for asdf	["category", "sdf"]	1	1	t	2026-03-06 23:29:12.964109	2026-03-06 23:29:12.964109
+73	e98c21e4-14a6-43c9-8682-ea357d4eb5d0	as_series_image	/objects/models/e98c21e4-14a6-43c9-8682-ea357d4eb5d0	image/jpeg	0	\N	\N	as series image	Series image for as	["series", "as"]	1	1	t	2026-03-07 04:52:09.504895	2026-03-07 04:52:09.504895
 \.
 
 
@@ -1092,12 +1097,12 @@ COPY public.quote_requests (id, first_name, last_name, zip_code, mobile, email, 
 -- Data for Name: trailer_categories; Type: TABLE DATA; Schema: public; Owner: neondb_owner
 --
 
-COPY public.trailer_categories (id, slug, name, description, image_url, starting_price, is_archived) FROM stdin;
-18	tag-alongs	Tag-Along Trailers		/objects/models/66f50d37-6f36-4576-8ab1-a0a27feb1b1c	13662	f
-7	equipment-tilt	Tilt Equipment Trailers		/objects/models/f0164f9e-3945-48d4-a059-2a1d57e6cd9c	6783	f
-8	dump	Dump Trailers		/objects/models/3ed5540a-b5a3-4abf-ad01-7f7915c31d3e	12493	f
-6	flatbed	Gooseneck Trailers		/objects/models/f59b13a0-b647-4910-a4c3-817dc539a144	12408	f
-9	landscape	Landscape Trailers		/objects/models/755a6a1c-1788-498d-8f6e-aa0dfdbc7922	12942	f
+COPY public.trailer_categories (id, slug, name, description, image_url, starting_price, is_archived, order_index) FROM stdin;
+6	flatbed	Gooseneck Trailers		/objects/models/f59b13a0-b647-4910-a4c3-817dc539a144	12408	f	1
+7	equipment-tilt	Tilt Equipment Trailers		/objects/models/f0164f9e-3945-48d4-a059-2a1d57e6cd9c	6783	f	2
+8	dump	Dump Trailers		/objects/models/3ed5540a-b5a3-4abf-ad01-7f7915c31d3e	12493	f	4
+9	landscape	Landscape Trailers		/objects/models/755a6a1c-1788-498d-8f6e-aa0dfdbc7922	12942	f	5
+18	tag-alongs	Tag-Along Trailers		/objects/models/66f50d37-6f36-4576-8ab1-a0a27feb1b1c	13662	f	6
 \.
 
 
@@ -1147,7 +1152,6 @@ COPY public.trailer_models (id, category_id, model_id, name, "(old)", axles, bas
 49	18	BDE215	BDE215 - I-BEAM DECKOVER EQUIPMENT 30K TRAILER	\N	Dual 15K	22379	/objects/models/default-model.png	[]	t	\N	26	\N	["26'","28'","30'","32'"]	{"28'":615,"30'":1229,"32'":1845}	{"26'":"Pintle ","28'":"Pintle ","30'":"Pintle ","32'":"Pintle "}	{"26'":"30,000 lbs","28'":"30,000 lbs","30'":"30,000 lbs","32'":"30,000 lbs"}	{"26'":"24,628","28'":"24,808","30'":"24,988","32'":"25,168 "}	{"26'":"96.5” x 26’","28'":"96.5” x 28’","30'":"96.5” x 30’ ","32'":"96.5” x 32’ "}	{"26'": 1, "28'": 2, "30'": 3, "32'": 4}	\N	\N	\N
 55	9	MPR205	MPR205 - (Tandem 5.2K axles)	\N	Dual 5K	12942	/objects/models/e54e2d00-84c0-491c-a44f-ad7ae4f395f0	[]	f	\N	7	\N	["20'","18'"]	{"20'":300}	{"20'":"Bumper Pull","18'":"Bumper Pull"}	{"20'":"9,990 lbs","18'":"9,990 lbs"}	{"20'":"7,790 lbs","18'":"6,790 lbs"}	{"20'":"98.5” x 25’","18'":"98.5” x 23’"}	{"18'": 2, "20'": 1}	\N	\N	\N
 13	8	DHV208	DHV208 - (Tandem 8K axles)	83" x 14-16'	Dual 8K	15349	/objects/models/45f9b7c1-a51f-4516-8d11-2acc4fca84c6	["520 Scissor Hoist", "Combo Barn/Spreader Gate", "Pull Style Tarp", "72\\" Slide-In Ramps", "Dexter Oil Bath Axles"]	f	\N	27	\N	["14' (B)","16' (B)","14' (G)","16' (G)"]	{"16' (B)":500,"14' (G)":1437,"16' (G)":1937}	{"14' (B)":"Bumper Pull","16' (B)":"Bumper Pull","16' (G)":"Gooseneck","14' (G)":"Gooseneck"}	{"14' (B)":"17,200 lbs","16' (B)":"17,200 lbs","16' (G)":"18,000 lbs","14' (G)":"18,000 lbs"}	{"14' (B)":"11,710 lbs","16' (B)":"11,460 lbs","16' (G)":"12,040 lbs","14' (G)":"12,290 lbs"}	{"14' (B)":"83” x 14’ ","16' (B)":"83” x 16’ ","16' (G)":"83” x 16’","14' (G)":"83” x 14’"}	{"14' (B)": 1, "14' (G)": 3, "16' (B)": 2, "16' (G)": 4}	\N	\N	["/objects/models/45f9b7c1-a51f-4516-8d11-2acc4fca84c6", "/objects/models/78840651-2317-42f4-8d95-f0c3ffe8ec8b"]
-57	6	Test	Testt	\N	Deas	123	/objects/models/default-model.png	[]	t	\N	15	\N	\N	\N	\N	\N	\N	\N	\N	\N	{"jack": 10, "tarp": 30, "color": 70, "ramps": 20, "tires": 40, "walls": 50, "extras": 60, "length": 0}	\N
 \.
 
 
@@ -1218,7 +1222,6 @@ COPY public.trailer_options (id, model_id, category, name, price, is_multi_selec
 151	FBX210	extras	Torque Tube	780	f	\N	/objects/models/306d898f-7647-4c89-91a9-e264ad38c166	\N	\N	["FBX210", "FBX210SS", "FBX215", "FBX212", "FBX307", "BDE210SS", "BDE210", "BDE215", "BDE307", "BDE212"]	\N	\N	f	f
 165	TSX207	extras	Drive Over Fenders w/ Center D-Rings (21k)	3075	f	t	\N	\N	\N	["TSX207", "TSX208", "TSX307"]	\N	\N	f	f
 66	FBH208	jack	Dual 12K Hydraulic Jacks	1930	f	f	\N	\N	\N	["FBH208", "FBH207", "FBX307", "FBX210", "FBX210SS", "FBX212", "FBX215", "THO210", "THO212", "THO215", "BDE212", "BDE210SS", "BDE210", "BDE215", "BDE207", "BDE208", "BDE307", "DHO208", "FBH307", "FBH210"]	\N	\N	f	f
-31	FBH207	extras	Under Deck Storage Box (37” x 10” x 12”)	245	f	f	\N	\N	\N	["FBH207", "FBH208", "FBX307", "FBX210", "FBX210SS", "FBX212", "FBX215", "THO210", "THO212", "THO215", "BDE210SS", "BDE210", "BDE215", "BDE207", "BDE208", "BDE307", "BDE212", "FBH307", "FBH210"]	\N	\N	f	f
 46	BDE207	extras	Winch Plate	170	f	t	\N	\N	\N	["BDE207"]	\N	\N	f	f
 47	BDE207	extras	Additional D-Rings	35	t	t	\N	\N	\N	["BDE207"]	\N	\N	f	f
 176	DHV207	extras	Barn Door	0	f	t	\N	\N	\N	["DHV207", "DHV208", "DHO210", "DHO212", "DHO215", "DHO208", "DHO210SS"]	\N	\N	f	f
@@ -1241,7 +1244,6 @@ COPY public.trailer_options (id, model_id, category, name, price, is_multi_selec
 202	DHV207	color	Desert Tan	350	f	\N	\N	\N	\N	["DHV207", "DHV208", "DHO210", "DHO212", "DHO215", "DHO210SS", "FBH207", "FBH208", "FBH307", "FBX210", "FBH210", "FBX212", "FBX215", "MPR205", "MPR207", "BDE210", "BDE207", "BDE208", "TMX107", "TSX207", "TSX208", "TSX307", "BDE212"]	#c1af89	500	f	f
 178	DHV207	walls	32” Walls (Solid)	1340	f	\N	\N	\N	\N	["DHV207", "DHV208", "DHO208"]	\N	\N	f	f
 60	DHV208	extras	7 ga. Floor Upgrade (per ft)	60	f	f	\N	\N	\N	["DHV208", "DHV207", "DHO210", "DHO212", "DHO215", "DHO208", "DHO210SS"]	\N	\N	f	t
-205	Test	color	color	123	f	\N	\N	\N	\N	["Test"]	#000	\N	f	f
 199	DHV207	color	Gentian Blue	350	f	\N	\N	\N	\N	["DHV207", "DHV208", "DHO210", "DHO212", "DHO215", "DHO210SS", "FBH207", "FBH208", "FBH307", "FBX210", "FBH210", "FBX212", "FBX215", "MPR205", "MPR207", "BDE210", "BDE207", "BDE208", "TMX107", "TSX207", "TSX208", "TSX307", "BDE212"]	#005596	500	f	f
 180	DHV208	walls	40” Wall with 16” Fold (24” + 16” Fold) (Both Sides)	2675	f	\N	\N	\N	\N	["DHV208", "DHV207"]	\N	\N	f	f
 169	THO210	tires	ST235/85R16 “G” 14 Ply	1300	f	\N	\N	\N	\N	["THO210", "THO212", "BDE210", "BDE212", "DHO210", "DHO212"]	\N	\N	f	f
@@ -1259,6 +1261,7 @@ COPY public.trailer_options (id, model_id, category, name, price, is_multi_selec
 40	DST235	extras	Wireless Remote	360	f	f	\N	\N	\N	["DST235", "DST205", "DHV207", "DHV208", "DHO210", "DHO212", "DHO215", "DHO208", "DHO210SS", "MPR205", "MPR207"]	\N	\N	f	f
 67	FBH208	ramps	Mega Ramps	0	f	f	\N	\N	\N	["FBH208", "FBH207", "BDE210SS", "BDE215", "BDE307", "FBX212", "FBX215", "FBH210", "FBX210", "FBH307"]	\N	\N	f	f
 181	DHO210	walls	Full 24” Fold Wall (One Side - Driver/Passenger) 	810	f	\N	\N	\N	\N	["DHO210", "DHO212", "DHO215", "DHO208", "DHO210SS"]	\N	\N	f	f
+31	FBH207	extras	Under Deck Storage Box (37” x 10” x 12”)	245	f	f	/objects/models/1a70d16f-2692-49f4-847c-77f37631d6d6	\N	\N	["FBH207", "FBH208", "FBX307", "FBX210", "FBX210SS", "FBX212", "FBX215", "THO210", "THO212", "THO215", "BDE210SS", "BDE210", "BDE215", "BDE207", "BDE208", "BDE307", "BDE212", "FBH307", "FBH210"]	\N	\N	f	f
 38	DST235	walls	32" Wall with Board Brackets (24" Solid + 8" Board)	1360	f	f	\N	\N	\N	["DST235", "DST205", "DHV207", "DHV208", "DHO208"]	\N	\N	f	f
 149	FBX307	tires	ST235/80R16 “E” 10 Ply Standard	0	f	\N	\N	\N	\N	["FBX307", "FBX210", "FBX212", "TMX107", "TSX307", "THO210", "THO212", "BDE207", "BDE307", "BDE210", "BDE212", "DST235", "DST205", "DMD207", "DHO210", "DHO212", "MPR207", "MPR205"]	\N	\N	f	f
 182	DHO210	walls	Full 24” Fold Wall (Both Sides)	1620	f	\N	\N	\N	\N	["DHO210", "DHO212", "DHO215", "DHO208", "DHO210SS"]	\N	\N	f	f
@@ -1346,7 +1349,7 @@ SELECT pg_catalog.setval('public.dealers_id_seq', 3, true);
 -- Name: media_files_id_seq; Type: SEQUENCE SET; Schema: public; Owner: neondb_owner
 --
 
-SELECT pg_catalog.setval('public.media_files_id_seq', 69, true);
+SELECT pg_catalog.setval('public.media_files_id_seq', 73, true);
 
 
 --
@@ -1367,14 +1370,14 @@ SELECT pg_catalog.setval('public.quote_requests_id_seq', 12, true);
 -- Name: trailer_categories_id_seq; Type: SEQUENCE SET; Schema: public; Owner: neondb_owner
 --
 
-SELECT pg_catalog.setval('public.trailer_categories_id_seq', 18, true);
+SELECT pg_catalog.setval('public.trailer_categories_id_seq', 24, true);
 
 
 --
 -- Name: trailer_models_id_seq; Type: SEQUENCE SET; Schema: public; Owner: neondb_owner
 --
 
-SELECT pg_catalog.setval('public.trailer_models_id_seq', 57, true);
+SELECT pg_catalog.setval('public.trailer_models_id_seq', 62, true);
 
 
 --
@@ -1388,14 +1391,14 @@ SELECT pg_catalog.setval('public.trailer_option_categories_id_seq', 14, true);
 -- Name: trailer_options_id_seq; Type: SEQUENCE SET; Schema: public; Owner: neondb_owner
 --
 
-SELECT pg_catalog.setval('public.trailer_options_id_seq', 205, true);
+SELECT pg_catalog.setval('public.trailer_options_id_seq', 210, true);
 
 
 --
 -- Name: trailer_series_id_seq; Type: SEQUENCE SET; Schema: public; Owner: neondb_owner
 --
 
-SELECT pg_catalog.setval('public.trailer_series_id_seq', 29, true);
+SELECT pg_catalog.setval('public.trailer_series_id_seq', 35, true);
 
 
 --
@@ -1742,5 +1745,5 @@ ALTER DEFAULT PRIVILEGES FOR ROLE cloud_admin IN SCHEMA public GRANT ALL ON TABL
 -- PostgreSQL database dump complete
 --
 
-\unrestrict iVyJrcaFeruvUL3YL5V1n3o1ER4VniafbMj2ODh6WqnLHy8QEZTPoEXznCG3DcH
+\unrestrict Cn3P2SJ6TUdxDIOKNdbzsPxddMOtbjCqaguMe6wFfasdOTjIJmj8Zc1NRLU8mKo
 
