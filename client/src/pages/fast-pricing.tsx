@@ -4176,22 +4176,24 @@ export default function FastPricing() {
                               <div className="space-y-1">
                                 {sortedCategories.map((cat: any, idx: number) => (
                                   <div key={cat.id} className="flex items-center gap-1 py-1 px-2 rounded bg-gray-50 border border-gray-100">
-                                    <div className="flex flex-col gap-0.5 mr-1">
-                                      <button
-                                        disabled={idx === 0}
-                                        onClick={() => moveCategory(cat.name, 'up')}
-                                        className={`w-5 h-4 flex items-center justify-center rounded text-gray-500 hover:bg-gray-200 disabled:opacity-30 disabled:cursor-not-allowed`}
-                                      >
-                                        <ArrowUp className="w-3 h-3" />
-                                      </button>
-                                      <button
-                                        disabled={idx === sortedCategories.length - 1}
-                                        onClick={() => moveCategory(cat.name, 'down')}
-                                        className={`w-5 h-4 flex items-center justify-center rounded text-gray-500 hover:bg-gray-200 disabled:opacity-30 disabled:cursor-not-allowed`}
-                                      >
-                                        <ArrowDown className="w-3 h-3" />
-                                      </button>
-                                    </div>
+                                    {isEditing && (
+                                      <div className="flex flex-col gap-0.5 mr-1">
+                                        <button
+                                          disabled={idx === 0}
+                                          onClick={() => moveCategory(cat.name, 'up')}
+                                          className={`w-5 h-4 flex items-center justify-center rounded text-gray-500 hover:bg-gray-200 disabled:opacity-30 disabled:cursor-not-allowed`}
+                                        >
+                                          <ArrowUp className="w-3 h-3" />
+                                        </button>
+                                        <button
+                                          disabled={idx === sortedCategories.length - 1}
+                                          onClick={() => moveCategory(cat.name, 'down')}
+                                          className={`w-5 h-4 flex items-center justify-center rounded text-gray-500 hover:bg-gray-200 disabled:opacity-30 disabled:cursor-not-allowed`}
+                                        >
+                                          <ArrowDown className="w-3 h-3" />
+                                        </button>
+                                      </div>
+                                    )}
                                     <span className="text-sm flex-1">{cat.name.charAt(0).toUpperCase() + cat.name.slice(1)}</span>
                                     {cat.isSystem && (
                                       <span className="text-xs px-1.5 py-0.5 rounded bg-blue-100 text-blue-700">Built-in</span>
