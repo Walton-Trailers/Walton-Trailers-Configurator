@@ -6,7 +6,7 @@ import * as schema from "@shared/schema";
 // Configure Neon for WebSocket support
 neonConfig.webSocketConstructor = ws;
 
-neonConfig.poolQueryViaFetch = process.env.NODE_ENV === 'production';
+neonConfig.poolQueryViaFetch = false;
 
 // Handle missing DATABASE_URL gracefully in production
 let pool: Pool | null = null;
