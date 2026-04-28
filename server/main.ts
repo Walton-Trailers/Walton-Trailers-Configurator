@@ -288,5 +288,23 @@ process.on('unhandledRejection', (reason, promise) => {
   }
 });
 
-// Start the server
-startServer();
+// On Vercel we don't auto-start a listener — the platform invokes the exported
+// app via api/index.ts. Locally (and on any host that runs `npm start`) we do
+// start a listener as before.
+if (!process.env.VERCEL) {
+  startServer();
+}
+
+// Lazy initialization for serverless environments (Vercel Functions). The first
+// request triggers route registration / admin seeding once per warm instance.
+let initPromise: Promise<unknown> | null = null;
+
+export async function getApp() {
+  if (!initPromise) {
+    initPromise = initializeServer();
+  }
+  await initPromise;
+  return app;
+}
+
+export { app };

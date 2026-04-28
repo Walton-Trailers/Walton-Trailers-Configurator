@@ -1,34 +1,30 @@
-import { Storage, File } from "@google-cloud/storage";
-import { Response } from "express";
+import { put, head, del, list } from "@vercel/blob";
+
+type HeadResult = Awaited<ReturnType<typeof head>>;
+import type { Response } from "express";
 import { randomUUID } from "crypto";
-import {
-  ObjectAclPolicy,
-  ObjectPermission,
-  canAccessObject,
-  getObjectAclPolicy,
-  setObjectAclPolicy,
-} from "./objectAcl";
 
-const REPLIT_SIDECAR_ENDPOINT = "http://127.0.0.1:1106";
+// Minimal ACL surface — Vercel Blob doesn't expose per-object ACL the way GCS did.
+// Trailer images are public-facing, so we use the public-access store and treat
+// every object as { owner: "admin", visibility: "public" }. The shape below is
+// kept so the rest of the codebase that imports it from here keeps compiling.
+export enum ObjectPermission {
+  READ = "read",
+  WRITE = "write",
+}
 
-// The object storage client is used to interact with the object storage service.
-export const objectStorageClient = new Storage({
-  credentials: {
-    audience: "replit",
-    subject_token_type: "access_token",
-    token_url: `${REPLIT_SIDECAR_ENDPOINT}/token`,
-    type: "external_account",
-    credential_source: {
-      url: `${REPLIT_SIDECAR_ENDPOINT}/credential`,
-      format: {
-        type: "json",
-        subject_token_field_name: "access_token",
-      },
-    },
-    universe_domain: "googleapis.com",
-  },
-  projectId: "",
-});
+export interface ObjectAclPolicy {
+  owner: string;
+  visibility: "public" | "private";
+}
+
+// Lightweight handle the rest of the app passes around in place of GCS File.
+export interface BlobObject {
+  pathname: string;
+  url: string;
+  contentType?: string;
+  size?: number;
+}
 
 export class ObjectNotFoundError extends Error {
   constructor() {
@@ -38,262 +34,160 @@ export class ObjectNotFoundError extends Error {
   }
 }
 
-// The object storage service is used to interact with the object storage service.
+// Strips the "/objects/" prefix from a path stored in the DB and returns the
+// Blob pathname (e.g. "/objects/models/abc" → "models/abc").
+function dbPathToBlobPath(objectPath: string): string {
+  if (!objectPath.startsWith("/objects/")) {
+    throw new ObjectNotFoundError();
+  }
+  return objectPath.slice("/objects/".length);
+}
+
+// Resolves a Vercel Blob URL → "/objects/<pathname>" so callers can store a
+// short relative path in the DB (matches the legacy format).
+function blobUrlToDbPath(rawUrl: string): string | null {
+  try {
+    const u = new URL(rawUrl);
+    if (
+      u.hostname.endsWith(".public.blob.vercel-storage.com") ||
+      u.hostname.endsWith(".blob.vercel-storage.com")
+    ) {
+      const pathname = u.pathname.replace(/^\//, "");
+      return `/objects/${pathname}`;
+    }
+  } catch {
+    // not a URL
+  }
+  return null;
+}
+
 export class ObjectStorageService {
   constructor() {}
 
-  // Gets the public object search paths.
+  // Legacy API — kept so existing callers that call these getters still work.
+  // PUBLIC_OBJECT_SEARCH_PATHS / PRIVATE_OBJECT_DIR are no longer used at runtime
+  // but we don't throw if unset; tests and admin-seed paths may reference them.
   getPublicObjectSearchPaths(): Array<string> {
     const pathsStr = process.env.PUBLIC_OBJECT_SEARCH_PATHS || "";
-    const paths = Array.from(
-      new Set(
-        pathsStr
-          .split(",")
-          .map((path) => path.trim())
-          .filter((path) => path.length > 0)
-      )
-    );
-    if (paths.length === 0) {
-      throw new Error(
-        "PUBLIC_OBJECT_SEARCH_PATHS not set. Create a bucket in 'Object Storage' " +
-          "tool and set PUBLIC_OBJECT_SEARCH_PATHS env var (comma-separated paths)."
-      );
-    }
-    return paths;
+    return pathsStr
+      .split(",")
+      .map((p) => p.trim())
+      .filter((p) => p.length > 0);
   }
 
-  // Gets the private object directory.
   getPrivateObjectDir(): string {
-    const dir = process.env.PRIVATE_OBJECT_DIR || "";
-    if (!dir) {
-      throw new Error(
-        "PRIVATE_OBJECT_DIR not set. Create a bucket in 'Object Storage' " +
-          "tool and set PRIVATE_OBJECT_DIR env var."
-      );
-    }
-    return dir;
+    return process.env.PRIVATE_OBJECT_DIR || "";
   }
 
-  // Search for a public object from the search paths.
-  async searchPublicObject(filePath: string): Promise<File | null> {
-    for (const searchPath of this.getPublicObjectSearchPaths()) {
-      const fullPath = `${searchPath}/${filePath}`;
-
-      // Full path format: /<bucket_name>/<object_name>
-      const { bucketName, objectName } = parseObjectPath(fullPath);
-      const bucket = objectStorageClient.bucket(bucketName);
-      const file = bucket.file(objectName);
-
-      // Check if file exists
-      const [exists] = await file.exists();
-      if (exists) {
-        return file;
-      }
-    }
-
-    return null;
-  }
-
-  // Downloads an object to the response.
-  async downloadObject(file: File, res: Response, cacheTtlSec: number = 3600) {
+  // Search for a public object by pathname. Returns null if not found.
+  async searchPublicObject(filePath: string): Promise<BlobObject | null> {
+    const cleaned = filePath.replace(/^\/+/, "");
     try {
-      // Get file metadata
-      const [metadata] = await file.getMetadata();
-      // Get the ACL policy for the object.
-      const aclPolicy = await getObjectAclPolicy(file);
-      const isPublic = aclPolicy?.visibility === "public";
-      // Set appropriate headers
-      res.set({
-        "Content-Type": metadata.contentType || "application/octet-stream",
-        "Content-Length": metadata.size,
-        "Cache-Control": `${
-          isPublic ? "public" : "private"
-        }, max-age=${cacheTtlSec}`,
-      });
-
-      // Stream the file to the response
-      const stream = file.createReadStream();
-
-      stream.on("error", (err) => {
-        console.error("Stream error:", err);
-        if (!res.headersSent) {
-          res.status(500).json({ error: "Error streaming file" });
-        }
-      });
-
-      stream.pipe(res);
-    } catch (error) {
-      console.error("Error downloading file:", error);
-      if (!res.headersSent) {
-        res.status(500).json({ error: "Error downloading file" });
-      }
+      const meta = await head(cleaned);
+      return blobMetaToObject(cleaned, meta);
+    } catch {
+      return null;
     }
   }
 
-  // Gets the upload URL for an object entity.
-  async getObjectEntityUploadURL(): Promise<string> {
-    const privateObjectDir = this.getPrivateObjectDir();
-    if (!privateObjectDir) {
-      throw new Error(
-        "PRIVATE_OBJECT_DIR not set. Create a bucket in 'Object Storage' " +
-          "tool and set PRIVATE_OBJECT_DIR env var."
-      );
-    }
-
-    const objectId = randomUUID();
-    const fullPath = `${privateObjectDir}/models/${objectId}`;
-
-    const { bucketName, objectName } = parseObjectPath(fullPath);
-
-    // Sign URL for PUT method with TTL
-    return signObjectURL({
-      bucketName,
-      objectName,
-      method: "PUT",
-      ttlSec: 900,
+  // Stream/redirect the blob to the response. With public Blob URLs we just
+  // 302-redirect — the CDN serves the file directly, fastest path.
+  async downloadObject(
+    file: BlobObject,
+    res: Response,
+    cacheTtlSec: number = 3600,
+  ): Promise<void> {
+    res.set({
+      "Cache-Control": `public, max-age=${cacheTtlSec}`,
     });
+    res.redirect(302, file.url);
   }
 
-  // Gets the object entity file from the object path.
-  async getObjectEntityFile(objectPath: string): Promise<File> {
-    if (!objectPath.startsWith("/objects/")) {
-      throw new ObjectNotFoundError();
-    }
-
-    const parts = objectPath.slice(1).split("/");
-    if (parts.length < 2) {
-      throw new ObjectNotFoundError();
-    }
-
-    const entityId = parts.slice(1).join("/");
-    let entityDir = this.getPrivateObjectDir();
-    if (!entityDir.endsWith("/")) {
-      entityDir = `${entityDir}/`;
-    }
-    const objectEntityPath = `${entityDir}${entityId}`;
-    const { bucketName, objectName } = parseObjectPath(objectEntityPath);
-    const bucket = objectStorageClient.bucket(bucketName);
-    const objectFile = bucket.file(objectName);
-    const [exists] = await objectFile.exists();
-    if (!exists) {
-      throw new ObjectNotFoundError();
-    }
-    return objectFile;
+  // Returns a URL the client can PUT a file to. Our /api/blob-upload/:id route
+  // handler in routes.ts streams the body into Vercel Blob server-side.
+  async getObjectEntityUploadURL(): Promise<string> {
+    const objectId = randomUUID();
+    const baseUrl = process.env.BASE_URL || "";
+    // BASE_URL is preferred (set explicitly on Vercel); fall back to a relative
+    // URL which Uppy will resolve against the page origin.
+    const path = `/api/blob-upload/${encodeURIComponent(`models/${objectId}`)}`;
+    return baseUrl ? `${baseUrl.replace(/\/$/, "")}${path}` : path;
   }
 
-  normalizeObjectEntityPath(
-    rawPath: string,
-  ): string {
-    if (!rawPath.startsWith("https://storage.googleapis.com/")) {
-      return rawPath;
+  // Resolves "/objects/<pathname>" to a BlobObject by hitting head().
+  async getObjectEntityFile(objectPath: string): Promise<BlobObject> {
+    const pathname = dbPathToBlobPath(objectPath);
+    try {
+      const meta = await head(pathname);
+      return blobMetaToObject(pathname, meta);
+    } catch {
+      throw new ObjectNotFoundError();
     }
-  
-    // Extract the path from the URL by removing query parameters and domain
-    const url = new URL(rawPath);
-    const rawObjectPath = url.pathname;
-  
-    let objectEntityDir = this.getPrivateObjectDir();
-    if (!objectEntityDir.endsWith("/")) {
-      objectEntityDir = `${objectEntityDir}/`;
-    }
-  
-    if (!rawObjectPath.startsWith(objectEntityDir)) {
-      return rawObjectPath;
-    }
-  
-    // Extract the entity ID from the path
-    const entityId = rawObjectPath.slice(objectEntityDir.length);
-    return `/objects/${entityId}`;
   }
 
-  // Tries to set the ACL policy for the object entity and return the normalized path.
+  // Normalize whatever the client just uploaded (a full Vercel Blob URL or
+  // sometimes just a path) into the canonical "/objects/<pathname>" form that
+  // the DB stores.
+  normalizeObjectEntityPath(rawPath: string): string {
+    if (!rawPath) return rawPath;
+    if (rawPath.startsWith("/objects/")) return rawPath;
+    const fromBlobUrl = blobUrlToDbPath(rawPath);
+    if (fromBlobUrl) return fromBlobUrl;
+    return rawPath;
+  }
+
+  // Sets ACL — Vercel Blob has no per-object ACL on public stores. Normalizing
+  // the path is the only useful work here, so this just delegates.
   async trySetObjectEntityAclPolicy(
     rawPath: string,
-    aclPolicy: ObjectAclPolicy
+    _aclPolicy: ObjectAclPolicy,
   ): Promise<string> {
-    const normalizedPath = this.normalizeObjectEntityPath(rawPath);
-    if (!normalizedPath.startsWith("/")) {
-      return normalizedPath;
-    }
-
-    const objectFile = await this.getObjectEntityFile(normalizedPath);
-    await setObjectAclPolicy(objectFile, aclPolicy);
-    return normalizedPath;
+    return this.normalizeObjectEntityPath(rawPath);
   }
 
-  // Checks if the user can access the object entity.
-  async canAccessObjectEntity({
-    userId,
-    objectFile,
-    requestedPermission,
-  }: {
+  // Public-access blobs are readable by anyone; we don't gate reads at this
+  // layer. Write/delete is only triggered by authed admin endpoints upstream.
+  async canAccessObjectEntity(_args: {
     userId?: string;
-    objectFile: File;
+    objectFile: BlobObject;
     requestedPermission?: ObjectPermission;
   }): Promise<boolean> {
-    return canAccessObject({
-      userId,
-      objectFile,
-      requestedPermission: requestedPermission ?? ObjectPermission.READ,
-    });
+    return true;
   }
 }
 
-function parseObjectPath(path: string): {
-  bucketName: string;
-  objectName: string;
-} {
-  if (!path.startsWith("/")) {
-    path = `/${path}`;
-  }
-  const pathParts = path.split("/");
-  if (pathParts.length < 3) {
-    throw new Error("Invalid path: must contain at least a bucket name");
-  }
-
-  const bucketName = pathParts[1];
-  const objectName = pathParts.slice(2).join("/");
-
+// Server-side helpers used by routes.ts /api/blob-upload/:id PUT handler and the
+// import-images.mjs script.
+export async function uploadBlob(
+  pathname: string,
+  body: Buffer | Blob | ReadableStream | ArrayBuffer | string,
+  contentType?: string,
+): Promise<BlobObject> {
+  const result = await put(pathname, body, {
+    access: "public",
+    allowOverwrite: true,
+    contentType,
+  });
   return {
-    bucketName,
-    objectName,
+    pathname: result.pathname,
+    url: result.url,
+    contentType: result.contentType,
   };
 }
 
-async function signObjectURL({
-  bucketName,
-  objectName,
-  method,
-  ttlSec,
-}: {
-  bucketName: string;
-  objectName: string;
-  method: "GET" | "PUT" | "DELETE" | "HEAD";
-  ttlSec: number;
-}): Promise<string> {
-  const request = {
-    bucket_name: bucketName,
-    object_name: objectName,
-    method,
-    expires_at: new Date(Date.now() + ttlSec * 1000).toISOString(),
-  };
-  const response = await fetch(
-    `${REPLIT_SIDECAR_ENDPOINT}/object-storage/signed-object-url`,
-    {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(request),
-    }
-  );
-  if (!response.ok) {
-    throw new Error(
-      `Failed to sign object URL, errorcode: ${response.status}, ` +
-        `make sure you're running on Replit`
-    );
-  }
+export async function deleteBlob(pathname: string): Promise<void> {
+  await del(pathname);
+}
 
-  const { signed_url: signedURL } = await response.json();
-  return signedURL;
+export async function listBlobs(prefix?: string) {
+  return list({ prefix });
+}
+
+function blobMetaToObject(pathname: string, meta: HeadResult): BlobObject {
+  return {
+    pathname,
+    url: meta.url,
+    contentType: meta.contentType,
+    size: meta.size,
+  };
 }
