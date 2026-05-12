@@ -1,4 +1,13 @@
-import { log } from "./vite";
+// Inlined to avoid pulling vite (a devDependency) into the production bundle.
+function log(message: string, source = "express") {
+  const formattedTime = new Date().toLocaleTimeString("en-US", {
+    hour: "numeric",
+    minute: "2-digit",
+    second: "2-digit",
+    hour12: true,
+  });
+  console.log(`${formattedTime} [${source}] ${message}`);
+}
 
 export function validateEnvironment() {
   // In production, DATABASE_URL might be injected differently by Replit

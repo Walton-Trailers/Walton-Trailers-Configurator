@@ -549,135 +549,10 @@ var init_email_config = __esm({
   }
 });
 
-// vite.config.ts
-import { defineConfig } from "vite";
-import react from "@vitejs/plugin-react";
-import path from "path";
-import runtimeErrorOverlay from "@replit/vite-plugin-runtime-error-modal";
-var vite_config_default;
-var init_vite_config = __esm({
-  async "vite.config.ts"() {
-    "use strict";
-    vite_config_default = defineConfig({
-      plugins: [
-        react(),
-        runtimeErrorOverlay(),
-        ...process.env.NODE_ENV !== "production" && process.env.REPL_ID !== void 0 ? [
-          await import("@replit/vite-plugin-cartographer").then(
-            (m) => m.cartographer()
-          )
-        ] : []
-      ],
-      resolve: {
-        alias: {
-          "@": path.resolve(import.meta.dirname, "client", "src"),
-          "@shared": path.resolve(import.meta.dirname, "shared"),
-          "@assets": path.resolve(import.meta.dirname, "attached_assets")
-        }
-      },
-      root: path.resolve(import.meta.dirname, "client"),
-      build: {
-        outDir: path.resolve(import.meta.dirname, "dist/public"),
-        emptyOutDir: true
-      },
-      server: {
-        fs: {
-          strict: true,
-          deny: ["**/.*"]
-        }
-      }
-    });
-  }
-});
-
-// server/vite.ts
-var vite_exports = {};
-__export(vite_exports, {
-  log: () => log,
-  serveStatic: () => serveStatic,
-  setupVite: () => setupVite
-});
-import express from "express";
-import fs from "fs";
-import path2 from "path";
-import { createServer as createViteServer, createLogger } from "vite";
-import { nanoid } from "nanoid";
-function log(message, source = "express") {
-  const formattedTime = (/* @__PURE__ */ new Date()).toLocaleTimeString("en-US", {
-    hour: "numeric",
-    minute: "2-digit",
-    second: "2-digit",
-    hour12: true
-  });
-  console.log(`${formattedTime} [${source}] ${message}`);
-}
-async function setupVite(app2, server) {
-  const serverOptions = {
-    middlewareMode: true,
-    hmr: { server },
-    allowedHosts: true
-  };
-  const vite = await createViteServer({
-    ...vite_config_default,
-    configFile: false,
-    customLogger: {
-      ...viteLogger,
-      error: (msg, options) => {
-        viteLogger.error(msg, options);
-        process.exit(1);
-      }
-    },
-    server: serverOptions,
-    appType: "custom"
-  });
-  app2.use(vite.middlewares);
-  app2.use("*", async (req, res, next) => {
-    const url = req.originalUrl;
-    try {
-      const clientTemplate = path2.resolve(
-        import.meta.dirname,
-        "..",
-        "client",
-        "index.html"
-      );
-      let template = await fs.promises.readFile(clientTemplate, "utf-8");
-      template = template.replace(
-        `src="/src/main.tsx"`,
-        `src="/src/main.tsx?v=${nanoid()}"`
-      );
-      const page = await vite.transformIndexHtml(url, template);
-      res.status(200).set({ "Content-Type": "text/html" }).end(page);
-    } catch (e) {
-      vite.ssrFixStacktrace(e);
-      next(e);
-    }
-  });
-}
-function serveStatic(app2) {
-  const distPath = path2.resolve(import.meta.dirname, "public");
-  if (!fs.existsSync(distPath)) {
-    throw new Error(
-      `Could not find the build directory: ${distPath}, make sure to build the client first`
-    );
-  }
-  app2.use(express.static(distPath));
-  app2.use("*", (_req, res) => {
-    res.sendFile(path2.resolve(distPath, "index.html"));
-  });
-}
-var viteLogger;
-var init_vite = __esm({
-  async "server/vite.ts"() {
-    "use strict";
-    await init_vite_config();
-    viteLogger = createLogger();
-  }
-});
-
 // server/main.ts
-import express2 from "express";
+import express from "express";
 import { createServer } from "http";
-import path3 from "path";
+import path from "path";
 import { fileURLToPath } from "url";
 import { dirname } from "path";
 import cookieParser from "cookie-parser";
@@ -3443,8 +3318,8 @@ var ObjectStorageService = class {
   async getObjectEntityUploadURL() {
     const objectId = randomUUID();
     const baseUrl = process.env.BASE_URL || "";
-    const path4 = `/api/blob-upload/${encodeURIComponent(`models/${objectId}`)}`;
-    return baseUrl ? `${baseUrl.replace(/\/$/, "")}${path4}` : path4;
+    const path2 = `/api/blob-upload/${encodeURIComponent(`models/${objectId}`)}`;
+    return baseUrl ? `${baseUrl.replace(/\/$/, "")}${path2}` : path2;
   }
   // Resolves "/objects/<pathname>" to a BlobObject by hitting head().
   async getObjectEntityFile(objectPath) {
@@ -6342,7 +6217,15 @@ if (process.env.NODE_ENV !== "production" && import.meta.url === `file://${proce
 }
 
 // server/environment-check.ts
-await init_vite();
+function log(message, source = "express") {
+  const formattedTime = (/* @__PURE__ */ new Date()).toLocaleTimeString("en-US", {
+    hour: "numeric",
+    minute: "2-digit",
+    second: "2-digit",
+    hour12: true
+  });
+  console.log(`${formattedTime} [${source}] ${message}`);
+}
 function validateEnvironment() {
   const isProduction = process.env.NODE_ENV === "production";
   const requiredEnvVars = isProduction ? [] : ["DATABASE_URL"];
@@ -6387,10 +6270,10 @@ function validateEnvironment() {
 }
 
 // server/main.ts
-import fs2 from "fs";
+import fs from "fs";
 var __filename = fileURLToPath(import.meta.url);
 var __dirname = dirname(__filename);
-var app = express2();
+var app = express();
 var isDevelopment = process.env.NODE_ENV !== "production";
 var port = parseInt(process.env.PORT || "5000", 10);
 if (!isDevelopment) {
@@ -6414,8 +6297,8 @@ app.get("/", (req, res, next) => {
     next();
   }
 });
-app.use(express2.json());
-app.use(express2.urlencoded({ extended: false }));
+app.use(express.json());
+app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
 app.use((req, res, next) => {
   const start = Date.now();
@@ -6462,22 +6345,22 @@ async function initializeServer() {
     }
     const server = createServer(app);
     if (isDevelopment) {
-      const { setupVite: setupVite2 } = await init_vite().then(() => vite_exports);
-      await setupVite2(app, server);
+      const { setupVite } = await import("./vite");
+      await setupVite(app, server);
       console.log("Vite development server configured");
     } else if (process.env.VERCEL) {
       console.log("Vercel runtime \u2014 static serving delegated to platform rewrites");
     } else {
       const possiblePaths = [
-        path3.join(__dirname, "public"),
-        path3.join(process.cwd(), "dist", "public"),
-        path3.join(process.cwd(), "public"),
-        path3.resolve("dist/public"),
-        path3.resolve("public")
+        path.join(__dirname, "public"),
+        path.join(process.cwd(), "dist", "public"),
+        path.join(process.cwd(), "public"),
+        path.resolve("dist/public"),
+        path.resolve("public")
       ];
       let staticPath = "";
       for (const testPath of possiblePaths) {
-        if (fs2.existsSync(testPath)) {
+        if (fs.existsSync(testPath)) {
           staticPath = testPath;
           break;
         }
@@ -6486,15 +6369,15 @@ async function initializeServer() {
       console.log(`  __dirname: ${__dirname}`);
       console.log(`  process.cwd(): ${process.cwd()}`);
       console.log(`  Selected staticPath: ${staticPath}`);
-      if (!staticPath || !fs2.existsSync(staticPath)) {
+      if (!staticPath || !fs.existsSync(staticPath)) {
         console.error("Static files not found in any of these paths:");
-        possiblePaths.forEach((p) => console.log(`  - ${p}: ${fs2.existsSync(p) ? "EXISTS" : "NOT FOUND"}`));
+        possiblePaths.forEach((p) => console.log(`  - ${p}: ${fs.existsSync(p) ? "EXISTS" : "NOT FOUND"}`));
         throw new Error(`Static files not found. Run 'npm run build' first.`);
       } else {
         console.log(`  Static files found at: ${staticPath}`);
-        console.log(`  Contents: ${fs2.readdirSync(staticPath).join(", ")}`);
+        console.log(`  Contents: ${fs.readdirSync(staticPath).join(", ")}`);
       }
-      app.use(express2.static(staticPath, {
+      app.use(express.static(staticPath, {
         maxAge: "1d",
         etag: true,
         lastModified: true,
@@ -6502,8 +6385,8 @@ async function initializeServer() {
         // Explicitly set index file
       }));
       app.get("*", (req, res) => {
-        const indexPath = path3.join(staticPath, "index.html");
-        if (fs2.existsSync(indexPath)) {
+        const indexPath = path.join(staticPath, "index.html");
+        if (fs.existsSync(indexPath)) {
           res.sendFile(indexPath);
         } else {
           res.status(404).send("Page not found");
@@ -6584,7 +6467,7 @@ Health check: http://localhost:${port}/health
     console.error("Failed to start server:", error);
     if (!isDevelopment) {
       console.log("Starting fallback health check server...");
-      const fallbackApp = express2();
+      const fallbackApp = express();
       fallbackApp.get("/health", (req, res) => res.status(200).send("OK"));
       fallbackApp.get("/healthz", (req, res) => res.status(200).send("OK"));
       fallbackApp.get("*", (req, res) => res.status(503).send("Service Unavailable"));
