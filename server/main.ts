@@ -112,11 +112,16 @@ async function initializeServer() {
     const server = createServer(app);
     
     // Setup static file serving
+    // On Vercel, static + SPA fallback is handled by vercel.json rewrites
+    // (dist/public is the CDN output and isn't bundled into the Function).
+    // Skip the in-process static branch entirely so the Function only serves /api/*.
     if (isDevelopment) {
       // Development: Use Vite
       const { setupVite } = await import("./vite");
       await setupVite(app, server);
       console.log('Vite development server configured');
+    } else if (process.env.VERCEL) {
+      console.log('Vercel runtime — static serving delegated to platform rewrites');
     } else {
       // Production: Serve static files directly
       // Try multiple possible paths for static files
