@@ -534,6 +534,45 @@ export default function Configurator() {
     setGalleryIndex(0);
   }, [selectedModel?.id]);
 
+  // Conditional-availability pruning: when an option's requirement becomes unsatisfied
+  // (e.g. user switches jack type away from hydraulic after having checked Solar
+  // Charger), drop the dependent from selectedOptions so the price + summary stay
+  // consistent. Companion to isOptionAvailable() defined below.
+  // Placed here (above the loading/error early-return guards) to keep hook count stable.
+  useEffect(() => {
+    if (!options || options.length === 0) return;
+    const isOptAvailLocal = (opt: TrailerOption): boolean => {
+      if (!opt.requiresCategory || !opt.requiresOptionName) return true;
+      const raw = selectedOptions[opt.requiresCategory];
+      if (raw == null) return false;
+      const ids = Array.isArray(raw) ? raw : [raw];
+      return ids.some((id) => {
+        const o = options.find((x) => x.id === id);
+        return o?.name === opt.requiresOptionName;
+      });
+    };
+    let mutated = false;
+    const next: Record<string, any> = { ...selectedOptions };
+    for (const [cat, raw] of Object.entries(selectedOptions)) {
+      if (raw == null) continue;
+      const ids = Array.isArray(raw) ? raw : [raw];
+      const kept = ids.filter((id) => {
+        const opt = options.find((o) => o.id === id);
+        if (!opt) return true; // unknown id (length placeholders etc.) — leave alone
+        return isOptAvailLocal(opt);
+      });
+      if (kept.length !== ids.length) {
+        mutated = true;
+        if (Array.isArray(raw)) {
+          next[cat] = kept;
+        } else {
+          delete next[cat];
+        }
+      }
+    }
+    if (mutated) setSelectedOptions(next);
+  }, [selectedOptions, options]);
+
   // Calculate dynamic payload based on selected length option
   const getDynamicPayload = () => {
     if (!selectedModel || !options) {
@@ -758,6 +797,8 @@ export default function Configurator() {
   // `option.requiresOptionName`. Used to hide dependent options (e.g. Solar Charger only
   // visible when Dual 12K Hydraulic Jacks is the chosen jack) and to prune them from
   // selectedOptions when their requirement becomes unsatisfied.
+  // (Hook-effect counterpart for pruning lives near the other useEffects above
+  // the early-return guards — see "Conditional-availability pruning" effect.)
   const isOptionAvailable = (option: TrailerOption, sel: Record<string, any>, all: TrailerOption[] | undefined): boolean => {
     if (!option.requiresCategory || !option.requiresOptionName) return true;
     if (!all) return true;
@@ -769,34 +810,6 @@ export default function Configurator() {
       return opt?.name === option.requiresOptionName;
     });
   };
-
-  // When an option's requirement becomes unsatisfied (e.g. user switches jack type away
-  // from hydraulic after having checked Solar Charger), drop the dependent from the
-  // selection so the price + summary stay consistent.
-  useEffect(() => {
-    if (!options || options.length === 0) return;
-    let mutated = false;
-    const next: Record<string, any> = { ...selectedOptions };
-    for (const [cat, raw] of Object.entries(selectedOptions)) {
-      if (raw == null) continue;
-      const ids = Array.isArray(raw) ? raw : [raw];
-      const kept = ids.filter((id) => {
-        const opt = options.find((o) => o.id === id);
-        if (!opt) return true; // unknown id — leave alone (length placeholders etc.)
-        return isOptionAvailable(opt, selectedOptions, options);
-      });
-      if (kept.length !== ids.length) {
-        mutated = true;
-        if (Array.isArray(raw)) {
-          next[cat] = kept;
-        } else {
-          // Single-select with a now-invalid id — clear the category entry entirely
-          delete next[cat];
-        }
-      }
-    }
-    if (mutated) setSelectedOptions(next);
-  }, [selectedOptions, options]);
 
   const handleDownloadPDF = () => {
     if (!selectedModel) return;
