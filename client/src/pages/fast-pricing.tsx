@@ -162,7 +162,9 @@ export default function FastPricing() {
     isMultiSelect: false,
     isPerFt: false,
     hexColor: "",
-    primerPrice: ""
+    primerPrice: "",
+    requiresCategory: "",
+    requiresOptionName: "",
   });
   const [addingLengthFor, setAddingLengthFor] = useState<number | null>(null);
   const [newLengthValue, setNewLengthValue] = useState("");
@@ -884,7 +886,9 @@ export default function FastPricing() {
         isMultiSelect: false,
         isPerFt: false,
         hexColor: "",
-        primerPrice: ""
+        primerPrice: "",
+        requiresCategory: "",
+        requiresOptionName: "",
       });
       toast({ title: "Success", description: "Option added successfully" });
     },
@@ -967,10 +971,19 @@ export default function FastPricing() {
       isMultiSelect: data.isMultiSelect ?? option.isMultiSelect,
       isPerFt: data.isPerFt ?? option.isPerFt,
     };
-    
+
     if (optionCategory === 'color') {
       mutationData.hexColor = data.hexColor ?? option.hexColor;
       mutationData.primerPrice = data.primerPrice ?? option.primerPrice;
+    }
+
+    // Conditional availability — pass through when edited; treat empty strings as
+    // "clear the requirement" so admins can remove a rule by blanking both fields.
+    if ('requiresCategory' in data || 'requiresOptionName' in data) {
+      const rc = (data.requiresCategory ?? option.requiresCategory ?? '').toString().trim();
+      const ron = (data.requiresOptionName ?? option.requiresOptionName ?? '').toString().trim();
+      mutationData.requiresCategory = rc || null;
+      mutationData.requiresOptionName = ron || null;
     }
     
     toast({ title: "Updating...", description: "Saving your changes" });
@@ -3134,6 +3147,32 @@ export default function FastPricing() {
                           </div>
                         </>
                       )}
+
+                      {/* Conditional availability — both fields together gate this option's visibility on the selected option in another category. Leave both blank for no requirement. */}
+                      <div className="mt-2 p-3 border rounded-md bg-gray-50">
+                        <div className="text-sm font-medium mb-1">Requires (optional)</div>
+                        <div className="text-xs text-gray-500 mb-2">Only show this option when an option in the named category is selected with the exact matching name. Leave both blank for no requirement.</div>
+                        <div className="grid grid-cols-2 gap-2">
+                          <div>
+                            <label className="block text-xs font-medium mb-1">Required category</label>
+                            <Input
+                              placeholder="e.g. jack"
+                              value={newOptionData.requiresCategory}
+                              onChange={(e: any) => setNewOptionData({ ...newOptionData, requiresCategory: e.target.value })}
+                              list="requires-category-list"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-xs font-medium mb-1">Required option name</label>
+                            <Input
+                              placeholder="e.g. Dual 12K Hydraulic Jacks"
+                              value={newOptionData.requiresOptionName}
+                              onChange={(e: any) => setNewOptionData({ ...newOptionData, requiresOptionName: e.target.value })}
+                              list="requires-option-name-list"
+                            />
+                          </div>
+                        </div>
+                      </div>
                       </div>
                       <div className="pb-6"></div>
                     </div>
@@ -3156,7 +3195,9 @@ export default function FastPricing() {
                             isMultiSelect: newOptionData.isMultiSelect,
                             isPerFt: newOptionData.isPerFt,
                             hexColor: newOptionData.hexColor,
-                            primerPrice: parseFloat(newOptionData.primerPrice as string) || 0
+                            primerPrice: parseFloat(newOptionData.primerPrice as string) || 0,
+                            requiresCategory: newOptionData.requiresCategory.trim() || null,
+                            requiresOptionName: newOptionData.requiresOptionName.trim() || null,
                           });
                         }}
                         disabled={
@@ -3173,6 +3214,18 @@ export default function FastPricing() {
                   </div>
                 </div>
               )}
+              {/* Autocomplete sources for the "Requires" inputs in both the Add Option dialog and the inline-edit cells.
+                  Re-derived from the live option set so suggestions stay in sync as admins add/rename options. */}
+              <datalist id="requires-category-list">
+                {Array.from(new Set((options || []).map((o: any) => o.category).filter(Boolean))).sort().map((c: any) => (
+                  <option key={String(c)} value={String(c)} />
+                ))}
+              </datalist>
+              <datalist id="requires-option-name-list">
+                {Array.from(new Set((options || []).map((o: any) => o.name).filter(Boolean))).sort().map((n: any) => (
+                  <option key={String(n)} value={String(n)} />
+                ))}
+              </datalist>
               <Table>
                 <TableHeader>
                   <TableRow>
@@ -3182,6 +3235,7 @@ export default function FastPricing() {
                     <TableHead>Price</TableHead>
                     <TableHead>Multi-Select</TableHead>
                     <TableHead>Per Ft</TableHead>
+                    <TableHead>Requires</TableHead>
                     <TableHead>Image</TableHead>
                     <TableHead>Actions</TableHead>
                   </TableRow>
@@ -3418,6 +3472,42 @@ export default function FastPricing() {
                             onCheckedChange={() => {}}
                             disabled={true}
                           />
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        {editingOption?.id === option.id ? (
+                          <div className="space-y-1 min-w-[180px]">
+                            <Input
+                              placeholder="category (e.g. jack)"
+                              className="text-xs h-7"
+                              value={editData[option.id]?.requiresCategory ?? option.requiresCategory ?? ''}
+                              onChange={(e: any) => setEditData({
+                                ...editData,
+                                [option.id]: { ...editData[option.id], requiresCategory: e.target.value }
+                              })}
+                              list="requires-category-list"
+                            />
+                            <Input
+                              placeholder="option name (exact match)"
+                              className="text-xs h-7"
+                              value={editData[option.id]?.requiresOptionName ?? option.requiresOptionName ?? ''}
+                              onChange={(e: any) => setEditData({
+                                ...editData,
+                                [option.id]: { ...editData[option.id], requiresOptionName: e.target.value }
+                              })}
+                              list="requires-option-name-list"
+                            />
+                          </div>
+                        ) : (
+                          option.requiresCategory && option.requiresOptionName ? (
+                            <div className="text-xs">
+                              <span className="text-gray-500">{option.requiresCategory}</span>
+                              {' → '}
+                              <span className="text-gray-900">{option.requiresOptionName}</span>
+                            </div>
+                          ) : (
+                            <span className="text-xs text-gray-300">—</span>
+                          )
                         )}
                       </TableCell>
                       <TableCell>
