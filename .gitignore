@@ -7,3 +7,4 @@ vite.config.ts.*
 .vercel
 .env.production
 .env*.local
+.test-bundle.mjs
