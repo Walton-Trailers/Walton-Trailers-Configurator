@@ -2172,8 +2172,12 @@ Configuration Date: ${new Date().toLocaleDateString()}
                             }
                           }
                         });
-                        
-                        generateConfigurationPDF(selectedModel, completeOptions, totalPrice, options);
+
+                        await generateConfigurationPDF(selectedModel, completeOptions, totalPrice, options, {
+                          gvwr: getDynamicGvwr(),
+                          payload: getDynamicPayload(),
+                          deckSize: getDynamicDeckSize(),
+                        });
                       }
                       toast({
                         title: "PDF Downloaded",
@@ -2338,8 +2342,12 @@ Configuration Date: ${new Date().toLocaleDateString()}
                         }
                       }
                     });
-                    
-                    generateConfigurationPDF(selectedModel, completeOptions, totalPrice, options);
+
+                    await generateConfigurationPDF(selectedModel, completeOptions, totalPrice, options, {
+                      gvwr: getDynamicGvwr(),
+                      payload: getDynamicPayload(),
+                      deckSize: getDynamicDeckSize(),
+                    });
                   }
                   toast({
                     title: "PDF Downloaded",
