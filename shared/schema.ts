@@ -99,6 +99,12 @@ export const trailerOptions = pgTable("trailer_options", {
   payload: integer("payload"), // payload capacity for length options
   hexColor: text("hex_color"), // hex color value for color options (e.g., '#FF0000')
   primerPrice: integer("primer_price"), // primer price for color options
+  // Conditional availability: this option is only shown/selectable when an option matching
+  // (requiresCategory, requiresOptionName) is currently chosen. Both nullable; both must be
+  // set to enforce a dependency. Example: Solar Charger requires category='jack',
+  // optionName='Dual 12K Hydraulic Jacks'.
+  requiresCategory: text("requires_category"),
+  requiresOptionName: text("requires_option_name"),
 });
 
 // User Configurations (for saving)

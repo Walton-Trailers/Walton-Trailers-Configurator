@@ -72,6 +72,11 @@ export interface TrailerOptionResponse {
   options?: any[];
   hexColor?: string; // Hex color value for color options
   primerPrice?: number; // Primer price for color options
+  // Conditional availability — when both fields are set, this option is only
+  // shown/selectable while the user has an option named `requiresOptionName`
+  // currently selected in category `requiresCategory`. Both null → no requirement.
+  requiresCategory?: string | null;
+  requiresOptionName?: string | null;
 }
 
 interface UserConfiguration {
@@ -664,14 +669,14 @@ export class DatabaseStorage implements IStorage {
     try {
       // Get non-length options from trailer_options table
       const optionsResult = await db.execute(sql`
-        SELECT id, name, price, category, model_id, applicable_models, image_url, is_archived, hex_color, primer_price, is_multi_select, is_per_ft, is_default
+        SELECT id, name, price, category, model_id, applicable_models, image_url, is_archived, hex_color, primer_price, is_multi_select, is_per_ft, is_default, requires_category, requires_option_name
         FROM trailer_options
         WHERE (is_archived IS NULL OR is_archived = false)
           AND (applicable_models IS NULL OR applicable_models @> ${JSON.stringify([modelId])})
           AND category != 'length'
         ORDER BY category, name
       `);
-      
+
       const nonLengthOptions = optionsResult.rows.map((option: any) => ({
         id: option.id,
         modelId: option.model_id,
@@ -686,6 +691,8 @@ export class DatabaseStorage implements IStorage {
         isMultiSelect: option.is_multi_select || false,
         isPerFt: option.is_per_ft || false,
         isDefault: option.is_default || false,
+        requiresCategory: option.requires_category,
+        requiresOptionName: option.requires_option_name,
       }));
 
       // Get length options from the model's length_options JSON column
@@ -1600,16 +1607,30 @@ export class DatabaseStorage implements IStorage {
         }
         if (updates.isPerFt !== undefined) {
           await db.execute(sql`
-            UPDATE trailer_options 
+            UPDATE trailer_options
             SET is_per_ft = ${updates.isPerFt}
             WHERE id = ${id}
           `);
         }
+        if (updates.requiresCategory !== undefined) {
+          await db.execute(sql`
+            UPDATE trailer_options
+            SET requires_category = ${updates.requiresCategory}
+            WHERE id = ${id}
+          `);
+        }
+        if (updates.requiresOptionName !== undefined) {
+          await db.execute(sql`
+            UPDATE trailer_options
+            SET requires_option_name = ${updates.requiresOptionName}
+            WHERE id = ${id}
+          `);
+        }
       }
-      
+
       // Get the updated record
       result = await db.execute(sql`
-        SELECT id, model_id, category, name, price, is_multi_select, is_per_ft, is_archived, image_url, applicable_models, hex_color, primer_price
+        SELECT id, model_id, category, name, price, is_multi_select, is_per_ft, is_archived, image_url, applicable_models, hex_color, primer_price, requires_category, requires_option_name
         FROM trailer_options WHERE id = ${id}
       `);
       
@@ -1627,6 +1648,8 @@ export class DatabaseStorage implements IStorage {
         imageUrl: updatedOption.image_url,
         hexColor: updatedOption.hex_color,
         primerPrice: updatedOption.primer_price,
+        requiresCategory: updatedOption.requires_category,
+        requiresOptionName: updatedOption.requires_option_name,
       };
     } catch (error) {
       console.error('Error updating option:', error);

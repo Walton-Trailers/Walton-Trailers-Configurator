@@ -129,6 +129,12 @@ interface TrailerOption {
   primerPrice?: number; // Primer price for color options
   isPerFt?: boolean; // Whether the price is per foot
   imageUrl?: string | null; // Image URL for the option
+  // Optional conditional availability — both fields must be present to enforce.
+  // The option is only shown when a currently-selected option in `requiresCategory`
+  // has a name matching `requiresOptionName`. Example: Solar Charger requires
+  // requiresCategory='jack' + requiresOptionName='Dual 12K Hydraulic Jacks'.
+  requiresCategory?: string | null;
+  requiresOptionName?: string | null;
 }
 
 // Option Info Modal Component
@@ -728,7 +734,7 @@ export default function Configurator() {
 
   const handleOptionChange = (category: string, optionId: string | number, isMultiSelect: boolean, checked: boolean) => {
     const newOptions = { ...selectedOptions };
-    
+
     if (isMultiSelect) {
       if (!newOptions[category]) {
         newOptions[category] = [];
@@ -743,9 +749,54 @@ export default function Configurator() {
         newOptions[category] = optionId;
       }
     }
-    
+
     setSelectedOptions(newOptions);
   };
+
+  // Conditional availability — returns true if the option has no requirement, OR if the
+  // currently-selected option in `option.requiresCategory` has a name matching
+  // `option.requiresOptionName`. Used to hide dependent options (e.g. Solar Charger only
+  // visible when Dual 12K Hydraulic Jacks is the chosen jack) and to prune them from
+  // selectedOptions when their requirement becomes unsatisfied.
+  const isOptionAvailable = (option: TrailerOption, sel: Record<string, any>, all: TrailerOption[] | undefined): boolean => {
+    if (!option.requiresCategory || !option.requiresOptionName) return true;
+    if (!all) return true;
+    const raw = sel[option.requiresCategory];
+    if (raw == null) return false;
+    const ids = Array.isArray(raw) ? raw : [raw];
+    return ids.some((id) => {
+      const opt = all.find((o) => o.id === id);
+      return opt?.name === option.requiresOptionName;
+    });
+  };
+
+  // When an option's requirement becomes unsatisfied (e.g. user switches jack type away
+  // from hydraulic after having checked Solar Charger), drop the dependent from the
+  // selection so the price + summary stay consistent.
+  useEffect(() => {
+    if (!options || options.length === 0) return;
+    let mutated = false;
+    const next: Record<string, any> = { ...selectedOptions };
+    for (const [cat, raw] of Object.entries(selectedOptions)) {
+      if (raw == null) continue;
+      const ids = Array.isArray(raw) ? raw : [raw];
+      const kept = ids.filter((id) => {
+        const opt = options.find((o) => o.id === id);
+        if (!opt) return true; // unknown id — leave alone (length placeholders etc.)
+        return isOptionAvailable(opt, selectedOptions, options);
+      });
+      if (kept.length !== ids.length) {
+        mutated = true;
+        if (Array.isArray(raw)) {
+          next[cat] = kept;
+        } else {
+          // Single-select with a now-invalid id — clear the category entry entirely
+          delete next[cat];
+        }
+      }
+    }
+    if (mutated) setSelectedOptions(next);
+  }, [selectedOptions, options]);
 
   const handleDownloadPDF = () => {
     if (!selectedModel) return;
@@ -1543,6 +1594,8 @@ Configuration Date: ${new Date().toLocaleDateString()}
                     <div className="mt-6 pb-20">
                       {Object.entries(
                         options.reduce((acc, option) => {
+                          // Hide dependent options whose requirement isn't currently satisfied
+                          if (!isOptionAvailable(option, selectedOptions, options)) return acc;
                           if (!acc[option.category]) acc[option.category] = [];
                           acc[option.category].push(option);
                           return acc;

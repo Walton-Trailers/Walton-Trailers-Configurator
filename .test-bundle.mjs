@@ -739,14 +739,8 @@ var trailerOptions = pgTable("trailer_options", {
   // payload capacity for length options
   hexColor: text("hex_color"),
   // hex color value for color options (e.g., '#FF0000')
-  primerPrice: integer("primer_price"),
+  primerPrice: integer("primer_price")
   // primer price for color options
-  // Conditional availability: this option is only shown/selectable when an option matching
-  // (requiresCategory, requiresOptionName) is currently chosen. Both nullable; both must be
-  // set to enforce a dependency. Example: Solar Charger requires category='jack',
-  // optionName='Dual 12K Hydraulic Jacks'.
-  requiresCategory: text("requires_category"),
-  requiresOptionName: text("requires_option_name")
 });
 var userConfigurations = pgTable("user_configurations", {
   id: serial("id").primaryKey(),
@@ -1792,7 +1786,7 @@ var DatabaseStorage = class {
   async getOptionsForModel(modelId) {
     try {
       const optionsResult = await db.execute(sql`
-        SELECT id, name, price, category, model_id, applicable_models, image_url, is_archived, hex_color, primer_price, is_multi_select, is_per_ft, is_default, requires_category, requires_option_name
+        SELECT id, name, price, category, model_id, applicable_models, image_url, is_archived, hex_color, primer_price, is_multi_select, is_per_ft, is_default
         FROM trailer_options
         WHERE (is_archived IS NULL OR is_archived = false)
           AND (applicable_models IS NULL OR applicable_models @> ${JSON.stringify([modelId])})
@@ -1812,9 +1806,7 @@ var DatabaseStorage = class {
         primerPrice: option.primer_price,
         isMultiSelect: option.is_multi_select || false,
         isPerFt: option.is_per_ft || false,
-        isDefault: option.is_default || false,
-        requiresCategory: option.requires_category,
-        requiresOptionName: option.requires_option_name
+        isDefault: option.is_default || false
       }));
       const lengthOptions = [];
       const modelResult = await db.execute(sql`
@@ -2644,28 +2636,14 @@ var DatabaseStorage = class {
         }
         if (updates.isPerFt !== void 0) {
           await db.execute(sql`
-            UPDATE trailer_options
+            UPDATE trailer_options 
             SET is_per_ft = ${updates.isPerFt}
-            WHERE id = ${id}
-          `);
-        }
-        if (updates.requiresCategory !== void 0) {
-          await db.execute(sql`
-            UPDATE trailer_options
-            SET requires_category = ${updates.requiresCategory}
-            WHERE id = ${id}
-          `);
-        }
-        if (updates.requiresOptionName !== void 0) {
-          await db.execute(sql`
-            UPDATE trailer_options
-            SET requires_option_name = ${updates.requiresOptionName}
             WHERE id = ${id}
           `);
         }
       }
       result = await db.execute(sql`
-        SELECT id, model_id, category, name, price, is_multi_select, is_per_ft, is_archived, image_url, applicable_models, hex_color, primer_price, requires_category, requires_option_name
+        SELECT id, model_id, category, name, price, is_multi_select, is_per_ft, is_archived, image_url, applicable_models, hex_color, primer_price
         FROM trailer_options WHERE id = ${id}
       `);
       const updatedOption = result.rows[0];
@@ -2681,9 +2659,7 @@ var DatabaseStorage = class {
         isArchived: updatedOption.is_archived || false,
         imageUrl: updatedOption.image_url,
         hexColor: updatedOption.hex_color,
-        primerPrice: updatedOption.primer_price,
-        requiresCategory: updatedOption.requires_category,
-        requiresOptionName: updatedOption.requires_option_name
+        primerPrice: updatedOption.primer_price
       };
     } catch (error) {
       console.error("Error updating option:", error);
@@ -5167,7 +5143,7 @@ async function registerRoutes(app2) {
   app2.patch("/api/options/:id", requireAuth, async (req, res) => {
     try {
       const optionId = parseInt(req.params.id);
-      const { price, name, category, modelId, applicableModels, isArchived, isMultiSelect, isPerFt, hexColor, primerPrice, requiresCategory, requiresOptionName } = req.body;
+      const { price, name, category, modelId, applicableModels, isArchived, isMultiSelect, isPerFt, hexColor, primerPrice } = req.body;
       const updatedOption = await storage.updateOption(optionId, {
         price,
         name,
@@ -5178,9 +5154,7 @@ async function registerRoutes(app2) {
         isMultiSelect,
         isPerFt,
         hexColor,
-        primerPrice,
-        requiresCategory,
-        requiresOptionName
+        primerPrice
       });
       res.json(updatedOption);
     } catch (error) {
