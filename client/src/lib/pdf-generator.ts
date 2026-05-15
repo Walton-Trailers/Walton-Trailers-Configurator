@@ -184,6 +184,18 @@ export async function generateConfigurationPDF(
   type Row = { category: string; selection: string; price: number; isPerFt?: boolean };
   const rows: Row[] = [];
 
+  // Pull-type lookup: trailer_models.pulltype_options is a JSON map keyed by
+  // length name (e.g. {"14' (B)": "Bumper Pull", "22'": "Gooseneck"}). Used to
+  // render the length row as `22' - Gooseneck` in the PDF.
+  const pullTypeMap: Record<string, string> = (() => {
+    const raw = (model as any).pulltypeOptions ?? (model as any).pulltype_options;
+    if (!raw) return {};
+    if (typeof raw === "string") {
+      try { return JSON.parse(raw); } catch { return {}; }
+    }
+    return raw as Record<string, string>;
+  })();
+
   for (const cat of sortCategoryKeys(Object.keys(selectedOptions))) {
     const raw = selectedOptions[cat];
     if (raw == null) continue;
@@ -191,9 +203,20 @@ export async function generateConfigurationPDF(
     for (const id of ids) {
       const opt = options.find((o) => o.id === id);
       if (!opt) continue;
+      const isLength = (opt.category || cat) === "length";
+      let selection = opt.name;
+      if (isLength) {
+        // Prefer the explicit pulltype_options map. Fall back to parsing the
+        // (B)/(G) suffix some models encode in the length name itself.
+        const pt = pullTypeMap[opt.name]
+          ?? (/\(B\)/.test(opt.name) ? "Bumper Pull"
+              : /\(G\)/.test(opt.name) ? "Gooseneck"
+              : "");
+        if (pt) selection = `${opt.name} - ${pt}`;
+      }
       rows.push({
-        category: categoryLabel(opt.category || cat),
-        selection: opt.name,
+        category: isLength ? "Length / Pull Type" : categoryLabel(opt.category || cat),
+        selection,
         price: opt.price,
         isPerFt: opt.isPerFt,
       });

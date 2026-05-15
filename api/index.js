@@ -2010,13 +2010,21 @@ var DatabaseStorage = class {
       const result = await db.execute(sql`
         SELECT m.id, m.category_id, m.model_id, m.name,
                m.deck_size, m.axles, m.base_price, m.image_url, m.image_urls, m.model_3d_url,
-               m.features, m.length_payload, m.category_order, m.series_id, s.name as series_name
+               m.features, m.length_payload, m.length_gvwr, m.pulltype_options,
+               m.category_order, m.series_id, s.name as series_name
         FROM trailer_models m
         LEFT JOIN trailer_series s ON m.series_id = s.id
         WHERE m.model_id = ${modelId}
       `);
       if (result.rows.length === 0) return void 0;
       const model = result.rows[0];
+      const parseJson = (v) => v == null ? null : typeof v === "string" ? (() => {
+        try {
+          return JSON.parse(v);
+        } catch {
+          return v;
+        }
+      })() : v;
       return {
         id: model.id,
         categoryId: model.category_id,
@@ -2031,8 +2039,11 @@ var DatabaseStorage = class {
         imageUrls: model.image_urls ? typeof model.image_urls === "string" ? JSON.parse(model.image_urls) : model.image_urls : null,
         model3dUrl: model.model_3d_url,
         features: model.features || [],
-        lengthPayload: model.length_payload,
-        categoryOrder: model.category_order ? typeof model.category_order === "string" ? JSON.parse(model.category_order) : model.category_order : null
+        lengthPayload: parseJson(model.length_payload),
+        lengthGvwr: parseJson(model.length_gvwr),
+        lengthDeckSize: parseJson(model.deck_size),
+        pulltypeOptions: parseJson(model.pulltype_options),
+        categoryOrder: parseJson(model.category_order)
       };
     } catch (error) {
       console.error("Error fetching model:", error);
