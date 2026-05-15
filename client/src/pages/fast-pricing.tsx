@@ -182,8 +182,44 @@ export default function FastPricing() {
   const [localGlobalCatOrder, setLocalGlobalCatOrder] = useState<any[]>([]);
 
   // Helper functions for managing length options and their pull types and GVWR
+  //
+  // INVARIANT: each entry in `lengthOptions` must have a unique name within a
+  // model. Per-length state (pulltypeOptions, lengthGvwr, lengthPayload,
+  // lengthDeckSize, lengthPrice, lengthOrder) is stored as a JSON map keyed by
+  // the length string, so duplicate names share a single map entry — editing
+  // one would silently overwrite the other ("ties them together").
+  //
+  // To support the same numeric length with different pull types, distinguish
+  // them in the name itself (the seed data convention is `"14' (B)"` /
+  // `"14' (G)"`). This helper enforces uniqueness on add/rename and surfaces
+  // a toast with that guidance.
+  const lengthNameIsDuplicate = (modelId: number, candidate: string, ignoreIndex?: number): boolean => {
+    const current = editData[modelId]?.lengthOptions ??
+      (typeof (models.find(m => m.id === modelId)?.lengthOptions) === 'string'
+        ? JSON.parse(models.find(m => m.id === modelId)?.lengthOptions || '[]')
+        : models.find(m => m.id === modelId)?.lengthOptions || []);
+    const trimmed = candidate.trim();
+    for (let i = 0; i < current.length; i++) {
+      if (i === ignoreIndex) continue;
+      if (current[i] === trimmed) return true;
+    }
+    return false;
+  };
+
+  const warnDuplicateLength = (candidate: string) => {
+    toast({
+      title: "Duplicate length",
+      description: `A length named "${candidate.trim()}" already exists on this model. To add the same numeric length for a different pull type, append a suffix — e.g. "${candidate.trim()} (B)" for bumper pull or "${candidate.trim()} (G)" for gooseneck. Otherwise the two entries would share the same price/GVWR/payload values.`,
+      variant: "destructive",
+    });
+  };
+
   const addLengthOption = (modelId: number, lengthValue: string) => {
     if (!lengthValue.trim()) return;
+    if (lengthNameIsDuplicate(modelId, lengthValue)) {
+      warnDuplicateLength(lengthValue);
+      return;
+    }
     
     const currentLengthOptions = editData[modelId]?.lengthOptions || 
       (typeof (models.find(m => m.id === modelId)?.lengthOptions) === 'string' 
@@ -435,11 +471,19 @@ export default function FastPricing() {
     if (!newLength.trim() || oldLength === newLength.trim()) {
       return;
     }
-    
-    const currentLengthOptions = editData[modelId]?.lengthOptions || 
-      (typeof (models.find(m => m.id === modelId)?.lengthOptions) === 'string' 
+
+    const currentLengthOptions = editData[modelId]?.lengthOptions ||
+      (typeof (models.find(m => m.id === modelId)?.lengthOptions) === 'string'
         ? JSON.parse(models.find(m => m.id === modelId)?.lengthOptions || '[]')
         : models.find(m => m.id === modelId)?.lengthOptions || []);
+
+    // Refuse the rename if it would collide with another length entry —
+    // see INVARIANT comment on lengthNameIsDuplicate above.
+    const oldIndex = currentLengthOptions.indexOf(oldLength);
+    if (lengthNameIsDuplicate(modelId, newLength, oldIndex)) {
+      warnDuplicateLength(newLength);
+      return;
+    }
     
     // Update length options array
     const newLengthOptions = currentLengthOptions.map((length: string) => 
@@ -3933,6 +3977,10 @@ export default function FastPricing() {
                                                 size="sm"
                                                 onClick={() => {
                                                   if (tempLengthValue.trim()) {
+                                                    if (lengthNameIsDuplicate(openModelId, tempLengthValue, index)) {
+                                                      warnDuplicateLength(tempLengthValue);
+                                                      return;
+                                                    }
                                                     const newLengthOptions = [...lengthOptions];
                                                     const oldLength = newLengthOptions[index];
                                                     newLengthOptions[index] = tempLengthValue.trim();
