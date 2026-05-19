@@ -3409,6 +3409,7 @@ function blobMetaToObject(pathname, meta) {
 }
 
 // server/routes.ts
+import { handleUpload } from "@vercel/blob/client";
 var requireAuth = async (req, res, next) => {
   const sessionId = req.get("authorization")?.replace("Bearer ", "");
   if (!sessionId) {
@@ -5776,7 +5777,12 @@ async function registerRoutes(app2) {
         return res.status(400).json({ error: "Invalid pathname" });
       }
       const contentType = req.get("content-type") || "application/octet-stream";
-      const result = await uploadBlob(pathname, req, contentType);
+      const chunks = [];
+      for await (const chunk of req) {
+        chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk));
+      }
+      const body = Buffer.concat(chunks);
+      const result = await uploadBlob(pathname, body, contentType);
       return res.status(200).json({
         pathname: result.pathname,
         url: result.url,
@@ -5785,6 +5791,37 @@ async function registerRoutes(app2) {
     } catch (error) {
       console.error("Error uploading blob:", error);
       return res.status(500).json({ error: "Upload failed", message: error?.message });
+    }
+  });
+  app2.post("/api/blob-upload-token", async (req, res) => {
+    try {
+      const body = req.body;
+      const jsonResponse = await handleUpload({
+        body,
+        request: req,
+        onBeforeGenerateToken: async (pathname) => {
+          return {
+            allowedContentTypes: [
+              "image/png",
+              "image/jpeg",
+              "image/webp",
+              "image/gif",
+              "image/svg+xml",
+              "model/gltf-binary",
+              "model/gltf+json",
+              "application/octet-stream"
+            ],
+            addRandomSuffix: false,
+            tokenPayload: JSON.stringify({ pathname })
+          };
+        },
+        onUploadCompleted: async (_event) => {
+        }
+      });
+      return res.status(200).json(jsonResponse);
+    } catch (error) {
+      console.error("Error generating blob upload token:", error);
+      return res.status(400).json({ error: error?.message || "Upload token request failed" });
     }
   });
   app2.post("/api/integrations/airtable/test", async (req, res) => {

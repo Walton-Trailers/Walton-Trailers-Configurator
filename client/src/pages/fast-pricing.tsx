@@ -2775,8 +2775,8 @@ export default function FastPricing() {
                         onComplete={(result) => handle3DModelUploadComplete(model.id, result)}
                         buttonClassName="p-0"
                         allowedFileTypes={['.glb', '.gltf']}
-                        maxFileSize={52428800}
-                        noteOverride="Upload a 3D model file (.glb or .gltf format, max 50MB)"
+                        maxFileSize={500 * 1024 * 1024}
+                        noteOverride="Upload a 3D model file (.glb or .gltf format, max 500MB). Files are uploaded directly to Vercel Blob — Vercel Function body limits no longer apply."
                       >
                         {model.model3dUrl ? (
                           <div className="w-12 h-12 rounded-md overflow-hidden border border-green-300 hover:border-green-500 transition-colors cursor-pointer flex items-center justify-center bg-green-50">
