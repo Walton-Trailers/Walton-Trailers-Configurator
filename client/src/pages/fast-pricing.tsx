@@ -1457,7 +1457,9 @@ export default function FastPricing() {
                                       body: file,
                                     });
                                     if (response.ok) {
-                                      setNewCategoryData(prev => ({ ...prev, imageUrl: uploadParams.url }));
+                                      const uploaded = await response.json().catch(() => ({} as any));
+                                      const savedUrl = uploaded.objectPath || uploadParams.url;
+                                      setNewCategoryData(prev => ({ ...prev, imageUrl: savedUrl }));
                                       toast({
                                         title: "Success",
                                         description: "Image uploaded successfully",
@@ -1605,9 +1607,11 @@ export default function FastPricing() {
                                         body: file,
                                       });
                                       if (response.ok) {
+                                        const uploaded = await response.json().catch(() => ({} as any));
+                                        const savedUrl = uploaded.objectPath || uploadParams.url;
                                         await apiRequest(`/api/categories/${category.id}/image`, {
                                           method: "PATCH",
-                                          body: { imageUrl: uploadParams.url },
+                                          body: { imageUrl: savedUrl },
                                           headers: sessionId ? { Authorization: `Bearer ${sessionId}` } : {},
                                         });
                                         queryClient.invalidateQueries({ queryKey: ['/api/admin/categories'] });
@@ -1948,7 +1952,9 @@ export default function FastPricing() {
                                     body: file,
                                   });
                                   if (response.ok) {
-                                    setNewSeriesData(prev => ({ ...prev, imageUrl: uploadParams.url }));
+                                    const uploaded = await response.json().catch(() => ({} as any));
+                                    const savedUrl = uploaded.objectPath || uploadParams.url;
+                                    setNewSeriesData(prev => ({ ...prev, imageUrl: savedUrl }));
                                     toast({
                                       title: "Success",
                                       description: "Image uploaded successfully",
@@ -2058,9 +2064,11 @@ export default function FastPricing() {
                                       body: file,
                                     });
                                     if (response.ok) {
+                                      const uploaded = await response.json().catch(() => ({} as any));
+                                      const savedUrl = uploaded.objectPath || uploadParams.url;
                                       await apiRequest(`/api/series/${series.id}/image`, {
                                         method: "PATCH",
-                                        body: { imageUrl: uploadParams.url },
+                                        body: { imageUrl: savedUrl },
                                         headers: sessionId ? { Authorization: `Bearer ${sessionId}` } : {},
                                       });
                                       queryClient.invalidateQueries({ queryKey: ['/api/series/all'] });
@@ -2385,7 +2393,9 @@ export default function FastPricing() {
                                       body: file,
                                     });
                                     if (response.ok) {
-                                      setNewModelData(prev => ({ ...prev, imageUrl: uploadParams.url }));
+                                      const uploaded = await response.json().catch(() => ({} as any));
+                                      const savedUrl = uploaded.objectPath || uploadParams.url;
+                                      setNewModelData(prev => ({ ...prev, imageUrl: savedUrl }));
                                       toast({
                                         title: "Success",
                                         description: "Image uploaded successfully",
@@ -3168,7 +3178,9 @@ export default function FastPricing() {
                                         body: file,
                                       });
                                       if (response.ok) {
-                                        setNewOptionData(prev => ({ ...prev, imageUrl: uploadParams.url }));
+                                        const uploaded = await response.json().catch(() => ({} as any));
+                                        const savedUrl = uploaded.objectPath || uploadParams.url;
+                                        setNewOptionData(prev => ({ ...prev, imageUrl: savedUrl }));
                                         toast({ title: "Success", description: "Image uploaded successfully" });
                                       }
                                     } catch (error) {
@@ -3632,9 +3644,11 @@ export default function FastPricing() {
                                         body: file,
                                       });
                                       if (response.ok) {
+                                        const uploaded = await response.json().catch(() => ({} as any));
+                                        const savedUrl = uploaded.objectPath || uploadParams.url;
                                         await apiRequest(`/api/options/${option.id}/image`, {
                                           method: "PATCH",
-                                          body: { imageUrl: uploadParams.url },
+                                          body: { imageUrl: savedUrl },
                                           headers: sessionId ? { Authorization: `Bearer ${sessionId}` } : {},
                                         });
                                         queryClient.invalidateQueries({ queryKey: ['/api/options/all'] });
