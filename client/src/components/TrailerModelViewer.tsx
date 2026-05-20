@@ -1,11 +1,29 @@
-import { Suspense, useRef, useState } from "react";
+import { Suspense, useMemo, useRef, useState } from "react";
 import { Canvas } from "@react-three/fiber";
 import { OrbitControls, useGLTF, Environment, ContactShadows, Html } from "@react-three/drei";
 import { Loader2, RotateCcw, ZoomIn, ZoomOut, Move } from "lucide-react";
+import * as THREE from "three";
 
+// GLBs from different authoring tools place the mesh origin in different
+// places — some at the geometric center, some at the bottom, some at a random
+// point in the scene. To make every model sit consistently on the ground
+// plane (y=0) we measure the loaded scene's axis-aligned bounding box and
+// translate the whole thing up by -minY, so the lowest vertex lands at y=0.
+//
+// We wrap the scene in a <group> rather than mutating the loaded object's own
+// position, because useGLTF() caches the scene at the URL level — mutating it
+// would carry the offset into any other component that loads the same model.
 function TrailerModel({ url }: { url: string }) {
   const { scene } = useGLTF(url);
-  return <primitive object={scene} />;
+  const offsetY = useMemo(() => {
+    const box = new THREE.Box3().setFromObject(scene);
+    return Number.isFinite(box.min.y) ? -box.min.y : 0;
+  }, [scene]);
+  return (
+    <group position={[0, offsetY, 0]}>
+      <primitive object={scene} />
+    </group>
+  );
 }
 
 function LoadingSpinner() {
@@ -71,11 +89,14 @@ export function TrailerModelViewer({ model3dUrl, fallbackImageUrl, className = "
         <directionalLight position={[-5, 5, -5]} intensity={0.3} />
         <Suspense fallback={<LoadingSpinner />}>
           <TrailerModel url={model3dUrl} />
+          {/* Shadow plane sits at the new ground (y=0). Pull it up by 1mm
+              so it doesn't z-fight the trailer's lowest mesh face. */}
           <ContactShadows
-            position={[0, -0.5, 0]}
-            opacity={0.4}
+            position={[0, 0.001, 0]}
+            opacity={0.45}
             scale={20}
-            blur={2}
+            blur={2.4}
+            far={4}
           />
           <Environment preset="city" />
         </Suspense>
