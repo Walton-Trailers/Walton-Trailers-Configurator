@@ -939,7 +939,7 @@ Configuration Date: ${new Date().toLocaleDateString()}
   // computer" that was used as a placeholder.
   const currentTrailerImage: string | null = selectedModel
     ? (selectedModelGallery[galleryIndex] || selectedModel.imageUrl || null)
-    : (hoveredModel?.imageUrl || hoveredCategory?.imageUrl || selectedCategory?.imageUrl || null);
+    : (hoveredModel?.imageUrl || selectedSeries?.imageUrl || hoveredCategory?.imageUrl || selectedCategory?.imageUrl || null);
 
   const current3dModelUrl = selectedModel?.model3dUrl || hoveredModel?.model3dUrl || null;
 
