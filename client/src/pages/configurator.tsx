@@ -1086,18 +1086,11 @@ Configuration Date: ${new Date().toLocaleDateString()}
               })()}
             </div>
 
-            {/* Subtle CTA for custom quotes */}
-            <div className="text-center mt-8 md:mt-16 mb-4 md:mb-8 px-4">
-              <p className="text-xs md:text-sm text-gray-500">
-                Don't see your desired trailer type? 
-                <span 
-                  className="ml-1 text-gray-600 hover:text-blue-600 transition-colors duration-300 cursor-pointer block md:inline"
-                  onClick={() => setShowCustomQuoteModal(true)}
-                >
-                  Contact Walton Trailers for a custom quote
-                </span>
-              </p>
-            </div>
+            {/* Custom-quote CTA removed at Taylor's request. The Dialog below is
+                retained (and the useState/form state still mounted) as harmless
+                dead code so a different entry point can be wired later without
+                rebuilding the form. Trigger it by calling setShowCustomQuoteModal(true)
+                from any new button if/when needed. */}
 
             <Dialog open={showCustomQuoteModal} onOpenChange={setShowCustomQuoteModal}>
               <DialogContent className="max-w-lg">
