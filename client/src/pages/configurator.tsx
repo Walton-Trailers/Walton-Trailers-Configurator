@@ -932,10 +932,14 @@ Configuration Date: ${new Date().toLocaleDateString()}
         : selectedModel.imageUrl ? [selectedModel.imageUrl] : [])
     : [];
 
-  const currentTrailerImage = selectedModel
-    ? (selectedModelGallery[galleryIndex] || selectedModel.imageUrl || "https://images.unsplash.com/photo-1581094794329-c8112a89af12?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&h=600")
-    : (hoveredModel?.imageUrl || hoveredCategory?.imageUrl || selectedCategory?.imageUrl ||
-       "https://images.unsplash.com/photo-1581094794329-c8112a89af12?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&h=600");
+  // null = nothing to show yet (initial load before hover/select). The
+  // preview pane stays empty until a category or model is interacted with,
+  // and the <img> sites below render conditionally so we don't show a
+  // broken-image icon. Replaces an old Unsplash stock photo of "a guy at a
+  // computer" that was used as a placeholder.
+  const currentTrailerImage: string | null = selectedModel
+    ? (selectedModelGallery[galleryIndex] || selectedModel.imageUrl || null)
+    : (hoveredModel?.imageUrl || hoveredCategory?.imageUrl || selectedCategory?.imageUrl || null);
 
   const current3dModelUrl = selectedModel?.model3dUrl || hoveredModel?.model3dUrl || null;
 
@@ -1401,15 +1405,15 @@ Configuration Date: ${new Date().toLocaleDateString()}
                 {current3dModelUrl && viewMode === '3d' ? (
                   <TrailerModelViewer
                     model3dUrl={current3dModelUrl}
-                    fallbackImageUrl={currentTrailerImage}
+                    fallbackImageUrl={currentTrailerImage ?? undefined}
                   />
-                ) : (
+                ) : currentTrailerImage ? (
                   <img
                     src={currentTrailerImage}
                     alt="Trailer"
                     className="w-full h-full object-contain drop-shadow-lg"
                   />
-                )}
+                ) : null}
                 {selectedModelGallery.length > 1 && !(current3dModelUrl && viewMode === '3d') && (
                   <>
                     <button
@@ -1452,15 +1456,15 @@ Configuration Date: ${new Date().toLocaleDateString()}
                 {current3dModelUrl && viewMode === '3d' ? (
                   <TrailerModelViewer
                     model3dUrl={current3dModelUrl}
-                    fallbackImageUrl={currentTrailerImage}
+                    fallbackImageUrl={currentTrailerImage ?? undefined}
                   />
-                ) : (
+                ) : currentTrailerImage ? (
                   <img
                     src={currentTrailerImage}
                     alt="Trailer"
                     className="w-full h-full object-contain transition-all duration-500 ease-out drop-shadow-xl"
                   />
-                )}
+                ) : null}
                 {selectedModelGallery.length > 1 && !(current3dModelUrl && viewMode === '3d') && (
                   <>
                     <button
@@ -1906,15 +1910,15 @@ Configuration Date: ${new Date().toLocaleDateString()}
                 {current3dModelUrl && viewMode === '3d' ? (
                   <TrailerModelViewer
                     model3dUrl={current3dModelUrl}
-                    fallbackImageUrl={currentTrailerImage}
+                    fallbackImageUrl={currentTrailerImage ?? undefined}
                   />
-                ) : (
-                  <img 
+                ) : currentTrailerImage ? (
+                  <img
                     src={currentTrailerImage}
                     alt="Trailer"
                     className="w-full h-full object-contain drop-shadow-lg"
                   />
-                )}
+                ) : null}
                 {selectedModelGallery.length > 1 && !(current3dModelUrl && viewMode === '3d') && (
                   <>
                     <button
