@@ -2732,6 +2732,22 @@ export async function registerRoutes(app: Express): Promise<Express> {
     }
   });
 
+  // Remove the 3D model from a model (admins use this when they want to
+  // replace a GLB they uploaded by mistake or retire a preview that's no
+  // longer accurate). We don't delete the underlying Blob — multiple records
+  // could reference it, and removing it asynchronously is the admin's choice
+  // via the future media library. Here we just clear the DB pointer.
+  app.delete("/api/models/:id/model3d", requireAuth, async (req, res) => {
+    try {
+      const modelId = parseInt(req.params.id);
+      const updatedModel = await storage.updateModel(modelId, { model3dUrl: null });
+      res.json({ success: true, model: updatedModel });
+    } catch (error) {
+      console.error("Error clearing 3D model:", error);
+      res.status(500).json({ error: "Failed to clear 3D model" });
+    }
+  });
+
   // Model gallery image endpoints
   app.post("/api/models/:id/images", requireAuth, async (req, res) => {
     try {

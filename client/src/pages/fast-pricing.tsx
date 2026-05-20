@@ -1107,6 +1107,25 @@ export default function FastPricing() {
     }
   };
 
+  // Clear the 3D model on a row. Confirms first because re-uploading a 200 MB
+  // GLB takes a minute. Hits the DELETE endpoint added in server/routes.ts; the
+  // underlying Blob is intentionally left in place (it may be referenced
+  // elsewhere) — this just clears the DB pointer.
+  const handle3DModelRemove = async (modelId: number) => {
+    if (!confirm("Remove the 3D model from this row? The file will stay in Vercel Blob but won't be associated with this model anymore.")) return;
+    try {
+      await apiRequest(`/api/models/${modelId}/model3d`, {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${sessionId}` },
+      });
+      queryClient.invalidateQueries({ queryKey: ['admin', 'models'] });
+      toast({ title: "3D model removed", description: "The model no longer has a 3D preview." });
+    } catch (error) {
+      console.error("Error removing 3D model:", error);
+      toast({ title: "Error", description: "Failed to remove 3D model", variant: "destructive" });
+    }
+  };
+
   const handle3DModelUploadComplete = async (modelId: number, result: any) => {
     try {
       const uploadedFile = result.successful?.[0];
@@ -2770,24 +2789,38 @@ export default function FastPricing() {
                       </button>
                     </TableCell>
                     <TableCell>
-                      <ObjectUploader
-                        onGetUploadParameters={handleGetUploadParameters}
-                        onComplete={(result) => handle3DModelUploadComplete(model.id, result)}
-                        buttonClassName="p-0"
-                        allowedFileTypes={['.glb', '.gltf']}
-                        maxFileSize={500 * 1024 * 1024}
-                        noteOverride="Upload a 3D model file (.glb or .gltf format, max 500MB). Files are uploaded directly to Vercel Blob — Vercel Function body limits no longer apply."
-                      >
-                        {model.model3dUrl ? (
-                          <div className="w-12 h-12 rounded-md overflow-hidden border border-green-300 hover:border-green-500 transition-colors cursor-pointer flex items-center justify-center bg-green-50">
-                            <span className="text-xs font-bold text-green-700">3D</span>
-                          </div>
-                        ) : (
-                          <div className="w-12 h-12 rounded-md border-2 border-dashed border-gray-300 hover:border-gray-400 transition-colors cursor-pointer flex items-center justify-center bg-gray-50">
-                            <span className="text-xs text-gray-400">3D</span>
-                          </div>
+                      <div className="flex items-center gap-1">
+                        <ObjectUploader
+                          onGetUploadParameters={handleGetUploadParameters}
+                          onComplete={(result) => handle3DModelUploadComplete(model.id, result)}
+                          buttonClassName="p-0"
+                          allowedFileTypes={['.glb', '.gltf']}
+                          maxFileSize={500 * 1024 * 1024}
+                          noteOverride="Upload a 3D model file (.glb or .gltf format, max 500MB). Files are uploaded directly to Vercel Blob — Vercel Function body limits no longer apply."
+                        >
+                          {model.model3dUrl ? (
+                            <div className="w-12 h-12 rounded-md overflow-hidden border border-green-300 hover:border-green-500 transition-colors cursor-pointer flex items-center justify-center bg-green-50" title="Click to replace 3D model">
+                              <span className="text-xs font-bold text-green-700">3D</span>
+                            </div>
+                          ) : (
+                            <div className="w-12 h-12 rounded-md border-2 border-dashed border-gray-300 hover:border-gray-400 transition-colors cursor-pointer flex items-center justify-center bg-gray-50" title="Click to upload 3D model">
+                              <span className="text-xs text-gray-400">3D</span>
+                            </div>
+                          )}
+                        </ObjectUploader>
+                        {/* Sibling of the uploader so its onClick doesn't bubble into ObjectUploader's button. Only renders when a GLB is currently linked. */}
+                        {model.model3dUrl && (
+                          <button
+                            type="button"
+                            onClick={() => handle3DModelRemove(model.id)}
+                            className="w-6 h-6 rounded-full border border-red-200 bg-red-50 hover:bg-red-100 hover:border-red-400 text-red-600 hover:text-red-800 flex items-center justify-center transition-colors"
+                            title="Remove 3D model"
+                            aria-label="Remove 3D model"
+                          >
+                            <X className="w-3 h-3" />
+                          </button>
                         )}
-                      </ObjectUploader>
+                      </div>
                     </TableCell>
                     <TableCell>
                       {editingModel?.id === model.id ? (

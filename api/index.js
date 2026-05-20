@@ -5439,6 +5439,16 @@ async function registerRoutes(app2) {
       res.status(500).json({ error: "Failed to update 3D model" });
     }
   });
+  app2.delete("/api/models/:id/model3d", requireAuth, async (req, res) => {
+    try {
+      const modelId = parseInt(req.params.id);
+      const updatedModel = await storage.updateModel(modelId, { model3dUrl: null });
+      res.json({ success: true, model: updatedModel });
+    } catch (error) {
+      console.error("Error clearing 3D model:", error);
+      res.status(500).json({ error: "Failed to clear 3D model" });
+    }
+  });
   app2.post("/api/models/:id/images", requireAuth, async (req, res) => {
     try {
       const modelId = parseInt(req.params.id);
