@@ -951,7 +951,7 @@ Configuration Date: ${new Date().toLocaleDateString()}
           <div className="relative flex items-center justify-start h-16 md:h-20">
             <div className="flex flex-col items-start">
               <a
-                href="https://waltontrailers.com/"
+                href="https://walton-trailers-website.vercel.app/"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="hover:opacity-80 transition-opacity duration-200"
@@ -2183,7 +2183,7 @@ Configuration Date: ${new Date().toLocaleDateString()}
                 <Button 
                   variant="outline"
                   onClick={() => {
-                    window.open("https://waltontrailers.com/locate-a-dealer/", "_blank");
+                    window.open("https://walton-trailers-website.vercel.app/find-a-dealer.html", "_blank");
                   }}
                   className="py-4 md:py-6 text-sm md:text-base min-h-[48px]"
                 >
