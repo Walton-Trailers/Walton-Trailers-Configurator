@@ -2535,12 +2535,11 @@ export default function FastPricing() {
                             [model.id]: { ...editData[model.id], categoryId: parseInt(value) }
                           })}
                         >
-                          <SelectItem value="6">Gooseneck Trailers</SelectItem>
-                          <SelectItem value="7">Car/Equipment Haulers</SelectItem>
-                          <SelectItem value="8">Dump Trailers</SelectItem>
-                          <SelectItem value="9">Landscape Trailers</SelectItem>
-                          <SelectItem value="10">Utility Trailers</SelectItem>
-                          <SelectItem value="11">Specialty Trailers</SelectItem>
+                          {categories.map((category: any) => (
+                            <option key={category.id} value={category.id}>
+                              {category.name}
+                            </option>
+                          ))}
                         </Select>
                       ) : (
                         model.categoryName
