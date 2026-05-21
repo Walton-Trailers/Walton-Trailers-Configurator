@@ -197,7 +197,7 @@ export default function Customization({
                               </Label>
                             </div>
                             <span className="text-primary font-semibold">
-                              {option.price === 0 ? 'Included' : 
+                              {option.price === 0 ? 'Standard' : 
                                option.price > 0 ? `+$${option.price.toLocaleString()}` : 
                                `$${option.price.toLocaleString()}`}
                             </span>
@@ -225,7 +225,7 @@ export default function Customization({
                                 </Label>
                               </div>
                               <span className="text-primary font-semibold">
-                                {option.price === 0 ? 'Included' : 
+                                {option.price === 0 ? 'Standard' : 
                                  option.price > 0 ? `+$${option.price.toLocaleString()}` : 
                                  `$${option.price.toLocaleString()}`}
                               </span>

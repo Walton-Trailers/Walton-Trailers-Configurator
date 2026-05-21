@@ -129,7 +129,7 @@ function sortCategoryKeys(keys: string[]): string[] {
 
 function formatPrice(price: number | undefined | null, isPerFt?: boolean): string {
   if (price == null) return "—";
-  if (price === 0) return "Included";
+  if (price === 0) return "Standard";
   const sign = price > 0 ? "+" : "-";
   const abs = Math.abs(price);
   return `${sign}$${abs.toLocaleString()}${isPerFt ? "/ft" : ""}`;

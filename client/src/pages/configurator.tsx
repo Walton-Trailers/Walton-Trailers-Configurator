@@ -948,18 +948,18 @@ Configuration Date: ${new Date().toLocaleDateString()}
       {/* Tesla-style Header */}
       <header className="fixed top-0 left-0 right-0 bg-black z-50 border-b border-gray-800">
         <div className="max-w-7xl mx-auto px-4 md:px-8">
-          <div className="relative flex items-center justify-center h-16 md:h-20">
-            <div className="flex flex-col items-center">
-              <a 
-                href="https://waltontrailers.com/" 
-                target="_blank" 
+          <div className="relative flex items-center justify-start h-16 md:h-20">
+            <div className="flex flex-col items-start">
+              <a
+                href="https://waltontrailers.com/"
+                target="_blank"
                 rel="noopener noreferrer"
                 className="hover:opacity-80 transition-opacity duration-200"
               >
-                <img 
-                  src={waltonLogo} 
-                  alt="Walton Trailers" 
-                  className="h-8 md:h-11 lg:h-14 w-auto object-contain max-w-[150px] md:max-w-[180px] lg:max-w-[220px]"
+                <img
+                  src={waltonLogo}
+                  alt="Walton Trailers"
+                  className="h-10 md:h-12 lg:h-13 w-auto object-contain"
                 />
               </a>
               {isDealerLoggedIn && (
@@ -1067,17 +1067,17 @@ Configuration Date: ${new Date().toLocaleDateString()}
                       {/* Bottom - Content */}
                       <div className="w-full p-4 md:p-5 flex-1 flex flex-col justify-between text-center">
                         <div className="flex items-center justify-center mb-2 md:mb-3">
-                          <h3 className="text-lg md:text-xl font-semibold text-gray-900 group-hover:text-blue-600 transition-colors duration-300">
+                          <h3 className="text-lg md:text-xl font-semibold text-gray-900 group-hover:text-gray-700 transition-colors duration-300">
                             {category.name}
                           </h3>
-                          <ArrowRight className="w-4 h-4 ml-2 text-gray-400 group-hover:text-blue-500 group-hover:translate-x-1 transition-all duration-300" />
+                          <ArrowRight className="w-4 h-4 ml-2 text-gray-400 group-hover:text-gray-600 group-hover:translate-x-1 transition-all duration-300" />
                         </div>
-                        
+
                         <p className="text-gray-600 mb-3 md:mb-4 leading-relaxed text-sm line-clamp-2 md:line-clamp-none">
                           {category.description}
                         </p>
-                        
-                        <div className="text-sm md:text-base font-semibold text-blue-600">
+
+                        <div className="text-sm md:text-base font-semibold text-gray-700">
                           Starting at ${category.startingPrice.toLocaleString()}
                         </div>
                       </div>
@@ -1308,9 +1308,9 @@ Configuration Date: ${new Date().toLocaleDateString()}
         {currentStep === 2 && selectedCategory && (
           <div className="max-w-7xl mx-auto px-4 md:px-8 py-6 md:py-8">
             <div className="flex items-center justify-between mb-6 md:mb-8">
-              <button 
+              <button
                 onClick={() => setCurrentStep(1)}
-                className="flex items-center text-blue-600 hover:text-blue-700 transition-colors duration-300 font-medium"
+                className="flex items-center text-gray-600 hover:text-gray-800 transition-colors duration-300 font-medium"
               >
                 <ArrowLeft className="w-5 h-5 mr-2" />
                 Back to Categories
@@ -1363,17 +1363,17 @@ Configuration Date: ${new Date().toLocaleDateString()}
                           {/* Bottom - Content */}
                           <div className="w-full p-6 md:p-8 text-center">
                             <div className="flex items-center justify-center mb-3 md:mb-4">
-                              <h3 className="text-xl md:text-2xl font-semibold text-gray-900 group-hover:text-blue-600 transition-colors duration-300">
+                              <h3 className="text-xl md:text-2xl font-semibold text-gray-900 group-hover:text-gray-700 transition-colors duration-300">
                                 {series.name}
                               </h3>
-                              <ArrowRight className="w-5 h-5 ml-2 text-gray-400 group-hover:text-blue-500 group-hover:translate-x-1 transition-all duration-300" />
+                              <ArrowRight className="w-5 h-5 ml-2 text-gray-400 group-hover:text-gray-600 group-hover:translate-x-1 transition-all duration-300" />
                             </div>
-                            
+
                             <p className="text-gray-600 mb-4 md:mb-6 leading-relaxed">
                               {series.description || 'Professional flatbed trailer for your hauling needs.'}
                             </p>
-                            
-                            <div className="text-lg md:text-xl font-semibold text-blue-600">
+
+                            <div className="text-lg md:text-xl font-semibold text-gray-700">
                               Starting at ${series.basePrice ? series.basePrice.toLocaleString() : '10,000'}
                             </div>
                           </div>
@@ -1670,7 +1670,7 @@ Configuration Date: ${new Date().toLocaleDateString()}
                                       )}
                                     </div>
                                     <span className="text-sm text-gray-600">
-                                      {option.price === 0 ? 'Included' : 
+                                      {option.price === 0 ? 'Standard' : 
                                        option.isMultiSelect && (selectedOptions[category]?.includes(option.id)) ? 
                                          `$${(option.price * (selectedOptions[`${category}_${option.id}_qty`] || 1)).toLocaleString()}${option.isPerFt ? '/ft' : ''}` :
                                        option.price > 0 ? `$${option.price.toLocaleString()}${option.isPerFt ? '/ft' : ''}` : 
@@ -1718,7 +1718,7 @@ Configuration Date: ${new Date().toLocaleDateString()}
                                           backgroundColor: colorHex,
                                           boxShadow: colorHex === '#ffffff' ? 'inset 0 0 0 1px #e5e7eb' : undefined
                                         }}
-                                        title={`${option.name} - ${option.price === 0 ? 'Included' : 
+                                        title={`${option.name} - ${option.price === 0 ? 'Standard' : 
                                           option.price > 0 ? `$${option.price.toLocaleString()}${option.isPerFt ? '/ft' : ''}` : 
                                           `$${option.price.toLocaleString()}${option.isPerFt ? '/ft' : ''}`}`}
                                       >
@@ -1737,7 +1737,7 @@ Configuration Date: ${new Date().toLocaleDateString()}
                                       <div className="mt-1">
                                         <div className="text-xs font-medium">{option.name}</div>
                                         <div className="text-xs text-gray-500">
-                                          {option.price === 0 ? 'Included' : 
+                                          {option.price === 0 ? 'Standard' : 
                                            option.price > 0 ? `$${option.price.toLocaleString()}${option.isPerFt ? '/ft' : ''}` : 
                                            `$${option.price.toLocaleString()}${option.isPerFt ? '/ft' : ''}`}
                                         </div>
@@ -1820,7 +1820,7 @@ Configuration Date: ${new Date().toLocaleDateString()}
                                       }
                                     }
                                     const pulltype = pulltypeOptions[option.name] || '';
-                                    const formattedPrice = option.price === 0 ? 'Included' : 
+                                    const formattedPrice = option.price === 0 ? 'Standard' : 
                                                           option.price > 0 ? `$${option.price.toLocaleString()}${option.isPerFt ? '/ft' : ''}` : 
                                                           `$${option.price.toLocaleString()}${option.isPerFt ? '/ft' : ''}`;
                                     return (
@@ -1853,7 +1853,7 @@ Configuration Date: ${new Date().toLocaleDateString()}
                                 </SelectTrigger>
                                 <SelectContent>
                                   {categoryOptions.map((option) => {
-                                    const formattedPrice = option.price === 0 ? 'Included' : 
+                                    const formattedPrice = option.price === 0 ? 'Standard' : 
                                                           option.price > 0 ? `$${option.price.toLocaleString()}${option.isPerFt ? '/ft' : ''}` : 
                                                           `$${option.price.toLocaleString()}${option.isPerFt ? '/ft' : ''}`;
                                     return (
@@ -2072,7 +2072,7 @@ Configuration Date: ${new Date().toLocaleDateString()}
                                 <div key={option.id} className="flex justify-between py-1 text-sm">
                                   <span className="text-zinc-700">{option.name}</span>
                                   <span className="font-medium text-zinc-600">
-                                    {option.price === 0 ? 'Included' : 
+                                    {option.price === 0 ? 'Standard' : 
                                      option.price > 0 ? `$${option.price.toLocaleString()}${option.isPerFt ? '/ft' : ''}` : 
                                      `$${option.price.toLocaleString()}${option.isPerFt ? '/ft' : ''}`}
                                   </span>
@@ -2091,7 +2091,7 @@ Configuration Date: ${new Date().toLocaleDateString()}
                               <div key={selectedOption.id} className="flex justify-between py-1 text-sm">
                                 <span className="text-zinc-700">{selectedOption.name}</span>
                                 <span className="font-medium text-zinc-600">
-                                  {selectedOption.price === 0 ? 'Included' : 
+                                  {selectedOption.price === 0 ? 'Standard' : 
                                    selectedOption.price > 0 ? `$${selectedOption.price.toLocaleString()}${selectedOption.isPerFt ? '/ft' : ''}` : 
                                    `$${selectedOption.price.toLocaleString()}${selectedOption.isPerFt ? '/ft' : ''}`}
                                 </span>
@@ -2241,9 +2241,9 @@ Configuration Date: ${new Date().toLocaleDateString()}
                         Save Configuration
                       </Button>
                     ) : (
-                      <Button 
+                      <Button
                         onClick={() => setShowQuoteModal(true)}
-                        className="bg-blue-500 hover:bg-blue-600 text-white px-6 md:px-8 py-2 md:py-3 text-sm md:text-base"
+                        className="bg-[#b7a380] hover:bg-[#9e8c6d] text-white px-6 md:px-8 py-2 md:py-3 text-sm md:text-base"
                       >
                         Request A Quote
                       </Button>
@@ -2398,7 +2398,7 @@ Configuration Date: ${new Date().toLocaleDateString()}
                         <div key={option.id} className="flex justify-between py-1 text-sm">
                           <span>{option.name}</span>
                           <span className="font-medium">
-                            {option.price === 0 ? 'Included' : 
+                            {option.price === 0 ? 'Standard' : 
                              option.price > 0 ? `$${option.price.toLocaleString()}${option.isPerFt ? '/ft' : ''}` : 
                              `$${option.price.toLocaleString()}${option.isPerFt ? '/ft' : ''}`}
                           </span>
@@ -2714,7 +2714,7 @@ Configuration Date: ${new Date().toLocaleDateString()}
                 </h3>
                 <p className="text-sm text-blue-600 font-medium mt-1">
                   {learnMoreOptions[learnMoreIndex]?.price === 0
-                    ? 'Included'
+                    ? 'Standard'
                     : `$${learnMoreOptions[learnMoreIndex]?.price.toLocaleString()}${learnMoreOptions[learnMoreIndex]?.isPerFt ? '/ft' : ''}`}
                 </p>
               </div>
