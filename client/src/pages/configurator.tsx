@@ -359,12 +359,41 @@ export default function Configurator() {
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const modelIdParam = params.get("model");
-    if (!modelIdParam) return;
+    const recreateId = params.get("recreate");
+
+    if (!modelIdParam && !recreateId) return;
 
     const load = async () => {
       try {
+        let modelIdToLoad = modelIdParam;
+        let restoreOptions: Record<string, any> | null = null;
+
+        // Recreate path: dealer clicked Recreate on a Deleted-tab row. Fetch
+        // the order, pre-fill selected options from it, and resolve the model
+        // the same way the plain ?model= path does. Falls through silently
+        // if the order can't be fetched (wrong session, missing id, etc.).
+        if (recreateId) {
+          const dealerSession = localStorage.getItem("dealer_session");
+          if (dealerSession) {
+            try {
+              const orderRes = await fetch(`/api/dealer/orders/${encodeURIComponent(recreateId)}`, {
+                headers: { Authorization: `Bearer ${dealerSession}` },
+              });
+              if (orderRes.ok) {
+                const order = await orderRes.json();
+                modelIdToLoad = order.modelId;
+                restoreOptions = order.selectedOptions || null;
+              }
+            } catch {
+              // ignore — fall through to default landing
+            }
+          }
+        }
+
+        if (!modelIdToLoad) return;
+
         const [modelRes, catsRes] = await Promise.all([
-          fetch(`/api/models/${encodeURIComponent(modelIdParam)}`),
+          fetch(`/api/models/${encodeURIComponent(modelIdToLoad)}`),
           fetch("/api/categories"),
         ]);
         if (!modelRes.ok) return;
@@ -379,7 +408,20 @@ export default function Configurator() {
         if (category) setSelectedCategory(category);
         if (series) setSelectedSeries(series);
         setSelectedModel(model);
+        // Stash the options to re-apply once the options query has loaded
+        // (the price/cascade effects depend on the model's options being
+        // available; we set them now and the downstream effects will fold
+        // them into the running total).
+        if (restoreOptions) setSelectedOptions(restoreOptions);
         setCurrentStep(3);
+
+        // Toast so the dealer knows what happened.
+        if (recreateId) {
+          toast({
+            title: "Recreated from a deleted order",
+            description: "Tweak as needed, then save as a new quote.",
+          });
+        }
       } catch {
         // silently ignore — user just sees the normal step 1
       }

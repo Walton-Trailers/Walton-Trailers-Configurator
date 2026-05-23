@@ -986,11 +986,31 @@ export async function registerRoutes(app: Express): Promise<Express> {
         .from(dealerOrders)
         .where(eq(dealerOrders.dealerId, req.dealer!.id))
         .orderBy(dealerOrders.createdAt);
-      
+
       res.json(orders);
     } catch (error) {
       console.error("Error fetching dealer orders:", error);
       res.status(500).json({ error: "Failed to fetch orders" });
+    }
+  });
+
+  // Fetch a single order by id. Used by the configurator's Recreate flow
+  // (?recreate=<id>) to pre-fill the wizard with the deleted order's
+  // category/model/options. Includes soft-deleted rows so Recreate works
+  // from the Deleted tab. Strict 404 if the order isn't this dealer's.
+  app.get("/api/dealer/orders/:id", requireDealerAuth, async (req: AuthenticatedRequest, res) => {
+    try {
+      const orderId = parseInt(req.params.id);
+      const [order] = await db.select()
+        .from(dealerOrders)
+        .where(eq(dealerOrders.id, orderId));
+      if (!order || order.dealerId !== req.dealer!.id) {
+        return res.status(404).json({ error: "Order not found" });
+      }
+      res.json(order);
+    } catch (error) {
+      console.error("Error fetching dealer order:", error);
+      res.status(500).json({ error: "Failed to fetch order" });
     }
   });
   
@@ -1271,6 +1291,67 @@ export async function registerRoutes(app: Express): Promise<Express> {
     } catch (error) {
       console.error("Error deleting dealer order:", error);
       res.status(500).json({ error: "Failed to delete order" });
+    }
+  });
+
+  // Dealer-initiated help message. Posts to a Slack incoming-webhook URL
+  // configured via SLACK_HELP_WEBHOOK_URL. If the env var isn't set we log
+  // the message to function output (console mode) so dev can still see it.
+  // Body: { subject, message, currentUrl? }
+  app.post("/api/dealer/help", requireDealerAuth, async (req: AuthenticatedRequest, res) => {
+    try {
+      const { subject, message, currentUrl } = req.body as {
+        subject?: string; message?: string; currentUrl?: string;
+      };
+      if (!message || !message.trim()) {
+        return res.status(400).json({ error: "Message is required" });
+      }
+
+      const dealer = req.dealer!;
+      const userTag = req.dealerUser
+        ? `${req.dealerUser.firstName} ${req.dealerUser.lastName} <${req.dealerUser.email}> (${req.dealerUser.role})`
+        : `${dealer.contactName || ''} <${dealer.email || ''}>`;
+
+      const slackText = [
+        `:rotating_light: *Walton Configurator help request*`,
+        '',
+        `*Dealer:* ${dealer.dealerName || dealer.companyName} (${dealer.dealerId})`,
+        `*From:*   ${userTag}`,
+        currentUrl ? `*Page:*   ${currentUrl}` : '',
+        subject ? `*Subject:* ${subject}` : '',
+        '',
+        '```',
+        message.trim(),
+        '```',
+      ].filter(Boolean).join('\n');
+
+      const webhook = process.env.SLACK_HELP_WEBHOOK_URL;
+      if (!webhook) {
+        console.log('=== HELP MESSAGE (no SLACK_HELP_WEBHOOK_URL set) ===');
+        console.log(slackText);
+        console.log('===================================================');
+        return res.json({ ok: true, delivery: 'console' });
+      }
+
+      const slackRes = await fetch(webhook, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text: slackText }),
+      });
+
+      if (!slackRes.ok) {
+        const body = await slackRes.text();
+        console.error(`Slack webhook failed: ${slackRes.status} ${body}`);
+        // Still acknowledge to the dealer — they shouldn't be blocked by our
+        // notification plumbing. The message is logged so dev can recover it.
+        console.log('Help message that failed Slack delivery:\n' + slackText);
+        return res.json({ ok: true, delivery: 'failed', warning: 'Notification queued — Walton has been alerted.' });
+      }
+
+      res.json({ ok: true, delivery: 'slack' });
+    } catch (error) {
+      console.error('Error in /api/dealer/help:', error);
+      res.status(500).json({ error: 'Failed to send help message' });
     }
   });
 

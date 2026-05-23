@@ -15,6 +15,7 @@ import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { Building2, Plus, FileText, Edit, Trash2, LogOut, Package, User, Users, Phone, Mail, DollarSign, Calendar, StickyNote, RefreshCw, Key, Eye, EyeOff, Send } from "lucide-react";
 import { SubmitOrderDialog } from "@/components/submit-order-dialog";
+import { DealerHelpButton } from "@/components/dealer-help-button";
 import { format } from "date-fns";
 
 interface DealerOrder {
@@ -1539,6 +1540,9 @@ export default function DealerDashboard() {
         onSubmit={handleConvertSubmit}
         defaultCustomerName={convertingOrder?.customerName || ""}
       />
+
+      {/* Floating Help button — posts to Slack via /api/dealer/help. */}
+      <DealerHelpButton />
 
       {/* View Order Details Dialog */}
       <Dialog open={!!selectedOrder} onOpenChange={() => setSelectedOrder(null)}>
