@@ -262,6 +262,13 @@ export default function Configurator() {
   const [showPricingModal, setShowPricingModal] = useState(false);
   const [showQuoteModal, setShowQuoteModal] = useState(false);
 
+  // Dealer-only pricing view: msrp (default) | customer (markdown for the
+  // buyer) | mycost (the dealer's tier-discounted cost). Customer discount %
+  // is what the dealer chooses to offer; tier discount comes from the
+  // dealer's record on the server and is fetched below.
+  const [pricingView, setPricingView] = useState<'msrp' | 'customer' | 'mycost'>('msrp');
+  const [customerDiscountPct, setCustomerDiscountPct] = useState<number>(0);
+
   // Quote form
   const quoteForm = useForm<QuoteFormData>({
     resolver: zodResolver(quoteFormSchema),
@@ -287,6 +294,46 @@ export default function Configurator() {
     const dealerSession = localStorage.getItem("dealer_session");
     setIsDealerLoggedIn(!!dealerSession);
   }, []);
+
+  // Dealer profile — only fetched when a session exists. Gives us pricingTier
+  // and discountPct directly (per the updated login response). For sessions
+  // that predate this change, the server's profile route re-reads from the
+  // dealers table which already has the columns, so this transparently
+  // upgrades existing localStorage sessions.
+  const { data: dealerProfile } = useQuery<{ pricingTier?: string; discountPct?: number }>({
+    queryKey: ['/api/dealer/profile'],
+    enabled: isDealerLoggedIn,
+  });
+
+  // Public list of all pricing tiers — used as a fallback to look up the
+  // dealer's discountPct if the profile response doesn't have it yet, and as
+  // a sanity-check source for the customer-discount input validation.
+  const { data: pricingTiers = [] } = useQuery<Array<{ slug: string; displayName: string; discountPct: number }>>({
+    queryKey: ['/api/pricing-tiers'],
+    enabled: isDealerLoggedIn,
+  });
+
+  const dealerDiscountPct: number =
+    dealerProfile?.discountPct ??
+    pricingTiers.find(t => t.slug === dealerProfile?.pricingTier)?.discountPct ??
+    0;
+
+  // Compute the price actually shown to the dealer based on their current
+  // view mode. Returned as a tuple so we can label it in the UI and pass
+  // the same number into the PDF generator without recomputing.
+  const computeDisplayedPrice = (msrp: number): { price: number; label: string } => {
+    if (!isDealerLoggedIn || pricingView === 'msrp') {
+      return { price: msrp, label: 'Trailer Price' };
+    }
+    if (pricingView === 'customer') {
+      const pct = Math.max(0, Math.min(100, customerDiscountPct));
+      return { price: Math.round(msrp * (1 - pct / 100)), label: 'Customer Price' };
+    }
+    // mycost
+    return { price: Math.round(msrp * (1 - dealerDiscountPct / 100)), label: 'Your Cost' };
+  };
+  const { price: displayedPrice, label: displayedPriceLabel } = computeDisplayedPrice(totalPrice);
+  const customerExceedsTier = isDealerLoggedIn && pricingView === 'customer' && customerDiscountPct >= dealerDiscountPct && customerDiscountPct > 0;
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -2157,7 +2204,13 @@ Configuration Date: ${new Date().toLocaleDateString()}
                           }
                         });
 
-                        await generateConfigurationPDF(selectedModel, completeOptions, totalPrice, options, {
+                        // Pass the dealer's currently-displayed price (MSRP /
+                        // Customer-discounted / Dealer-cost) so the PDF
+                        // reflects whichever view the dealer was looking at
+                        // when they clicked Download. Retail visitors always
+                        // see MSRP because computeDisplayedPrice returns
+                        // totalPrice unchanged when isDealerLoggedIn is false.
+                        await generateConfigurationPDF(selectedModel, completeOptions, displayedPrice, options, {
                           gvwr: getDynamicGvwr(),
                           payload: getDynamicPayload(),
                           deckSize: getDynamicDeckSize(),
@@ -2223,9 +2276,9 @@ Configuration Date: ${new Date().toLocaleDateString()}
                     <div className="flex items-center gap-2">
                       <div>
                         <div className="text-2xl md:text-3xl font-bold">
-                          ${totalPrice.toLocaleString()}
+                          ${displayedPrice.toLocaleString()}
                         </div>
-                        <div className="text-xs md:text-sm text-zinc-500">Trailer Price</div>
+                        <div className="text-xs md:text-sm text-zinc-500">{displayedPriceLabel}</div>
                       </div>
                       <button 
                         onClick={() => setShowPricingModal(true)}
@@ -2235,7 +2288,7 @@ Configuration Date: ${new Date().toLocaleDateString()}
                       </button>
                     </div>
                     {isDealerLoggedIn ? (
-                      <Button 
+                      <Button
                         onClick={() => setShowDealerSaveDialog(true)}
                         className="bg-green-600 hover:bg-green-700 text-white px-6 md:px-8 py-2 md:py-3 text-sm md:text-base"
                       >
@@ -2251,6 +2304,71 @@ Configuration Date: ${new Date().toLocaleDateString()}
                       </Button>
                     )}
                   </div>
+
+                  {/* Dealer-only: pricing-view toggle.
+                      MSRP shows the full retail price.
+                      Customer applies a user-typed % discount the dealer is
+                        willing to give the buyer (used to print the customer
+                        quote PDF).
+                      My Cost applies the dealer's tier discount (Elite 20% /
+                        Preferred 15% / Standard 10%) — what the dealer
+                        actually pays Walton. */}
+                  {isDealerLoggedIn && (
+                    <div className="mt-3 pt-3 border-t border-zinc-200 dark:border-zinc-700 flex flex-wrap items-center gap-3">
+                      <div
+                        role="tablist"
+                        aria-label="Pricing view"
+                        className="inline-flex rounded-md bg-zinc-100 dark:bg-zinc-800 p-1"
+                      >
+                        {(['msrp', 'customer', 'mycost'] as const).map(mode => (
+                          <button
+                            key={mode}
+                            role="tab"
+                            aria-selected={pricingView === mode}
+                            onClick={() => setPricingView(mode)}
+                            className={
+                              "px-3 py-1.5 text-xs font-medium rounded transition-colors " +
+                              (pricingView === mode
+                                ? "bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 shadow-sm"
+                                : "text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-200")
+                            }
+                          >
+                            {mode === 'msrp' ? 'MSRP' : mode === 'customer' ? 'Customer' : 'My Cost'}
+                          </button>
+                        ))}
+                      </div>
+
+                      {pricingView === 'customer' && (
+                        <label className="flex items-center gap-2 text-xs text-zinc-600 dark:text-zinc-400">
+                          Discount
+                          <input
+                            type="number"
+                            min={0}
+                            max={100}
+                            step={1}
+                            value={customerDiscountPct}
+                            onChange={e => setCustomerDiscountPct(
+                              Math.max(0, Math.min(100, parseInt(e.target.value || '0', 10) || 0))
+                            )}
+                            className="w-14 px-2 py-1 text-xs text-right rounded border border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-900"
+                          />
+                          <span>%</span>
+                        </label>
+                      )}
+
+                      {pricingView === 'mycost' && dealerDiscountPct > 0 && (
+                        <span className="text-xs text-zinc-500">
+                          Tier discount: {dealerDiscountPct}%
+                        </span>
+                      )}
+
+                      {customerExceedsTier && (
+                        <span className="text-xs text-amber-600 dark:text-amber-400">
+                          At or below your cost.
+                        </span>
+                      )}
+                    </div>
+                  )}
                 </div>
               </div>
             </div>

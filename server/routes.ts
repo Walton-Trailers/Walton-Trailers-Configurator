@@ -10,7 +10,7 @@ import {
   hashPassword,
   isAdmin
 } from "./auth";
-import { insertAdminUserSchema, type AdminUser, trailerCategories, trailerModels, trailerSeries, customQuoteRequests, insertCustomQuoteRequestSchema, quoteRequests, insertQuoteRequestSchema, dealers, dealerSessions, dealerOrders, dealerUsers, dealerUserSessions, userConfigurations, mediaFiles, dealerPasswordResetTokens, adminSessions, type Dealer, type DealerUser, type MediaFile } from "@shared/schema";
+import { insertAdminUserSchema, type AdminUser, trailerCategories, trailerModels, trailerSeries, customQuoteRequests, insertCustomQuoteRequestSchema, quoteRequests, insertQuoteRequestSchema, dealers, dealerSessions, dealerOrders, dealerUsers, dealerUserSessions, userConfigurations, mediaFiles, dealerPasswordResetTokens, adminSessions, pricingTiers, type Dealer, type DealerUser, type MediaFile, type PricingTier } from "@shared/schema";
 import { z } from "zod";
 import crypto from "crypto";
 import bcrypt from "bcryptjs";
@@ -149,11 +149,26 @@ export async function registerRoutes(app: Express): Promise<Express> {
     } catch (error) {
       console.error("Error in /api/categories:", error);
       const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
-      res.status(500).json({ 
-        message: "Failed to fetch categories", 
+      res.status(500).json({
+        message: "Failed to fetch categories",
         error: errorMessage,
         timestamp: new Date().toISOString()
       });
+    }
+  });
+
+  // Public list of pricing tiers. The dealer UI uses this to render the
+  // MSRP / Customer / My-cost toggle and to validate that a typed customer
+  // discount % isn't deeper than the dealer's own tier discount.
+  app.get("/api/pricing-tiers", async (_req, res) => {
+    try {
+      const tiers = await db.select()
+        .from(pricingTiers)
+        .orderBy(pricingTiers.displayOrder);
+      res.json(tiers);
+    } catch (error) {
+      console.error("Error in /api/pricing-tiers:", error);
+      res.status(500).json({ error: "Failed to fetch pricing tiers" });
     }
   });
 
@@ -689,6 +704,12 @@ export async function registerRoutes(app: Express): Promise<Express> {
         expiresAt,
       });
       
+      // Look up the dealer's tier so the client can render the
+      // MSRP / Customer / My-cost toggle without an extra round trip.
+      const [tier] = await db.select()
+        .from(pricingTiers)
+        .where(eq(pricingTiers.slug, dealer.pricingTier));
+
       res.json({
         dealer: {
           id: dealer.id,
@@ -697,6 +718,8 @@ export async function registerRoutes(app: Express): Promise<Express> {
           contactName: dealer.contactName,
           email: dealer.email,
           territory: dealer.territory,
+          pricingTier: dealer.pricingTier,
+          discountPct: tier?.discountPct ?? 0,
         },
         sessionId,
         expiresAt: expiresAt.toISOString(),
