@@ -271,6 +271,10 @@ export const dealerOrders = pgTable("dealer_orders", {
   // submit-to-Walton along with customer name above; both stay nullable so
   // existing draft rows aren't invalidated.
   poNumber: varchar("po_number", { length: 100 }),
+  // Walton's internal order number that the rep fills in after matching this
+  // dealer order to their internal system. orderNumber above remains our
+  // stable internal handle; this is what the dealer UI shows once assigned.
+  repOrderNumber: varchar("rep_order_number", { length: 50 }),
   notes: text("notes"),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),

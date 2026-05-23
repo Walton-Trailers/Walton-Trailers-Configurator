@@ -547,7 +547,7 @@ export default function Configurator() {
 
       toast({
         title: "Order submitted",
-        description: `Order ${order.orderNumber} sent to Walton. You'll get a confirmation email shortly.`,
+        description: `Sent to Walton. Your assigned order # will appear here once your rep picks it up. Confirmation email on the way.`,
       });
       setShowSubmitOrderDialog(false);
       queryClient.invalidateQueries({ queryKey: ["/api/dealer/orders"] });

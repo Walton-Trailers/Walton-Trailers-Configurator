@@ -1064,13 +1064,15 @@ export async function registerRoutes(app: Express): Promise<Express> {
             .join('\n')
         : '(no options selected)';
 
-      const repSubject = `New Walton Order ${updated.orderNumber} — ${dealer.dealerName || dealer.companyName}`;
+      // Internal ref (orderNumber) is for Walton-side lookup; rep will assign
+      // a Walton order # (repOrderNumber) once they match this to their system.
+      const repSubject = `New Walton Order from ${dealer.dealerName || dealer.companyName} (ref ${updated.orderNumber})`;
       const repBody = [
         `Hi ${repName},`,
         '',
         `${dealer.dealerName || dealer.companyName} has submitted a new order through the configurator.`,
         '',
-        `Order #:        ${updated.orderNumber}`,
+        `Internal ref:   ${updated.orderNumber}   (assign your order # in the admin dashboard)`,
         `Dealer:         ${dealer.dealerName || dealer.companyName} (${dealer.dealerId})`,
         `Dealer contact: ${dealer.contactName || ''} <${dealer.email || ''}>`,
         `Customer:       ${updated.customerName}`,
@@ -1096,12 +1098,12 @@ export async function registerRoutes(app: Express): Promise<Express> {
 
       // Dealer confirmation
       if (dealer.email) {
-        const dealerSubject = `Walton order received — ${updated.orderNumber}`;
+        const dealerSubject = `Walton order received for ${updated.customerName}`;
         const dealerBody = [
           `Thanks, ${dealer.contactName || dealer.dealerName || 'team'} —`,
           '',
-          `We received your order ${updated.orderNumber} for ${updated.customerName}.`,
-          `Your Walton rep (${repName}) has been notified and will follow up.`,
+          `We received your order for ${updated.customerName}.`,
+          `Your Walton rep (${repName}) will assign your order number and follow up shortly.`,
           '',
           `Trailer:  ${updated.modelName}`,
           `Total:    $${updated.totalPrice.toLocaleString()}`,
@@ -1132,21 +1134,37 @@ export async function registerRoutes(app: Express): Promise<Express> {
     try {
       const orderId = parseInt(req.params.id);
       const updates = req.body;
-      
+
       // Verify order belongs to dealer
       const [existingOrder] = await db.select()
         .from(dealerOrders)
         .where(eq(dealerOrders.id, orderId));
-      
+
       if (!existingOrder || existingOrder.dealerId !== req.dealer!.id) {
         return res.status(404).json({ error: "Order not found" });
       }
-      
+
+      // Whitelist what dealers are allowed to change on an order. Status
+      // transitions are owned by the server (POST /submit) and by Walton
+      // admin staff — never by the dealer, even via direct API call.
+      // Order numbering (orderNumber, repOrderNumber) and work order
+      // attachments are also admin-only.
+      const ALLOWED_DEALER_FIELDS = new Set([
+        'customerName',
+        'customerEmail',
+        'customerPhone',
+        'notes',
+      ]);
+      const safeUpdates: Record<string, any> = {};
+      for (const [key, value] of Object.entries(updates)) {
+        if (ALLOWED_DEALER_FIELDS.has(key)) safeUpdates[key] = value;
+      }
+
       const [updatedOrder] = await db.update(dealerOrders)
-        .set({ ...updates, updatedAt: new Date() })
+        .set({ ...safeUpdates, updatedAt: new Date() })
         .where(eq(dealerOrders.id, orderId))
         .returning();
-      
+
       res.json(updatedOrder);
     } catch (error) {
       console.error("Error updating dealer order:", error);

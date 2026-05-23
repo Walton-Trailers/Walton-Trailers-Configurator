@@ -20,6 +20,7 @@ import { format } from "date-fns";
 interface DealerOrder {
   id: number;
   orderNumber: string;
+  repOrderNumber: string | null;
   customerName: string | null;
   customerEmail: string | null;
   customerPhone: string | null;
@@ -330,7 +331,7 @@ export default function DealerDashboard() {
       });
       toast({
         title: "Order submitted",
-        description: `Quote ${convertingOrder.orderNumber} is now an order. Walton has been notified.`,
+        description: `Quote sent to Walton. You'll see your assigned order # here once your rep picks it up.`,
       });
       setConvertingOrder(null);
       refetch();
@@ -452,7 +453,8 @@ export default function DealerDashboard() {
         customerName: editingOrder.customerName,
         customerEmail: editingOrder.customerEmail,
         customerPhone: editingOrder.customerPhone,
-        status: editingOrder.status,
+        // status intentionally NOT included — only system events and Walton
+        // admin staff move orders through the lifecycle.
         notes: editingOrder.notes,
       },
     });
@@ -604,7 +606,11 @@ export default function DealerDashboard() {
           const renderRows = (rows: typeof orders, opts: { showConvert: boolean }) =>
             rows.map((order) => (
               <TableRow key={order.id}>
-                <TableCell className="font-medium">{order.orderNumber}</TableCell>
+                <TableCell className="font-medium">
+                  {order.repOrderNumber || (
+                    <span className="text-gray-400 italic font-normal">Pending assignment</span>
+                  )}
+                </TableCell>
                 <TableCell>
                   {order.customerName || <span className="text-gray-400">N/A</span>}
                 </TableCell>
@@ -1416,7 +1422,7 @@ export default function DealerDashboard() {
           <DialogHeader>
             <DialogTitle>Order Details</DialogTitle>
             <DialogDescription>
-              Order #{selectedOrder?.orderNumber}
+              Order #{selectedOrder?.repOrderNumber || 'Pending assignment'}
             </DialogDescription>
           </DialogHeader>
           
@@ -1474,12 +1480,23 @@ export default function DealerDashboard() {
                 <div>
                   <h3 className="font-semibold mb-3">Selected Options</h3>
                   <div className="space-y-2">
-                    {Object.entries(selectedOrder.selectedOptions).map(([key, value]) => (
-                      <div key={key} className="flex justify-between text-sm">
-                        <span className="text-gray-600 capitalize">{key}</span>
-                        <span className="font-medium">{formatOptionValue(key, value)}</span>
-                      </div>
-                    ))}
+                    {Object.entries(selectedOrder.selectedOptions).map(([key, value]) => {
+                      // The length option is special-cased: it's stored as a
+                      // synthetic ID ("length_DHV207_0") that points into the
+                      // model's length_options array. The resolved string is
+                      // already in modelSpecs.deckSize at save time, so we
+                      // show that here instead of the raw synthetic ID.
+                      const display =
+                        key === 'length' && typeof value === 'string' && value.startsWith('length_')
+                          ? (selectedOrder.modelSpecs as any)?.deckSize || String(value)
+                          : formatOptionValue(key, value);
+                      return (
+                        <div key={key} className="flex justify-between text-sm">
+                          <span className="text-gray-600 capitalize">{key}</span>
+                          <span className="font-medium">{display}</span>
+                        </div>
+                      );
+                    })}
                   </div>
                 </div>
               )}
@@ -1581,25 +1598,10 @@ export default function DealerDashboard() {
                 />
               </div>
 
-              <div>
-                <Label htmlFor="status">Status</Label>
-                <Select
-                  value={editingOrder.status}
-                  onValueChange={(value) =>
-                    setEditingOrder({ ...editingOrder, status: value })
-                  }
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="draft">Draft</SelectItem>
-                    <SelectItem value="submitted">Submitted</SelectItem>
-                    <SelectItem value="processing">Processing</SelectItem>
-                    <SelectItem value="completed">Completed</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
+              {/* Status is managed by the system (submitted on order send,
+                  received when the rep uploads the work order) and by Walton
+                  admin staff — not by dealers — so the field is intentionally
+                  omitted from the dealer edit dialog. */}
 
               <div>
                 <Label htmlFor="notes">Notes</Label>
@@ -1632,7 +1634,7 @@ export default function DealerDashboard() {
           <DialogHeader>
             <DialogTitle>Delete Order</DialogTitle>
             <DialogDescription>
-              Are you sure you want to delete order #{deleteConfirmOrder?.orderNumber}? This action cannot be undone.
+              Are you sure you want to delete order #{deleteConfirmOrder?.repOrderNumber || deleteConfirmOrder?.orderNumber}? This action cannot be undone.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
