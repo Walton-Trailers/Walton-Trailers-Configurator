@@ -2291,8 +2291,8 @@ Configuration Date: ${new Date().toLocaleDateString()}
               <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-t-lg shadow-lg overflow-hidden">
                 <div className="px-6 py-4">
                   <div className="flex items-center justify-between gap-3">
-                    <div className="flex items-center gap-2 min-w-0">
-                      <div className="min-w-0">
+                    <div className="flex items-center gap-2">
+                      <div>
                         <div className="text-2xl md:text-3xl font-bold">
                           ${displayedPrice.toLocaleString()}
                         </div>
