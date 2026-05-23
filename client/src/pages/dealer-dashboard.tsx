@@ -21,6 +21,8 @@ interface DealerOrder {
   id: number;
   orderNumber: string;
   repOrderNumber: string | null;
+  submittedAt: string | null;
+  deletedAt: string | null;
   customerName: string | null;
   customerEmail: string | null;
   customerPhone: string | null;
@@ -56,6 +58,10 @@ interface DealerProfile {
   contactName?: string;
   email?: string;
   territory?: string;
+  // Assigned Walton sales rep. Used by the past-window delete dialog to
+  // tell the dealer who to contact for cancellation.
+  salesRepName?: string | null;
+  salesRepEmail?: string | null;
   // User info for dealer employees
   user?: {
     id: number;
@@ -317,6 +323,18 @@ export default function DealerDashboard() {
         variant: "destructive",
       });
     },
+  });
+
+  // Restore a soft-deleted order back into the Quotes tab.
+  const restoreOrderMutation = useMutation({
+    mutationFn: async (orderId: number) =>
+      apiRequest(`/api/dealer/orders/${orderId}/restore`, { method: "POST" }),
+    onSuccess: () => {
+      toast({ title: "Restored", description: "Moved back to your Quotes." });
+      refetch();
+    },
+    onError: (err: any) =>
+      toast({ title: "Couldn't restore", description: err?.message, variant: "destructive" }),
   });
 
   // Convert a draft quote into a submitted order. Server route fires the
@@ -600,8 +618,12 @@ export default function DealerDashboard() {
             and Orders (anything that's been submitted to Walton). Computed
             inline rather than via useMemo since the array is small. */}
         {(() => {
-          const quotes = orders.filter((o) => o.status === 'draft');
-          const submittedOrders = orders.filter((o) => o.status !== 'draft');
+          // Three buckets keyed off (status, deletedAt). Deleted always wins
+          // — a soft-deleted draft shows up in Deleted, never Quotes.
+          const activeOrders = orders.filter((o) => !o.deletedAt);
+          const quotes = activeOrders.filter((o) => o.status === 'draft');
+          const submittedOrders = activeOrders.filter((o) => o.status !== 'draft');
+          const deletedOrders = orders.filter((o) => !!o.deletedAt);
           // Shared row renderer so the Convert action only appears on quotes.
           const renderRows = (rows: typeof orders, opts: { showConvert: boolean }) =>
             rows.map((order) => (
@@ -652,9 +674,10 @@ export default function DealerDashboard() {
 
           return (
             <Tabs value={activeTab} onValueChange={setActiveTab}>
-              <TabsList className={`grid w-full ${isUserAdmin ? 'grid-cols-4' : 'grid-cols-3'}`}>
+              <TabsList className={`grid w-full ${isUserAdmin ? 'grid-cols-5' : 'grid-cols-4'}`}>
                 <TabsTrigger value="quotes">Quotes ({quotes.length})</TabsTrigger>
                 <TabsTrigger value="orders">Orders ({submittedOrders.length})</TabsTrigger>
+                <TabsTrigger value="deleted">Deleted ({deletedOrders.length})</TabsTrigger>
                 <TabsTrigger value="profile">Profile</TabsTrigger>
                 {isUserAdmin && <TabsTrigger value="users">Users</TabsTrigger>}
               </TabsList>
@@ -754,6 +777,107 @@ export default function DealerDashboard() {
                             </TableRow>
                           </TableHeader>
                           <TableBody>{renderRows(submittedOrders, { showConvert: false })}</TableBody>
+                        </Table>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              </TabsContent>
+
+              {/* Deleted — soft-deleted quotes and cancelled submissions.
+                  Recreate spawns a fresh configurator session pre-filled from
+                  this row; Restore brings the original row back into Quotes. */}
+              <TabsContent value="deleted" className="mt-6">
+                <Card>
+                  <CardHeader>
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <CardTitle>Deleted</CardTitle>
+                        <CardDescription>
+                          Quotes and cancelled submissions you've removed.
+                          Recreate copies the configuration into a fresh quote;
+                          Restore brings the original back to your Quotes tab.
+                        </CardDescription>
+                      </div>
+                      <Button onClick={() => refetch()} variant="outline" size="sm" disabled={isLoading}>
+                        <RefreshCw className={`w-4 h-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
+                        Refresh
+                      </Button>
+                    </div>
+                  </CardHeader>
+                  <CardContent>
+                    {isLoading ? (
+                      <p className="text-center py-8 text-gray-500">Loading…</p>
+                    ) : deletedOrders.length === 0 ? (
+                      <div className="text-center py-12">
+                        <Trash2 className="w-12 h-12 text-gray-300 mx-auto mb-4" />
+                        <p className="text-gray-500">Nothing deleted yet</p>
+                      </div>
+                    ) : (
+                      <div className="overflow-x-auto">
+                        <Table>
+                          <TableHeader>
+                            <TableRow>
+                              <TableHead>Order #</TableHead>
+                              <TableHead>Customer</TableHead>
+                              <TableHead>Model</TableHead>
+                              <TableHead>Total Price</TableHead>
+                              <TableHead>Was</TableHead>
+                              <TableHead>Deleted</TableHead>
+                              <TableHead>Actions</TableHead>
+                            </TableRow>
+                          </TableHeader>
+                          <TableBody>
+                            {deletedOrders.map((order) => (
+                              <TableRow key={order.id} className="opacity-75">
+                                <TableCell className="font-medium">
+                                  {order.repOrderNumber || (
+                                    <span className="text-gray-400 italic font-normal">Pending assignment</span>
+                                  )}
+                                </TableCell>
+                                <TableCell>{order.customerName || <span className="text-gray-400">N/A</span>}</TableCell>
+                                <TableCell>
+                                  <div>
+                                    <p className="font-medium">{order.modelName}</p>
+                                    <p className="text-sm text-gray-500">{order.categoryName}</p>
+                                  </div>
+                                </TableCell>
+                                <TableCell>{formatPrice(order.totalPrice)}</TableCell>
+                                <TableCell>{getStatusBadge(order.status)}</TableCell>
+                                <TableCell>
+                                  {order.deletedAt ? format(new Date(order.deletedAt), "MMM d, yyyy") : '—'}
+                                </TableCell>
+                                <TableCell>
+                                  <div className="flex space-x-2">
+                                    <Button size="sm" variant="ghost" onClick={() => setSelectedOrder(order)}>
+                                      <FileText className="w-4 h-4" />
+                                    </Button>
+                                    {/* Recreate — pre-fills a fresh configurator session.
+                                        Wired in the next commit (Phase C.2 part 2). For
+                                        now just navigates to the configurator. */}
+                                    <Button
+                                      size="sm"
+                                      variant="ghost"
+                                      title="Recreate as a new quote"
+                                      onClick={() => setLocation(`/?recreate=${order.id}`)}
+                                      className="text-green-700 hover:text-green-800"
+                                    >
+                                      <Plus className="w-4 h-4" />
+                                    </Button>
+                                    <Button
+                                      size="sm"
+                                      variant="ghost"
+                                      title="Restore to Quotes"
+                                      onClick={() => restoreOrderMutation.mutate(order.id)}
+                                      disabled={restoreOrderMutation.isPending}
+                                    >
+                                      <RefreshCw className="w-4 h-4" />
+                                    </Button>
+                                  </div>
+                                </TableCell>
+                              </TableRow>
+                            ))}
+                          </TableBody>
                         </Table>
                       </div>
                     )}
@@ -1628,32 +1752,96 @@ export default function DealerDashboard() {
         </DialogContent>
       </Dialog>
 
-      {/* Delete Confirmation Dialog */}
-      <Dialog open={!!deleteConfirmOrder} onOpenChange={() => setDeleteConfirmOrder(null)}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Delete Order</DialogTitle>
-            <DialogDescription>
-              Are you sure you want to delete order #{deleteConfirmOrder?.repOrderNumber || deleteConfirmOrder?.orderNumber}? This action cannot be undone.
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setDeleteConfirmOrder(null)}>
-              Cancel
-            </Button>
-            <Button
-              variant="destructive"
-              onClick={() => {
-                if (deleteConfirmOrder) {
-                  deleteOrderMutation.mutate(deleteConfirmOrder.id);
-                }
-              }}
-            >
-              Delete Order
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      {/* Smart delete / cancel dialog. Three branches keyed off (status,
+          submittedAt) — same rules the server enforces:
+            1. Draft quote          → simple confirm.
+            2. Submitted < 48hr     → warning + "rep will be notified".
+            3. Submitted ≥ 48hr OR  → no destructive action; show rep
+               status past submitted   contact info instead. */}
+      {(() => {
+        if (!deleteConfirmOrder) {
+          return (
+            <Dialog open={false} onOpenChange={() => setDeleteConfirmOrder(null)}>
+              <DialogContent />
+            </Dialog>
+          );
+        }
+
+        const orderDisplay = deleteConfirmOrder.repOrderNumber
+          ? `order #${deleteConfirmOrder.repOrderNumber}`
+          : 'this order';
+        const repName = profile?.salesRepName || 'your Walton sales rep';
+        const repEmail = profile?.salesRepEmail || 'info@waltontrailers.com';
+
+        const isDraft = deleteConfirmOrder.status === 'draft';
+        const submittedAt = deleteConfirmOrder.submittedAt
+          ? new Date(deleteConfirmOrder.submittedAt)
+          : null;
+        const WINDOW_MS = 48 * 60 * 60 * 1000;
+        const withinWindow = submittedAt != null &&
+          (Date.now() - submittedAt.getTime()) < WINDOW_MS;
+        const isCancelablePostSubmit = deleteConfirmOrder.status === 'submitted' && withinWindow;
+        const lockedOut = !isDraft && !isCancelablePostSubmit;
+
+        const close = () => setDeleteConfirmOrder(null);
+
+        return (
+          <Dialog open={true} onOpenChange={close}>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>
+                  {isDraft ? 'Delete quote'
+                    : isCancelablePostSubmit ? 'Cancel submitted order'
+                    : 'Cancellation not available'}
+                </DialogTitle>
+                <DialogDescription>
+                  {isDraft && (
+                    <>Move {orderDisplay} to your Deleted tab? You can Recreate or Restore it later.</>
+                  )}
+                  {isCancelablePostSubmit && (
+                    <>
+                      You're cancelling {orderDisplay} within the 48-hour window.{' '}
+                      <strong>{repName}</strong> will be notified by email so they can stop the order on Walton's side.
+                    </>
+                  )}
+                  {lockedOut && (
+                    <>
+                      It's been more than 48 hours since {orderDisplay} was submitted, so you can't cancel it directly anymore.{' '}
+                      Please contact <strong>{repName}</strong> at{' '}
+                      <a className="underline" href={`mailto:${repEmail}`}>{repEmail}</a> to cancel.
+                    </>
+                  )}
+                </DialogDescription>
+              </DialogHeader>
+              <DialogFooter>
+                {lockedOut ? (
+                  <>
+                    <Button variant="outline" onClick={close}>Close</Button>
+                    <Button asChild>
+                      <a href={`mailto:${repEmail}?subject=${encodeURIComponent(
+                        `Cancel request: ${deleteConfirmOrder.repOrderNumber || deleteConfirmOrder.orderNumber}`
+                      )}`}>
+                        Email {repName}
+                      </a>
+                    </Button>
+                  </>
+                ) : (
+                  <>
+                    <Button variant="outline" onClick={close}>Keep</Button>
+                    <Button
+                      variant="destructive"
+                      disabled={deleteOrderMutation.isPending}
+                      onClick={() => deleteOrderMutation.mutate(deleteConfirmOrder.id)}
+                    >
+                      {isDraft ? 'Delete quote' : 'Cancel order'}
+                    </Button>
+                  </>
+                )}
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+        );
+      })()}
       
       {/* Add User Dialog */}
       <Dialog open={isAddingUser} onOpenChange={setIsAddingUser}>

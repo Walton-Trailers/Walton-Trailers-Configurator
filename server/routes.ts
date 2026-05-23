@@ -1046,6 +1046,10 @@ export async function registerRoutes(app: Express): Promise<Express> {
           status: 'submitted',
           customerName: customerName.trim(),
           poNumber: poNumber?.trim() || null,
+          // submittedAt is the authoritative submission timestamp. The 48hr
+          // cancel window is computed off this column, not updated_at (which
+          // gets bumped by any subsequent edit).
+          submittedAt: new Date(),
           updatedAt: new Date(),
         })
         .where(eq(dealerOrders.id, orderId))
@@ -1172,31 +1176,129 @@ export async function registerRoutes(app: Express): Promise<Express> {
     }
   });
   
-  // Delete dealer order
+  // Soft-delete a dealer order. Three lifecycle rules enforced server-side
+  // (the client UI mirrors these but the server is the source of truth):
+  //
+  //   - Draft quote: freely deletable.
+  //   - Submitted, < 48hr since submission: deletable as a cancellation.
+  //     Triggers a notification email to the assigned rep so Walton knows
+  //     to stop the order if it's already been picked up.
+  //   - Submitted, >= 48hr since submission (or any state past 'submitted'
+  //     like processing/completed/received): NOT deletable. Client redirects
+  //     the dealer to contact their rep. Server returns 403 with the
+  //     rep's contact info so the UI can show it.
+  //
+  // We soft-delete (deleted_at = now()) rather than hard-deleting so dealers
+  // can Recreate from a past order via the Deleted tab.
+  const SUBMITTED_DELETE_WINDOW_MS = 48 * 60 * 60 * 1000;
+
   app.delete("/api/dealer/orders/:id", requireDealerAuth, async (req: AuthenticatedRequest, res) => {
     try {
       const orderId = parseInt(req.params.id);
-      
-      // Verify order belongs to dealer and is in draft status
+
       const [existingOrder] = await db.select()
         .from(dealerOrders)
         .where(eq(dealerOrders.id, orderId));
-      
+
       if (!existingOrder || existingOrder.dealerId !== req.dealer!.id) {
         return res.status(404).json({ error: "Order not found" });
       }
-      
-      if (existingOrder.status !== 'draft') {
-        return res.status(400).json({ error: "Can only delete draft orders" });
+      if (existingOrder.deletedAt) {
+        return res.status(400).json({ error: "Order is already deleted" });
       }
-      
-      await db.delete(dealerOrders)
+
+      const isDraft = existingOrder.status === 'draft';
+      const submittedAt = existingOrder.submittedAt ? new Date(existingOrder.submittedAt) : null;
+      const withinWindow = submittedAt != null &&
+        (Date.now() - submittedAt.getTime()) < SUBMITTED_DELETE_WINDOW_MS;
+      const isCancelablePostSubmit = existingOrder.status === 'submitted' && withinWindow;
+
+      if (!isDraft && !isCancelablePostSubmit) {
+        // Past the 48hr window OR already past 'submitted' in the pipeline —
+        // dealer can't delete on their own.
+        const dealer = req.dealer!;
+        return res.status(403).json({
+          error: "Contact your Walton rep to cancel this order.",
+          repName: dealer.salesRepName || null,
+          repEmail: dealer.salesRepEmail || 'info@waltontrailers.com',
+        });
+      }
+
+      // Soft delete.
+      await db.update(dealerOrders)
+        .set({ deletedAt: new Date(), updatedAt: new Date() })
         .where(eq(dealerOrders.id, orderId));
-      
+
+      // If the dealer is cancelling a submitted order, notify the rep so
+      // Walton can stop it on their end. Fire-and-log: failure shouldn't
+      // block the delete since the dealer's intent is clear.
+      if (isCancelablePostSubmit) {
+        const dealer = req.dealer!;
+        const repTo = dealer.salesRepEmail || 'info@waltontrailers.com';
+        const repName = dealer.salesRepName || 'Walton Sales';
+        const body = [
+          `Hi ${repName},`,
+          '',
+          `${dealer.dealerName || dealer.companyName} just cancelled a submitted order within the 48-hour window.`,
+          '',
+          `Internal ref:   ${existingOrder.orderNumber}`,
+          existingOrder.repOrderNumber ? `Walton order #: ${existingOrder.repOrderNumber}` : '',
+          `Dealer:         ${dealer.dealerName || dealer.companyName} (${dealer.dealerId})`,
+          `Customer:       ${existingOrder.customerName || '(unspecified)'}`,
+          existingOrder.poNumber ? `PO #:           ${existingOrder.poNumber}` : '',
+          `Trailer:        ${existingOrder.modelName}`,
+          `Total:          $${existingOrder.totalPrice.toLocaleString()}`,
+          `Submitted at:   ${submittedAt ? submittedAt.toISOString() : '(unknown)'}`,
+          `Cancelled at:   ${new Date().toISOString()}`,
+          '',
+          'If you have already begun processing this on the Walton side, please stop the work.',
+          '',
+          '— Walton Trailers Configurator',
+        ].filter(Boolean).join('\n');
+        try {
+          const sent = await EmailService.getInstance().sendEmail({
+            to: repTo,
+            subject: `Cancellation: order ${existingOrder.repOrderNumber || existingOrder.orderNumber} from ${dealer.dealerName || dealer.companyName}`,
+            text: body,
+          });
+          if (!sent) console.warn(`Cancellation notification failed: order ${existingOrder.orderNumber}`);
+        } catch (e) {
+          console.warn(`Cancellation notification error: order ${existingOrder.orderNumber}`, e);
+        }
+      }
+
       res.json({ message: "Order deleted successfully" });
     } catch (error) {
       console.error("Error deleting dealer order:", error);
       res.status(500).json({ error: "Failed to delete order" });
+    }
+  });
+
+  // Restore a soft-deleted dealer order back into Quotes. Used by the
+  // Deleted tab's "Restore" action when a dealer wants the original row
+  // back (vs Recreate which spawns a fresh quote).
+  app.post("/api/dealer/orders/:id/restore", requireDealerAuth, async (req: AuthenticatedRequest, res) => {
+    try {
+      const orderId = parseInt(req.params.id);
+      const [existingOrder] = await db.select()
+        .from(dealerOrders)
+        .where(eq(dealerOrders.id, orderId));
+
+      if (!existingOrder || existingOrder.dealerId !== req.dealer!.id) {
+        return res.status(404).json({ error: "Order not found" });
+      }
+      if (!existingOrder.deletedAt) {
+        return res.status(400).json({ error: "Order is not deleted" });
+      }
+
+      await db.update(dealerOrders)
+        .set({ deletedAt: null, updatedAt: new Date() })
+        .where(eq(dealerOrders.id, orderId));
+
+      res.json({ message: "Order restored" });
+    } catch (error) {
+      console.error("Error restoring dealer order:", error);
+      res.status(500).json({ error: "Failed to restore order" });
     }
   });
 

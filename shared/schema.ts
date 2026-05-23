@@ -276,6 +276,13 @@ export const dealerOrders = pgTable("dealer_orders", {
   // stable internal handle; this is what the dealer UI shows once assigned.
   repOrderNumber: varchar("rep_order_number", { length: 50 }),
   notes: text("notes"),
+  // Stamped by the server when status transitions draft → submitted. Used by
+  // the 48hr cancel-window logic on the dealer side. updated_at can't be
+  // trusted as the submission timestamp because other edits bump it.
+  submittedAt: timestamp("submitted_at"),
+  // Soft delete. Non-null means the dealer moved the order to their Deleted
+  // tab. We don't hard-delete so dealers can Recreate from a past order.
+  deletedAt: timestamp("deleted_at"),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
