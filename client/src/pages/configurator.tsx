@@ -11,7 +11,7 @@ import { Separator } from "@/components/ui/separator";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { ArrowLeft, ArrowRight, Download, Mail, MapPin, RotateCcw, Info, X, Users, Phone, Building, Building2, Save, ChevronDown, ChevronLeft, ChevronRight, Package } from "lucide-react";
+import { ArrowLeft, ArrowRight, Download, Mail, MapPin, RotateCcw, Info, X, Users, Phone, Building, Building2, Save, ChevronDown, ChevronLeft, ChevronRight, Package, Eye, EyeOff } from "lucide-react";
 import waltonDefaultImg from "@assets/walton_1771452814610.png";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Link } from "wouter";
@@ -268,6 +268,24 @@ export default function Configurator() {
   // dealer's record on the server and is fetched below.
   const [pricingView, setPricingView] = useState<'msrp' | 'customer' | 'mycost'>('msrp');
   const [customerDiscountPct, setCustomerDiscountPct] = useState<number>(0);
+  // When a dealer is screen-sharing with a customer they can hide the entire
+  // toggle row so MSRP / My Cost are not visible. Hiding also forces the
+  // view back to MSRP, so a dealer who hides while in "My Cost" doesn't
+  // accidentally leave the dealer cost on screen. Persisted in localStorage
+  // so the preference survives reloads.
+  const [dealerToolsHidden, setDealerToolsHidden] = useState<boolean>(false);
+  useEffect(() => {
+    if (localStorage.getItem('dealer_tools_hidden') === '1') setDealerToolsHidden(true);
+  }, []);
+  const setDealerToolsHiddenPersisted = (hidden: boolean) => {
+    setDealerToolsHidden(hidden);
+    if (hidden) {
+      localStorage.setItem('dealer_tools_hidden', '1');
+      setPricingView('msrp');
+    } else {
+      localStorage.removeItem('dealer_tools_hidden');
+    }
+  };
 
   // Quote form
   const quoteForm = useForm<QuoteFormData>({
@@ -2280,12 +2298,22 @@ Configuration Date: ${new Date().toLocaleDateString()}
                         </div>
                         <div className="text-xs md:text-sm text-zinc-500">{displayedPriceLabel}</div>
                       </div>
-                      <button 
+                      <button
                         onClick={() => setShowPricingModal(true)}
                         className="ml-1 p-1 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded transition-colors"
                       >
                         <ChevronDown className="w-4 h-4 md:w-5 md:h-5 text-zinc-400" />
                       </button>
+                      {isDealerLoggedIn && dealerToolsHidden && (
+                        <button
+                          onClick={() => setDealerToolsHiddenPersisted(false)}
+                          className="ml-1 p-1 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded transition-colors"
+                          title="Show dealer pricing tools"
+                          aria-label="Show dealer pricing tools"
+                        >
+                          <Eye className="w-4 h-4 text-zinc-400" />
+                        </button>
+                      )}
                     </div>
                     {isDealerLoggedIn ? (
                       <Button
@@ -2313,7 +2341,7 @@ Configuration Date: ${new Date().toLocaleDateString()}
                       My Cost applies the dealer's tier discount (Elite 20% /
                         Preferred 15% / Standard 10%) — what the dealer
                         actually pays Walton. */}
-                  {isDealerLoggedIn && (
+                  {isDealerLoggedIn && !dealerToolsHidden && (
                     <div className="mt-3 pt-3 border-t border-zinc-200 dark:border-zinc-700 flex flex-wrap items-center gap-3">
                       <div
                         role="tablist"
@@ -2367,6 +2395,19 @@ Configuration Date: ${new Date().toLocaleDateString()}
                           At or below your cost.
                         </span>
                       )}
+
+                      {/* Hide the toggle entirely for screen-sharing with a
+                          customer. Hiding also forces view back to MSRP so
+                          the dealer cost can't be left on screen by accident. */}
+                      <button
+                        onClick={() => setDealerToolsHiddenPersisted(true)}
+                        className="ml-auto inline-flex items-center gap-1 text-xs text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300 transition-colors"
+                        title="Hide dealer pricing tools (for customer view)"
+                        aria-label="Hide dealer pricing tools"
+                      >
+                        <EyeOff className="w-3.5 h-3.5" />
+                        Hide
+                      </button>
                     </div>
                   )}
                 </div>
