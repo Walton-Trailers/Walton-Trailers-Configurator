@@ -123,9 +123,11 @@ export function AdminOrderManageDialog({ open, onOpenChange, order }: AdminOrder
         <DialogHeader>
           <DialogTitle className="flex items-center gap-3">
             Manage order
-            <span className="text-sm font-normal text-gray-500">
-              internal ref {order.orderNumber}
-            </span>
+            {(order.dealerName || order.customerName) && (
+              <span className="text-sm font-normal text-gray-500">
+                {[order.dealerName, order.customerName].filter(Boolean).join(' · ')}
+              </span>
+            )}
           </DialogTitle>
           <DialogDescription>
             Assign the Walton order number, update status, and attach the work-order PDF.

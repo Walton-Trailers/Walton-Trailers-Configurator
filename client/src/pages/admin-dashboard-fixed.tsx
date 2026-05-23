@@ -1489,9 +1489,12 @@ ${quote.notes ? `\nAdmin Notes: ${quote.notes}` : ''}`;
                                     Variant: {config.variantId}
                                   </div>
                                 )}
-                                {config.orderNumber && (
+                                {/* Show the Walton-assigned order # if the
+                                    rep has set one. Internal ref is hidden
+                                    from the admin table. */}
+                                {config.repOrderNumber && (
                                   <div className="text-xs text-gray-500">
-                                    Order: {config.orderNumber}
+                                    Order #: {config.repOrderNumber}
                                   </div>
                                 )}
                               </td>
@@ -1981,10 +1984,14 @@ ${quote.notes ? `\nAdmin Notes: ${quote.notes}` : ''}`;
                       })}
                     </p>
                   </div>
-                  {selectedConfiguration.type === 'dealer' && selectedConfiguration.orderNumber && (
+                  {selectedConfiguration.type === 'dealer' && (
                     <div>
                       <Label className="font-medium">Order Number</Label>
-                      <p className="text-sm font-mono">{selectedConfiguration.orderNumber}</p>
+                      <p className="text-sm font-mono">
+                        {selectedConfiguration.repOrderNumber || (
+                          <span className="text-gray-400 italic">Pending assignment</span>
+                        )}
+                      </p>
                     </div>
                   )}
                 </div>
