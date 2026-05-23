@@ -13,7 +13,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
-import { Building2, Plus, FileText, Edit, Trash2, LogOut, Package, User, Users, Phone, Mail, DollarSign, Calendar, StickyNote, RefreshCw, Key, Eye, EyeOff } from "lucide-react";
+import { Building2, Plus, FileText, Edit, Trash2, LogOut, Package, User, Users, Phone, Mail, DollarSign, Calendar, StickyNote, RefreshCw, Key, Eye, EyeOff, Send } from "lucide-react";
+import { SubmitOrderDialog } from "@/components/submit-order-dialog";
 import { format } from "date-fns";
 
 interface DealerOrder {
@@ -88,7 +89,10 @@ export default function DealerDashboard() {
   const [editingOrder, setEditingOrder] = useState<DealerOrder | null>(null);
   const [deleteConfirmOrder, setDeleteConfirmOrder] = useState<DealerOrder | null>(null);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
-  const [activeTab, setActiveTab] = useState("orders");
+  const [activeTab, setActiveTab] = useState("quotes");
+  // Quote being converted to a submitted order via the SubmitOrderDialog.
+  const [convertingOrder, setConvertingOrder] = useState<DealerOrder | null>(null);
+  const [isSubmittingConvert, setIsSubmittingConvert] = useState(false);
   const [isEditingProfile, setIsEditingProfile] = useState(false);
   const [profileFormData, setProfileFormData] = useState<Partial<DealerProfile>>({});
   const [isChangingPassword, setIsChangingPassword] = useState(false);
@@ -313,6 +317,34 @@ export default function DealerDashboard() {
       });
     },
   });
+
+  // Convert a draft quote into a submitted order. Server route fires the
+  // rep + dealer notification emails as a side effect.
+  const handleConvertSubmit = async (data: { customerName: string; poNumber: string }) => {
+    if (!convertingOrder) return;
+    setIsSubmittingConvert(true);
+    try {
+      await apiRequest(`/api/dealer/orders/${convertingOrder.id}/submit`, {
+        method: "POST",
+        body: { customerName: data.customerName, poNumber: data.poNumber || undefined },
+      });
+      toast({
+        title: "Order submitted",
+        description: `Quote ${convertingOrder.orderNumber} is now an order. Walton has been notified.`,
+      });
+      setConvertingOrder(null);
+      refetch();
+      setActiveTab('orders');
+    } catch (error: any) {
+      toast({
+        title: "Submit failed",
+        description: error?.message || "Couldn't submit the order.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSubmittingConvert(false);
+    }
+  };
   
   // Create user mutation
   const createUserMutation = useMutation({
@@ -562,114 +594,166 @@ export default function DealerDashboard() {
           </Card>
         </div>
 
-        {/* Main Content */}
-        <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className={`grid w-full ${isUserAdmin ? 'grid-cols-3' : 'grid-cols-2'}`}>
-            <TabsTrigger value="orders">Orders</TabsTrigger>
-            <TabsTrigger value="profile">Profile</TabsTrigger>
-            {isUserAdmin && <TabsTrigger value="users">Users</TabsTrigger>}
-          </TabsList>
-
-          <TabsContent value="orders" className="mt-6">
-            <Card>
-              <CardHeader>
-                <div className="flex justify-between items-start">
+        {/* Split orders into Quotes (drafts the dealer is still iterating on)
+            and Orders (anything that's been submitted to Walton). Computed
+            inline rather than via useMemo since the array is small. */}
+        {(() => {
+          const quotes = orders.filter((o) => o.status === 'draft');
+          const submittedOrders = orders.filter((o) => o.status !== 'draft');
+          // Shared row renderer so the Convert action only appears on quotes.
+          const renderRows = (rows: typeof orders, opts: { showConvert: boolean }) =>
+            rows.map((order) => (
+              <TableRow key={order.id}>
+                <TableCell className="font-medium">{order.orderNumber}</TableCell>
+                <TableCell>
+                  {order.customerName || <span className="text-gray-400">N/A</span>}
+                </TableCell>
+                <TableCell>
                   <div>
-                    <CardTitle>Your Orders</CardTitle>
-                    <CardDescription>
-                      Manage your saved trailer configurations and customer orders
-                    </CardDescription>
+                    <p className="font-medium">{order.modelName}</p>
+                    <p className="text-sm text-gray-500">{order.categoryName}</p>
                   </div>
-                  <Button
-                    onClick={() => refetch()}
-                    variant="outline"
-                    size="sm"
-                    disabled={isLoading}
-                  >
-                    <RefreshCw className={`w-4 h-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
-                    Refresh
-                  </Button>
-                </div>
-              </CardHeader>
-              <CardContent>
-                {isLoading ? (
-                  <p className="text-center py-8 text-gray-500">Loading orders...</p>
-                ) : orders.length === 0 ? (
-                  <div className="text-center py-12">
-                    <Package className="w-12 h-12 text-gray-300 mx-auto mb-4" />
-                    <p className="text-gray-500 mb-4">No orders yet</p>
-                    <Button onClick={() => setLocation("/")} variant="outline">
-                      Create Your First Order
+                </TableCell>
+                <TableCell>{formatPrice(order.totalPrice)}</TableCell>
+                <TableCell>{getStatusBadge(order.status)}</TableCell>
+                <TableCell>{format(new Date(order.createdAt), "MMM d, yyyy")}</TableCell>
+                <TableCell>
+                  <div className="flex space-x-2">
+                    <Button size="sm" variant="ghost" onClick={() => setSelectedOrder(order)}>
+                      <FileText className="w-4 h-4" />
+                    </Button>
+                    <Button size="sm" variant="ghost" onClick={() => handleEditOrder(order)}>
+                      <Edit className="w-4 h-4" />
+                    </Button>
+                    {opts.showConvert && (
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        title="Submit to Walton"
+                        onClick={() => setConvertingOrder(order)}
+                        className="text-green-700 hover:text-green-800"
+                      >
+                        <Send className="w-4 h-4" />
+                      </Button>
+                    )}
+                    <Button size="sm" variant="ghost" onClick={() => setDeleteConfirmOrder(order)}>
+                      <Trash2 className="w-4 h-4" />
                     </Button>
                   </div>
-                ) : (
-                  <div className="overflow-x-auto">
-                    <Table>
-                      <TableHeader>
-                        <TableRow>
-                          <TableHead>Order #</TableHead>
-                          <TableHead>Customer</TableHead>
-                          <TableHead>Model</TableHead>
-                          <TableHead>Total Price</TableHead>
-                          <TableHead>Status</TableHead>
-                          <TableHead>Created</TableHead>
-                          <TableHead>Actions</TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {orders.map((order) => (
-                          <TableRow key={order.id}>
-                            <TableCell className="font-medium">
-                              {order.orderNumber}
-                            </TableCell>
-                            <TableCell>
-                              {order.customerName || <span className="text-gray-400">N/A</span>}
-                            </TableCell>
-                            <TableCell>
-                              <div>
-                                <p className="font-medium">{order.modelName}</p>
-                                <p className="text-sm text-gray-500">{order.categoryName}</p>
-                              </div>
-                            </TableCell>
-                            <TableCell>{formatPrice(order.totalPrice)}</TableCell>
-                            <TableCell>{getStatusBadge(order.status)}</TableCell>
-                            <TableCell>
-                              {format(new Date(order.createdAt), "MMM d, yyyy")}
-                            </TableCell>
-                            <TableCell>
-                              <div className="flex space-x-2">
-                                <Button
-                                  size="sm"
-                                  variant="ghost"
-                                  onClick={() => setSelectedOrder(order)}
-                                >
-                                  <FileText className="w-4 h-4" />
-                                </Button>
-                                <Button
-                                  size="sm"
-                                  variant="ghost"
-                                  onClick={() => handleEditOrder(order)}
-                                >
-                                  <Edit className="w-4 h-4" />
-                                </Button>
-                                <Button
-                                  size="sm"
-                                  variant="ghost"
-                                  onClick={() => setDeleteConfirmOrder(order)}
-                                >
-                                  <Trash2 className="w-4 h-4" />
-                                </Button>
-                              </div>
-                            </TableCell>
-                          </TableRow>
-                        ))}
-                      </TableBody>
-                    </Table>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          </TabsContent>
+                </TableCell>
+              </TableRow>
+            ));
+
+          return (
+            <Tabs value={activeTab} onValueChange={setActiveTab}>
+              <TabsList className={`grid w-full ${isUserAdmin ? 'grid-cols-4' : 'grid-cols-3'}`}>
+                <TabsTrigger value="quotes">Quotes ({quotes.length})</TabsTrigger>
+                <TabsTrigger value="orders">Orders ({submittedOrders.length})</TabsTrigger>
+                <TabsTrigger value="profile">Profile</TabsTrigger>
+                {isUserAdmin && <TabsTrigger value="users">Users</TabsTrigger>}
+              </TabsList>
+
+              {/* Quotes — drafts the dealer hasn't sent to Walton yet. */}
+              <TabsContent value="quotes" className="mt-6">
+                <Card>
+                  <CardHeader>
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <CardTitle>Quotes</CardTitle>
+                        <CardDescription>
+                          Saved configurations you can iterate on with customers. Click the
+                          send icon to submit a quote to Walton as an order.
+                        </CardDescription>
+                      </div>
+                      <Button onClick={() => refetch()} variant="outline" size="sm" disabled={isLoading}>
+                        <RefreshCw className={`w-4 h-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
+                        Refresh
+                      </Button>
+                    </div>
+                  </CardHeader>
+                  <CardContent>
+                    {isLoading ? (
+                      <p className="text-center py-8 text-gray-500">Loading…</p>
+                    ) : quotes.length === 0 ? (
+                      <div className="text-center py-12">
+                        <Package className="w-12 h-12 text-gray-300 mx-auto mb-4" />
+                        <p className="text-gray-500 mb-4">No quotes yet</p>
+                        <Button onClick={() => setLocation("/")} variant="outline">
+                          Configure a Trailer
+                        </Button>
+                      </div>
+                    ) : (
+                      <div className="overflow-x-auto">
+                        <Table>
+                          <TableHeader>
+                            <TableRow>
+                              <TableHead>Quote #</TableHead>
+                              <TableHead>Customer</TableHead>
+                              <TableHead>Model</TableHead>
+                              <TableHead>Total Price</TableHead>
+                              <TableHead>Status</TableHead>
+                              <TableHead>Created</TableHead>
+                              <TableHead>Actions</TableHead>
+                            </TableRow>
+                          </TableHeader>
+                          <TableBody>{renderRows(quotes, { showConvert: true })}</TableBody>
+                        </Table>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              </TabsContent>
+
+              {/* Orders — submitted to Walton (and any further pipeline states). */}
+              <TabsContent value="orders" className="mt-6">
+                <Card>
+                  <CardHeader>
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <CardTitle>Orders</CardTitle>
+                        <CardDescription>
+                          Orders you've submitted to Walton. Track status as they move through
+                          processing and completion.
+                        </CardDescription>
+                      </div>
+                      <Button onClick={() => refetch()} variant="outline" size="sm" disabled={isLoading}>
+                        <RefreshCw className={`w-4 h-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
+                        Refresh
+                      </Button>
+                    </div>
+                  </CardHeader>
+                  <CardContent>
+                    {isLoading ? (
+                      <p className="text-center py-8 text-gray-500">Loading…</p>
+                    ) : submittedOrders.length === 0 ? (
+                      <div className="text-center py-12">
+                        <Package className="w-12 h-12 text-gray-300 mx-auto mb-4" />
+                        <p className="text-gray-500 mb-4">No submitted orders yet</p>
+                        <p className="text-sm text-gray-400">
+                          Submit a quote from the Quotes tab to start an order.
+                        </p>
+                      </div>
+                    ) : (
+                      <div className="overflow-x-auto">
+                        <Table>
+                          <TableHeader>
+                            <TableRow>
+                              <TableHead>Order #</TableHead>
+                              <TableHead>Customer</TableHead>
+                              <TableHead>Model</TableHead>
+                              <TableHead>Total Price</TableHead>
+                              <TableHead>Status</TableHead>
+                              <TableHead>Created</TableHead>
+                              <TableHead>Actions</TableHead>
+                            </TableRow>
+                          </TableHeader>
+                          <TableBody>{renderRows(submittedOrders, { showConvert: false })}</TableBody>
+                        </Table>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              </TabsContent>
 
           <TabsContent value="profile" className="mt-6">
             {/* User Profile Section - Only for dealer employees */}
@@ -1312,7 +1396,19 @@ export default function DealerDashboard() {
             </Card>
           </TabsContent>
         </Tabs>
+          );
+        })()}
       </div>
+
+      {/* Submit-to-Walton conversion dialog — pre-filled from the quote row.
+          Quote already has a customerName on it most of the time; the dealer
+          can adjust before sending. */}
+      <SubmitOrderDialog
+        open={!!convertingOrder}
+        onOpenChange={(open) => { if (!open && !isSubmittingConvert) setConvertingOrder(null); }}
+        onSubmit={handleConvertSubmit}
+        defaultCustomerName={convertingOrder?.customerName || ""}
+      />
 
       {/* View Order Details Dialog */}
       <Dialog open={!!selectedOrder} onOpenChange={() => setSelectedOrder(null)}>

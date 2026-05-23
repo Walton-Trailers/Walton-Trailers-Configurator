@@ -267,6 +267,10 @@ export const dealerOrders = pgTable("dealer_orders", {
   optionsPrice: integer("options_price").notNull(),
   totalPrice: integer("total_price").notNull(),
   status: varchar("status", { length: 20 }).notNull().default("draft"), // draft, submitted, processing, completed
+  // Dealer-supplied purchase order / internal reference number. Captured on
+  // submit-to-Walton along with customer name above; both stay nullable so
+  // existing draft rows aren't invalidated.
+  poNumber: varchar("po_number", { length: 100 }),
   notes: text("notes"),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),

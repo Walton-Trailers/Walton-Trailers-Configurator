@@ -999,21 +999,134 @@ export async function registerRoutes(app: Express): Promise<Express> {
     try {
       const orderData = req.body;
       const orderNumber = generateOrderNumber();
-      
+
       const [order] = await db.insert(dealerOrders).values({
         ...orderData,
         dealerId: req.dealer!.id,
         orderNumber,
         status: 'draft',
       }).returning();
-      
+
       res.json(order);
     } catch (error) {
       console.error("Error saving dealer order:", error);
       res.status(500).json({ error: "Failed to save order" });
     }
   });
-  
+
+  // Submit a draft order to Walton.
+  // - Promotes status draft → submitted.
+  // - Stamps customer_name + po_number (captured in the submit modal).
+  // - Emails the dealer's assigned sales rep (or info@waltontrailers.com
+  //   as a fallback) with the full order details.
+  // - Emails the dealer a confirmation copy.
+  // Email failures don't fail the request — the order is persisted regardless
+  // and the failure is logged for follow-up.
+  app.post("/api/dealer/orders/:id/submit", requireDealerAuth, async (req: AuthenticatedRequest, res) => {
+    try {
+      const orderId = parseInt(req.params.id);
+      const { customerName, poNumber } = req.body as { customerName?: string; poNumber?: string };
+
+      if (!customerName || !customerName.trim()) {
+        return res.status(400).json({ error: "Customer name is required" });
+      }
+
+      const [existing] = await db.select()
+        .from(dealerOrders)
+        .where(eq(dealerOrders.id, orderId));
+
+      if (!existing) return res.status(404).json({ error: "Order not found" });
+      if (existing.dealerId !== req.dealer!.id) return res.status(403).json({ error: "Not your order" });
+      if (existing.status !== 'draft') {
+        return res.status(400).json({ error: `Order is already ${existing.status}` });
+      }
+
+      const [updated] = await db.update(dealerOrders)
+        .set({
+          status: 'submitted',
+          customerName: customerName.trim(),
+          poNumber: poNumber?.trim() || null,
+          updatedAt: new Date(),
+        })
+        .where(eq(dealerOrders.id, orderId))
+        .returning();
+
+      // Fire-and-track email notifications. Wrap each so one failure doesn't
+      // sink the other.
+      const dealer = req.dealer!;
+      const repTo = dealer.salesRepEmail || 'info@waltontrailers.com';
+      const repName = dealer.salesRepName || 'Walton Sales';
+
+      // Render the configured options into a readable block.
+      const optionsText = updated.selectedOptions && typeof updated.selectedOptions === 'object'
+        ? Object.entries(updated.selectedOptions as Record<string, unknown>)
+            .map(([category, value]) => `  • ${category}: ${Array.isArray(value) ? value.join(', ') : value}`)
+            .join('\n')
+        : '(no options selected)';
+
+      const repSubject = `New Walton Order ${updated.orderNumber} — ${dealer.dealerName || dealer.companyName}`;
+      const repBody = [
+        `Hi ${repName},`,
+        '',
+        `${dealer.dealerName || dealer.companyName} has submitted a new order through the configurator.`,
+        '',
+        `Order #:        ${updated.orderNumber}`,
+        `Dealer:         ${dealer.dealerName || dealer.companyName} (${dealer.dealerId})`,
+        `Dealer contact: ${dealer.contactName || ''} <${dealer.email || ''}>`,
+        `Customer:       ${updated.customerName}`,
+        updated.poNumber ? `PO #:           ${updated.poNumber}` : '',
+        '',
+        `Trailer:        ${updated.modelName}`,
+        `Category:       ${updated.categoryName}`,
+        `Total:          $${updated.totalPrice.toLocaleString()}`,
+        '',
+        'Selected options:',
+        optionsText,
+        '',
+        '— Walton Trailers Configurator',
+      ].filter(Boolean).join('\n');
+
+      const emailService = EmailService.getInstance();
+      const repSent = await emailService.sendEmail({
+        to: repTo,
+        subject: repSubject,
+        text: repBody,
+      });
+      if (!repSent) console.warn(`Order ${updated.orderNumber}: rep notification email failed (to ${repTo})`);
+
+      // Dealer confirmation
+      if (dealer.email) {
+        const dealerSubject = `Walton order received — ${updated.orderNumber}`;
+        const dealerBody = [
+          `Thanks, ${dealer.contactName || dealer.dealerName || 'team'} —`,
+          '',
+          `We received your order ${updated.orderNumber} for ${updated.customerName}.`,
+          `Your Walton rep (${repName}) has been notified and will follow up.`,
+          '',
+          `Trailer:  ${updated.modelName}`,
+          `Total:    $${updated.totalPrice.toLocaleString()}`,
+          updated.poNumber ? `PO #:     ${updated.poNumber}` : '',
+          '',
+          'You can see this order in your dealer dashboard at any time.',
+          '',
+          '— Walton Trailers',
+        ].filter(Boolean).join('\n');
+
+        const dealerSent = await emailService.sendEmail({
+          to: dealer.email,
+          subject: dealerSubject,
+          text: dealerBody,
+        });
+        if (!dealerSent) console.warn(`Order ${updated.orderNumber}: dealer confirmation email failed (to ${dealer.email})`);
+      }
+
+      res.json(updated);
+    } catch (error) {
+      console.error("Error submitting order:", error);
+      res.status(500).json({ error: "Failed to submit order" });
+    }
+  });
+
   // Update dealer order
   app.patch("/api/dealer/orders/:id", requireDealerAuth, async (req: AuthenticatedRequest, res) => {
     try {

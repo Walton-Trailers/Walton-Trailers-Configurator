@@ -20,6 +20,7 @@ import { apiRequest, queryClient } from "@/lib/queryClient";
 import { getOptionInfo } from "@/lib/trailer-option-info";
 import waltonLogo from "@/assets/walton-logo-white.png";
 import { DealerSaveDialog } from "@/components/dealer-save-dialog";
+import { SubmitOrderDialog } from "@/components/submit-order-dialog";
 import { TrailerModelViewer } from "@/components/TrailerModelViewer";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { useForm } from "react-hook-form";
@@ -259,6 +260,8 @@ export default function Configurator() {
   const [isSubmittingQuote, setIsSubmittingQuote] = useState(false);
   const [isDealerLoggedIn, setIsDealerLoggedIn] = useState(false);
   const [showDealerSaveDialog, setShowDealerSaveDialog] = useState(false);
+  const [showSubmitOrderDialog, setShowSubmitOrderDialog] = useState(false);
+  const [isSubmittingOrder, setIsSubmittingOrder] = useState(false);
   const [showPricingModal, setShowPricingModal] = useState(false);
   const [showQuoteModal, setShowQuoteModal] = useState(false);
 
@@ -481,6 +484,83 @@ export default function Configurator() {
       totalPrice: totalPrice,
       notes: customerInfo.notes || null
     });
+  };
+
+  // Submit-to-Walton path: same payload as Save-as-Quote (so we always
+  // persist the configuration), then promote the resulting draft to
+  // 'submitted' which triggers the rep + dealer notification emails on
+  // the server. We do the two-step create-then-submit here rather than
+  // adding a separate "create as submitted" route — keeps the order
+  // table consistent (every submitted order has a draft history) and
+  // reuses the existing save logic without forking it.
+  const handleSubmitOrderToWalton = async (data: { customerName: string; poNumber: string }) => {
+    if (!selectedModel || !selectedCategory) return;
+    setIsSubmittingOrder(true);
+    try {
+      const completeOptions: Record<string, any> = {};
+      if (options) {
+        const allCategories = [...new Set(options.map(opt => opt.category))];
+        allCategories.forEach(category => {
+          const categoryOptions = options.filter(opt => opt.category === category);
+          if (categoryOptions.length > 0) {
+            const selectedOptionId = selectedOptions[category];
+            const isMultiSelect = categoryOptions[0]?.isMultiSelect || category === 'extras';
+            if (selectedOptionId) {
+              completeOptions[category] = selectedOptionId;
+            } else if (!isMultiSelect) {
+              completeOptions[category] = categoryOptions[0].id;
+            }
+          }
+        });
+      }
+
+      // 1) Create as draft (stamps an order_number, ties to dealer).
+      const order: any = await apiRequest("/api/dealer/orders", {
+        method: "POST",
+        body: {
+          customerName: data.customerName,
+          categorySlug: selectedCategory.slug,
+          categoryName: selectedCategory.name,
+          modelId: selectedModel.modelId,
+          modelName: selectedModel.name,
+          modelSpecs: {
+            gvwr: getDynamicGvwr(),
+            payload: getDynamicPayload(),
+            deckSize: getDynamicDeckSize(),
+            axles: selectedModel.axles,
+          },
+          selectedOptions: completeOptions,
+          basePrice: selectedModel.basePrice || 0,
+          optionsPrice: totalPrice - (selectedModel.basePrice || 0),
+          totalPrice,
+        },
+      });
+
+      // 2) Promote to submitted (server fires the rep + dealer emails).
+      await apiRequest(`/api/dealer/orders/${order.id}/submit`, {
+        method: "POST",
+        body: {
+          customerName: data.customerName,
+          poNumber: data.poNumber || undefined,
+        },
+      });
+
+      toast({
+        title: "Order submitted",
+        description: `Order ${order.orderNumber} sent to Walton. You'll get a confirmation email shortly.`,
+      });
+      setShowSubmitOrderDialog(false);
+      queryClient.invalidateQueries({ queryKey: ["/api/dealer/orders"] });
+      setTimeout(() => setLocation("/dealer/dashboard"), 1500);
+    } catch (error: any) {
+      toast({
+        title: "Submit failed",
+        description: error?.message || "Couldn't submit the order. Try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSubmittingOrder(false);
+    }
   };
 
 
@@ -2265,15 +2345,27 @@ Configuration Date: ${new Date().toLocaleDateString()}
                 )}
               </div>
 
-              {/* Save Configuration for Dealers */}
+              {/* Dealer-only: Save as Quote (draft) + Submit Order (sends to
+                  Walton + emails the assigned sales rep). Two actions instead
+                  of one so the dealer can iterate on a customer quote without
+                  triggering downstream notifications. */}
               {isDealerLoggedIn && (
-                <Button
-                  onClick={() => setShowDealerSaveDialog(true)}
-                  className="w-full bg-green-600 hover:bg-green-700 text-white py-4 md:py-6 text-sm md:text-base min-h-[48px] mt-4"
-                >
-                  <Save className="w-4 h-4 md:w-5 md:h-5 mr-2" />
-                  Save Configuration to Dealer Account
-                </Button>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mt-4">
+                  <Button
+                    onClick={() => setShowDealerSaveDialog(true)}
+                    className="bg-green-600 hover:bg-green-700 text-white py-4 md:py-6 text-sm md:text-base min-h-[48px]"
+                  >
+                    <Save className="w-4 h-4 md:w-5 md:h-5 mr-2" />
+                    Save as Quote
+                  </Button>
+                  <Button
+                    onClick={() => setShowSubmitOrderDialog(true)}
+                    variant="outline"
+                    className="border-green-600 text-green-700 hover:bg-green-50 py-4 md:py-6 text-sm md:text-base min-h-[48px]"
+                  >
+                    Submit Order to Walton
+                  </Button>
+                </div>
               )}
             </div>
           )}
@@ -2321,7 +2413,7 @@ Configuration Date: ${new Date().toLocaleDateString()}
                         className="bg-green-600 hover:bg-green-700 text-white px-3 md:px-4 py-2 md:py-2.5 text-xs md:text-sm flex-shrink-0 whitespace-nowrap"
                       >
                         <Save className="w-3.5 h-3.5 md:w-4 md:h-4 mr-1.5" />
-                        Save Configuration
+                        Save as Quote
                       </Button>
                     ) : (
                       <Button
@@ -2450,6 +2542,13 @@ Configuration Date: ${new Date().toLocaleDateString()}
         open={showDealerSaveDialog}
         onOpenChange={setShowDealerSaveDialog}
         onSave={handleDealerSaveConfiguration}
+      />
+
+      {/* Submit-to-Walton Dialog */}
+      <SubmitOrderDialog
+        open={showSubmitOrderDialog}
+        onOpenChange={setShowSubmitOrderDialog}
+        onSubmit={handleSubmitOrderToWalton}
       />
 
       {/* Pricing Configuration Modal */}
