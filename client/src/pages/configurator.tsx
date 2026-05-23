@@ -2288,11 +2288,11 @@ Configuration Date: ${new Date().toLocaleDateString()}
         <div className="fixed bottom-0 left-0 right-0 z-50">
           <div className="lg:ml-[65%] lg:w-[35%] w-full">
             <div className="max-w-md mx-auto px-4 md:px-6">
-              <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-t-lg shadow-lg">
+              <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-t-lg shadow-lg overflow-hidden">
                 <div className="px-6 py-4">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <div>
+                  <div className="flex items-center justify-between gap-3">
+                    <div className="flex items-center gap-2 min-w-0">
+                      <div className="min-w-0">
                         <div className="text-2xl md:text-3xl font-bold">
                           ${displayedPrice.toLocaleString()}
                         </div>
@@ -2318,7 +2318,7 @@ Configuration Date: ${new Date().toLocaleDateString()}
                     {isDealerLoggedIn ? (
                       <Button
                         onClick={() => setShowDealerSaveDialog(true)}
-                        className="bg-green-600 hover:bg-green-700 text-white px-6 md:px-8 py-2 md:py-3 text-sm md:text-base"
+                        className="bg-green-600 hover:bg-green-700 text-white px-4 md:px-5 py-2 md:py-3 text-sm md:text-base flex-shrink-0 whitespace-nowrap"
                       >
                         <Save className="w-4 h-4 md:w-5 md:h-5 mr-2" />
                         Save Configuration
@@ -2326,7 +2326,7 @@ Configuration Date: ${new Date().toLocaleDateString()}
                     ) : (
                       <Button
                         onClick={() => setShowQuoteModal(true)}
-                        className="bg-[#b7a380] hover:bg-[#9e8c6d] text-white px-6 md:px-8 py-2 md:py-3 text-sm md:text-base"
+                        className="bg-[#b7a380] hover:bg-[#9e8c6d] text-white px-4 md:px-5 py-2 md:py-3 text-sm md:text-base flex-shrink-0 whitespace-nowrap"
                       >
                         Request A Quote
                       </Button>
