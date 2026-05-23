@@ -27,8 +27,19 @@ interface Dealer {
   state: string;
   zipCode: string;
   isActive: boolean;
+  pricingTier: string;
+  salesRepName: string | null;
+  salesRepEmail: string | null;
   createdAt: string;
   updatedAt: string;
+}
+
+interface PricingTierOption {
+  id: number;
+  slug: string;
+  displayName: string;
+  discountPct: number;
+  displayOrder: number;
 }
 
 interface DealerStats {
@@ -54,6 +65,9 @@ export default function AdminDealers() {
     state: "",
     zipCode: "",
     password: "",
+    pricingTier: "standard",
+    salesRepName: "",
+    salesRepEmail: "",
   });
 
   // Fetch all dealers
@@ -65,6 +79,14 @@ export default function AdminDealers() {
   const { data: dealerStats = [] } = useQuery<DealerStats[]>({
     queryKey: ["/api/admin/dealers/stats"],
   });
+
+  // Pricing tiers populate the tier dropdown in Add/Edit dialogs and the
+  // tier-name column on the dealer table.
+  const { data: pricingTierOptions = [] } = useQuery<PricingTierOption[]>({
+    queryKey: ["/api/pricing-tiers"],
+  });
+  const tierBySlug = (slug: string) =>
+    pricingTierOptions.find((t) => t.slug === slug);
 
   // Add dealer mutation
   const addDealerMutation = useMutation({
@@ -155,6 +177,9 @@ export default function AdminDealers() {
       state: "",
       zipCode: "",
       password: "",
+      pricingTier: "standard",
+      salesRepName: "",
+      salesRepEmail: "",
     });
   };
 
@@ -172,6 +197,9 @@ export default function AdminDealers() {
       state: dealer.state,
       zipCode: dealer.zipCode,
       password: "",
+      pricingTier: dealer.pricingTier || "standard",
+      salesRepName: dealer.salesRepName || "",
+      salesRepEmail: dealer.salesRepEmail || "",
     });
     setIsEditDialogOpen(true);
   };
@@ -193,6 +221,9 @@ export default function AdminDealers() {
       city: formData.city,
       state: formData.state,
       zipCode: formData.zipCode,
+      pricingTier: formData.pricingTier,
+      salesRepName: formData.salesRepName || null,
+      salesRepEmail: formData.salesRepEmail || null,
     };
 
     if (formData.password) {
@@ -305,6 +336,7 @@ export default function AdminDealers() {
                     <TableHead>Company</TableHead>
                     <TableHead>Contact</TableHead>
                     <TableHead>Territory</TableHead>
+                    <TableHead>Tier</TableHead>
                     <TableHead>Location</TableHead>
                     <TableHead>Orders</TableHead>
                     <TableHead>Revenue</TableHead>
@@ -331,6 +363,19 @@ export default function AdminDealers() {
                           </div>
                         </TableCell>
                         <TableCell>{dealer.territory}</TableCell>
+                        <TableCell>
+                          {(() => {
+                            const t = tierBySlug(dealer.pricingTier);
+                            return t ? (
+                              <div className="text-sm">
+                                <p className="font-medium">{t.displayName}</p>
+                                <p className="text-gray-500">{t.discountPct}% off</p>
+                              </div>
+                            ) : (
+                              <span className="text-gray-400 text-sm">—</span>
+                            );
+                          })()}
+                        </TableCell>
                         <TableCell>
                           <div className="text-sm">
                             <p>{dealer.city}, {dealer.state}</p>
@@ -453,6 +498,45 @@ export default function AdminDealers() {
                   placeholder="(555) 123-4567"
                 />
               </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="pricingTier">Pricing Tier *</Label>
+                <select
+                  id="pricingTier"
+                  value={formData.pricingTier}
+                  onChange={(e) => setFormData({ ...formData, pricingTier: e.target.value })}
+                  className="w-full h-10 px-3 rounded-md border border-input bg-background text-sm"
+                >
+                  {pricingTierOptions.map((t) => (
+                    <option key={t.slug} value={t.slug}>
+                      {t.displayName} ({t.discountPct}% off MSRP)
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <Label htmlFor="salesRepName">Sales Rep Name</Label>
+                <Input
+                  id="salesRepName"
+                  value={formData.salesRepName}
+                  onChange={(e) => setFormData({ ...formData, salesRepName: e.target.value })}
+                  placeholder="Jane Smith"
+                />
+              </div>
+            </div>
+
+            <div>
+              <Label htmlFor="salesRepEmail">Sales Rep Email</Label>
+              <Input
+                id="salesRepEmail"
+                type="email"
+                value={formData.salesRepEmail}
+                onChange={(e) => setFormData({ ...formData, salesRepEmail: e.target.value })}
+                placeholder="jane@waltontrailers.com"
+              />
+              <p className="text-xs text-gray-500 mt-1">Submitted orders are emailed to this address.</p>
             </div>
 
             <div>
@@ -587,6 +671,43 @@ export default function AdminDealers() {
                   onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
                 />
               </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="edit-pricingTier">Pricing Tier *</Label>
+                <select
+                  id="edit-pricingTier"
+                  value={formData.pricingTier}
+                  onChange={(e) => setFormData({ ...formData, pricingTier: e.target.value })}
+                  className="w-full h-10 px-3 rounded-md border border-input bg-background text-sm"
+                >
+                  {pricingTierOptions.map((t) => (
+                    <option key={t.slug} value={t.slug}>
+                      {t.displayName} ({t.discountPct}% off MSRP)
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <Label htmlFor="edit-salesRepName">Sales Rep Name</Label>
+                <Input
+                  id="edit-salesRepName"
+                  value={formData.salesRepName}
+                  onChange={(e) => setFormData({ ...formData, salesRepName: e.target.value })}
+                />
+              </div>
+            </div>
+
+            <div>
+              <Label htmlFor="edit-salesRepEmail">Sales Rep Email</Label>
+              <Input
+                id="edit-salesRepEmail"
+                type="email"
+                value={formData.salesRepEmail}
+                onChange={(e) => setFormData({ ...formData, salesRepEmail: e.target.value })}
+              />
+              <p className="text-xs text-gray-500 mt-1">Submitted orders are emailed to this address.</p>
             </div>
 
             <div>

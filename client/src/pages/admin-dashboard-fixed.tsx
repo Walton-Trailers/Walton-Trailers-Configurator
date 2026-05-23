@@ -603,6 +603,12 @@ export default function AdminDashboard() {
                   <span className="hidden md:inline">Dealers</span>
                 </Button>
               </Link>
+              <Link href="/admin/pricing-tiers">
+                <Button variant="ghost" size="sm" title="Pricing Tiers" className="p-2 md:px-3">
+                  <DollarSign className="w-4 h-4 md:mr-2" />
+                  <span className="hidden md:inline">Pricing Tiers</span>
+                </Button>
+              </Link>
               <Button onClick={handleLogout} variant="outline" size="sm" title="Logout" className="p-2 md:px-3">
                 <LogOut className="w-4 h-4 md:mr-2" />
                 <span className="hidden md:inline">Logout</span>

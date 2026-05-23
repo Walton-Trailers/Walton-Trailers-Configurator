@@ -1952,19 +1952,19 @@ export async function registerRoutes(app: Express): Promise<Express> {
   // Add new dealer (admin only)
   app.post("/api/admin/dealers", requireAuth, requireAdmin, async (req, res) => {
     try {
-      const { dealerId, dealerName, contactName, email, phone, territory, address, city, state, zipCode, password } = req.body;
-      
+      const { dealerId, dealerName, contactName, email, phone, territory, address, city, state, zipCode, password, pricingTier, salesRepName, salesRepEmail } = req.body;
+
       // Check if dealer ID or email already exists
       const existing = await db.select()
         .from(dealers)
         .where(sql`${dealers.dealerId} = ${dealerId} OR ${dealers.email} = ${email}`);
-      
+
       if (existing.length > 0) {
         return res.status(400).json({ error: "Dealer ID or email already exists" });
       }
-      
+
       const passwordHash = await hashPassword(password);
-      
+
       const [newDealer] = await db.insert(dealers).values({
         dealerId,
         dealerName,
@@ -1976,10 +1976,15 @@ export async function registerRoutes(app: Express): Promise<Express> {
         city: city || null,
         state: state || null,
         zipCode: zipCode || null,
+        // Pricing tier defaults to 'standard' at the schema level. Accept an
+        // override here so admins can assign a different tier on creation.
+        pricingTier: pricingTier || 'standard',
+        salesRepName: salesRepName || null,
+        salesRepEmail: salesRepEmail || null,
         passwordHash,
         isActive: true
       }).returning();
-      
+
       res.json(newDealer);
     } catch (error) {
       console.error("Error creating dealer:", error);
@@ -2012,6 +2017,98 @@ export async function registerRoutes(app: Express): Promise<Express> {
     } catch (error) {
       console.error("Error updating dealer:", error);
       res.status(500).json({ error: "Failed to update dealer" });
+    }
+  });
+
+  // ─── Pricing tier admin CRUD ─────────────────────────────────
+  // The public GET /api/pricing-tiers above is used for read; admins
+  // get POST/PATCH/DELETE here so they can rename a tier, tweak the
+  // discount %, add a tier, or retire one (only if no dealers reference it).
+
+  app.post("/api/admin/pricing-tiers", requireAuth, requireAdmin, async (req, res) => {
+    try {
+      const { slug, displayName, discountPct, displayOrder } = req.body;
+      if (!slug || !displayName || discountPct == null) {
+        return res.status(400).json({ error: "slug, displayName, and discountPct are required" });
+      }
+      if (typeof discountPct !== 'number' || discountPct < 0 || discountPct > 100) {
+        return res.status(400).json({ error: "discountPct must be a number between 0 and 100" });
+      }
+      const [created] = await db.insert(pricingTiers).values({
+        slug: slug.toLowerCase().trim(),
+        displayName,
+        discountPct,
+        displayOrder: displayOrder ?? 0,
+      }).returning();
+      res.json(created);
+    } catch (error: any) {
+      console.error("Error creating pricing tier:", error);
+      // unique_violation on slug
+      if (error?.code === '23505') {
+        return res.status(400).json({ error: "A tier with that slug already exists" });
+      }
+      res.status(500).json({ error: "Failed to create pricing tier" });
+    }
+  });
+
+  app.patch("/api/admin/pricing-tiers/:id", requireAuth, requireAdmin, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const updates: Record<string, any> = {};
+      // Whitelist columns explicitly — req.body could contain anything.
+      if (req.body.displayName != null) updates.displayName = req.body.displayName;
+      if (req.body.discountPct != null) {
+        const pct = Number(req.body.discountPct);
+        if (Number.isNaN(pct) || pct < 0 || pct > 100) {
+          return res.status(400).json({ error: "discountPct must be a number between 0 and 100" });
+        }
+        updates.discountPct = pct;
+      }
+      if (req.body.displayOrder != null) updates.displayOrder = Number(req.body.displayOrder);
+      // Intentionally NOT updating slug — it's the FK target on dealers and
+      // would cascade-rename via the ON UPDATE CASCADE, but renaming a tier
+      // slug is an unusual operation and we'd want it explicit.
+      updates.updatedAt = new Date();
+
+      const [updated] = await db.update(pricingTiers)
+        .set(updates)
+        .where(eq(pricingTiers.id, id))
+        .returning();
+
+      if (!updated) return res.status(404).json({ error: "Tier not found" });
+      res.json(updated);
+    } catch (error) {
+      console.error("Error updating pricing tier:", error);
+      res.status(500).json({ error: "Failed to update pricing tier" });
+    }
+  });
+
+  app.delete("/api/admin/pricing-tiers/:id", requireAuth, requireAdmin, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+
+      // Friendly pre-check: if any dealer references this tier the FK
+      // RESTRICT will block the delete anyway, but the message would be
+      // cryptic. Tell the admin who's still on it.
+      const [tier] = await db.select().from(pricingTiers).where(eq(pricingTiers.id, id));
+      if (!tier) return res.status(404).json({ error: "Tier not found" });
+
+      const inUse = await db.select({ id: dealers.id, dealerName: dealers.dealerName })
+        .from(dealers)
+        .where(eq(dealers.pricingTier, tier.slug));
+
+      if (inUse.length > 0) {
+        return res.status(400).json({
+          error: `Cannot delete: ${inUse.length} dealer${inUse.length === 1 ? '' : 's'} still on this tier. Reassign them first.`,
+          dealers: inUse,
+        });
+      }
+
+      await db.delete(pricingTiers).where(eq(pricingTiers.id, id));
+      res.json({ ok: true });
+    } catch (error) {
+      console.error("Error deleting pricing tier:", error);
+      res.status(500).json({ error: "Failed to delete pricing tier" });
     }
   });
 
