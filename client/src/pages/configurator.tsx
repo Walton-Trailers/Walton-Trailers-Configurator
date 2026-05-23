@@ -2128,8 +2128,8 @@ Configuration Date: ${new Date().toLocaleDateString()}
                 </CardContent>
               </Card>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <Button 
+              <div className={isDealerLoggedIn ? "grid grid-cols-1 gap-4" : "grid grid-cols-1 md:grid-cols-2 gap-4"}>
+                <Button
                   variant="outline"
                   onClick={async () => {
                     try {
@@ -2138,19 +2138,19 @@ Configuration Date: ${new Date().toLocaleDateString()}
                         // Create complete options object including defaults
                         const completeOptions: Record<string, any> = {};
                         const allCategories = [...new Set(options.map(opt => opt.category))];
-                        
+
                         allCategories.forEach(category => {
                           const categoryOptions = options.filter(opt => opt.category === category);
                           if (categoryOptions.length > 0) {
                             const selectedOptionId = selectedOptions[category];
-                            const selectedOption = selectedOptionId 
-                              ? categoryOptions.find(opt => 
-                                  Array.isArray(selectedOptionId) 
+                            const selectedOption = selectedOptionId
+                              ? categoryOptions.find(opt =>
+                                  Array.isArray(selectedOptionId)
                                     ? selectedOptionId.includes(opt.id)
                                     : opt.id === selectedOptionId
                                 )
                               : categoryOptions[0]; // Default to first option
-                            
+
                             if (selectedOption) {
                               completeOptions[category] = selectedOption.id;
                             }
@@ -2178,18 +2178,20 @@ Configuration Date: ${new Date().toLocaleDateString()}
                   className="py-4 md:py-6 text-sm md:text-base min-h-[48px]"
                 >
                   <Download className="w-4 h-4 md:w-5 md:h-5 mr-2" />
-                  Spec Sheet
+                  {isDealerLoggedIn ? "Download PDF" : "Spec Sheet"}
                 </Button>
-                <Button 
-                  variant="outline"
-                  onClick={() => {
-                    window.open("https://walton-trailers-website.vercel.app/find-a-dealer.html", "_blank");
-                  }}
-                  className="py-4 md:py-6 text-sm md:text-base min-h-[48px]"
-                >
-                  <Building2 className="w-4 h-4 md:w-5 md:h-5 mr-2" />
-                  Find Dealer
-                </Button>
+                {!isDealerLoggedIn && (
+                  <Button
+                    variant="outline"
+                    onClick={() => {
+                      window.open("https://walton-trailers-website.vercel.app/find-a-dealer.html", "_blank");
+                    }}
+                    className="py-4 md:py-6 text-sm md:text-base min-h-[48px]"
+                  >
+                    <Building2 className="w-4 h-4 md:w-5 md:h-5 mr-2" />
+                    Find Dealer
+                  </Button>
+                )}
               </div>
 
               {/* Save Configuration for Dealers */}

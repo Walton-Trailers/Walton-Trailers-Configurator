@@ -9,7 +9,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useLocation, Link } from "wouter";
 import { apiRequest, queryClient } from "@/lib/queryClient";
-import { Loader2, Building2 } from "lucide-react";
+import { Loader2 } from "lucide-react";
+import waltonIcon from "@/assets/walton-icon-gold.png";
 
 const loginSchema = z.object({
   dealerId: z.string().min(1, "Dealer ID is required"),
@@ -87,7 +88,11 @@ export default function DealerLogin() {
       <div className="max-w-md w-full space-y-8">
         <div className="text-center">
           <div className="flex justify-center mb-4">
-            <Building2 className="w-12 h-12 text-blue-600" />
+            <img
+              src={waltonIcon}
+              alt="Walton Trailers"
+              className="w-16 h-16 object-contain"
+            />
           </div>
           <h2 className="mt-6 text-3xl font-bold text-gray-900">
             Dealer Portal
