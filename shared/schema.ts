@@ -179,6 +179,25 @@ export const dealers = pgTable("dealers", {
   territory: varchar("territory", { length: 100 }),
   passwordHash: text("password_hash").notNull(),
   isActive: boolean("is_active").notNull().default(true),
+  // Pricing tier — references pricing_tiers.slug. New dealers default to 'standard'
+  // (10% off MSRP). FK enforces referential integrity.
+  pricingTier: varchar("pricing_tier", { length: 20 }).notNull().default('standard'),
+  // Assigned Walton sales rep — order-submit emails are routed here.
+  // Falls back to a default Walton inbox when null.
+  salesRepName: varchar("sales_rep_name", { length: 200 }),
+  salesRepEmail: varchar("sales_rep_email", { length: 200 }),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Pricing tiers — Elite / Preferred / Standard. Editable in admin so the
+// discount percentages can be tuned without a code deploy.
+export const pricingTiers = pgTable("pricing_tiers", {
+  id: serial("id").primaryKey(),
+  slug: varchar("slug", { length: 20 }).notNull().unique(),
+  displayName: varchar("display_name", { length: 50 }).notNull(),
+  discountPct: integer("discount_pct").notNull(),
+  displayOrder: integer("display_order").notNull().default(0),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
@@ -399,11 +418,18 @@ export type DealerUser = typeof dealerUsers.$inferSelect;
 export type DealerSession = typeof dealerSessions.$inferSelect;
 export type DealerUserSession = typeof dealerUserSessions.$inferSelect;
 export type DealerOrder = typeof dealerOrders.$inferSelect;
+export type PricingTier = typeof pricingTiers.$inferSelect;
 export type InsertDealer = z.infer<typeof insertDealerSchema>;
 export type InsertDealerUser = z.infer<typeof insertDealerUserSchema>;
 export type InsertDealerSession = z.infer<typeof insertDealerSessionSchema>;
 export type InsertDealerUserSession = z.infer<typeof insertDealerUserSessionSchema>;
 export type InsertDealerOrder = z.infer<typeof insertDealerOrderSchema>;
+export const insertPricingTierSchema = createInsertSchema(pricingTiers).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+export type InsertPricingTier = z.infer<typeof insertPricingTierSchema>;
 export type TrailerCategory = typeof trailerCategories.$inferSelect;
 export type TrailerSeries = typeof trailerSeries.$inferSelect;
 export type TrailerModel = typeof trailerModels.$inferSelect;
