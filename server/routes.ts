@@ -3704,13 +3704,17 @@ export async function registerRoutes(app: Express): Promise<Express> {
     }
   });
 
-  // Work-order PDF uploads. Separate endpoint from the general image/GLB
-  // token route because the allowed content types are different and we
-  // want this gated behind admin auth (general image uploads are open
-  // because the URLs only become visible after an authed PATCH; work
-  // order PDFs go straight into a dealer's order so we lock the door
-  // earlier).
-  app.post("/api/admin/blob-upload-token/work-order", requireAuth, requireAdmin, async (req, res) => {
+  // Work-order PDF uploads. Intentionally unauthed (matches the existing
+  // /api/blob-upload-token pattern) because @vercel/blob/client.upload()
+  // calls handleUploadUrl with its own fetch and doesn't forward our
+  // Authorization: Bearer header, so any auth here would 401.
+  //
+  // Security mitigation: addRandomSuffix=true so each upload gets a unique
+  // blob URL. An anonymous request can upload a PDF to our Blob bucket but
+  // can't overwrite an existing work order (different URL each time), and
+  // can't attach a URL to any order — the PATCH /api/admin/dealer-orders/:id
+  // that wires the URL to a row IS admin-authed.
+  app.post("/api/admin/blob-upload-token/work-order", async (req, res) => {
     try {
       const body = (req as any).body as HandleUploadBody;
       const jsonResponse = await handleUpload({
@@ -3719,7 +3723,7 @@ export async function registerRoutes(app: Express): Promise<Express> {
         onBeforeGenerateToken: async (pathname) => {
           return {
             allowedContentTypes: ["application/pdf"],
-            addRandomSuffix: false,
+            addRandomSuffix: true,
             tokenPayload: JSON.stringify({ pathname }),
           };
         },

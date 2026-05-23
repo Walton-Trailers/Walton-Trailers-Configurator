@@ -80,7 +80,10 @@ export default function AdminDashboard() {
   // Filter the configurations table by lifecycle status. 'all' shows
   // everything (including public configurations which carry status='saved'
   // or no status). The other values map to the dealer_orders.status values.
-  const [configurationStatusFilter, setConfigurationStatusFilter] = useState<'all' | 'draft' | 'submitted' | 'processing' | 'completed'>('all');
+  const [configurationStatusFilter, setConfigurationStatusFilter] = useState<'all' | 'draft' | 'submitted' | 'received' | 'processing' | 'completed'>('all');
+  // Dealer dropdown filter. 'all' is the passthrough; otherwise we match
+  // against config.dealerName (joined onto the configurations payload).
+  const [configurationDealerFilter, setConfigurationDealerFilter] = useState<string>('all');
   const [quoteRequestSearchTerm, setQuoteRequestSearchTerm] = useState("");
   const [activeTab, setActiveTab] = useState("products");
   const { toast } = useToast();
@@ -1301,14 +1304,17 @@ ${quote.notes ? `\nAdmin Notes: ${quote.notes}` : ''}`;
                 </div>
               </div>
 
-              {/* Status filter chips. Counts reflect the unfiltered configuration
-                  list so admins can see at a glance how many are in each state. */}
+              {/* Status filter chips + dealer dropdown. Counts on the chips
+                  reflect the unfiltered configuration list so admins see
+                  the lifecycle distribution at a glance. The dealer dropdown
+                  is independent — it composes with the status filter. */}
               {(() => {
                 const allConfigs = configurations as any[];
                 const counts = {
                   all: allConfigs.length,
                   draft: allConfigs.filter((c) => c.status === 'draft').length,
                   submitted: allConfigs.filter((c) => c.status === 'submitted').length,
+                  received: allConfigs.filter((c) => c.status === 'received').length,
                   processing: allConfigs.filter((c) => c.status === 'processing').length,
                   completed: allConfigs.filter((c) => c.status === 'completed').length,
                 };
@@ -1316,36 +1322,64 @@ ${quote.notes ? `\nAdmin Notes: ${quote.notes}` : ''}`;
                   { key: 'all', label: 'All' },
                   { key: 'draft', label: 'Quotes (draft)' },
                   { key: 'submitted', label: 'Submitted' },
+                  { key: 'received', label: 'Received' },
                   { key: 'processing', label: 'Processing' },
                   { key: 'completed', label: 'Completed' },
                 ];
+                // Unique dealers across the configuration list (excludes
+                // public configs which carry no dealerName). Sorted A→Z.
+                const dealerNames = Array.from(
+                  new Set(
+                    allConfigs
+                      .map((c) => c.dealerName)
+                      .filter((n): n is string => !!n && n.trim().length > 0)
+                  )
+                ).sort((a, b) => a.localeCompare(b));
                 return (
-                  <div className="flex flex-wrap gap-2">
-                    {chips.map((chip) => {
-                      const active = configurationStatusFilter === chip.key;
-                      return (
-                        <button
-                          key={chip.key}
-                          onClick={() => setConfigurationStatusFilter(chip.key)}
-                          className={
-                            'inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium border transition-colors ' +
-                            (active
-                              ? 'bg-gray-900 text-white border-gray-900'
-                              : 'bg-white text-gray-700 border-gray-200 hover:border-gray-400')
-                          }
-                        >
-                          {chip.label}
-                          <span
+                  <div className="flex flex-wrap items-center gap-3">
+                    <div className="flex flex-wrap gap-2">
+                      {chips.map((chip) => {
+                        const active = configurationStatusFilter === chip.key;
+                        return (
+                          <button
+                            key={chip.key}
+                            onClick={() => setConfigurationStatusFilter(chip.key)}
                             className={
-                              'inline-flex items-center justify-center min-w-[20px] px-1.5 rounded-full text-[10px] ' +
-                              (active ? 'bg-white/20 text-white' : 'bg-gray-100 text-gray-600')
+                              'inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium border transition-colors ' +
+                              (active
+                                ? 'bg-gray-900 text-white border-gray-900'
+                                : 'bg-white text-gray-700 border-gray-200 hover:border-gray-400')
                             }
                           >
-                            {counts[chip.key]}
-                          </span>
-                        </button>
-                      );
-                    })}
+                            {chip.label}
+                            <span
+                              className={
+                                'inline-flex items-center justify-center min-w-[20px] px-1.5 rounded-full text-[10px] ' +
+                                (active ? 'bg-white/20 text-white' : 'bg-gray-100 text-gray-600')
+                              }
+                            >
+                              {counts[chip.key]}
+                            </span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                    <div className="flex items-center gap-2 ml-auto">
+                      <label htmlFor="dealerFilter" className="text-xs text-gray-500 uppercase tracking-wider">
+                        Dealer
+                      </label>
+                      <select
+                        id="dealerFilter"
+                        value={configurationDealerFilter}
+                        onChange={(e) => setConfigurationDealerFilter(e.target.value)}
+                        className="h-8 px-2 rounded border border-gray-200 bg-white text-xs"
+                      >
+                        <option value="all">All dealers</option>
+                        {dealerNames.map((name) => (
+                          <option key={name} value={name}>{name}</option>
+                        ))}
+                      </select>
+                    </div>
                   </div>
                 );
               })()}
@@ -1374,6 +1408,14 @@ ${quote.notes ? `\nAdmin Notes: ${quote.notes}` : ''}`;
                               // Status filter chip — 'all' is a passthrough.
                               if (configurationStatusFilter === 'all') return true;
                               return config.status === configurationStatusFilter;
+                            })
+                            .filter((config: any) => {
+                              // Dealer dropdown filter — 'all' is a passthrough.
+                              // Public configurations have no dealerName, so the
+                              // moment a specific dealer is picked, public
+                              // configs naturally drop out.
+                              if (configurationDealerFilter === 'all') return true;
+                              return config.dealerName === configurationDealerFilter;
                             })
                             .filter((config: any) => {
                             if (!configurationSearchTerm) return true;
