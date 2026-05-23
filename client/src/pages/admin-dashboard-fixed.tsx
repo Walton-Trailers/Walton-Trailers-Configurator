@@ -72,6 +72,10 @@ export default function AdminDashboard() {
   const [userSearchTerm, setUserSearchTerm] = useState("");
   const [customRequestSearchTerm, setCustomRequestSearchTerm] = useState("");
   const [configurationSearchTerm, setConfigurationSearchTerm] = useState("");
+  // Filter the configurations table by lifecycle status. 'all' shows
+  // everything (including public configurations which carry status='saved'
+  // or no status). The other values map to the dealer_orders.status values.
+  const [configurationStatusFilter, setConfigurationStatusFilter] = useState<'all' | 'draft' | 'submitted' | 'processing' | 'completed'>('all');
   const [quoteRequestSearchTerm, setQuoteRequestSearchTerm] = useState("");
   const [activeTab, setActiveTab] = useState("products");
   const { toast } = useToast();
@@ -1274,7 +1278,7 @@ ${quote.notes ? `\nAdmin Notes: ${quote.notes}` : ''}`;
                   <h3 className="text-lg font-medium">Saved Configurations</h3>
                   <p className="text-sm text-gray-600">View all trailer configurations from dealers and public users</p>
                 </div>
-                
+
                 <div className="flex items-center space-x-4">
                   <div className="relative">
                     <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
@@ -1285,12 +1289,61 @@ ${quote.notes ? `\nAdmin Notes: ${quote.notes}` : ''}`;
                       className="pl-10 w-64"
                     />
                   </div>
-                  
+
                   <Badge variant="outline" className="px-3 py-1">
                     {(configurations as any[]).length} Total Configurations
                   </Badge>
                 </div>
               </div>
+
+              {/* Status filter chips. Counts reflect the unfiltered configuration
+                  list so admins can see at a glance how many are in each state. */}
+              {(() => {
+                const allConfigs = configurations as any[];
+                const counts = {
+                  all: allConfigs.length,
+                  draft: allConfigs.filter((c) => c.status === 'draft').length,
+                  submitted: allConfigs.filter((c) => c.status === 'submitted').length,
+                  processing: allConfigs.filter((c) => c.status === 'processing').length,
+                  completed: allConfigs.filter((c) => c.status === 'completed').length,
+                };
+                const chips: Array<{ key: typeof configurationStatusFilter; label: string }> = [
+                  { key: 'all', label: 'All' },
+                  { key: 'draft', label: 'Quotes (draft)' },
+                  { key: 'submitted', label: 'Submitted' },
+                  { key: 'processing', label: 'Processing' },
+                  { key: 'completed', label: 'Completed' },
+                ];
+                return (
+                  <div className="flex flex-wrap gap-2">
+                    {chips.map((chip) => {
+                      const active = configurationStatusFilter === chip.key;
+                      return (
+                        <button
+                          key={chip.key}
+                          onClick={() => setConfigurationStatusFilter(chip.key)}
+                          className={
+                            'inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium border transition-colors ' +
+                            (active
+                              ? 'bg-gray-900 text-white border-gray-900'
+                              : 'bg-white text-gray-700 border-gray-200 hover:border-gray-400')
+                          }
+                        >
+                          {chip.label}
+                          <span
+                            className={
+                              'inline-flex items-center justify-center min-w-[20px] px-1.5 rounded-full text-[10px] ' +
+                              (active ? 'bg-white/20 text-white' : 'bg-gray-100 text-gray-600')
+                            }
+                          >
+                            {counts[chip.key]}
+                          </span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                );
+              })()}
 
               <Card>
                 <CardContent className="p-0">
@@ -1311,7 +1364,13 @@ ${quote.notes ? `\nAdmin Notes: ${quote.notes}` : ''}`;
                       </thead>
                       <tbody className="bg-white divide-y divide-gray-200">
                         {(configurations as any[]).length > 0 ? (
-                          (configurations as any[]).filter((config: any) => {
+                          (configurations as any[])
+                            .filter((config: any) => {
+                              // Status filter chip — 'all' is a passthrough.
+                              if (configurationStatusFilter === 'all') return true;
+                              return config.status === configurationStatusFilter;
+                            })
+                            .filter((config: any) => {
                             if (!configurationSearchTerm) return true;
                             const searchLower = configurationSearchTerm.toLowerCase();
                             return (
