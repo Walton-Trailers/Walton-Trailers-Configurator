@@ -326,13 +326,22 @@ export default function DealerDashboard() {
     },
   });
 
-  // Restore a soft-deleted order back into the Quotes tab.
+  // Restore a soft-deleted order back into the Quotes tab. Server always
+  // resets the order to status='draft' regardless of its prior state so a
+  // previously-submitted order can't sneak back into Orders without going
+  // through Submit again. The toast reflects which branch ran.
   const restoreOrderMutation = useMutation({
     mutationFn: async (orderId: number) =>
-      apiRequest(`/api/dealer/orders/${orderId}/restore`, { method: "POST" }),
-    onSuccess: () => {
-      toast({ title: "Restored", description: "Moved back to your Quotes." });
+      apiRequest(`/api/dealer/orders/${orderId}/restore`, { method: "POST" }) as Promise<{ message: string; wasSubmitted: boolean }>,
+    onSuccess: (result) => {
+      toast({
+        title: "Restored to Quotes",
+        description: result?.wasSubmitted
+          ? "This was a submitted order — submit again to resend it to Walton."
+          : "Moved back to your Quotes.",
+      });
       refetch();
+      setActiveTab('quotes');
     },
     onError: (err: any) =>
       toast({ title: "Couldn't restore", description: err?.message, variant: "destructive" }),

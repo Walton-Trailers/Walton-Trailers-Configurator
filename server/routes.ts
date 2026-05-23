@@ -1355,9 +1355,14 @@ export async function registerRoutes(app: Express): Promise<Express> {
     }
   });
 
-  // Restore a soft-deleted dealer order back into Quotes. Used by the
-  // Deleted tab's "Restore" action when a dealer wants the original row
-  // back (vs Recreate which spawns a fresh quote).
+  // Restore a soft-deleted dealer order back into Quotes. Always lands the
+  // order in the Quotes tab as a 'draft' — even if it was previously
+  // submitted/received/etc. — so a cancelled order can't sneak back into
+  // the dealer's Orders tab without anyone re-sending it. The dealer has
+  // to go through Submit Order again, which re-fires the rep notification
+  // and re-stamps submitted_at. We also wipe rep_order_number since the
+  // rep's previously-assigned number is no longer valid once the order
+  // was cancelled.
   app.post("/api/dealer/orders/:id/restore", requireDealerAuth, async (req: AuthenticatedRequest, res) => {
     try {
       const orderId = parseInt(req.params.id);
@@ -1372,11 +1377,30 @@ export async function registerRoutes(app: Express): Promise<Express> {
         return res.status(400).json({ error: "Order is not deleted" });
       }
 
+      const wasSubmitted = existingOrder.status !== 'draft';
+
       await db.update(dealerOrders)
-        .set({ deletedAt: null, updatedAt: new Date() })
+        .set({
+          deletedAt: null,
+          // Force back to draft regardless of prior state — Quotes tab only.
+          status: 'draft',
+          // Clear the submission audit trail so 48hr window logic starts fresh
+          // on the next submit, and so the dealer can't game cancellation
+          // history by deleting + restoring + re-submitting late.
+          submittedAt: null,
+          // Rep's order # is no longer valid once we cancelled. Force the
+          // rep to assign a new one when this re-submits.
+          repOrderNumber: null,
+          updatedAt: new Date(),
+        })
         .where(eq(dealerOrders.id, orderId));
 
-      res.json({ message: "Order restored" });
+      res.json({
+        message: wasSubmitted
+          ? "Restored as a quote. Submit again to resend to Walton."
+          : "Order restored to Quotes.",
+        wasSubmitted,
+      });
     } catch (error) {
       console.error("Error restoring dealer order:", error);
       res.status(500).json({ error: "Failed to restore order" });
