@@ -1558,7 +1558,7 @@ export default function DealerDashboard() {
           <DialogHeader>
             <DialogTitle>Edit Order</DialogTitle>
             <DialogDescription>
-              Update customer information and order status
+              Update customer information and notes
             </DialogDescription>
           </DialogHeader>
 
