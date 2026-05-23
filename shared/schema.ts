@@ -283,6 +283,11 @@ export const dealerOrders = pgTable("dealer_orders", {
   // Soft delete. Non-null means the dealer moved the order to their Deleted
   // tab. We don't hard-delete so dealers can Recreate from a past order.
   deletedAt: timestamp("deleted_at"),
+  // Work-order PDF the rep uploads after matching this to Walton's internal
+  // system. Setting workOrderUrl on a 'submitted' order auto-flips status
+  // to 'received' (PATCH /api/admin/dealer-orders/:id handler).
+  workOrderUrl: varchar("work_order_url", { length: 500 }),
+  workOrderUploadedAt: timestamp("work_order_uploaded_at"),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });

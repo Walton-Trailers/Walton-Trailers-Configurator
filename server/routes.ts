@@ -2520,7 +2520,13 @@ export async function registerRoutes(app: Express): Promise<Express> {
         status: dealerOrders.status,
         notes: dealerOrders.notes,
         createdAt: dealerOrders.createdAt,
-        orderNumber: dealerOrders.orderNumber
+        orderNumber: dealerOrders.orderNumber,
+        // Fields the rep-management dialog needs to render and edit.
+        repOrderNumber: dealerOrders.repOrderNumber,
+        poNumber: dealerOrders.poNumber,
+        submittedAt: dealerOrders.submittedAt,
+        workOrderUrl: dealerOrders.workOrderUrl,
+        workOrderUploadedAt: dealerOrders.workOrderUploadedAt,
       })
       .from(dealerOrders)
       .leftJoin(dealers, eq(dealerOrders.dealerId, dealers.id))
@@ -3695,6 +3701,134 @@ export async function registerRoutes(app: Express): Promise<Express> {
     } catch (error: any) {
       console.error("Error generating blob upload token:", error);
       return res.status(400).json({ error: error?.message || "Upload token request failed" });
+    }
+  });
+
+  // Work-order PDF uploads. Separate endpoint from the general image/GLB
+  // token route because the allowed content types are different and we
+  // want this gated behind admin auth (general image uploads are open
+  // because the URLs only become visible after an authed PATCH; work
+  // order PDFs go straight into a dealer's order so we lock the door
+  // earlier).
+  app.post("/api/admin/blob-upload-token/work-order", requireAuth, requireAdmin, async (req, res) => {
+    try {
+      const body = (req as any).body as HandleUploadBody;
+      const jsonResponse = await handleUpload({
+        body,
+        request: req as any,
+        onBeforeGenerateToken: async (pathname) => {
+          return {
+            allowedContentTypes: ["application/pdf"],
+            addRandomSuffix: false,
+            tokenPayload: JSON.stringify({ pathname }),
+          };
+        },
+        onUploadCompleted: async (_event) => {
+          // The admin UI follows up with PATCH /api/admin/dealer-orders/:id
+          // to attach the URL to the order. No DB write here.
+        },
+      });
+      return res.status(200).json(jsonResponse);
+    } catch (error: any) {
+      console.error("Error generating work-order upload token:", error);
+      return res.status(400).json({ error: error?.message || "Upload token request failed" });
+    }
+  });
+
+  // Admin order management — rep-side PATCH. Replaces ad-hoc updates with a
+  // single whitelisted handler that:
+  //   - lets the rep set rep_order_number, status, notes, work_order_url
+  //   - auto-flips status submitted → received when a work order URL is
+  //     attached (since the spec is that uploading the work order means
+  //     the rep has matched and accepted the order)
+  //   - stamps work_order_uploaded_at when the URL is set
+  //   - emails the dealer when the work order is attached so they know
+  //     their PDF is ready to download
+  app.patch("/api/admin/dealer-orders/:id", requireAuth, requireAdmin, async (req, res) => {
+    try {
+      const orderId = parseInt(req.params.id);
+      const [existing] = await db.select()
+        .from(dealerOrders)
+        .where(eq(dealerOrders.id, orderId));
+      if (!existing) return res.status(404).json({ error: "Order not found" });
+
+      const ALLOWED = new Set([
+        'repOrderNumber',
+        'status',
+        'notes',
+        'workOrderUrl',
+      ]);
+      const VALID_STATUSES = new Set(['draft', 'submitted', 'received', 'processing', 'completed']);
+      const updates: Record<string, any> = {};
+
+      for (const [key, value] of Object.entries(req.body)) {
+        if (ALLOWED.has(key)) updates[key] = value;
+      }
+
+      if (updates.status && !VALID_STATUSES.has(updates.status)) {
+        return res.status(400).json({ error: `Invalid status. Must be one of: ${Array.from(VALID_STATUSES).join(', ')}` });
+      }
+
+      const attachingNewWorkOrder = 'workOrderUrl' in updates &&
+        updates.workOrderUrl &&
+        updates.workOrderUrl !== existing.workOrderUrl;
+
+      if (attachingNewWorkOrder) {
+        updates.workOrderUploadedAt = new Date();
+        // Auto-flip submitted → received unless the rep set a different
+        // status in the same PATCH (rare but possible — they win).
+        if (!('status' in updates) && existing.status === 'submitted') {
+          updates.status = 'received';
+        }
+      }
+
+      // Explicit clear: workOrderUrl = null. Wipe the upload timestamp too.
+      if ('workOrderUrl' in updates && !updates.workOrderUrl) {
+        updates.workOrderUploadedAt = null;
+      }
+
+      updates.updatedAt = new Date();
+
+      const [updated] = await db.update(dealerOrders)
+        .set(updates)
+        .where(eq(dealerOrders.id, orderId))
+        .returning();
+
+      // Notify the dealer when the work order lands.
+      if (attachingNewWorkOrder) {
+        try {
+          const [dealer] = await db.select()
+            .from(dealers)
+            .where(eq(dealers.id, updated.dealerId));
+          if (dealer?.email) {
+            await EmailService.getInstance().sendEmail({
+              to: dealer.email,
+              subject: `Work order ready: ${updated.repOrderNumber || updated.orderNumber}`,
+              text: [
+                `Hi ${dealer.contactName || dealer.dealerName || 'team'},`,
+                '',
+                `Your Walton work order is ready.`,
+                updated.repOrderNumber ? `Order #:    ${updated.repOrderNumber}` : '',
+                `Customer:   ${updated.customerName || '(unspecified)'}`,
+                `Trailer:    ${updated.modelName}`,
+                '',
+                `Download:   ${updated.workOrderUrl}`,
+                '',
+                'You can also re-download from your dealer dashboard at any time.',
+                '',
+                '— Walton Trailers',
+              ].filter(Boolean).join('\n'),
+            });
+          }
+        } catch (e) {
+          console.warn(`Work-order notification email failed for order ${updated.orderNumber}:`, e);
+        }
+      }
+
+      res.json(updated);
+    } catch (error) {
+      console.error("Error in PATCH /api/admin/dealer-orders/:id:", error);
+      res.status(500).json({ error: "Failed to update order" });
     }
   });
 

@@ -12,6 +12,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { AdminOrderManageDialog } from "@/components/admin-order-manage-dialog";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -69,6 +70,10 @@ export default function AdminDashboard() {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [selectedConfiguration, setSelectedConfiguration] = useState<any>(null);
   const [showConfigDetailModal, setShowConfigDetailModal] = useState(false);
+  // Rep-side order management dialog. Separate from the read-only View
+  // modal — opens via the "Manage" button on dealer rows.
+  const [managingOrder, setManagingOrder] = useState<any>(null);
+  const [showManageDialog, setShowManageDialog] = useState(false);
   const [userSearchTerm, setUserSearchTerm] = useState("");
   const [customRequestSearchTerm, setCustomRequestSearchTerm] = useState("");
   const [configurationSearchTerm, setConfigurationSearchTerm] = useState("");
@@ -1464,16 +1469,34 @@ ${quote.notes ? `\nAdmin Notes: ${quote.notes}` : ''}`;
                                 </Badge>
                               </td>
                               <td className="px-4 py-3">
-                                <Button
-                                  size="sm"
-                                  variant="outline"
-                                  onClick={() => {
-                                    setSelectedConfiguration(config);
-                                    setShowConfigDetailModal(true);
-                                  }}
-                                >
-                                  View
-                                </Button>
+                                <div className="flex gap-2">
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    onClick={() => {
+                                      setSelectedConfiguration(config);
+                                      setShowConfigDetailModal(true);
+                                    }}
+                                  >
+                                    View
+                                  </Button>
+                                  {/* Rep workflow — assign order #, change status,
+                                      upload work-order PDF. Only on dealer-type
+                                      rows since public configurations have no
+                                      rep state to manage. */}
+                                  {config.type === 'dealer' && (
+                                    <Button
+                                      size="sm"
+                                      variant="default"
+                                      onClick={() => {
+                                        setManagingOrder(config);
+                                        setShowManageDialog(true);
+                                      }}
+                                    >
+                                      Manage
+                                    </Button>
+                                  )}
+                                </div>
                               </td>
                             </tr>
                           ))
@@ -1866,6 +1889,15 @@ ${quote.notes ? `\nAdmin Notes: ${quote.notes}` : ''}`;
           )}
         </DialogContent>
       </Dialog>
+
+      {/* Rep order management dialog. Opens from "Manage" on dealer rows.
+          Lets the rep assign Walton's order #, change status, upload the
+          work-order PDF, and add internal notes. */}
+      <AdminOrderManageDialog
+        open={showManageDialog}
+        onOpenChange={(open) => { if (!open) setManagingOrder(null); setShowManageDialog(open); }}
+        order={managingOrder}
+      />
 
       {/* Configuration Detail Modal */}
       <Dialog open={showConfigDetailModal} onOpenChange={setShowConfigDetailModal}>

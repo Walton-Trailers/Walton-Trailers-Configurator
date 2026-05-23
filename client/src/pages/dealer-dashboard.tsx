@@ -24,6 +24,8 @@ interface DealerOrder {
   repOrderNumber: string | null;
   submittedAt: string | null;
   deletedAt: string | null;
+  workOrderUrl: string | null;
+  workOrderUploadedAt: string | null;
   customerName: string | null;
   customerEmail: string | null;
   customerPhone: string | null;
@@ -492,13 +494,17 @@ export default function DealerDashboard() {
     const variants: Record<string, "default" | "secondary" | "destructive" | "outline"> = {
       draft: "secondary",
       submitted: "default",
+      received: "default",
       processing: "outline",
       completed: "default",
     };
-    
+
     const colors: Record<string, string> = {
       draft: "bg-gray-100 text-gray-800",
       submitted: "bg-blue-100 text-blue-800",
+      // Received = rep has matched the order and uploaded a work order. Use
+      // a teal/cyan so it reads as a distinct progression from blue submitted.
+      received: "bg-teal-100 text-teal-800",
       processing: "bg-yellow-100 text-yellow-800",
       completed: "bg-green-100 text-green-800",
     };
@@ -1662,6 +1668,29 @@ export default function DealerDashboard() {
                 <div>
                   <h3 className="font-semibold mb-3">Notes</h3>
                   <p className="text-sm text-gray-600">{selectedOrder.notes}</p>
+                </div>
+              )}
+
+              {/* Work order PDF — appears once the rep attaches one on the
+                  admin side. Opens in a new tab; the PDF is a public Blob
+                  URL so no auth header needed. */}
+              {selectedOrder.workOrderUrl && (
+                <div>
+                  <h3 className="font-semibold mb-3">Work Order</h3>
+                  <a
+                    href={selectedOrder.workOrderUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-2 px-4 py-2 rounded border border-blue-300 bg-blue-50 text-blue-800 text-sm font-medium hover:bg-blue-100 transition-colors"
+                  >
+                    <FileText className="w-4 h-4" />
+                    Download Work Order PDF
+                  </a>
+                  {selectedOrder.workOrderUploadedAt && (
+                    <p className="text-xs text-gray-500 mt-1">
+                      Uploaded {format(new Date(selectedOrder.workOrderUploadedAt), "MMM d, yyyy h:mm a")}
+                    </p>
+                  )}
                 </div>
               )}
 
