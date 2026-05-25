@@ -508,7 +508,7 @@ export default function AdminDealers() {
 
       {/* Add Dealer Dialog */}
       <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
-        <DialogContent className="sm:max-w-[600px]">
+        <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Add New Dealer</DialogTitle>
             <DialogDescription>
@@ -758,7 +758,7 @@ export default function AdminDealers() {
 
       {/* Edit Dealer Dialog */}
       <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-        <DialogContent className="sm:max-w-[600px]">
+        <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Edit Dealer</DialogTitle>
             <DialogDescription>
