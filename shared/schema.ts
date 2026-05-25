@@ -167,6 +167,13 @@ export const dealers = pgTable("dealers", {
   city: varchar("city", { length: 100 }),
   state: varchar("state", { length: 2 }),
   zipCode: varchar("zip_code", { length: 10 }),
+  // Parent dealer linkage. Locations of an existing dealer reference the
+  // parent here; primary dealers leave it NULL. Used to derive the -L##
+  // suffix on auto-generated dealer IDs.
+  parentDealerId: integer("parent_dealer_id"),
+  // 4-digit year the dealer was admitted. Powers the [YY] segment of the
+  // auto-generated dealer_id (e.g. 2023 -> "23" in UT-23-001).
+  establishedYear: varchar("established_year", { length: 4 }),
   // Primary contact person
   contactFirstName: varchar("contact_first_name", { length: 100 }).notNull(),
   contactLastName: varchar("contact_last_name", { length: 100 }).notNull(),

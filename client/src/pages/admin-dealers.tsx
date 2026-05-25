@@ -30,8 +30,57 @@ interface Dealer {
   pricingTier: string;
   salesRepName: string | null;
   salesRepEmail: string | null;
+  parentDealerId: number | null;
+  establishedYear: string | null;
   createdAt: string;
   updatedAt: string;
+}
+
+// US states for the State dropdown. Two-letter abbreviation is what gets
+// stored and what feeds the [STATE] segment of the auto-generated dealer ID.
+const US_STATES: ReadonlyArray<[string, string]> = [
+  ['AL','Alabama'],['AK','Alaska'],['AZ','Arizona'],['AR','Arkansas'],
+  ['CA','California'],['CO','Colorado'],['CT','Connecticut'],['DE','Delaware'],
+  ['FL','Florida'],['GA','Georgia'],['HI','Hawaii'],['ID','Idaho'],
+  ['IL','Illinois'],['IN','Indiana'],['IA','Iowa'],['KS','Kansas'],
+  ['KY','Kentucky'],['LA','Louisiana'],['ME','Maine'],['MD','Maryland'],
+  ['MA','Massachusetts'],['MI','Michigan'],['MN','Minnesota'],['MS','Mississippi'],
+  ['MO','Missouri'],['MT','Montana'],['NE','Nebraska'],['NV','Nevada'],
+  ['NH','New Hampshire'],['NJ','New Jersey'],['NM','New Mexico'],['NY','New York'],
+  ['NC','North Carolina'],['ND','North Dakota'],['OH','Ohio'],['OK','Oklahoma'],
+  ['OR','Oregon'],['PA','Pennsylvania'],['RI','Rhode Island'],['SC','South Carolina'],
+  ['SD','South Dakota'],['TN','Tennessee'],['TX','Texas'],['UT','Utah'],
+  ['VT','Vermont'],['VA','Virginia'],['WA','Washington'],['WV','West Virginia'],
+  ['WI','Wisconsin'],['WY','Wyoming'],
+];
+
+// Mirror of the server-side generator in routes.ts (generateDealerId).
+// Keeps the live form preview consistent with what the server will assign.
+// Per-state sequence; locations append -L## to the parent's ID.
+function computeDealerIdPreview(opts: {
+  state?: string;
+  year?: string;
+  parentId?: number | null;
+  dealers: Dealer[];
+}): string {
+  if (opts.parentId) {
+    const parent = opts.dealers.find(d => d.id === opts.parentId);
+    if (!parent) return "";
+    const locCount = opts.dealers.filter(d => d.parentDealerId === opts.parentId).length;
+    const next = locCount + 2; // primary is implicitly L01, first added location is L02
+    return `${parent.dealerId}-L${String(next).padStart(2, "0")}`;
+  }
+  const st = (opts.state || "").toUpperCase();
+  const yr = (opts.year || "").trim();
+  if (!/^[A-Z]{2}$/.test(st) || !/^\d{4}$/.test(yr)) return "";
+  const yy = yr.slice(-2);
+  const pattern = new RegExp(`^${st}-\\d{2}-(\\d{3})$`);
+  let maxSeq = 0;
+  for (const d of opts.dealers) {
+    const m = d.dealerId.match(pattern);
+    if (m) maxSeq = Math.max(maxSeq, parseInt(m[1], 10));
+  }
+  return `${st}-${yy}-${String(maxSeq + 1).padStart(3, "0")}`;
 }
 
 interface PricingTierOption {
@@ -68,6 +117,8 @@ export default function AdminDealers() {
     pricingTier: "standard",
     salesRepName: "",
     salesRepEmail: "",
+    establishedYear: String(new Date().getFullYear()),
+    parentDealerId: null as number | null,
   });
 
   // Fetch all dealers
@@ -180,6 +231,8 @@ export default function AdminDealers() {
       pricingTier: "standard",
       salesRepName: "",
       salesRepEmail: "",
+      establishedYear: String(new Date().getFullYear()),
+      parentDealerId: null,
     });
   };
 
@@ -200,12 +253,41 @@ export default function AdminDealers() {
       pricingTier: dealer.pricingTier || "standard",
       salesRepName: dealer.salesRepName || "",
       salesRepEmail: dealer.salesRepEmail || "",
+      establishedYear: dealer.establishedYear || String(new Date().getFullYear()),
+      parentDealerId: dealer.parentDealerId,
     });
     setIsEditDialogOpen(true);
   };
 
   const handleAddDealer = () => {
-    addDealerMutation.mutate(formData);
+    const payload = {
+      ...formData,
+      // Server uses these to drive ID generation. dealerId is server-assigned.
+      parentDealerId: formData.parentDealerId,
+      establishedYear: formData.establishedYear,
+    };
+    addDealerMutation.mutate(payload);
+  };
+
+  // When the admin selects a parent dealer (location mode), inherit the
+  // parent's state and establishedYear so the address block reflects what
+  // the server will use for ID generation.
+  const selectParent = (parentId: number | null) => {
+    if (parentId === null) {
+      setFormData({ ...formData, parentDealerId: null });
+      return;
+    }
+    const parent = dealers.find((d) => d.id === parentId);
+    if (!parent) {
+      setFormData({ ...formData, parentDealerId: parentId });
+      return;
+    }
+    setFormData({
+      ...formData,
+      parentDealerId: parentId,
+      state: parent.state || formData.state,
+      establishedYear: parent.establishedYear || formData.establishedYear,
+    });
   };
 
   const handleUpdateDealer = () => {
@@ -349,7 +431,17 @@ export default function AdminDealers() {
                     const stats = getStats(dealer.id);
                     return (
                       <TableRow key={dealer.id}>
-                        <TableCell className="font-medium">{dealer.dealerId}</TableCell>
+                        <TableCell className="font-medium">
+                          <div className="font-mono">{dealer.dealerId}</div>
+                          {dealer.parentDealerId !== null && (() => {
+                            const parent = dealers.find((d) => d.id === dealer.parentDealerId);
+                            return parent ? (
+                              <p className="text-xs text-gray-500 mt-0.5">
+                                Location of <span className="font-mono">{parent.dealerId}</span>
+                              </p>
+                            ) : null;
+                          })()}
+                        </TableCell>
                         <TableCell>
                           <div>
                             <p className="font-medium">{dealer.dealerName}</p>
@@ -425,14 +517,71 @@ export default function AdminDealers() {
           </DialogHeader>
 
           <div className="grid gap-4 py-4">
+            {/* Location-of-existing-dealer toggle */}
+            <div className="flex items-center justify-between rounded-md border bg-gray-50 px-3 py-2">
+              <div>
+                <Label htmlFor="isLocation" className="cursor-pointer">
+                  This is a new location of an existing dealer
+                </Label>
+                <p className="text-xs text-gray-500 mt-0.5">Links the new record to a parent and uses an -L## suffix.</p>
+              </div>
+              <Switch
+                id="isLocation"
+                checked={formData.parentDealerId !== null}
+                onCheckedChange={(checked) => {
+                  if (!checked) return selectParent(null);
+                  const firstParent = dealers.find((d) => d.parentDealerId === null);
+                  selectParent(firstParent?.id ?? null);
+                }}
+              />
+            </div>
+
+            {formData.parentDealerId !== null && (
+              <div>
+                <Label htmlFor="parentDealer">Parent Dealer *</Label>
+                <select
+                  id="parentDealer"
+                  value={formData.parentDealerId ?? ""}
+                  onChange={(e) => selectParent(parseInt(e.target.value, 10))}
+                  className="w-full h-10 px-3 rounded-md border border-input bg-background text-sm"
+                >
+                  {dealers
+                    .filter((d) => d.parentDealerId === null)
+                    .map((d) => (
+                      <option key={d.id} value={d.id}>
+                        {d.dealerName} ({d.dealerId})
+                      </option>
+                    ))}
+                </select>
+              </div>
+            )}
+
+            {/* Auto-generated Dealer ID preview */}
+            <div className="rounded-md border bg-amber-50/40 px-3 py-2">
+              <Label className="text-xs uppercase tracking-wide text-gray-600">Auto-generated Dealer ID</Label>
+              <div className="font-mono text-lg text-gray-900 mt-0.5">
+                {computeDealerIdPreview({
+                  state: formData.state,
+                  year: formData.establishedYear,
+                  parentId: formData.parentDealerId,
+                  dealers,
+                }) || <span className="text-gray-400">—</span>}
+              </div>
+              <p className="text-xs text-gray-500 mt-1">
+                {formData.parentDealerId !== null
+                  ? "Location inherits the parent's state and year, appends -L##."
+                  : "Format: [STATE]-[YY]-[###]. State and year drive the prefix; sequence is per state."}
+              </p>
+            </div>
+
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <Label htmlFor="dealerId">Dealer ID *</Label>
+                <Label htmlFor="dealerName">Company Name *</Label>
                 <Input
-                  id="dealerId"
-                  value={formData.dealerId}
-                  onChange={(e) => setFormData({ ...formData, dealerId: e.target.value })}
-                  placeholder="D003"
+                  id="dealerName"
+                  value={formData.dealerName}
+                  onChange={(e) => setFormData({ ...formData, dealerName: e.target.value })}
+                  placeholder="ABC Trailers Inc."
                 />
               </div>
               <div>
@@ -445,16 +594,6 @@ export default function AdminDealers() {
                   placeholder="Enter password"
                 />
               </div>
-            </div>
-
-            <div>
-              <Label htmlFor="dealerName">Company Name *</Label>
-              <Input
-                id="dealerName"
-                value={formData.dealerName}
-                onChange={(e) => setFormData({ ...formData, dealerName: e.target.value })}
-                placeholder="ABC Trailers Inc."
-              />
             </div>
 
             <div className="grid grid-cols-2 gap-4">
@@ -549,7 +688,7 @@ export default function AdminDealers() {
               />
             </div>
 
-            <div className="grid grid-cols-3 gap-4">
+            <div className="grid grid-cols-2 gap-4">
               <div>
                 <Label htmlFor="city">City</Label>
                 <Input
@@ -560,15 +699,25 @@ export default function AdminDealers() {
                 />
               </div>
               <div>
-                <Label htmlFor="state">State</Label>
-                <Input
+                <Label htmlFor="state">
+                  State {formData.parentDealerId === null && <span className="text-red-500">*</span>}
+                </Label>
+                <select
                   id="state"
                   value={formData.state}
                   onChange={(e) => setFormData({ ...formData, state: e.target.value })}
-                  placeholder="NY"
-                  maxLength={2}
-                />
+                  disabled={formData.parentDealerId !== null}
+                  className="w-full h-10 px-3 rounded-md border border-input bg-background text-sm disabled:bg-gray-100 disabled:text-gray-500"
+                >
+                  <option value="">Select state…</option>
+                  {US_STATES.map(([abbr, name]) => (
+                    <option key={abbr} value={abbr}>{name}</option>
+                  ))}
+                </select>
               </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
               <div>
                 <Label htmlFor="zipCode">ZIP Code</Label>
                 <Input
@@ -576,6 +725,21 @@ export default function AdminDealers() {
                   value={formData.zipCode}
                   onChange={(e) => setFormData({ ...formData, zipCode: e.target.value })}
                   placeholder="10001"
+                />
+              </div>
+              <div>
+                <Label htmlFor="establishedYear">
+                  Year Joined {formData.parentDealerId === null && <span className="text-red-500">*</span>}
+                </Label>
+                <Input
+                  id="establishedYear"
+                  inputMode="numeric"
+                  maxLength={4}
+                  value={formData.establishedYear}
+                  onChange={(e) => setFormData({ ...formData, establishedYear: e.target.value.replace(/\D/g, "") })}
+                  disabled={formData.parentDealerId !== null}
+                  placeholder="2026"
+                  className="disabled:bg-gray-100 disabled:text-gray-500"
                 />
               </div>
             </div>

@@ -2258,6 +2258,65 @@ export async function registerRoutes(app: Express): Promise<Express> {
   });
 
   // Admin dealer management endpoints
+
+  // Auto-generate a dealer ID following the documented rule set:
+  //   Primary dealer:    [STATE]-[YY]-[###]        e.g.  UT-23-001
+  //   Additional loc:    [STATE]-[YY]-[###]-L[##]  e.g.  UT-23-001-L02
+  // Per-state sequence (resets per state, not per year). Locations inherit
+  // the parent's full ID and append -L02, -L03, etc. (parent is implicitly L01).
+  async function generateDealerId(opts: {
+    state: string;
+    year: string;       // 4-digit, e.g. "2026"
+    parentDealerId?: number | null;
+  }): Promise<string> {
+    if (opts.parentDealerId) {
+      const [parent] = await db.select().from(dealers).where(eq(dealers.id, opts.parentDealerId));
+      if (!parent) throw new Error("Parent dealer not found");
+      // Count existing locations under this parent (parent itself is L01)
+      const sibs = await db.select().from(dealers).where(eq(dealers.parentDealerId, parent.id));
+      const nextLoc = sibs.length + 2; // L02 for the first added location
+      const suffix = String(nextLoc).padStart(2, '0');
+      return `${parent.dealerId}-L${suffix}`;
+    }
+
+    const state = opts.state.toUpperCase();
+    const yy = opts.year.slice(-2).padStart(2, '0');
+    // Per-state sequence: find max ### across all primary dealers in this state
+    const stateDealers = await db.select().from(dealers).where(eq(dealers.state, state));
+    let maxSeq = 0;
+    const pattern = new RegExp(`^${state}-\\d{2}-(\\d{3})$`);
+    for (const d of stateDealers) {
+      const m = d.dealerId.match(pattern);
+      if (m) maxSeq = Math.max(maxSeq, parseInt(m[1], 10));
+    }
+    const seq = String(maxSeq + 1).padStart(3, '0');
+    return `${state}-${yy}-${seq}`;
+  }
+
+  // Preview an auto-generated dealer ID without persisting anything.
+  // Used by the Add Dealer form to show a live ID as the admin fills it in.
+  app.get("/api/admin/dealers/preview-id", requireAuth, requireAdmin, async (req, res) => {
+    try {
+      const state = String(req.query.state || '').trim();
+      const year = String(req.query.year || '').trim();
+      const parentParam = req.query.parentDealerId;
+      const parentDealerId = parentParam ? parseInt(String(parentParam), 10) : null;
+
+      if (parentDealerId) {
+        const id = await generateDealerId({ state, year, parentDealerId });
+        return res.json({ dealerId: id });
+      }
+      if (!/^[A-Za-z]{2}$/.test(state) || !/^\d{4}$/.test(year)) {
+        return res.status(400).json({ error: "state (2 letters) and year (4 digits) required" });
+      }
+      const id = await generateDealerId({ state, year });
+      res.json({ dealerId: id });
+    } catch (error: any) {
+      console.error("Error previewing dealer ID:", error);
+      res.status(500).json({ error: error?.message || "Failed to preview dealer ID" });
+    }
+  });
+
   // Get all dealers (admin only)
   app.get("/api/admin/dealers", requireAuth, requireAdmin, async (req, res) => {
     try {
@@ -2287,24 +2346,57 @@ export async function registerRoutes(app: Express): Promise<Express> {
     }
   });
 
-  // Add new dealer (admin only)
+  // Add new dealer (admin only). dealer_id is auto-generated server-side
+  // from state + establishedYear (or parent linkage). See generateDealerId().
   app.post("/api/admin/dealers", requireAuth, requireAdmin, async (req, res) => {
     try {
-      const { dealerId, dealerName, contactName, email, phone, territory, address, city, state, zipCode, password, pricingTier, salesRepName, salesRepEmail } = req.body;
+      const {
+        dealerName, contactName, email, phone, territory,
+        address, city, state, zipCode, password,
+        pricingTier, salesRepName, salesRepEmail,
+        parentDealerId, establishedYear,
+      } = req.body;
 
-      // Check if dealer ID or email already exists
+      const parentId = parentDealerId ? parseInt(String(parentDealerId), 10) : null;
+      const isLocation = !!parentId;
+
+      // For locations the state/year are inherited from the parent. For
+      // primary dealers both fields are required so we can generate a valid ID.
+      let effectiveState: string | null = state ? String(state).toUpperCase() : null;
+      let effectiveYear: string | null = establishedYear ? String(establishedYear) : null;
+
+      if (isLocation) {
+        const [parent] = await db.select().from(dealers).where(eq(dealers.id, parentId!));
+        if (!parent) return res.status(400).json({ error: "Parent dealer not found" });
+        effectiveState = parent.state;
+        effectiveYear = parent.establishedYear;
+      } else {
+        if (!effectiveState || !/^[A-Z]{2}$/.test(effectiveState)) {
+          return res.status(400).json({ error: "State (2-letter abbreviation) is required" });
+        }
+        if (!effectiveYear || !/^\d{4}$/.test(effectiveYear)) {
+          return res.status(400).json({ error: "Year (YYYY) is required" });
+        }
+      }
+
+      const generatedId = await generateDealerId({
+        state: effectiveState || '',
+        year: effectiveYear || '',
+        parentDealerId: parentId,
+      });
+
+      // Defense in depth: re-check uniqueness in case of a race
       const existing = await db.select()
         .from(dealers)
-        .where(sql`${dealers.dealerId} = ${dealerId} OR ${dealers.email} = ${email}`);
-
+        .where(sql`${dealers.dealerId} = ${generatedId} OR ${dealers.email} = ${email}`);
       if (existing.length > 0) {
-        return res.status(400).json({ error: "Dealer ID or email already exists" });
+        return res.status(400).json({ error: "Generated dealer ID or email already exists. Please retry." });
       }
 
       const passwordHash = await hashPassword(password);
 
       const [newDealer] = await db.insert(dealers).values({
-        dealerId,
+        dealerId: generatedId,
         dealerName,
         contactName,
         email,
@@ -2312,8 +2404,10 @@ export async function registerRoutes(app: Express): Promise<Express> {
         territory: territory || null,
         address: address || null,
         city: city || null,
-        state: state || null,
+        state: effectiveState,
         zipCode: zipCode || null,
+        parentDealerId: parentId,
+        establishedYear: effectiveYear,
         // Pricing tier defaults to 'standard' at the schema level. Accept an
         // override here so admins can assign a different tier on creation.
         pricingTier: pricingTier || 'standard',
@@ -2324,9 +2418,9 @@ export async function registerRoutes(app: Express): Promise<Express> {
       }).returning();
 
       res.json(newDealer);
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error creating dealer:", error);
-      res.status(500).json({ error: "Failed to create dealer" });
+      res.status(500).json({ error: error?.message || "Failed to create dealer" });
     }
   });
 

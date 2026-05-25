@@ -6,6 +6,32 @@ import { useFastQuery } from "@/hooks/useFastQuery";
 import { ObjectUploader } from "@/components/ObjectUploader";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import { upload as blobUpload } from "@vercel/blob/client";
+
+// Direct-to-Blob upload helper used by the inline category/series/option image
+// uploads on this page. The legacy /api/<entity>/upload-url + PUT pattern
+// streams the request body through Vercel and intermittently fails (see
+// server/routes.ts:3714 — "DEPRECATED" comment on /api/blob-upload). This
+// uploads the bytes browser → Blob directly via /api/blob-upload-token.
+async function uploadImageDirect(prefix: string, file: File): Promise<string> {
+  const base = file.name
+    .toLowerCase()
+    .replace(/[^a-z0-9._-]+/g, "-")
+    .replace(/-+/g, "-")
+    .replace(/^[-.]+|[-.]+$/g, "")
+    .slice(0, 120);
+  const suffix = Math.random().toString(36).slice(2, 8);
+  const dot = base.lastIndexOf(".");
+  const stem = dot > 0 ? base.slice(0, dot) : base;
+  const ext = dot > 0 ? base.slice(dot) : "";
+  const pathname = `${prefix}/${stem}-${suffix}${ext}`;
+  const blob = await blobUpload(pathname, file, {
+    access: "public",
+    handleUploadUrl: "/api/blob-upload-token",
+    contentType: file.type || undefined,
+  });
+  return blob.url;
+}
 
 // Minimal UI components for maximum performance
 const Button = ({ children, onClick, disabled, variant = 'default', size = 'default', ...props }: any) => (
@@ -1037,20 +1063,6 @@ export default function FastPricing() {
     setEditData({});
   };
 
-  // Image upload handlers
-  const handleGetUploadParameters = async () => {
-    const response = await apiRequest("/api/models/upload-url", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${sessionId}`,
-      },
-    });
-    return {
-      method: "PUT" as const,
-      url: response.uploadURL,
-    };
-  };
-
   const handleImageUploadComplete = async (modelId: number, result: any) => {
     try {
       const uploadedFile = result.successful?.[0];
@@ -1159,20 +1171,6 @@ export default function FastPricing() {
     }
   };
 
-  // Option image upload handlers
-  const handleGetCategoryUploadParameters = async () => {
-    const response = await apiRequest("/api/categories/upload-url", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${sessionId}`,
-      },
-    });
-    return {
-      method: "PUT" as const,
-      url: response.uploadURL,
-    };
-  };
-
   const handleCategoryImageUploadComplete = async (categoryId: number, result: any) => {
     try {
       const uploadedFile = result.successful?.[0];
@@ -1210,19 +1208,6 @@ export default function FastPricing() {
     }
   };
 
-  const handleGetOptionUploadParameters = async () => {
-    const response = await apiRequest("/api/options/upload-url", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${sessionId}`,
-      },
-    });
-    return {
-      method: "PUT" as const,
-      url: response.uploadURL,
-    };
-  };
-
   const handleOptionImageUploadComplete = async (optionId: number, result: any) => {
     try {
       const uploadedFile = result.successful?.[0];
@@ -1257,20 +1242,6 @@ export default function FastPricing() {
         variant: "destructive",
       });
     }
-  };
-
-  // Series image upload handlers
-  const handleGetSeriesUploadParameters = async () => {
-    const response = await apiRequest("/api/series/upload-url", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${sessionId}`,
-      },
-    });
-    return {
-      method: "PUT" as const,
-      url: response.uploadURL,
-    };
   };
 
   const handleSeriesImageUploadComplete = async (seriesId: number, result: any) => {
@@ -1451,25 +1422,17 @@ export default function FastPricing() {
                                 if (file) {
                                   setUploadingCategoryId(-1);
                                   try {
-                                    const uploadParams = await handleGetCategoryUploadParameters();
-                                    const response = await fetch(uploadParams.url, {
-                                      method: uploadParams.method,
-                                      body: file,
+                                    const blobUrl = await uploadImageDirect("categories", file);
+                                    setNewCategoryData(prev => ({ ...prev, imageUrl: blobUrl }));
+                                    toast({
+                                      title: "Success",
+                                      description: "Image uploaded successfully",
                                     });
-                                    if (response.ok) {
-                                      const uploaded = await response.json().catch(() => ({} as any));
-                                      const savedUrl = uploaded.objectPath || uploadParams.url;
-                                      setNewCategoryData(prev => ({ ...prev, imageUrl: savedUrl }));
-                                      toast({
-                                        title: "Success",
-                                        description: "Image uploaded successfully",
-                                      });
-                                    }
-                                  } catch (error) {
+                                  } catch (error: any) {
                                     console.error('Upload failed:', error);
                                     toast({
                                       title: "Error",
-                                      description: "Failed to upload image",
+                                      description: error?.message || "Failed to upload image",
                                       variant: "destructive",
                                     });
                                   } finally {
@@ -1601,26 +1564,18 @@ export default function FastPricing() {
                                   if (file) {
                                     setUploadingCategoryId(category.id);
                                     try {
-                                      const uploadParams = await handleGetCategoryUploadParameters();
-                                      const response = await fetch(uploadParams.url, {
-                                        method: uploadParams.method,
-                                        body: file,
+                                      const blobUrl = await uploadImageDirect("categories", file);
+                                      await apiRequest(`/api/categories/${category.id}/image`, {
+                                        method: "PATCH",
+                                        body: { imageUrl: blobUrl },
+                                        headers: sessionId ? { Authorization: `Bearer ${sessionId}` } : {},
                                       });
-                                      if (response.ok) {
-                                        const uploaded = await response.json().catch(() => ({} as any));
-                                        const savedUrl = uploaded.objectPath || uploadParams.url;
-                                        await apiRequest(`/api/categories/${category.id}/image`, {
-                                          method: "PATCH",
-                                          body: { imageUrl: savedUrl },
-                                          headers: sessionId ? { Authorization: `Bearer ${sessionId}` } : {},
-                                        });
-                                        queryClient.invalidateQueries({ queryKey: ['/api/admin/categories'] });
-                                        queryClient.invalidateQueries({ queryKey: ['categories'] });
-                                        toast({ title: "Success", description: "Category image updated" });
-                                      }
-                                    } catch (error) {
+                                      queryClient.invalidateQueries({ queryKey: ['/api/admin/categories'] });
+                                      queryClient.invalidateQueries({ queryKey: ['categories'] });
+                                      toast({ title: "Success", description: "Category image updated" });
+                                    } catch (error: any) {
                                       console.error('Upload failed:', error);
-                                      toast({ title: "Error", description: "Failed to upload image", variant: "destructive" });
+                                      toast({ title: "Error", description: error?.message || "Failed to upload image", variant: "destructive" });
                                     } finally {
                                       setUploadingCategoryId(null);
                                       e.target.value = '';
@@ -1946,25 +1901,17 @@ export default function FastPricing() {
                               if (file) {
                                 setUploadingCategoryId(-2);
                                 try {
-                                  const uploadParams = await handleGetSeriesUploadParameters();
-                                  const response = await fetch(uploadParams.url, {
-                                    method: uploadParams.method,
-                                    body: file,
+                                  const blobUrl = await uploadImageDirect("series", file);
+                                  setNewSeriesData(prev => ({ ...prev, imageUrl: blobUrl }));
+                                  toast({
+                                    title: "Success",
+                                    description: "Image uploaded successfully",
                                   });
-                                  if (response.ok) {
-                                    const uploaded = await response.json().catch(() => ({} as any));
-                                    const savedUrl = uploaded.objectPath || uploadParams.url;
-                                    setNewSeriesData(prev => ({ ...prev, imageUrl: savedUrl }));
-                                    toast({
-                                      title: "Success",
-                                      description: "Image uploaded successfully",
-                                    });
-                                  }
-                                } catch (error) {
+                                } catch (error: any) {
                                   console.error('Upload failed:', error);
                                   toast({
                                     title: "Error",
-                                    description: "Failed to upload image",
+                                    description: error?.message || "Failed to upload image",
                                     variant: "destructive",
                                   });
                                 } finally {
@@ -2058,25 +2005,17 @@ export default function FastPricing() {
                                 if (file) {
                                   setUploadingCategoryId(series.id * -100);
                                   try {
-                                    const uploadParams = await handleGetSeriesUploadParameters();
-                                    const response = await fetch(uploadParams.url, {
-                                      method: uploadParams.method,
-                                      body: file,
+                                    const blobUrl = await uploadImageDirect("series", file);
+                                    await apiRequest(`/api/series/${series.id}/image`, {
+                                      method: "PATCH",
+                                      body: { imageUrl: blobUrl },
+                                      headers: sessionId ? { Authorization: `Bearer ${sessionId}` } : {},
                                     });
-                                    if (response.ok) {
-                                      const uploaded = await response.json().catch(() => ({} as any));
-                                      const savedUrl = uploaded.objectPath || uploadParams.url;
-                                      await apiRequest(`/api/series/${series.id}/image`, {
-                                        method: "PATCH",
-                                        body: { imageUrl: savedUrl },
-                                        headers: sessionId ? { Authorization: `Bearer ${sessionId}` } : {},
-                                      });
-                                      queryClient.invalidateQueries({ queryKey: ['/api/series/all'] });
-                                      toast({ title: "Success", description: "Series image updated" });
-                                    }
-                                  } catch (error) {
+                                    queryClient.invalidateQueries({ queryKey: ['/api/series/all'] });
+                                    toast({ title: "Success", description: "Series image updated" });
+                                  } catch (error: any) {
                                     console.error('Upload failed:', error);
-                                    toast({ title: "Error", description: "Failed to upload image", variant: "destructive" });
+                                    toast({ title: "Error", description: error?.message || "Failed to upload image", variant: "destructive" });
                                   } finally {
                                     setUploadingCategoryId(null);
                                     e.target.value = '';
@@ -2387,25 +2326,17 @@ export default function FastPricing() {
                                 if (file) {
                                   setUploadingCategoryId(-3);
                                   try {
-                                    const uploadParams = await handleGetUploadParameters();
-                                    const response = await fetch(uploadParams.url, {
-                                      method: uploadParams.method,
-                                      body: file,
+                                    const blobUrl = await uploadImageDirect("models", file);
+                                    setNewModelData(prev => ({ ...prev, imageUrl: blobUrl }));
+                                    toast({
+                                      title: "Success",
+                                      description: "Image uploaded successfully",
                                     });
-                                    if (response.ok) {
-                                      const uploaded = await response.json().catch(() => ({} as any));
-                                      const savedUrl = uploaded.objectPath || uploadParams.url;
-                                      setNewModelData(prev => ({ ...prev, imageUrl: savedUrl }));
-                                      toast({
-                                        title: "Success",
-                                        description: "Image uploaded successfully",
-                                      });
-                                    }
-                                  } catch (error) {
+                                  } catch (error: any) {
                                     console.error('Upload failed:', error);
                                     toast({
                                       title: "Error",
-                                      description: "Failed to upload image",
+                                      description: error?.message || "Failed to upload image",
                                       variant: "destructive",
                                     });
                                   } finally {
@@ -2800,7 +2731,6 @@ export default function FastPricing() {
                     <TableCell>
                       <div className="flex items-center gap-1">
                         <ObjectUploader
-                          onGetUploadParameters={handleGetUploadParameters}
                           onComplete={(result) => handle3DModelUploadComplete(model.id, result)}
                           buttonClassName="p-0"
                           allowedFileTypes={['.glb', '.gltf']}
@@ -3171,20 +3101,12 @@ export default function FastPricing() {
                                   if (file) {
                                     setUploadingCategoryId(-4);
                                     try {
-                                      const uploadParams = await handleGetOptionUploadParameters();
-                                      const response = await fetch(uploadParams.url, {
-                                        method: uploadParams.method,
-                                        body: file,
-                                      });
-                                      if (response.ok) {
-                                        const uploaded = await response.json().catch(() => ({} as any));
-                                        const savedUrl = uploaded.objectPath || uploadParams.url;
-                                        setNewOptionData(prev => ({ ...prev, imageUrl: savedUrl }));
-                                        toast({ title: "Success", description: "Image uploaded successfully" });
-                                      }
-                                    } catch (error) {
+                                      const blobUrl = await uploadImageDirect("options", file);
+                                      setNewOptionData(prev => ({ ...prev, imageUrl: blobUrl }));
+                                      toast({ title: "Success", description: "Image uploaded successfully" });
+                                    } catch (error: any) {
                                       console.error('Upload failed:', error);
-                                      toast({ title: "Error", description: "Failed to upload image", variant: "destructive" });
+                                      toast({ title: "Error", description: error?.message || "Failed to upload image", variant: "destructive" });
                                     } finally {
                                       setUploadingCategoryId(null);
                                     }
@@ -3637,25 +3559,17 @@ export default function FastPricing() {
                                   if (file) {
                                     setUploadingCategoryId(option.id * -200);
                                     try {
-                                      const uploadParams = await handleGetOptionUploadParameters();
-                                      const response = await fetch(uploadParams.url, {
-                                        method: uploadParams.method,
-                                        body: file,
+                                      const blobUrl = await uploadImageDirect("options", file);
+                                      await apiRequest(`/api/options/${option.id}/image`, {
+                                        method: "PATCH",
+                                        body: { imageUrl: blobUrl },
+                                        headers: sessionId ? { Authorization: `Bearer ${sessionId}` } : {},
                                       });
-                                      if (response.ok) {
-                                        const uploaded = await response.json().catch(() => ({} as any));
-                                        const savedUrl = uploaded.objectPath || uploadParams.url;
-                                        await apiRequest(`/api/options/${option.id}/image`, {
-                                          method: "PATCH",
-                                          body: { imageUrl: savedUrl },
-                                          headers: sessionId ? { Authorization: `Bearer ${sessionId}` } : {},
-                                        });
-                                        queryClient.invalidateQueries({ queryKey: ['/api/options/all'] });
-                                        toast({ title: "Success", description: "Option image updated" });
-                                      }
-                                    } catch (error) {
+                                      queryClient.invalidateQueries({ queryKey: ['/api/options/all'] });
+                                      toast({ title: "Success", description: "Option image updated" });
+                                    } catch (error: any) {
                                       console.error('Upload failed:', error);
-                                      toast({ title: "Error", description: "Failed to upload image", variant: "destructive" });
+                                      toast({ title: "Error", description: error?.message || "Failed to upload image", variant: "destructive" });
                                     } finally {
                                       setUploadingCategoryId(null);
                                       e.target.value = '';
@@ -4499,7 +4413,6 @@ export default function FastPricing() {
                     </div>
                   ))}
                   <ObjectUploader
-                    onGetUploadParameters={handleGetUploadParameters}
                     onComplete={(result) => handleGalleryImageUploadComplete(galleryModelId, result)}
                     skipPreview
                   >
