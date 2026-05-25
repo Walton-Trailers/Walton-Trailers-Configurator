@@ -10,7 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
-import { ArrowLeft, Plus, Edit, Building2, MapPin, Phone, Mail, Package, DollarSign } from "lucide-react";
+import { ArrowLeft, Plus, Edit, Building2, MapPin, Phone, Mail, Package, DollarSign, Archive, ArchiveRestore, Trash2 } from "lucide-react";
 import { Link } from "wouter";
 import { format } from "date-fns";
 
@@ -102,6 +102,8 @@ export default function AdminDealers() {
   const [selectedDealer, setSelectedDealer] = useState<Dealer | null>(null);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
+  const [showArchived, setShowArchived] = useState(false);
+  const [dealerPendingDelete, setDealerPendingDelete] = useState<Dealer | null>(null);
   const [formData, setFormData] = useState({
     dealerId: "",
     dealerName: "",
@@ -192,6 +194,44 @@ export default function AdminDealers() {
   });
 
   // Toggle dealer status mutation
+  // Hard-delete mutation. Server enforces "0 orders + 0 users + 0 locations"
+  // and returns 409 with a structured reason payload otherwise — surface that
+  // in the toast so the admin knows exactly why and what to do (archive).
+  const deleteDealerMutation = useMutation({
+    mutationFn: async (id: number) => {
+      return apiRequest(`/api/admin/dealers/${id}`, { method: "DELETE" });
+    },
+    onSuccess: () => {
+      toast({ title: "Dealer deleted" });
+      setDealerPendingDelete(null);
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/dealers"] });
+    },
+    onError: (error: any) => {
+      // apiRequest throws Error("<status>: <body>"). Parse the body so the
+      // 409 "has N orders" structured reason can be surfaced to the admin.
+      let description = error?.message || "Failed to delete dealer";
+      const m = String(error?.message || "").match(/^\d+:\s*(\{.*\})$/);
+      if (m) {
+        try {
+          const body = JSON.parse(m[1]);
+          if (body?.reason) {
+            const parts: string[] = [];
+            if (body.reason.orders) parts.push(`${body.reason.orders} order${body.reason.orders === 1 ? "" : "s"}`);
+            if (body.reason.users) parts.push(`${body.reason.users} user${body.reason.users === 1 ? "" : "s"}`);
+            if (body.reason.locations) parts.push(`${body.reason.locations} location${body.reason.locations === 1 ? "" : "s"}`);
+            if (parts.length) description = `Has ${parts.join(", ")}. Archive instead to preserve history.`;
+            else description = body.error || description;
+          } else if (body?.error) {
+            description = body.error;
+          }
+        } catch {
+          // fall through with raw message
+        }
+      }
+      toast({ title: "Cannot delete dealer", description, variant: "destructive" });
+    },
+  });
+
   const toggleDealerStatusMutation = useMutation({
     mutationFn: async ({ id, isActive }: { id: number; isActive: boolean }) => {
       return apiRequest(`/api/admin/dealers/${id}/status`, {
@@ -390,26 +430,47 @@ export default function AdminDealers() {
       {/* Dealers Table */}
       <Card>
         <CardHeader>
-          <CardTitle>All Dealers</CardTitle>
-          <CardDescription>
-            View and manage all dealer accounts
-          </CardDescription>
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle>All Dealers</CardTitle>
+              <CardDescription>
+                View and manage all dealer accounts
+              </CardDescription>
+            </div>
+            <label className="flex items-center gap-2 text-sm text-gray-600 cursor-pointer">
+              <Switch checked={showArchived} onCheckedChange={setShowArchived} />
+              Show archived ({dealers.filter((d) => !d.isActive).length})
+            </label>
+          </div>
         </CardHeader>
         <CardContent>
-          {isLoading ? (
-            <p className="text-center py-8 text-gray-500">Loading dealers...</p>
-          ) : dealers.length === 0 ? (
-            <div className="text-center py-12">
-              <Building2 className="w-12 h-12 text-gray-300 mx-auto mb-4" />
-              <p className="text-gray-500 mb-4">No dealers found</p>
-              <Button onClick={() => {
-                resetForm();
-                setIsAddDialogOpen(true);
-              }}>
-                Add First Dealer
-              </Button>
-            </div>
-          ) : (
+          {(() => {
+            const visibleDealers = showArchived ? dealers : dealers.filter((d) => d.isActive);
+            if (isLoading) {
+              return <p className="text-center py-8 text-gray-500">Loading dealers...</p>;
+            }
+            if (dealers.length === 0) {
+              return (
+                <div className="text-center py-12">
+                  <Building2 className="w-12 h-12 text-gray-300 mx-auto mb-4" />
+                  <p className="text-gray-500 mb-4">No dealers found</p>
+                  <Button onClick={() => {
+                    resetForm();
+                    setIsAddDialogOpen(true);
+                  }}>
+                    Add First Dealer
+                  </Button>
+                </div>
+              );
+            }
+            if (visibleDealers.length === 0) {
+              return (
+                <p className="text-center py-8 text-gray-500">
+                  All dealers are archived. Toggle "Show archived" to view them.
+                </p>
+              );
+            }
+            return (
             <div className="overflow-x-auto">
               <Table>
                 <TableHeader>
@@ -427,10 +488,10 @@ export default function AdminDealers() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {dealers.map((dealer) => {
+                  {visibleDealers.map((dealer) => {
                     const stats = getStats(dealer.id);
                     return (
-                      <TableRow key={dealer.id}>
+                      <TableRow key={dealer.id} className={dealer.isActive ? undefined : "opacity-60"}>
                         <TableCell className="font-medium">
                           <div className="font-mono">{dealer.dealerId}</div>
                           {dealer.parentDealerId !== null && (() => {
@@ -477,24 +538,40 @@ export default function AdminDealers() {
                         <TableCell>{stats.orderCount}</TableCell>
                         <TableCell>{formatPrice(stats.totalRevenue)}</TableCell>
                         <TableCell>
-                          <Switch
-                            checked={dealer.isActive}
-                            onCheckedChange={(checked) => {
-                              toggleDealerStatusMutation.mutate({
-                                id: dealer.id,
-                                isActive: checked,
-                              });
-                            }}
-                          />
+                          {dealer.isActive ? (
+                            <Badge variant="default" className="bg-green-100 text-green-800 hover:bg-green-100">Active</Badge>
+                          ) : (
+                            <Badge variant="secondary" className="bg-gray-200 text-gray-700 hover:bg-gray-200">Archived</Badge>
+                          )}
                         </TableCell>
                         <TableCell>
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            onClick={() => handleEdit(dealer)}
-                          >
-                            <Edit className="w-4 h-4" />
-                          </Button>
+                          <div className="flex items-center gap-1">
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={() => handleEdit(dealer)}
+                              title="Edit dealer"
+                            >
+                              <Edit className="w-4 h-4" />
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={() => toggleDealerStatusMutation.mutate({ id: dealer.id, isActive: !dealer.isActive })}
+                              title={dealer.isActive ? "Archive dealer" : "Restore dealer"}
+                            >
+                              {dealer.isActive ? <Archive className="w-4 h-4" /> : <ArchiveRestore className="w-4 h-4" />}
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={() => setDealerPendingDelete(dealer)}
+                              title="Delete dealer permanently"
+                              className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </Button>
+                          </div>
                         </TableCell>
                       </TableRow>
                     );
@@ -502,9 +579,42 @@ export default function AdminDealers() {
                 </TableBody>
               </Table>
             </div>
-          )}
+            );
+          })()}
         </CardContent>
       </Card>
+
+      {/* Delete confirmation dialog */}
+      <Dialog open={dealerPendingDelete !== null} onOpenChange={(open) => !open && setDealerPendingDelete(null)}>
+        <DialogContent className="sm:max-w-[440px]">
+          <DialogHeader>
+            <DialogTitle>Delete dealer permanently?</DialogTitle>
+            <DialogDescription>
+              This cannot be undone. The dealer record will be removed entirely.
+              For dealers with order history or active users, archive instead — that
+              keeps history intact and disables the account.
+            </DialogDescription>
+          </DialogHeader>
+          {dealerPendingDelete && (
+            <div className="rounded-md bg-gray-50 px-3 py-2 text-sm">
+              <p className="font-mono text-gray-900">{dealerPendingDelete.dealerId}</p>
+              <p className="text-gray-700">{dealerPendingDelete.dealerName}</p>
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDealerPendingDelete(null)}>
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              disabled={deleteDealerMutation.isPending}
+              onClick={() => dealerPendingDelete && deleteDealerMutation.mutate(dealerPendingDelete.id)}
+            >
+              {deleteDealerMutation.isPending ? "Deleting..." : "Delete permanently"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Add Dealer Dialog */}
       <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>

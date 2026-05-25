@@ -2549,20 +2549,75 @@ export async function registerRoutes(app: Express): Promise<Express> {
     try {
       const dealerId = parseInt(req.params.id);
       const { isActive } = req.body;
-      
+
       const [updatedDealer] = await db.update(dealers)
         .set({ isActive })
         .where(eq(dealers.id, dealerId))
         .returning();
-      
+
       if (!updatedDealer) {
         return res.status(404).json({ error: "Dealer not found" });
       }
-      
+
       res.json(updatedDealer);
     } catch (error) {
       console.error("Error updating dealer status:", error);
       res.status(500).json({ error: "Failed to update dealer status" });
+    }
+  });
+
+  // Hard-delete a dealer. Only permitted when the dealer has no orders and
+  // no dealer users — otherwise the admin should archive (PATCH /status) so
+  // history is preserved. Sessions and password-reset tokens are cleaned up
+  // automatically since they're disposable.
+  app.delete("/api/admin/dealers/:id", requireAuth, requireAdmin, async (req, res) => {
+    try {
+      const dealerId = parseInt(req.params.id);
+
+      const [target] = await db.select().from(dealers).where(eq(dealers.id, dealerId));
+      if (!target) {
+        return res.status(404).json({ error: "Dealer not found" });
+      }
+
+      const [orderCountRow] = await db
+        .select({ n: sql<number>`count(*)::int` })
+        .from(dealerOrders)
+        .where(eq(dealerOrders.dealerId, dealerId));
+      const orderCount = orderCountRow?.n ?? 0;
+
+      const [userCountRow] = await db
+        .select({ n: sql<number>`count(*)::int` })
+        .from(dealerUsers)
+        .where(eq(dealerUsers.dealerId, dealerId));
+      const userCount = userCountRow?.n ?? 0;
+
+      const [locCountRow] = await db
+        .select({ n: sql<number>`count(*)::int` })
+        .from(dealers)
+        .where(eq(dealers.parentDealerId, dealerId));
+      const locationCount = locCountRow?.n ?? 0;
+
+      if (orderCount > 0 || userCount > 0 || locationCount > 0) {
+        return res.status(409).json({
+          error: "Cannot delete dealer with history",
+          reason: {
+            orders: orderCount,
+            users: userCount,
+            locations: locationCount,
+          },
+          suggestion: "Archive the dealer instead so order history is preserved.",
+        });
+      }
+
+      // Clean up disposable side tables, then the dealer row itself.
+      await db.delete(dealerSessions).where(eq(dealerSessions.dealerId, dealerId));
+      await db.delete(dealerPasswordResetTokens).where(eq(dealerPasswordResetTokens.dealerId, dealerId));
+      await db.delete(dealers).where(eq(dealers.id, dealerId));
+
+      res.json({ success: true });
+    } catch (error: any) {
+      console.error("Error deleting dealer:", error);
+      res.status(500).json({ error: error?.message || "Failed to delete dealer" });
     }
   });
 
