@@ -152,7 +152,7 @@ export default function DealerLogin() {
 
               <Button
                 type="submit"
-                className="w-full"
+                className="w-full bg-brand-tan text-white hover:bg-brand-tan/90"
                 disabled={isLoading}
               >
                 {isLoading ? (
