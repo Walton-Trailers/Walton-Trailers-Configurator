@@ -370,7 +370,6 @@ export default function AdminDashboard() {
                     <p>• Upload and manage trailer images</p>
                   </div>
                   <Button onClick={() => setLocation("/admin/pricing")}>
-                    <DollarSign className="w-4 h-4 mr-2" />
                     Update Products Catalog
                   </Button>
                 </CardContent>

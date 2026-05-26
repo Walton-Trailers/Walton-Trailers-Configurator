@@ -669,10 +669,7 @@ export default function AdminDashboard() {
             <div className="grid grid-cols-1 md:grid-cols-1 gap-6">
               <Card>
                 <CardHeader>
-                  <CardTitle className="flex items-center">
-                    <DollarSign className="w-5 h-5 mr-2" />
-                    Product Management
-                  </CardTitle>
+                  <CardTitle>Product Management</CardTitle>
                   <CardDescription>
                     Update trailer and option pricing & details
                   </CardDescription>
@@ -685,7 +682,6 @@ export default function AdminDashboard() {
                   </div>
                   <Link href="/admin/pricing">
                     <Button>
-                      <DollarSign className="w-4 h-4 mr-2" />
                       Update Products Catalog
                     </Button>
                   </Link>
