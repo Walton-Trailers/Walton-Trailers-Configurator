@@ -13,7 +13,7 @@ import { Loader2 } from "lucide-react";
 import waltonIcon from "@/assets/walton-icon-gold.png";
 
 const loginSchema = z.object({
-  dealerId: z.string().min(1, "Dealer ID is required"),
+  email: z.string().min(1, "Email is required").email("Enter a valid email address"),
   password: z.string().min(1, "Password is required"),
 });
 
@@ -48,7 +48,7 @@ export default function DealerLogin() {
   const form = useForm<LoginForm>({
     resolver: zodResolver(loginSchema),
     defaultValues: {
-      dealerId: "",
+      email: "",
       password: "",
     },
   });
@@ -118,17 +118,18 @@ export default function DealerLogin() {
               )}
 
               <div className="space-y-2">
-                <Label htmlFor="dealerId">Dealer ID</Label>
+                <Label htmlFor="email">Email</Label>
                 <Input
-                  id="dealerId"
-                  type="text"
-                  placeholder="Enter your dealer ID"
-                  {...form.register("dealerId")}
+                  id="email"
+                  type="email"
+                  autoComplete="email"
+                  placeholder="you@yourdealership.com"
+                  {...form.register("email")}
                   disabled={isLoading}
                 />
-                {form.formState.errors.dealerId && (
+                {form.formState.errors.email && (
                   <p className="text-sm text-red-600">
-                    {form.formState.errors.dealerId.message}
+                    {form.formState.errors.email.message}
                   </p>
                 )}
               </div>

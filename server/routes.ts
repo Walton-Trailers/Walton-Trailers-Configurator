@@ -668,21 +668,26 @@ export async function registerRoutes(app: Express): Promise<Express> {
   // Dealer login
   app.post("/api/dealer/login", async (req, res) => {
     try {
-      const { dealerId, password } = req.body;
-      
+      // Email is the canonical login identifier. We still accept a legacy
+      // `dealerId` body field so any client that hasn't picked up the new
+      // build yet keeps working for one release — drop after the next deploy
+      // cycle if you want to lock to email-only.
+      const { email: rawEmail, dealerId: legacyDealerId, password } = req.body;
+      const email = typeof rawEmail === "string" ? rawEmail.trim().toLowerCase() : "";
+
       console.log("🔐 Dealer login attempt:");
-      console.log("📝 Received dealerId:", dealerId);
-      
-      const [dealer] = await db.select()
-        .from(dealers)
-        .where(eq(dealers.dealerId, dealerId));
-      
-      console.log("🔍 Database query result:", dealer);
-      
+      console.log("📝 Received email:", email || "(none)", "legacyDealerId:", legacyDealerId || "(none)");
+
+      const [dealer] = email
+        ? await db.select().from(dealers).where(sql`LOWER(${dealers.email}) = ${email}`)
+        : legacyDealerId
+          ? await db.select().from(dealers).where(eq(dealers.dealerId, legacyDealerId))
+          : [];
+
+      console.log("🔍 Database query result:", dealer ? `dealer ${dealer.dealerId}` : "(no match)");
+
       if (!dealer || !dealer.isActive) {
         console.log("❌ Authentication failed: dealer not found or inactive");
-        console.log("📊 Dealer exists:", !!dealer);
-        console.log("📊 Dealer active:", dealer?.isActive);
         return res.status(401).json({ error: "Invalid credentials" });
       }
       
