@@ -2339,6 +2339,92 @@ export async function registerRoutes(app: Express): Promise<Express> {
     }
   });
 
+  // Get a single dealer with their full record. The list endpoint already
+  // returns everything, but the detail page wants a 404 if the id doesn't
+  // exist so the URL can be linked directly.
+  app.get("/api/admin/dealers/:id", requireAuth, requireAdmin, async (req, res) => {
+    try {
+      const dealerId = parseInt(req.params.id);
+      if (Number.isNaN(dealerId)) return res.status(400).json({ error: "Invalid dealer id" });
+      const [dealer] = await db.select().from(dealers).where(eq(dealers.id, dealerId));
+      if (!dealer) return res.status(404).json({ error: "Dealer not found" });
+      res.json(dealer);
+    } catch (error) {
+      console.error("Error fetching dealer:", error);
+      res.status(500).json({ error: "Failed to fetch dealer" });
+    }
+  });
+
+  // Orders for one dealer. Shape mirrors /api/admin/configurations so the
+  // existing AdminOrderManageDialog component can consume rows directly.
+  app.get("/api/admin/dealers/:id/orders", requireAuth, requireAdmin, async (req, res) => {
+    try {
+      const dealerId = parseInt(req.params.id);
+      if (Number.isNaN(dealerId)) return res.status(400).json({ error: "Invalid dealer id" });
+      const rows = await db.select({
+        id: dealerOrders.id,
+        type: sql<string>`'dealer'`,
+        source: sql<string>`'Dealer'`,
+        dealerId: sql<string>`cast(${dealerOrders.dealerId} as text)`,
+        dealerName: dealers.dealerName,
+        customerName: dealerOrders.customerName,
+        customerEmail: dealerOrders.customerEmail,
+        customerPhone: dealerOrders.customerPhone,
+        categorySlug: dealerOrders.categorySlug,
+        categoryName: dealerOrders.categoryName,
+        modelId: dealerOrders.modelId,
+        modelName: dealerOrders.modelName,
+        selectedOptions: dealerOrders.selectedOptions,
+        totalPrice: dealerOrders.totalPrice,
+        status: dealerOrders.status,
+        notes: dealerOrders.notes,
+        createdAt: dealerOrders.createdAt,
+        orderNumber: dealerOrders.orderNumber,
+        repOrderNumber: dealerOrders.repOrderNumber,
+        poNumber: dealerOrders.poNumber,
+        submittedAt: dealerOrders.submittedAt,
+        deletedAt: dealerOrders.deletedAt,
+        workOrderUrl: dealerOrders.workOrderUrl,
+        workOrderUploadedAt: dealerOrders.workOrderUploadedAt,
+      })
+      .from(dealerOrders)
+      .leftJoin(dealers, eq(dealerOrders.dealerId, dealers.id))
+      .where(eq(dealerOrders.dealerId, dealerId))
+      .orderBy(sql`${dealerOrders.createdAt} DESC`);
+      res.json(rows);
+    } catch (error) {
+      console.error("Error fetching dealer orders:", error);
+      res.status(500).json({ error: "Failed to fetch dealer orders" });
+    }
+  });
+
+  // Sub-users (employees) belonging to a dealer. Hides password hashes.
+  app.get("/api/admin/dealers/:id/users", requireAuth, requireAdmin, async (req, res) => {
+    try {
+      const dealerId = parseInt(req.params.id);
+      if (Number.isNaN(dealerId)) return res.status(400).json({ error: "Invalid dealer id" });
+      const users = await db.select({
+        id: dealerUsers.id,
+        username: dealerUsers.username,
+        email: dealerUsers.email,
+        firstName: dealerUsers.firstName,
+        lastName: dealerUsers.lastName,
+        title: dealerUsers.title,
+        role: dealerUsers.role,
+        isActive: dealerUsers.isActive,
+        lastLogin: dealerUsers.lastLogin,
+        createdAt: dealerUsers.createdAt,
+      })
+      .from(dealerUsers)
+      .where(eq(dealerUsers.dealerId, dealerId))
+      .orderBy(dealerUsers.createdAt);
+      res.json(users);
+    } catch (error) {
+      console.error("Error fetching dealer users:", error);
+      res.status(500).json({ error: "Failed to fetch dealer users" });
+    }
+  });
+
   // Get dealer stats (admin only)
   app.get("/api/admin/dealers/stats", requireAuth, requireAdmin, async (req, res) => {
     try {

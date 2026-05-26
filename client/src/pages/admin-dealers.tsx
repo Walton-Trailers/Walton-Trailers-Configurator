@@ -504,10 +504,12 @@ export default function AdminDealers() {
                           })()}
                         </TableCell>
                         <TableCell>
-                          <div>
-                            <p className="font-medium">{dealer.dealerName}</p>
-                            <p className="text-sm text-gray-500">{dealer.email}</p>
-                          </div>
+                          <Link href={`/admin/dealers/${dealer.id}`}>
+                            <div className="cursor-pointer group">
+                              <p className="font-medium group-hover:text-blue-600 group-hover:underline">{dealer.dealerName}</p>
+                              <p className="text-sm text-gray-500">{dealer.email}</p>
+                            </div>
+                          </Link>
                         </TableCell>
                         <TableCell>
                           <div>
