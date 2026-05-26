@@ -1,15 +1,17 @@
 // One-shot: invalidate every dealer + dealer-user session and send a
-// password-reset email to every active dealer. Use this after switching
-// dealer login from Dealer ID to email so everyone is forced to set fresh
-// credentials.
+// password-reset email to every active dealer AND every active dealer-user.
+// Use this after switching login identifiers (Dealer ID → email for dealers,
+// username → email for dealer-users) so everyone is forced to set fresh
+// credentials they actually know.
 //
 // Usage:
 //   APP_URL=https://your-prod-url.vercel.app node scripts/force-dealer-reset.mjs
 //
 // APP_URL points at the deployed Vercel app — the script POSTs each
-// dealer's email at /api/dealer/forgot-password, which uses the configured
-// email provider to deliver the reset link. Sessions are cleared directly
-// in the DB using DATABASE_URL from .env.local.
+// account's email at /api/dealer/forgot-password (dealers) or
+// /api/dealer/user/forgot-password (dealer-users), which uses the
+// configured email provider to deliver the reset link. Sessions are
+// cleared directly in the DB using DATABASE_URL from .env.local.
 
 import fs from 'node:fs';
 import path from 'node:path';
@@ -58,9 +60,9 @@ try {
   const { rows: dealers } = await c.query(
     'SELECT id, dealer_id, dealer_name, email FROM dealers WHERE is_active = true AND email IS NOT NULL AND email != \'\''
   );
-  console.log(`Sending password-reset emails to ${dealers.length} active dealer(s)…`);
+  console.log(`\nSending password-reset emails to ${dealers.length} active dealer(s)…`);
 
-  let sent = 0, failed = 0;
+  let dealerSent = 0, dealerFailed = 0;
   for (const d of dealers) {
     try {
       const resp = await fetch(`${appUrl}/api/dealer/forgot-password`, {
@@ -70,17 +72,55 @@ try {
       });
       if (resp.ok) {
         console.log(`  ✓ ${d.dealer_id} ${d.dealer_name} <${d.email}>`);
-        sent++;
+        dealerSent++;
       } else {
         console.warn(`  ✗ ${d.dealer_id} <${d.email}> — HTTP ${resp.status}`);
-        failed++;
+        dealerFailed++;
       }
     } catch (err) {
       console.warn(`  ✗ ${d.dealer_id} <${d.email}> — ${err?.message || err}`);
-      failed++;
+      dealerFailed++;
     }
   }
-  console.log(`Done. ${sent} sent, ${failed} failed.`);
+
+  // 3. Pull active dealer-users (sub-users under a dealer account) and reset
+  // their passwords too. Skip users whose parent dealer is archived — those
+  // accounts can't log in regardless.
+  const { rows: users } = await c.query(`
+    SELECT u.id, u.email, u.first_name, u.last_name, d.dealer_id AS parent_dealer_id, d.dealer_name AS parent_dealer_name
+    FROM dealer_users u
+    JOIN dealers d ON d.id = u.dealer_id
+    WHERE u.is_active = true
+      AND d.is_active = true
+      AND u.email IS NOT NULL
+      AND u.email != ''
+  `);
+  console.log(`\nSending password-reset emails to ${users.length} active dealer-user(s)…`);
+
+  let userSent = 0, userFailed = 0;
+  for (const u of users) {
+    try {
+      const resp = await fetch(`${appUrl}/api/dealer/user/forgot-password`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: u.email }),
+      });
+      if (resp.ok) {
+        console.log(`  ✓ ${u.first_name} ${u.last_name} <${u.email}> (under ${u.parent_dealer_id} ${u.parent_dealer_name})`);
+        userSent++;
+      } else {
+        console.warn(`  ✗ <${u.email}> — HTTP ${resp.status}`);
+        userFailed++;
+      }
+    } catch (err) {
+      console.warn(`  ✗ <${u.email}> — ${err?.message || err}`);
+      userFailed++;
+    }
+  }
+
+  console.log(`\nDone.`);
+  console.log(`  Dealers:      ${dealerSent} sent, ${dealerFailed} failed`);
+  console.log(`  Dealer-users: ${userSent} sent, ${userFailed} failed`);
 } finally {
   c.release();
   await pool.end();
