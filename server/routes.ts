@@ -3990,6 +3990,42 @@ export async function registerRoutes(app: Express): Promise<Express> {
     }
   });
 
+  // Hard-delete a dealer order. Used by admins to clean up test/junk
+  // orders. Distinct from the dealer-side soft-delete (deletedAt). Also
+  // best-effort removes the work-order PDF from Blob so we don't leave
+  // orphan files. The dealer-side "Recreate from past order" feature can
+  // no longer see the order after this — by design.
+  app.delete("/api/admin/dealer-orders/:id", requireAuth, requireAdmin, async (req, res) => {
+    try {
+      const orderId = parseInt(req.params.id);
+      const [existing] = await db.select()
+        .from(dealerOrders)
+        .where(eq(dealerOrders.id, orderId));
+      if (!existing) {
+        return res.status(404).json({ error: "Order not found" });
+      }
+
+      // Best-effort: clean up the work-order PDF if one is attached.
+      if (existing.workOrderUrl) {
+        try {
+          // workOrderUrl is a full Vercel Blob public URL — pass it directly
+          // to del(); it accepts URLs as well as pathnames.
+          const { del } = await import("@vercel/blob");
+          await del(existing.workOrderUrl);
+        } catch (e) {
+          console.warn(`Work-order blob cleanup failed for order ${existing.orderNumber}:`, e);
+          // Don't block the delete — orphan blob is acceptable.
+        }
+      }
+
+      await db.delete(dealerOrders).where(eq(dealerOrders.id, orderId));
+      res.json({ success: true });
+    } catch (error: any) {
+      console.error("Error in DELETE /api/admin/dealer-orders/:id:", error);
+      res.status(500).json({ error: error?.message || "Failed to delete order" });
+    }
+  });
+
   // Airtable Integration Routes
   app.post("/api/integrations/airtable/test", async (req, res) => {
     const { sessionId } = req.cookies;

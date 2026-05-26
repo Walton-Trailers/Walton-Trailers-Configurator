@@ -83,6 +83,30 @@ export function AdminOrderManageDialog({ open, onOpenChange, order }: AdminOrder
       toast({ title: "Update failed", description: err?.message, variant: "destructive" }),
   });
 
+  // Hard-delete the order. Distinct from the dealer-side soft-delete — this
+  // wipes the row entirely (and best-effort cleans up the work-order PDF).
+  // Two-step confirm guards against an accidental click.
+  const [confirmDelete, setConfirmDelete] = useState(false);
+  const deleteMutation = useMutation({
+    mutationFn: async () => {
+      if (!order) throw new Error("No order selected");
+      return apiRequest(`/api/admin/dealer-orders/${order.id}`, { method: "DELETE" });
+    },
+    onSuccess: () => {
+      toast({ title: "Order deleted" });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/configurations"] });
+      setConfirmDelete(false);
+      onOpenChange(false);
+    },
+    onError: (err: any) =>
+      toast({ title: "Delete failed", description: err?.message, variant: "destructive" }),
+  });
+
+  // Reset the confirm-delete state any time the dialog re-opens with a new row.
+  useEffect(() => {
+    if (open) setConfirmDelete(false);
+  }, [open, order]);
+
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file || !order) return;
@@ -275,26 +299,61 @@ export function AdminOrderManageDialog({ open, onOpenChange, order }: AdminOrder
           </div>
         </div>
 
-        <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)} disabled={saveMutation.isPending}>
-            Cancel
-          </Button>
-          <Button
-            onClick={() => saveMutation.mutate()}
-            disabled={saveMutation.isPending || uploading}
-          >
-            {saveMutation.isPending ? (
-              <>
-                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                Saving…
-              </>
-            ) : (
-              <>
-                <Send className="w-4 h-4 mr-2" />
-                Save Changes
-              </>
-            )}
-          </Button>
+        <DialogFooter className="sm:justify-between">
+          {/* Delete is intentionally on the left so it can't be confused with
+              the primary Save action on the right. Two-click confirm. */}
+          {confirmDelete ? (
+            <div className="flex items-center gap-2">
+              <span className="text-sm text-red-700 font-medium">Delete this order permanently?</span>
+              <Button
+                variant="destructive"
+                size="sm"
+                onClick={() => deleteMutation.mutate()}
+                disabled={deleteMutation.isPending}
+              >
+                {deleteMutation.isPending ? (
+                  <><Loader2 className="w-3 h-3 mr-1 animate-spin" /> Deleting…</>
+                ) : (
+                  "Yes, delete"
+                )}
+              </Button>
+              <Button variant="outline" size="sm" onClick={() => setConfirmDelete(false)} disabled={deleteMutation.isPending}>
+                Cancel
+              </Button>
+            </div>
+          ) : (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setConfirmDelete(true)}
+              disabled={saveMutation.isPending || deleteMutation.isPending}
+              className="text-red-600 hover:text-red-700 hover:bg-red-50"
+            >
+              <Trash2 className="w-4 h-4 mr-1" />
+              Delete order
+            </Button>
+          )}
+          <div className="flex items-center gap-2">
+            <Button variant="outline" onClick={() => onOpenChange(false)} disabled={saveMutation.isPending || deleteMutation.isPending}>
+              Cancel
+            </Button>
+            <Button
+              onClick={() => saveMutation.mutate()}
+              disabled={saveMutation.isPending || uploading || deleteMutation.isPending || confirmDelete}
+            >
+              {saveMutation.isPending ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Saving…
+                </>
+              ) : (
+                <>
+                  <Send className="w-4 h-4 mr-2" />
+                  Save Changes
+                </>
+              )}
+            </Button>
+          </div>
         </DialogFooter>
       </DialogContent>
     </Dialog>
