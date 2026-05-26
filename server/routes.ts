@@ -1575,12 +1575,18 @@ export async function registerRoutes(app: Express): Promise<Express> {
   // Dealer user login
   app.post("/api/dealer/user/login", async (req, res) => {
     try {
-      const { username, password } = req.body;
-      
-      const [user] = await db.select()
-        .from(dealerUsers)
-        .where(eq(dealerUsers.username, username));
-      
+      // Email is the canonical login identifier. `username` is still
+      // accepted for one release as a grace period so any client running
+      // an older bundle keeps working.
+      const { email: rawEmail, username: legacyUsername, password } = req.body;
+      const email = typeof rawEmail === "string" ? rawEmail.trim().toLowerCase() : "";
+
+      const [user] = email
+        ? await db.select().from(dealerUsers).where(sql`LOWER(${dealerUsers.email}) = ${email}`)
+        : legacyUsername
+          ? await db.select().from(dealerUsers).where(eq(dealerUsers.username, legacyUsername))
+          : [];
+
       if (!user || !user.isActive) {
         return res.status(401).json({ error: "Invalid credentials" });
       }

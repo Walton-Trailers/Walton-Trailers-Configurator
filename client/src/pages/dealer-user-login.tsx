@@ -12,7 +12,7 @@ import { apiRequest, queryClient } from "@/lib/queryClient";
 import { Loader2, Users } from "lucide-react";
 
 const loginSchema = z.object({
-  username: z.string().min(1, "Username is required"),
+  email: z.string().min(1, "Email is required").email("Enter a valid email address"),
   password: z.string().min(1, "Password is required"),
 });
 
@@ -53,7 +53,7 @@ export default function DealerUserLogin() {
   const form = useForm<LoginForm>({
     resolver: zodResolver(loginSchema),
     defaultValues: {
-      username: "",
+      email: "",
       password: "",
     },
   });
@@ -110,7 +110,7 @@ export default function DealerUserLogin() {
           <CardHeader>
             <CardTitle>Employee Sign In</CardTitle>
             <CardDescription>
-              Enter your username and password to access the portal
+              Enter your email and password to access the portal
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -122,18 +122,19 @@ export default function DealerUserLogin() {
               )}
 
               <div className="space-y-2">
-                <Label htmlFor="username">Username</Label>
+                <Label htmlFor="email">Email</Label>
                 <Input
-                  id="username"
-                  type="text"
-                  placeholder="Enter your username"
-                  {...form.register("username")}
+                  id="email"
+                  type="email"
+                  autoComplete="email"
+                  placeholder="you@yourdealership.com"
+                  {...form.register("email")}
                   disabled={isLoading}
-                  data-testid="input-username"
+                  data-testid="input-email"
                 />
-                {form.formState.errors.username && (
+                {form.formState.errors.email && (
                   <p className="text-sm text-red-600">
-                    {form.formState.errors.username.message}
+                    {form.formState.errors.email.message}
                   </p>
                 )}
               </div>
@@ -157,7 +158,7 @@ export default function DealerUserLogin() {
 
               <Button
                 type="submit"
-                className="w-full"
+                className="w-full bg-brand-tan text-white hover:bg-brand-tan/90"
                 disabled={isLoading}
                 data-testid="button-submit"
               >
