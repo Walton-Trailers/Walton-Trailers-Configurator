@@ -26,7 +26,7 @@ import {
 
 interface AdminUser {
   id: number;
-  username: string;
+  username?: string | null;
   email: string;
   firstName: string | null;
   lastName: string | null;
@@ -37,7 +37,6 @@ interface AdminUser {
 }
 
 const createUserSchema = z.object({
-  username: z.string().min(3, "Username must be at least 3 characters"),
   email: z.string().email("Invalid email address"),
   firstName: z.string().optional(),
   lastName: z.string().optional(),
@@ -93,7 +92,6 @@ export default function AdminDashboard() {
   const form = useForm<CreateUserForm>({
     resolver: zodResolver(createUserSchema),
     defaultValues: {
-      username: "",
       email: "",
       firstName: "",
       lastName: "",
@@ -590,7 +588,7 @@ export default function AdminDashboard() {
             <div className="flex items-center space-x-2 md:space-x-4">
               {/* Welcome message - hidden on mobile, shown on desktop */}
               <div className="hidden md:block text-sm text-gray-600">
-                Welcome, {user.firstName || user.username}
+                Welcome, {user.firstName || user.email}
                 <Badge variant={user.role === "admin" ? "default" : "secondary"} className="ml-2">
                   {user.role}
                 </Badge>
@@ -891,26 +889,13 @@ ${quote.notes ? `\nAdmin Notes: ${quote.notes}` : ''}`;
                     </DialogHeader>
                     
                     <form onSubmit={form.handleSubmit(onCreateUser)} className="space-y-4">
-                      <div className="grid grid-cols-2 gap-4">
-                        <div className="space-y-2">
-                          <Label htmlFor="username">Username</Label>
-                          <Input
-                            id="username"
-                            {...form.register("username")}
-                            placeholder="Enter username"
-                          />
-                          {form.formState.errors.username && (
-                            <p className="text-sm text-red-600">
-                              {form.formState.errors.username.message}
-                            </p>
-                          )}
-                        </div>
-
+                      <div className="grid grid-cols-1 gap-4">
                         <div className="space-y-2">
                           <Label htmlFor="email">Email</Label>
                           <Input
                             id="email"
                             type="email"
+                            autoComplete="email"
                             {...form.register("email")}
                             placeholder="Enter email"
                           />
@@ -1006,7 +991,6 @@ ${quote.notes ? `\nAdmin Notes: ${quote.notes}` : ''}`;
                         <thead className="border-b bg-gray-50">
                           <tr>
                             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Username</th>
                             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
                             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Role</th>
                             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
@@ -1019,7 +1003,6 @@ ${quote.notes ? `\nAdmin Notes: ${quote.notes}` : ''}`;
                             if (!userSearchTerm) return true;
                             const searchLower = userSearchTerm.toLowerCase();
                             return (
-                              adminUser.username.toLowerCase().includes(searchLower) ||
                               adminUser.email.toLowerCase().includes(searchLower) ||
                               (adminUser.firstName && adminUser.firstName.toLowerCase().includes(searchLower)) ||
                               (adminUser.lastName && adminUser.lastName.toLowerCase().includes(searchLower)) ||
@@ -1050,18 +1033,6 @@ ${quote.notes ? `\nAdmin Notes: ${quote.notes}` : ''}`;
                                       : "-"
                                     }
                                   </div>
-                                )}
-                              </td>
-                              <td className="px-6 py-4 whitespace-nowrap">
-                                {editingUser?.id === adminUser.id ? (
-                                  <Input
-                                    placeholder="Username"
-                                    value={editData.username ?? adminUser.username}
-                                    onChange={(e) => setEditData({ ...editData, username: e.target.value })}
-                                    className="w-32 h-8 text-sm"
-                                  />
-                                ) : (
-                                  <div className="text-sm text-gray-900">{adminUser.username}</div>
                                 )}
                               </td>
                               <td className="px-6 py-4 whitespace-nowrap">
@@ -1204,7 +1175,7 @@ ${quote.notes ? `\nAdmin Notes: ${quote.notes}` : ''}`;
                   <DialogHeader>
                     <DialogTitle>Change Password</DialogTitle>
                     <DialogDescription>
-                      Change password for {changingPasswordUser?.firstName} {changingPasswordUser?.lastName} ({changingPasswordUser?.username})
+                      Change password for {changingPasswordUser?.firstName} {changingPasswordUser?.lastName} ({changingPasswordUser?.email})
                     </DialogDescription>
                   </DialogHeader>
                   

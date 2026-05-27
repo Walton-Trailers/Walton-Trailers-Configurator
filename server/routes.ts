@@ -147,10 +147,16 @@ const requireDealerAuth = async (req: AuthenticatedRequest, res: Response, next:
   }
 };
 
-// Login validation schema
+// Login validation schema. Email is the canonical identifier; `username`
+// is accepted as a fallback for one release so any client still running an
+// old bundle keeps working.
 const loginSchema = z.object({
-  username: z.string().min(1, 'Username is required'),
+  email: z.string().email('Enter a valid email address').optional(),
+  username: z.string().optional(),
   password: z.string().min(1, 'Password is required'),
+}).refine((d) => !!(d.email || d.username), {
+  message: 'Email is required',
+  path: ['email'],
 });
 
 // User creation schema for admin
@@ -1901,10 +1907,12 @@ export async function registerRoutes(app: Express): Promise<Express> {
   // Admin login
   app.post("/api/admin/login", async (req, res) => {
     try {
-      const { username, password } = loginSchema.parse(req.body);
-      
-      const authResult = await authenticateUser(username, password);
-      
+      const { email, username, password } = loginSchema.parse(req.body);
+      // Email path is preferred; username path is a one-release fallback.
+      const authResult = email
+        ? await authenticateUserByEmail(email, password)
+        : await authenticateUser(username!, password);
+
       if (!authResult.success) {
         return res.status(401).json({ error: authResult.error });
       }
@@ -2224,9 +2232,12 @@ export async function registerRoutes(app: Express): Promise<Express> {
   // Create new user (admin only)
   app.post("/api/admin/users", requireAuth, requireAdmin, async (req: any, res) => {
     try {
-      const userData = createUserSchema.parse(req.body);
-      
-      // Check if trying to create an admin user
+      // Allow the request to omit `username` — email is the only identifier
+      // we collect now. Strip it from the input before zod parsing so the
+      // generated insert schema doesn't reject a missing key.
+      const { username: _ignoreLegacyUsername, ...rest } = req.body || {};
+      const userData = createUserSchema.parse(rest);
+
       // Only admin users can create other admin users
       if (userData.role === 'admin') {
         const currentUser = req.user;
@@ -2234,23 +2245,18 @@ export async function registerRoutes(app: Express): Promise<Express> {
           return res.status(403).json({ error: "Only administrators can create admin users" });
         }
       }
-      
-      // Check if username or email already exists
-      const existingByUsername = await storage.getAdminUserByUsername(userData.username);
-      if (existingByUsername) {
-        return res.status(400).json({ error: "Username already exists" });
-      }
 
       const existingByEmail = await storage.getAdminUserByEmail(userData.email);
       if (existingByEmail) {
-        return res.status(400).json({ error: "Email already exists" });
+        return res.status(400).json({ error: "An account with this email already exists" });
       }
 
       // Hash the password
       const passwordHash = await hashPassword(userData.password);
-      
+
       const newUser = await storage.createAdminUser({
         ...userData,
+        username: null,
         passwordHash,
       });
 

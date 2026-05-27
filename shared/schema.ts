@@ -124,7 +124,11 @@ export const userConfigurations = pgTable("user_configurations", {
 // Admin Users
 export const adminUsers = pgTable("admin_users", {
   id: serial("id").primaryKey(),
-  username: varchar("username", { length: 50 }).notNull().unique(),
+  // Legacy. Email is the canonical login identifier (see 0009 migration).
+  // Column kept nullable so existing rows aren't invalidated, but new rows
+  // leave it NULL and neither the login form nor the create-user form ask
+  // for it.
+  username: varchar("username", { length: 50 }).unique(),
   email: varchar("email", { length: 100 }).notNull().unique(),
   passwordHash: text("password_hash").notNull(),
   firstName: varchar("first_name", { length: 50 }),

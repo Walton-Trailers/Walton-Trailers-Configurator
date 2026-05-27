@@ -12,7 +12,7 @@ import { apiRequest } from "@/lib/queryClient";
 import { Loader2 } from "lucide-react";
 
 const loginSchema = z.object({
-  username: z.string().min(1, "Username is required"),
+  email: z.string().min(1, "Email is required").email("Enter a valid email address"),
   password: z.string().min(1, "Password is required"),
 });
 
@@ -21,7 +21,7 @@ type LoginForm = z.infer<typeof loginSchema>;
 interface LoginResponse {
   user: {
     id: number;
-    username: string;
+    username?: string | null;
     email: string;
     firstName: string | null;
     lastName: string | null;
@@ -47,7 +47,7 @@ export default function AdminLogin() {
   const form = useForm<LoginForm>({
     resolver: zodResolver(loginSchema),
     defaultValues: {
-      username: "",
+      email: "",
       password: "",
     },
   });
@@ -103,17 +103,18 @@ export default function AdminLogin() {
               )}
 
               <div className="space-y-2">
-                <Label htmlFor="username">Username</Label>
+                <Label htmlFor="email">Email</Label>
                 <Input
-                  id="username"
-                  type="text"
-                  placeholder="Enter your username"
-                  {...form.register("username")}
+                  id="email"
+                  type="email"
+                  autoComplete="email"
+                  placeholder="you@waltontrailers.com"
+                  {...form.register("email")}
                   disabled={isLoading}
                 />
-                {form.formState.errors.username && (
+                {form.formState.errors.email && (
                   <p className="text-sm text-red-600">
-                    {form.formState.errors.username.message}
+                    {form.formState.errors.email.message}
                   </p>
                 )}
               </div>

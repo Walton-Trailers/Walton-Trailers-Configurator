@@ -3,7 +3,7 @@ import { apiRequest } from "@/lib/queryClient";
 
 interface AdminUser {
   id: number;
-  username: string;
+  username?: string | null;
   email: string;
   firstName: string | null;
   lastName: string | null;

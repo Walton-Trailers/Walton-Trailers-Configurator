@@ -53,7 +53,7 @@ export class NoDatabaseStorage implements IStorage {
     const id = this.nextId++;
     const user: AdminUser = {
       id,
-      username: data.username,
+      username: data.username ?? null,
       email: data.email,
       passwordHash: data.passwordHash,
       firstName: data.firstName ?? null,

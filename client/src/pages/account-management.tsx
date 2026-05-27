@@ -11,7 +11,7 @@ import { apiRequest } from "@/lib/queryClient";
 
 interface AdminUser {
   id: number;
-  username: string;
+  username?: string | null;
   email: string;
   role: string;
   isActive: boolean;
@@ -81,25 +81,15 @@ export default function AccountManagement() {
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="username">Username</Label>
-                  <Input
-                    id="username"
-                    value={user.username || ''}
-                    disabled
-                    className="bg-gray-50"
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="email">Email</Label>
-                  <Input
-                    id="email"
-                    value={user.email || ''}
-                    disabled
-                    className="bg-gray-50"
-                  />
-                </div>
+              <div>
+                <Label htmlFor="email">Email</Label>
+                <Input
+                  id="email"
+                  value={user.email || ''}
+                  disabled
+                  className="bg-gray-50"
+                />
+                <p className="text-xs text-gray-500 mt-1">Used as your login.</p>
               </div>
             </CardContent>
           </Card>

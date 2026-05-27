@@ -32,13 +32,15 @@ export function generateSessionId(): string {
   return crypto.randomBytes(32).toString('hex');
 }
 
-// Authenticate user credentials
+// Authenticate user credentials by username (legacy path — kept while the
+// admin-user `username` column is being phased out). Prefer
+// authenticateUserByEmail for new code paths.
 export async function authenticateUser(username: string, password: string): Promise<AuthResult> {
   try {
     const user = await storage.getAdminUserByUsername(username);
-    
+
     if (!user) {
-      return { success: false, error: 'Invalid username or password' };
+      return { success: false, error: 'Invalid credentials' };
     }
 
     if (!user.isActive) {
@@ -46,9 +48,9 @@ export async function authenticateUser(username: string, password: string): Prom
     }
 
     const isValidPassword = await verifyPassword(password, user.passwordHash);
-    
+
     if (!isValidPassword) {
-      return { success: false, error: 'Invalid username or password' };
+      return { success: false, error: 'Invalid credentials' };
     }
 
     // Update last login
@@ -57,6 +59,32 @@ export async function authenticateUser(username: string, password: string): Prom
     return { success: true, user };
   } catch (error) {
     console.error('Error authenticating user:', error);
+    return { success: false, error: 'Authentication failed' };
+  }
+}
+
+// Email-based admin login. Case-insensitive lookup so users don't get
+// tripped up by mismatched casing between the field they typed and what
+// was stored.
+export async function authenticateUserByEmail(email: string, password: string): Promise<AuthResult> {
+  try {
+    const normalized = email.trim().toLowerCase();
+    const user = await storage.getAdminUserByEmail(normalized);
+
+    if (!user) {
+      return { success: false, error: 'Invalid credentials' };
+    }
+    if (!user.isActive) {
+      return { success: false, error: 'Account is deactivated' };
+    }
+    const isValidPassword = await verifyPassword(password, user.passwordHash);
+    if (!isValidPassword) {
+      return { success: false, error: 'Invalid credentials' };
+    }
+    await storage.updateAdminUser(user.id, { lastLogin: new Date() });
+    return { success: true, user };
+  } catch (error) {
+    console.error('Error authenticating user by email:', error);
     return { success: false, error: 'Authentication failed' };
   }
 }

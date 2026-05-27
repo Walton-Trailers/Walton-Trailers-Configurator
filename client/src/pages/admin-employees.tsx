@@ -14,7 +14,7 @@ import { useToast } from "@/hooks/use-toast";
 // Walton internal staff (admin_users). Distinct from dealers and dealer-users.
 interface Employee {
   id: number;
-  username: string;
+  username?: string | null;
   email: string;
   firstName: string | null;
   lastName: string | null;
@@ -88,8 +88,11 @@ function EmployeeCard({ employee, onManage }: { employee: Employee; onManage: ()
     queryKey: [`/api/admin/users/${employee.id}/dealer-assignments`],
   });
 
-  const fullName = [employee.firstName, employee.lastName].filter(Boolean).join(" ") || employee.username;
-  const initials = (employee.firstName?.[0] || "") + (employee.lastName?.[0] || "") || employee.username[0]?.toUpperCase() || "?";
+  const fullName = [employee.firstName, employee.lastName].filter(Boolean).join(" ") || employee.email;
+  const initials =
+    (employee.firstName?.[0] || "") + (employee.lastName?.[0] || "") ||
+    employee.email[0]?.toUpperCase() ||
+    "?";
 
   return (
     <Card className={!employee.isActive ? "opacity-60" : ""}>
