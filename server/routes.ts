@@ -1023,6 +1023,10 @@ export async function registerRoutes(app: Express): Promise<Express> {
   // happy under burst load from the dashboard.
   const AIRTABLE_BASE_ID = process.env.AIRTABLE_BASE_ID || "appigN6Xxb0P2nNb9";
   const AIRTABLE_INVENTORY_TABLE = process.env.AIRTABLE_INVENTORY_TABLE || "tblkvSVTSbEl0SQp1";
+  // Restrict to a specific Airtable view so dealers only see the filtered
+  // inventory list the user curates there (not the whole table). Override
+  // via env var if you ever want to switch which view drives the portal.
+  const AIRTABLE_INVENTORY_VIEW = process.env.AIRTABLE_INVENTORY_VIEW || "viwvscAcx1lVbXrHS";
   let inventoryCache: { fetchedAt: number; records: any[] } | null = null;
   const INVENTORY_CACHE_TTL_MS = 60_000;
 
@@ -1046,6 +1050,7 @@ export async function registerRoutes(app: Express): Promise<Express> {
           `https://api.airtable.com/v0/${AIRTABLE_BASE_ID}/${AIRTABLE_INVENTORY_TABLE}`,
         );
         url.searchParams.set("pageSize", "100");
+        if (AIRTABLE_INVENTORY_VIEW) url.searchParams.set("view", AIRTABLE_INVENTORY_VIEW);
         if (offset) url.searchParams.set("offset", offset);
 
         const resp = await fetch(url.toString(), {
