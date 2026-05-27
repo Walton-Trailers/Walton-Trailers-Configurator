@@ -136,6 +136,16 @@ export const adminUsers = pgTable("admin_users", {
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
+// Join table: which dealers each Walton employee (admin user) is assigned
+// to cover. Bookkeeping only as of 0008 — assignments are surfaced in the
+// Employees admin page but don't gate access in the dealer/order APIs yet.
+export const adminDealerAssignments = pgTable("admin_dealer_assignments", {
+  id: serial("id").primaryKey(),
+  adminUserId: integer("admin_user_id").notNull(),
+  dealerId: integer("dealer_id").notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
 // Admin Sessions for authentication
 export const adminSessions = pgTable("admin_sessions", {
   id: varchar("id", { length: 255 }).primaryKey(),
@@ -213,7 +223,10 @@ export const pricingTiers = pgTable("pricing_tiers", {
 export const dealerUsers = pgTable("dealer_users", {
   id: serial("id").primaryKey(),
   dealerId: integer("dealer_id").notNull(),
-  username: varchar("username", { length: 100 }).notNull().unique(),
+  // Legacy. Email is the canonical login identifier (see 0007 migration).
+  // Column kept nullable so existing rows aren't invalidated, but new rows
+  // leave it NULL and the dealer-user UI no longer asks for it.
+  username: varchar("username", { length: 100 }).unique(),
   email: varchar("email", { length: 200 }).notNull().unique(),
   firstName: varchar("first_name", { length: 100 }).notNull(),
   lastName: varchar("last_name", { length: 100 }).notNull(),

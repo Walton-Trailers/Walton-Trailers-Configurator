@@ -68,7 +68,7 @@ interface DealerProfile {
   // User info for dealer employees
   user?: {
     id: number;
-    username: string;
+    username?: string | null;
     email: string;
     firstName: string;
     lastName: string;
@@ -80,7 +80,7 @@ interface DealerProfile {
 interface DealerUser {
   id: number;
   dealerId: number;
-  username: string;
+  username?: string | null;
   email: string;
   firstName: string;
   lastName: string;
@@ -131,7 +131,6 @@ export default function DealerDashboard() {
   const [editingUser, setEditingUser] = useState<DealerUser | null>(null);
   const [deleteConfirmUser, setDeleteConfirmUser] = useState<DealerUser | null>(null);
   const [newUserData, setNewUserData] = useState({
-    username: "",
     email: "",
     firstName: "",
     lastName: "",
@@ -392,7 +391,6 @@ export default function DealerDashboard() {
       });
       setIsAddingUser(false);
       setNewUserData({
-        username: "",
         email: "",
         firstName: "",
         lastName: "",
@@ -917,10 +915,6 @@ export default function DealerDashboard() {
                     <div>
                       <h3 className="text-lg font-semibold mb-4">Account Information</h3>
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <div>
-                          <Label className="text-sm text-gray-600">Username</Label>
-                          <p className="font-medium">{profile.user.username}</p>
-                        </div>
                         <div>
                           <Label className="text-sm text-gray-600">Email</Label>
                           <p className="font-medium">{profile.user.email}</p>
@@ -1489,7 +1483,6 @@ export default function DealerDashboard() {
                     <Table>
                       <TableHeader>
                         <TableRow>
-                          <TableHead>Username</TableHead>
                           <TableHead>Name</TableHead>
                           <TableHead>Email</TableHead>
                           <TableHead>Title</TableHead>
@@ -1500,7 +1493,6 @@ export default function DealerDashboard() {
                       <TableBody>
                         {users.map((user) => (
                           <TableRow key={user.id}>
-                            <TableCell>{user.username}</TableCell>
                             <TableCell>{user.firstName} {user.lastName}</TableCell>
                             <TableCell>{user.email}</TableCell>
                             <TableCell>{user.title || "-"}</TableCell>
@@ -1895,25 +1887,18 @@ export default function DealerDashboard() {
             </DialogDescription>
           </DialogHeader>
           <div className="grid gap-4 py-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="username">Username</Label>
-                <Input
-                  id="username"
-                  value={newUserData.username}
-                  onChange={(e) => setNewUserData({ ...newUserData, username: e.target.value })}
-                  placeholder="Enter username"
-                />
-              </div>
+            <div className="grid grid-cols-1 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="email">Email</Label>
                 <Input
                   id="email"
                   type="email"
+                  autoComplete="email"
                   value={newUserData.email}
                   onChange={(e) => setNewUserData({ ...newUserData, email: e.target.value })}
                   placeholder="user@example.com"
                 />
+                <p className="text-xs text-gray-500">Used as the login.</p>
               </div>
             </div>
             <div className="grid grid-cols-2 gap-4">
@@ -1997,21 +1982,13 @@ export default function DealerDashboard() {
           </DialogHeader>
           {editingUser && (
             <div className="grid gap-4 py-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="edit-username">Username</Label>
-                  <Input
-                    id="edit-username"
-                    value={editingUser.username}
-                    disabled
-                    className="bg-gray-50"
-                  />
-                </div>
+              <div className="grid grid-cols-1 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="edit-email">Email</Label>
                   <Input
                     id="edit-email"
                     type="email"
+                    autoComplete="email"
                     value={editingUser.email}
                     onChange={(e) => setEditingUser({ ...editingUser, email: e.target.value })}
                   />
@@ -2090,7 +2067,7 @@ export default function DealerDashboard() {
           <DialogHeader>
             <DialogTitle>Delete User</DialogTitle>
             <DialogDescription>
-              Are you sure you want to delete user "{deleteConfirmUser?.username}"? This action cannot be undone.
+              Are you sure you want to delete {deleteConfirmUser ? `${deleteConfirmUser.firstName} ${deleteConfirmUser.lastName}` : "this user"}? This action cannot be undone.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>

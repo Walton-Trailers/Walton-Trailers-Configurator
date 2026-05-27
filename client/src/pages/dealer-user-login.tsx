@@ -21,7 +21,7 @@ type LoginForm = z.infer<typeof loginSchema>;
 interface LoginResponse {
   user: {
     id: number;
-    username: string;
+    username?: string | null;
     email: string;
     firstName: string;
     lastName: string;
