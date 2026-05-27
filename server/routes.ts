@@ -2,11 +2,12 @@ import type { Express, Request, Response, NextFunction } from "express";
 import { storage } from "./storage";
 import { db } from "./db";
 import { sql, eq, inArray } from "drizzle-orm";
-import { 
-  authenticateUser, 
-  createSession, 
-  validateSession, 
-  logout, 
+import {
+  authenticateUser,
+  authenticateUserByEmail,
+  createSession,
+  validateSession,
+  logout,
   hashPassword,
   isAdmin
 } from "./auth";

@@ -21,6 +21,7 @@ export default function ForgotPassword() {
   const [, setLocation] = useLocation();
   const [isLoading, setIsLoading] = useState(false);
   const [success, setSuccess] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const form = useForm<ForgotPasswordForm>({
     resolver: zodResolver(forgotPasswordSchema),
@@ -32,6 +33,7 @@ export default function ForgotPassword() {
   const onSubmit = async (data: ForgotPasswordForm) => {
     try {
       setIsLoading(true);
+      setError(null);
 
       await apiRequest("/api/admin/forgot-password", {
         method: "POST",
@@ -40,7 +42,10 @@ export default function ForgotPassword() {
 
       setSuccess(true);
     } catch (err: any) {
+      // Previously swallowed silently — the user saw "nothing happened"
+      // when the server errored. Surface the real message so they know.
       console.error("Forgot password error:", err);
+      setError(err?.message || "Something went wrong. Please try again.");
     } finally {
       setIsLoading(false);
     }
@@ -107,6 +112,11 @@ export default function ForgotPassword() {
           </CardHeader>
           <CardContent>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+              {error && (
+                <Alert variant="destructive">
+                  <AlertDescription>{error}</AlertDescription>
+                </Alert>
+              )}
               <div className="space-y-2">
                 <Label htmlFor="email">Email Address</Label>
                 <Input
