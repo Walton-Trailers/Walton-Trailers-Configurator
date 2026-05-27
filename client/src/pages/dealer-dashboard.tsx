@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { useLocation, Link } from "wouter";
+import { useLocation, Link, useRoute } from "wouter";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -13,7 +13,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
-import { Building2, Plus, FileText, Edit, Trash2, LogOut, Package, User, Users, Phone, Mail, DollarSign, Calendar, StickyNote, RefreshCw, Key, Eye, EyeOff, Send, Search } from "lucide-react";
+import { Building2, Plus, FileText, Edit, Trash2, LogOut, Package, User, Users, Phone, Mail, DollarSign, Calendar, StickyNote, RefreshCw, Key, Eye, EyeOff, Send, Search, ArrowLeft } from "lucide-react";
 import { SubmitOrderDialog } from "@/components/submit-order-dialog";
 import { DealerHelpButton } from "@/components/dealer-help-button";
 import { format } from "date-fns";
@@ -105,6 +105,11 @@ export default function DealerDashboard() {
   const [quotesFilter, setQuotesFilter] = useState("");
   const [reservedFilter, setReservedFilter] = useState("");
   const [ordersFilter, setOrdersFilter] = useState("");
+  // Profile is its own URL (/dealer/profile) so it reads as a separate
+  // screen instead of a tab. Same component, different chrome — when
+  // this matches we hide the dashboard stats + tab row and show a
+  // Back-to-Dashboard button above the profile content.
+  const [onProfileScreen] = useRoute("/dealer/profile");
   // Quote being converted to a submitted order via the SubmitOrderDialog.
   const [convertingOrder, setConvertingOrder] = useState<DealerOrder | null>(null);
   const [isSubmittingConvert, setIsSubmittingConvert] = useState(false);
@@ -151,6 +156,17 @@ export default function DealerDashboard() {
       setLocation("/dealer/login");
     }
   }, [setLocation]);
+
+  // Keep the Tabs `value` in sync with the route. Landing on
+  // /dealer/profile or coming back to /dealer/dashboard should land
+  // the user on the right TabsContent.
+  useEffect(() => {
+    if (onProfileScreen && activeTab !== "profile") {
+      setActiveTab("profile");
+    } else if (!onProfileScreen && activeTab === "profile") {
+      setActiveTab("quotes");
+    }
+  }, [onProfileScreen]);
 
   // Get dealer profile
   const { data: profile, refetch: refetchProfile, error: profileError } = useQuery<DealerProfile>({
@@ -615,12 +631,13 @@ export default function DealerDashboard() {
                 <Package className="w-4 h-4 mr-2" />
                 View Inventory
               </Button>
-              {/* Profile icon — opens the Profile tab (which also nests
-                  User Management for dealer-account admins). Separate
-                  from the main tab row so the four work tabs stay
-                  visually focused. */}
+              {/* Profile icon — navigates to /dealer/profile, which
+                  renders the same component without the dashboard
+                  chrome (stats, tab row) and adds a Back-to-Dashboard
+                  button. The activeTab effect snaps to "profile" when
+                  this route matches. */}
               <Button
-                onClick={() => setActiveTab("profile")}
+                onClick={() => setLocation("/dealer/profile")}
                 variant="ghost"
                 size="sm"
                 title="Profile & users"
@@ -643,7 +660,21 @@ export default function DealerDashboard() {
       </header>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Stats Cards */}
+        {/* Back-to-Dashboard button only visible on /dealer/profile so the
+            screen reads as a separate destination, not a hidden tab. */}
+        {onProfileScreen && (
+          <Button
+            variant="ghost"
+            size="sm"
+            className="mb-4"
+            onClick={() => setLocation("/dealer/dashboard")}
+          >
+            <ArrowLeft className="w-4 h-4 mr-2" />
+            Back to Dashboard
+          </Button>
+        )}
+        {/* Stats Cards — dashboard chrome only; hidden on the profile route. */}
+        {!onProfileScreen && (
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
           <Card>
             <CardHeader className="pb-2">
@@ -678,6 +709,7 @@ export default function DealerDashboard() {
             </CardContent>
           </Card>
         </div>
+        )}
 
         {/* Split orders into Quotes (drafts the dealer is still iterating on)
             and Orders (anything that's been submitted to Walton). Computed
@@ -778,7 +810,7 @@ export default function DealerDashboard() {
                   (r) => r.status !== "cancelled" && r.status !== "released",
                 );
                 return (
-              <TabsList className="grid w-full grid-cols-4">
+              <TabsList className={`grid w-full grid-cols-4${onProfileScreen ? " hidden" : ""}`}>
                 <TabsTrigger value="quotes">Quotes ({quotes.length})</TabsTrigger>
                 <TabsTrigger value="reserved">Reserved ({activeReservations.length})</TabsTrigger>
                 <TabsTrigger value="orders">Orders ({submittedOrders.length})</TabsTrigger>

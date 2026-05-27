@@ -52,6 +52,7 @@ function Router() {
       <Route path="/dealer/forgot-password" component={DealerForgotPassword} />
       <Route path="/dealer/reset-password/:token" component={DealerResetPassword} />
       <Route path="/dealer/dashboard" component={DealerDashboard} />
+      <Route path="/dealer/profile" component={DealerDashboard} />
       <Route path="/dealer/orders/:id" component={DealerOrderDetail} />
       <Route path="/dealer/inventory" component={DealerInventory} />
       <Route path="/dealer/clear" component={ClearDealerSession} />
