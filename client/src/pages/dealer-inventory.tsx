@@ -25,9 +25,11 @@ interface AirtableRecord {
   createdTime: string;
 }
 
-// Heuristic for which columns to surface first. Anything else still
-// renders, just after these. Sorted alphabetically as a fallback so the
-// view is stable across reloads.
+// Fallback column order used only when the server doesn't ship an
+// explicit fieldOrder (e.g. AIRTABLE_INVENTORY_FIELDS not set in
+// Vercel). When the env var IS set, the server returns fieldOrder
+// matching the env var verbatim and that wins absolutely — the
+// admin picks the column layout, the client honors it.
 const PREFERRED_COLUMN_ORDER = [
   "Stock #",
   "Stock Number",
@@ -73,7 +75,11 @@ export default function DealerInventory() {
     if (!sessionId) setLocation("/dealer/login");
   }, [sessionId, setLocation]);
 
-  const { data, isLoading, error, isFetching } = useQuery<{ records: AirtableRecord[]; cached: boolean }>({
+  const { data, isLoading, error, isFetching } = useQuery<{
+    records: AirtableRecord[];
+    fieldOrder?: string[];
+    cached: boolean;
+  }>({
     queryKey: ["/api/dealer/inventory"],
     queryFn: () =>
       apiRequest("/api/dealer/inventory", {
@@ -87,10 +93,13 @@ export default function DealerInventory() {
 
   const records = data?.records ?? [];
 
-  // Compute the union of field keys across all records so the table
-  // header reflects everything Walton has in Airtable, not just what
-  // happened to be on the first row. Reorder so preferred columns lead.
+  // Server-provided fieldOrder reflects the AIRTABLE_INVENTORY_FIELDS
+  // env var verbatim, so the admin picks the column layout in Vercel
+  // and we honor it absolutely. Fall back to the legacy preferred-then-
+  // alphabetical heuristic only when the server didn't ship an order
+  // (i.e. env var unset).
   const columns = useMemo(() => {
+    if (data?.fieldOrder && data.fieldOrder.length > 0) return data.fieldOrder;
     const seen = new Set<string>();
     for (const r of records) {
       for (const k of Object.keys(r.fields || {})) seen.add(k);
@@ -104,7 +113,7 @@ export default function DealerInventory() {
     }
     const remaining = Array.from(seen).sort((a, b) => a.localeCompare(b));
     return [...ordered, ...remaining];
-  }, [records]);
+  }, [records, data?.fieldOrder]);
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();

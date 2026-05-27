@@ -251,8 +251,9 @@ export default function DealerOrderDetail() {
           </CardContent>
         </Card>
 
-        {/* Documents */}
-        <Card>
+        {/* Documents — span both columns so the embedded PDF previews have
+            room to breathe. */}
+        <Card className="lg:col-span-2">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <FileText className="w-5 h-5" /> Documents
@@ -261,14 +262,14 @@ export default function DealerOrderDetail() {
               Files your Walton rep has attached to this order.
             </CardDescription>
           </CardHeader>
-          <CardContent className="space-y-2 text-sm">
-            <DocumentRow
+          <CardContent className="space-y-4 text-sm">
+            <DocumentBlock
               label="Work order"
               url={order.workOrderUrl}
               uploadedAt={order.workOrderUploadedAt}
               fmtDate={fmtDate}
             />
-            <DocumentRow
+            <DocumentBlock
               label="Invoice"
               url={order.invoiceUrl}
               uploadedAt={order.invoiceUploadedAt}
@@ -392,7 +393,7 @@ function DateRow({
   );
 }
 
-function DocumentRow({
+function DocumentBlock({
   label,
   url,
   uploadedAt,
@@ -406,32 +407,51 @@ function DocumentRow({
   if (!url) {
     return (
       <div className="flex items-center justify-between py-2 border-b last:border-b-0">
-        <span className="text-gray-600">{label}</span>
+        <span className="text-gray-700 font-medium">{label}</span>
         <span className="text-gray-400 italic text-xs">Not yet attached</span>
       </div>
     );
   }
   return (
-    <div className="flex items-center justify-between py-2 border-b last:border-b-0 gap-3">
-      <div className="min-w-0">
-        <p className="font-medium">{label}</p>
-        {uploadedAt && (
-          <p className="text-xs text-gray-500">Attached {fmtDate(uploadedAt)}</p>
-        )}
+    <div className="border rounded-md overflow-hidden last:mb-0">
+      {/* Header strip: file label + upload date on the left, action
+          buttons on the right. Sits above the embedded preview. */}
+      <div className="flex items-center justify-between gap-3 px-3 py-2 bg-gray-50 border-b">
+        <div className="min-w-0">
+          <p className="font-medium">{label}</p>
+          {uploadedAt && (
+            <p className="text-xs text-gray-500">Attached {fmtDate(uploadedAt)}</p>
+          )}
+        </div>
+        <div className="flex items-center gap-2 flex-shrink-0">
+          <a
+            href={url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-blue-600 hover:underline inline-flex items-center gap-1 text-sm"
+          >
+            Open in new tab <ExternalLink className="w-3.5 h-3.5" />
+          </a>
+          <a
+            href={url}
+            download
+            className="inline-flex items-center gap-1 text-sm text-gray-700 hover:text-gray-900 border rounded px-2 py-1 bg-white"
+            title="Download"
+          >
+            <Download className="w-4 h-4" /> Download
+          </a>
+        </div>
       </div>
-      <div className="flex items-center gap-2 flex-shrink-0">
-        <a
-          href={url}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="text-blue-600 hover:underline inline-flex items-center gap-1 text-sm"
-        >
-          View <ExternalLink className="w-3.5 h-3.5" />
-        </a>
-        <a href={url} download className="text-gray-600 hover:text-gray-900" title="Download">
-          <Download className="w-4 h-4" />
-        </a>
-      </div>
+      {/* Native browser PDF viewer. 720px tall is roughly a US-letter
+          page at the typical portal width without forcing extra scroll
+          inside the iframe. Most modern browsers render Vercel Blob
+          public PDFs inline via their built-in viewer. */}
+      <iframe
+        src={url}
+        title={label}
+        className="block w-full bg-gray-100"
+        style={{ height: 720, border: 0 }}
+      />
     </div>
   );
 }

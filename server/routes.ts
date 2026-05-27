@@ -1036,7 +1036,15 @@ export async function registerRoutes(app: Express): Promise<Express> {
     .split(",")
     .map((s) => s.trim())
     .filter(Boolean);
-  let inventoryCache: { fetchedAt: number; records: any[] } | null = null;
+  // Airtable's `cellFormat=string` returns each cell as its rendered
+  // display value — which means linked-record fields come back as the
+  // linked row's primary-field text instead of the raw recXXXX id. Needs
+  // timeZone + userLocale alongside. Tweak via env if the portal ever
+  // lives outside MT/US.
+  const AIRTABLE_TIMEZONE = process.env.AIRTABLE_TIMEZONE || "America/Denver";
+  const AIRTABLE_LOCALE = process.env.AIRTABLE_LOCALE || "en-us";
+
+  let inventoryCache: { fetchedAt: number; records: any[]; fieldOrder: string[] } | null = null;
   const INVENTORY_CACHE_TTL_MS = 60_000;
 
   app.get("/api/dealer/inventory", requireDealerAuth, async (_req: AuthenticatedRequest, res) => {
@@ -1049,7 +1057,11 @@ export async function registerRoutes(app: Express): Promise<Express> {
       }
 
       if (inventoryCache && Date.now() - inventoryCache.fetchedAt < INVENTORY_CACHE_TTL_MS) {
-        return res.json({ records: inventoryCache.records, cached: true });
+        return res.json({
+          records: inventoryCache.records,
+          fieldOrder: inventoryCache.fieldOrder,
+          cached: true,
+        });
       }
 
       const records: any[] = [];
@@ -1062,6 +1074,12 @@ export async function registerRoutes(app: Express): Promise<Express> {
         if (AIRTABLE_INVENTORY_VIEW) url.searchParams.set("view", AIRTABLE_INVENTORY_VIEW);
         // Airtable expects fields[]=<name> repeated once per field.
         for (const f of AIRTABLE_INVENTORY_FIELDS) url.searchParams.append("fields[]", f);
+        // Ask Airtable to pre-format each cell as a display string. This
+        // resolves linked-record fields (otherwise they come back as raw
+        // recXXXX ids) and gives us currency/date formatting for free.
+        url.searchParams.set("cellFormat", "string");
+        url.searchParams.set("timeZone", AIRTABLE_TIMEZONE);
+        url.searchParams.set("userLocale", AIRTABLE_LOCALE);
         if (offset) url.searchParams.set("offset", offset);
 
         const resp = await fetch(url.toString(), {
@@ -1079,8 +1097,25 @@ export async function registerRoutes(app: Express): Promise<Express> {
         offset = data.offset;
       } while (offset);
 
-      inventoryCache = { fetchedAt: Date.now(), records };
-      res.json({ records, cached: false });
+      // Field order priority: the env-var allowlist if provided (the
+      // user's stated preference), then anything else Airtable returned
+      // that we didn't list. Falls back to the keys of the first record
+      // when no allowlist is set.
+      const seenKeys = new Set<string>();
+      for (const r of records) for (const k of Object.keys(r.fields || {})) seenKeys.add(k);
+      const fieldOrder: string[] = [];
+      for (const f of AIRTABLE_INVENTORY_FIELDS) {
+        if (seenKeys.has(f)) {
+          fieldOrder.push(f);
+          seenKeys.delete(f);
+        }
+      }
+      // Anything extra Airtable returned (e.g. allowlist not set) tacks
+      // on alphabetically so the result is stable.
+      fieldOrder.push(...Array.from(seenKeys).sort((a, b) => a.localeCompare(b)));
+
+      inventoryCache = { fetchedAt: Date.now(), records, fieldOrder };
+      res.json({ records, fieldOrder, cached: false });
     } catch (error: any) {
       console.error("Error fetching inventory:", error);
       res.status(500).json({ error: error?.message || "Failed to fetch inventory" });
