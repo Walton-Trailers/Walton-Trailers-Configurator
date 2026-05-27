@@ -1,12 +1,14 @@
 import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation } from "@tanstack/react-query";
 import { Link, useRoute } from "wouter";
-import { ArrowLeft, Building2, Mail, Phone, MapPin, User, Package, DollarSign, Calendar, Users, Edit } from "lucide-react";
+import { ArrowLeft, Building2, Mail, Phone, MapPin, User, Package, DollarSign, Calendar, Users, Edit, Send, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { AdminOrderManageDialog } from "@/components/admin-order-manage-dialog";
+import { apiRequest } from "@/lib/queryClient";
+import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
 
 // Mirrors the Dealer shape on admin-dealers.tsx. Kept local to avoid coupling
@@ -35,7 +37,7 @@ interface Dealer {
 
 interface DealerUserRow {
   id: number;
-  username: string;
+  username?: string | null;
   email: string;
   firstName: string;
   lastName: string;
@@ -90,8 +92,26 @@ const formatPrice = (n: number) =>
 export default function AdminDealerDetail() {
   const [, params] = useRoute<{ id: string }>("/admin/dealers/:id");
   const dealerId = params ? parseInt(params.id, 10) : NaN;
+  const { toast } = useToast();
 
   const [orderInDialog, setOrderInDialog] = useState<any | null>(null);
+
+  // Send Invite: POSTs to /api/admin/dealers/:id/invite which generates a
+  // 7-day reset token and emails the dealer a welcome + set-password link.
+  // Re-runnable — each click mints a fresh token, useful if the dealer lost
+  // the first email or it bounced.
+  const sendInviteMutation = useMutation({
+    mutationFn: async () => apiRequest(`/api/admin/dealers/${dealerId}/invite`, { method: "POST" }),
+    onSuccess: (data: any) => {
+      toast({
+        title: "Invitation sent",
+        description: `Setup link emailed to ${data?.email}. Valid for 7 days.`,
+      });
+    },
+    onError: (err: any) => {
+      toast({ title: "Could not send invite", description: err?.message, variant: "destructive" });
+    },
+  });
 
   const { data: dealer, isLoading: dealerLoading, error: dealerError } = useQuery<Dealer>({
     queryKey: [`/api/admin/dealers/${dealerId}`],
@@ -193,12 +213,32 @@ export default function AdminDealerDetail() {
             </p>
           )}
         </div>
-        <Link href={`/admin/dealers?edit=${dealer.id}`}>
-          <Button variant="outline">
-            <Edit className="w-4 h-4 mr-2" />
-            Edit
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            onClick={() => sendInviteMutation.mutate()}
+            disabled={sendInviteMutation.isPending || !dealer.isActive || !dealer.email}
+            title={
+              !dealer.isActive
+                ? "Restore the dealer first"
+                : !dealer.email
+                  ? "Dealer has no email on file"
+                  : "Email the dealer their login info + set-password link"
+            }
+          >
+            {sendInviteMutation.isPending ? (
+              <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Sending…</>
+            ) : (
+              <><Send className="w-4 h-4 mr-2" /> Send Invite</>
+            )}
           </Button>
-        </Link>
+          <Link href={`/admin/dealers?edit=${dealer.id}`}>
+            <Button variant="outline">
+              <Edit className="w-4 h-4 mr-2" />
+              Edit
+            </Button>
+          </Link>
+        </div>
       </div>
 
       {/* Stats */}

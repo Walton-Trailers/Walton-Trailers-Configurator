@@ -10,7 +10,7 @@ import {
   hashPassword,
   isAdmin
 } from "./auth";
-import { insertAdminUserSchema, type AdminUser, trailerCategories, trailerModels, trailerSeries, customQuoteRequests, insertCustomQuoteRequestSchema, quoteRequests, insertQuoteRequestSchema, dealers, dealerSessions, dealerOrders, dealerUsers, dealerUserSessions, userConfigurations, mediaFiles, dealerPasswordResetTokens, adminSessions, pricingTiers, type Dealer, type DealerUser, type MediaFile, type PricingTier } from "@shared/schema";
+import { insertAdminUserSchema, type AdminUser, trailerCategories, trailerModels, trailerSeries, customQuoteRequests, insertCustomQuoteRequestSchema, quoteRequests, insertQuoteRequestSchema, dealers, dealerSessions, dealerOrders, dealerUsers, dealerUserSessions, userConfigurations, mediaFiles, dealerPasswordResetTokens, adminSessions, adminDealerAssignments, pricingTiers, type Dealer, type DealerUser, type MediaFile, type PricingTier } from "@shared/schema";
 import { z } from "zod";
 import crypto from "crypto";
 import bcrypt from "bcryptjs";
@@ -1440,16 +1440,17 @@ export async function registerRoutes(app: Express): Promise<Express> {
     }
   });
   
-  // Create a new dealer user
+  // Create a new dealer user. Email-only login — `username` is no longer
+  // collected; the column stays nullable for backwards compat with old rows.
   app.post("/api/dealer/users", requireDealerAuth, async (req: AuthenticatedRequest, res) => {
     try {
-      const { username, email, firstName, lastName, title, password, role = 'user' } = req.body;
-      
+      const { email, firstName, lastName, title, password, role = 'user' } = req.body;
+
       // Validate required fields
-      if (!username || !email || !firstName || !lastName || !password) {
+      if (!email || !firstName || !lastName || !password) {
         return res.status(400).json({ error: "Missing required fields" });
       }
-      
+
       // Check if trying to create an admin user
       // Only admins or main dealer accounts can create admin users
       if (role === 'admin') {
@@ -1458,22 +1459,22 @@ export async function registerRoutes(app: Express): Promise<Express> {
           return res.status(403).json({ error: "Only administrators can create admin users" });
         }
       }
-      
-      // Check if username or email already exists
+
+      // Email uniqueness (case-insensitive) is the only check now.
       const existing = await db.select()
         .from(dealerUsers)
-        .where(sql`${dealerUsers.username} = ${username} OR ${dealerUsers.email} = ${email}`);
-      
+        .where(sql`LOWER(${dealerUsers.email}) = LOWER(${email})`);
+
       if (existing.length > 0) {
-        return res.status(400).json({ error: "Username or email already exists" });
+        return res.status(400).json({ error: "A user with this email already exists" });
       }
-      
+
       // Hash password (using simple hash for demo, use bcrypt in production)
       const passwordHash = await hashPassword(password);
-      
+
       const [newUser] = await db.insert(dealerUsers).values({
         dealerId: req.dealer!.id,
-        username,
+        username: null,
         email,
         firstName,
         lastName,
@@ -1575,17 +1576,14 @@ export async function registerRoutes(app: Express): Promise<Express> {
   // Dealer user login
   app.post("/api/dealer/user/login", async (req, res) => {
     try {
-      // Email is the canonical login identifier. `username` is still
-      // accepted for one release as a grace period so any client running
-      // an older bundle keeps working.
-      const { email: rawEmail, username: legacyUsername, password } = req.body;
+      // Email-only login. Usernames are deprecated for dealer users.
+      const { email: rawEmail, password } = req.body;
       const email = typeof rawEmail === "string" ? rawEmail.trim().toLowerCase() : "";
+      if (!email) return res.status(400).json({ error: "Email is required" });
 
-      const [user] = email
-        ? await db.select().from(dealerUsers).where(sql`LOWER(${dealerUsers.email}) = ${email}`)
-        : legacyUsername
-          ? await db.select().from(dealerUsers).where(eq(dealerUsers.username, legacyUsername))
-          : [];
+      const [user] = await db.select()
+        .from(dealerUsers)
+        .where(sql`LOWER(${dealerUsers.email}) = ${email}`);
 
       if (!user || !user.isActive) {
         return res.status(401).json({ error: "Invalid credentials" });
@@ -2135,6 +2133,48 @@ export async function registerRoutes(app: Express): Promise<Express> {
   });
 
   // Get all users (admin only)
+  // Dealer assignments for one admin user (employee). Returns the array of
+  // dealer ids they're assigned to. Bookkeeping only — does not yet gate
+  // access in dealer/order endpoints (see 0008 migration comment).
+  app.get("/api/admin/users/:id/dealer-assignments", requireAuth, requireAdmin, async (req, res) => {
+    try {
+      const adminUserId = parseInt(req.params.id);
+      if (Number.isNaN(adminUserId)) return res.status(400).json({ error: "Invalid user id" });
+      const rows = await db.select({ dealerId: adminDealerAssignments.dealerId })
+        .from(adminDealerAssignments)
+        .where(eq(adminDealerAssignments.adminUserId, adminUserId));
+      res.json(rows.map((r) => r.dealerId));
+    } catch (error) {
+      console.error("Error fetching dealer assignments:", error);
+      res.status(500).json({ error: "Failed to fetch assignments" });
+    }
+  });
+
+  // Replace the set of dealer assignments for one admin user. Body:
+  // { dealerIds: number[] }. We delete-then-insert for simplicity — the
+  // set is small (low dozens at most) and the FK ON DELETE CASCADE keeps
+  // things clean when a dealer or admin user is removed.
+  app.put("/api/admin/users/:id/dealer-assignments", requireAuth, requireAdmin, async (req, res) => {
+    try {
+      const adminUserId = parseInt(req.params.id);
+      if (Number.isNaN(adminUserId)) return res.status(400).json({ error: "Invalid user id" });
+      const dealerIds: number[] = Array.isArray(req.body?.dealerIds)
+        ? req.body.dealerIds.map((n: any) => parseInt(n, 10)).filter((n: number) => Number.isFinite(n))
+        : [];
+
+      await db.delete(adminDealerAssignments).where(eq(adminDealerAssignments.adminUserId, adminUserId));
+      if (dealerIds.length > 0) {
+        await db.insert(adminDealerAssignments).values(
+          dealerIds.map((dealerId) => ({ adminUserId, dealerId })),
+        );
+      }
+      res.json({ success: true, count: dealerIds.length });
+    } catch (error: any) {
+      console.error("Error saving dealer assignments:", error);
+      res.status(500).json({ error: error?.message || "Failed to save assignments" });
+    }
+  });
+
   app.get("/api/admin/users", requireAuth, requireAdmin, async (req, res) => {
     try {
       const users = await storage.getAllAdminUsers();
@@ -2660,6 +2700,86 @@ export async function registerRoutes(app: Express): Promise<Express> {
     } catch (error) {
       console.error("Error updating dealer status:", error);
       res.status(500).json({ error: "Failed to update dealer status" });
+    }
+  });
+
+  // Send an invitation email to a dealer. Generates a 7-day reset token and
+  // emails the dealer a "Welcome" link they can click to set their initial
+  // password. Distinct from /api/dealer/forgot-password (different copy,
+  // longer expiry, doesn't pretend to be ambiguous about whether the dealer
+  // exists since the admin is the one triggering it).
+  app.post("/api/admin/dealers/:id/invite", requireAuth, requireAdmin, async (req, res) => {
+    try {
+      const dealerId = parseInt(req.params.id);
+      if (Number.isNaN(dealerId)) return res.status(400).json({ error: "Invalid dealer id" });
+
+      const [dealer] = await db.select().from(dealers).where(eq(dealers.id, dealerId));
+      if (!dealer) return res.status(404).json({ error: "Dealer not found" });
+      if (!dealer.isActive) return res.status(400).json({ error: "Dealer is archived; restore before inviting." });
+      if (!dealer.email) return res.status(400).json({ error: "Dealer has no email on file." });
+
+      const emailService = EmailService.getInstance();
+      const token = emailService.generateResetToken();
+      const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 days
+
+      await db.insert(dealerPasswordResetTokens).values({
+        dealerId: dealer.id,
+        token,
+        email: dealer.email,
+        expiresAt,
+      });
+
+      const baseUrl = process.env.BASE_URL || "";
+      const setupUrl = `${baseUrl}/dealer/reset-password/${token}`;
+      const loginUrl = `${baseUrl}/dealer/login`;
+      const contactName = dealer.contactName || dealer.dealerName || "there";
+
+      const emailSent = await emailService.sendEmail({
+        to: dealer.email,
+        subject: `Welcome to the Walton Trailers Dealer Portal`,
+        text: [
+          `Hi ${contactName},`,
+          ``,
+          `You've been added as a dealer in the Walton Trailers portal.`,
+          ``,
+          `Login URL:  ${loginUrl}`,
+          `Your email: ${dealer.email}`,
+          ``,
+          `To finish setting up, click the link below and choose a password.`,
+          `This link is valid for 7 days.`,
+          ``,
+          `Set your password:  ${setupUrl}`,
+          ``,
+          `— Walton Trailers`,
+        ].join("\n"),
+        html: `
+          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; color: #333; line-height: 1.6;">
+            <h2 style="margin-top: 0;">Welcome to the Walton Trailers Dealer Portal</h2>
+            <p>Hi ${contactName},</p>
+            <p>You've been added as a dealer in the Walton Trailers portal.</p>
+            <table cellspacing="0" cellpadding="6" style="background:#f8f9fa;border:1px solid #e5e7eb;border-radius:6px;margin:16px 0;">
+              <tr><td style="color:#666;">Login URL</td><td><a href="${loginUrl}">${loginUrl}</a></td></tr>
+              <tr><td style="color:#666;">Your email</td><td>${dealer.email}</td></tr>
+            </table>
+            <p>To finish setting up, click the button below and choose a password. This link is valid for 7 days.</p>
+            <p style="text-align:center;margin:24px 0;">
+              <a href="${setupUrl}" style="display:inline-block;background:#c1af89;color:#fff;padding:12px 28px;text-decoration:none;border-radius:4px;font-weight:600;">Set Your Password</a>
+            </p>
+            <p style="font-size:12px;color:#666;">If the button doesn't work, copy and paste this link: <br>${setupUrl}</p>
+            <p style="margin-top:32px;font-size:13px;color:#666;">— Walton Trailers</p>
+          </div>
+        `,
+      });
+
+      if (!emailSent) {
+        console.warn(`Invitation email failed for dealer ${dealer.dealerId}`);
+        return res.status(500).json({ error: "Could not send invitation email. Check email provider config." });
+      }
+
+      res.json({ success: true, email: dealer.email });
+    } catch (error: any) {
+      console.error("Error sending dealer invitation:", error);
+      res.status(500).json({ error: error?.message || "Failed to send invitation" });
     }
   });
 
