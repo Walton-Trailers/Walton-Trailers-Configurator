@@ -4219,6 +4219,8 @@ export async function registerRoutes(app: Express): Promise<Express> {
         'status',
         'notes',
         'workOrderUrl',
+        'invoiceUrl',
+        'expectedDeliveryDate',
       ]);
       const VALID_STATUSES = new Set(['draft', 'submitted', 'received', 'processing', 'completed']);
       const updates: Record<string, any> = {};
@@ -4247,6 +4249,22 @@ export async function registerRoutes(app: Express): Promise<Express> {
       // Explicit clear: workOrderUrl = null. Wipe the upload timestamp too.
       if ('workOrderUrl' in updates && !updates.workOrderUrl) {
         updates.workOrderUploadedAt = null;
+      }
+
+      // Same upload-stamp / explicit-clear pattern for the invoice PDF.
+      const attachingNewInvoice = 'invoiceUrl' in updates &&
+        updates.invoiceUrl &&
+        updates.invoiceUrl !== existing.invoiceUrl;
+      if (attachingNewInvoice) {
+        updates.invoiceUploadedAt = new Date();
+      }
+      if ('invoiceUrl' in updates && !updates.invoiceUrl) {
+        updates.invoiceUploadedAt = null;
+      }
+
+      // Empty string → null for the date column, so admins can clear it.
+      if ('expectedDeliveryDate' in updates && updates.expectedDeliveryDate === '') {
+        updates.expectedDeliveryDate = null;
       }
 
       updates.updatedAt = new Date();

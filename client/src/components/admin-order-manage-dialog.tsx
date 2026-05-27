@@ -48,7 +48,10 @@ export function AdminOrderManageDialog({ open, onOpenChange, order }: AdminOrder
   const [status, setStatus] = useState("");
   const [notes, setNotes] = useState("");
   const [workOrderUrl, setWorkOrderUrl] = useState<string | null>(null);
+  const [invoiceUrl, setInvoiceUrl] = useState<string | null>(null);
+  const [expectedDeliveryDate, setExpectedDeliveryDate] = useState<string>("");
   const [uploading, setUploading] = useState(false);
+  const [uploadingInvoice, setUploadingInvoice] = useState(false);
 
   useEffect(() => {
     if (open && order) {
@@ -56,6 +59,11 @@ export function AdminOrderManageDialog({ open, onOpenChange, order }: AdminOrder
       setStatus(order.status || "submitted");
       setNotes(order.notes || "");
       setWorkOrderUrl(order.workOrderUrl || null);
+      setInvoiceUrl(order.invoiceUrl || null);
+      // expectedDeliveryDate comes back as a YYYY-MM-DD string from the
+      // server's DATE column. Native <input type="date"> wants that exact
+      // shape so we pass it through unchanged.
+      setExpectedDeliveryDate(order.expectedDeliveryDate || "");
     }
   }, [open, order]);
 
@@ -68,9 +76,11 @@ export function AdminOrderManageDialog({ open, onOpenChange, order }: AdminOrder
           repOrderNumber: repOrderNumber.trim() || null,
           status,
           notes: notes.trim() || null,
-          // workOrderUrl is included so the server can detect an explicit
-          // "remove" (null) vs no change. We always send it.
+          // workOrderUrl + invoiceUrl are included so the server can detect
+          // explicit "remove" (null) vs no change. We always send them.
           workOrderUrl,
+          invoiceUrl,
+          expectedDeliveryDate: expectedDeliveryDate || null,
         },
       });
     },
@@ -136,6 +146,39 @@ export function AdminOrderManageDialog({ open, onOpenChange, order }: AdminOrder
 
   const handleRemoveWorkOrder = () => {
     setWorkOrderUrl(null);
+    toast({ title: "Removed", description: "Click Save to commit the removal." });
+  };
+
+  // Invoice PDFs follow the same flow as work orders — direct-to-Blob via
+  // the existing /api/admin/blob-upload-token/work-order token endpoint
+  // (the endpoint accepts any admin-uploaded PDF; we just use a different
+  // pathname so blobs don't collide).
+  const handleInvoiceChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !order) return;
+    if (file.type !== "application/pdf") {
+      toast({ title: "PDF only", description: "Invoices must be PDF files.", variant: "destructive" });
+      return;
+    }
+    setUploadingInvoice(true);
+    try {
+      const blob = await upload(`invoices/${order.orderNumber}.pdf`, file, {
+        access: "public",
+        handleUploadUrl: "/api/admin/blob-upload-token/work-order",
+        contentType: "application/pdf",
+      });
+      setInvoiceUrl(blob.url);
+      toast({ title: "Uploaded", description: "Click Save to attach this to the order." });
+    } catch (err: any) {
+      toast({ title: "Upload failed", description: err?.message, variant: "destructive" });
+    } finally {
+      setUploadingInvoice(false);
+      e.target.value = "";
+    }
+  };
+
+  const handleRemoveInvoice = () => {
+    setInvoiceUrl(null);
     toast({ title: "Removed", description: "Click Save to commit the removal." });
   };
 
@@ -229,6 +272,22 @@ export function AdminOrderManageDialog({ open, onOpenChange, order }: AdminOrder
             />
           </div>
 
+          {/* Expected delivery date — the dealer sees this on their order
+              detail page. DATE column, no time component. */}
+          <div>
+            <Label htmlFor="expectedDeliveryDate">Expected delivery date</Label>
+            <Input
+              id="expectedDeliveryDate"
+              type="date"
+              value={expectedDeliveryDate}
+              onChange={(e) => setExpectedDeliveryDate(e.target.value)}
+            />
+            <p className="text-xs text-gray-500 mt-1">
+              Shown to the dealer so they can plan customer pickup. Leave blank
+              if not yet scheduled.
+            </p>
+          </div>
+
           {/* Work-order PDF */}
           <div>
             <Label>Work order PDF</Label>
@@ -290,6 +349,77 @@ export function AdminOrderManageDialog({ open, onOpenChange, order }: AdminOrder
                       <p className="text-sm font-medium">Upload work order PDF</p>
                       <p className="text-xs text-gray-500">
                         Dealer will be emailed a download link. Status will move to <em>Received</em>.
+                      </p>
+                    </div>
+                  </>
+                )}
+              </label>
+            )}
+          </div>
+
+          {/* Invoice PDF — same upload pattern as the work-order block above.
+              No auto-status flip on attach; invoices typically land late in
+              the lifecycle when the rep is already in the right status. */}
+          <div>
+            <Label>Invoice PDF</Label>
+            {invoiceUrl ? (
+              <div className="flex items-center gap-2 mt-2 p-3 border rounded bg-emerald-50">
+                <FileText className="w-5 h-5 text-emerald-700 flex-shrink-0" />
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium truncate">Invoice attached</p>
+                  <a
+                    href={invoiceUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-xs text-emerald-700 hover:underline inline-flex items-center gap-1"
+                  >
+                    Preview <ExternalLink className="w-3 h-3" />
+                  </a>
+                </div>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={handleRemoveInvoice}
+                  disabled={saveMutation.isPending}
+                  className="text-red-600 hover:text-red-700"
+                >
+                  <Trash2 className="w-4 h-4" />
+                </Button>
+                <label className="cursor-pointer">
+                  <input
+                    type="file"
+                    accept="application/pdf"
+                    className="hidden"
+                    onChange={handleInvoiceChange}
+                    disabled={uploadingInvoice || saveMutation.isPending}
+                  />
+                  <span className="inline-flex items-center gap-1 text-xs px-2 py-1 rounded border bg-white hover:bg-gray-50">
+                    {uploadingInvoice ? <Loader2 className="w-3 h-3 animate-spin" /> : <Upload className="w-3 h-3" />}
+                    Replace
+                  </span>
+                </label>
+              </div>
+            ) : (
+              <label className="cursor-pointer mt-2 flex items-center gap-2 p-3 border-2 border-dashed rounded hover:bg-gray-50">
+                <input
+                  type="file"
+                  accept="application/pdf"
+                  className="hidden"
+                  onChange={handleInvoiceChange}
+                  disabled={uploadingInvoice || saveMutation.isPending}
+                />
+                {uploadingInvoice ? (
+                  <>
+                    <Loader2 className="w-5 h-5 animate-spin text-gray-500" />
+                    <span className="text-sm text-gray-600">Uploading…</span>
+                  </>
+                ) : (
+                  <>
+                    <Upload className="w-5 h-5 text-gray-500" />
+                    <div className="flex-1">
+                      <p className="text-sm font-medium">Upload invoice PDF</p>
+                      <p className="text-xs text-gray-500">
+                        Dealer can view + download from their order detail page.
                       </p>
                     </div>
                   </>

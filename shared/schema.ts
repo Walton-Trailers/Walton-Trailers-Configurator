@@ -1,4 +1,4 @@
-import { pgTable, text, serial, integer, boolean, json, numeric, timestamp, varchar } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, integer, boolean, json, numeric, timestamp, varchar, date } from "drizzle-orm/pg-core";
 import { relations } from "drizzle-orm";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
@@ -312,6 +312,13 @@ export const dealerOrders = pgTable("dealer_orders", {
   // to 'received' (PATCH /api/admin/dealer-orders/:id handler).
   workOrderUrl: varchar("work_order_url", { length: 500 }),
   workOrderUploadedAt: timestamp("work_order_uploaded_at"),
+  // Invoice PDF the rep attaches once Walton invoices the dealer for the
+  // build. Same pattern as workOrderUrl above.
+  invoiceUrl: varchar("invoice_url", { length: 500 }),
+  invoiceUploadedAt: timestamp("invoice_uploaded_at"),
+  // Rep-set expected delivery / ship date so the dealer can plan customer
+  // pickup. Stored as a DATE — no time component needed.
+  expectedDeliveryDate: date("expected_delivery_date"),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });

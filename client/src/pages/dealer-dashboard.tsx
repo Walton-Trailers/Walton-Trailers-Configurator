@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { useLocation } from "wouter";
+import { useLocation, Link } from "wouter";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -561,13 +561,20 @@ export default function DealerDashboard() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center">
-              <Building2 className="w-8 h-8 text-blue-600 mr-3" />
-              <div>
-                <h1 className="text-xl font-bold text-gray-900">Dealer Portal</h1>
-                {profile && (
-                  <p className="text-sm text-gray-600">{profile.dealerName}</p>
-                )}
-              </div>
+              {/* Personalized greeting. Dealer-user logins (profile.user
+                  populated) get the employee's first name; main dealer
+                  account logins fall back to the dealer's primary
+                  contact name, then the company name. */}
+              <h1 className="text-xl font-bold text-gray-900">
+                Welcome
+                {profile && (() => {
+                  const name = profile.user?.firstName
+                    || profile.contactName
+                    || profile.companyName
+                    || profile.dealerName;
+                  return name ? `, ${name}` : "";
+                })()}
+              </h1>
             </div>
             <div className="flex items-center space-x-4">
               <Button
@@ -643,9 +650,17 @@ export default function DealerDashboard() {
             rows.map((order) => (
               <TableRow key={order.id}>
                 <TableCell className="font-medium">
-                  {order.repOrderNumber || (
-                    <span className="text-gray-400 italic font-normal">Pending assignment</span>
-                  )}
+                  {/* Click the order number to see the full order detail
+                      (documents, dates, options, status). Other cells stay
+                      non-navigating so the inline action buttons still work
+                      without stopPropagation. */}
+                  <Link href={`/dealer/orders/${order.id}`}>
+                    <span className="cursor-pointer text-blue-600 hover:underline">
+                      {order.repOrderNumber || (
+                        <span className="text-gray-400 italic font-normal">Pending assignment</span>
+                      )}
+                    </span>
+                  </Link>
                 </TableCell>
                 <TableCell>
                   {order.customerName || <span className="text-gray-400">N/A</span>}
