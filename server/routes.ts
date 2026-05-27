@@ -11,7 +11,7 @@ import {
   hashPassword,
   isAdmin
 } from "./auth";
-import { insertAdminUserSchema, type AdminUser, trailerCategories, trailerModels, trailerSeries, customQuoteRequests, insertCustomQuoteRequestSchema, quoteRequests, insertQuoteRequestSchema, dealers, dealerSessions, dealerOrders, dealerUsers, dealerUserSessions, userConfigurations, mediaFiles, dealerPasswordResetTokens, adminSessions, adminDealerAssignments, pricingTiers, type Dealer, type DealerUser, type MediaFile, type PricingTier } from "@shared/schema";
+import { insertAdminUserSchema, type AdminUser, trailerCategories, trailerModels, trailerSeries, customQuoteRequests, insertCustomQuoteRequestSchema, quoteRequests, insertQuoteRequestSchema, dealers, dealerSessions, dealerOrders, dealerUsers, dealerUserSessions, userConfigurations, mediaFiles, dealerPasswordResetTokens, adminSessions, adminDealerAssignments, inventoryReservations, pricingTiers, type Dealer, type DealerUser, type MediaFile, type PricingTier } from "@shared/schema";
 import { z } from "zod";
 import crypto from "crypto";
 import bcrypt from "bcryptjs";
@@ -1187,15 +1187,45 @@ export async function registerRoutes(app: Express): Promise<Express> {
 
       if (!ok) {
         console.warn(`Reserve email failed (rep=${repTo}, dealer=${dealer.dealerId})`);
-        // We still return success to the dealer — the request is logged
-        // in the server console either way, and the cause is almost
-        // always provider config rather than something they can fix.
+        // We still persist + return success to the dealer — the request
+        // is logged in the server console either way, and the cause is
+        // almost always provider config rather than something they can fix.
       }
 
-      res.json({ success: true, repEmail: repTo });
+      // Persist the reservation so the dealer sees it on their dashboard
+      // across sessions. Status starts at 'requested'; the rep workflow
+      // (manual for now) moves it from there.
+      const [reservation] = await db.insert(inventoryReservations).values({
+        dealerId: dealer.id,
+        dealerUserId: actor?.id ?? null,
+        airtableRecordId: recordId ?? null,
+        stockNumber: stock || null,
+        model: model || null,
+        customerName: customerName?.toString().trim() || null,
+        note: note?.toString().trim() || null,
+        snapshotFields: fields,
+        status: "requested",
+      }).returning();
+
+      res.json({ success: true, repEmail: repTo, reservationId: reservation?.id });
     } catch (error: any) {
       console.error("Error sending reservation request:", error);
       res.status(500).json({ error: error?.message || "Failed to send reservation request" });
+    }
+  });
+
+  // List the dealer's reservation history. Sorted newest-first so the
+  // "Reserved" tab shows the most recent request at the top.
+  app.get("/api/dealer/inventory/reservations", requireDealerAuth, async (req: AuthenticatedRequest, res) => {
+    try {
+      const rows = await db.select()
+        .from(inventoryReservations)
+        .where(eq(inventoryReservations.dealerId, req.dealer!.id))
+        .orderBy(sql`${inventoryReservations.createdAt} DESC`);
+      res.json(rows);
+    } catch (error: any) {
+      console.error("Error fetching reservations:", error);
+      res.status(500).json({ error: error?.message || "Failed to fetch reservations" });
     }
   });
 

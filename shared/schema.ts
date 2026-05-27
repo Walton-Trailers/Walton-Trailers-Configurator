@@ -323,6 +323,25 @@ export const dealerOrders = pgTable("dealer_orders", {
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
+// Persisted Reserve-Now requests from the dealer inventory page. The
+// rep email is still where the actual hold happens — this table is the
+// dealer-facing record so the dashboard can show what they have on
+// hold alongside their orders.
+export const inventoryReservations = pgTable("inventory_reservations", {
+  id: serial("id").primaryKey(),
+  dealerId: integer("dealer_id").notNull(),
+  dealerUserId: integer("dealer_user_id"),
+  airtableRecordId: varchar("airtable_record_id", { length: 50 }),
+  stockNumber: varchar("stock_number", { length: 100 }),
+  model: varchar("model", { length: 200 }),
+  customerName: varchar("customer_name", { length: 200 }),
+  note: text("note"),
+  snapshotFields: json("snapshot_fields").$type<Record<string, any>>(),
+  status: varchar("status", { length: 20 }).notNull().default("requested"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
 // Custom Quote Requests
 export const customQuoteRequests = pgTable("custom_quote_requests", {
   id: serial("id").primaryKey(),

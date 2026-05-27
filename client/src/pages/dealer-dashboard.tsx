@@ -181,6 +181,23 @@ export default function DealerDashboard() {
     retry: false,
   });
   
+  // Dealer's Reserve-Now history for the new Reserved tab.
+  interface Reservation {
+    id: number;
+    airtableRecordId: string | null;
+    stockNumber: string | null;
+    model: string | null;
+    customerName: string | null;
+    note: string | null;
+    status: string;
+    createdAt: string;
+  }
+  const { data: reservations = [] } = useQuery<Reservation[]>({
+    queryKey: ["/api/dealer/inventory/reservations"],
+    enabled: !!localStorage.getItem("dealer_session"),
+    retry: false,
+  });
+
   // Get all options for displaying option names
   const { data: allOptions = [] } = useQuery<any[]>({
     queryKey: ["/api/options/all"],
@@ -711,13 +728,24 @@ export default function DealerDashboard() {
 
           return (
             <Tabs value={activeTab} onValueChange={setActiveTab}>
-              <TabsList className={`grid w-full ${isUserAdmin ? 'grid-cols-5' : 'grid-cols-4'}`}>
+              {/* Active-reservations count drives the Reserved tab badge.
+                  We hide cancelled/released entries from the count so the
+                  number tracks what's "in flight" rather than total history. */}
+              {(() => {
+                const activeReservations = reservations.filter(
+                  (r) => r.status !== "cancelled" && r.status !== "released",
+                );
+                return (
+              <TabsList className={`grid w-full ${isUserAdmin ? 'grid-cols-6' : 'grid-cols-5'}`}>
                 <TabsTrigger value="quotes">Quotes ({quotes.length})</TabsTrigger>
+                <TabsTrigger value="reserved">Reserved ({activeReservations.length})</TabsTrigger>
                 <TabsTrigger value="orders">Orders ({submittedOrders.length})</TabsTrigger>
                 <TabsTrigger value="deleted">Deleted ({deletedOrders.length})</TabsTrigger>
                 <TabsTrigger value="profile">Profile</TabsTrigger>
                 {isUserAdmin && <TabsTrigger value="users">Users</TabsTrigger>}
               </TabsList>
+                );
+              })()}
 
               {/* Quotes — drafts the dealer hasn't sent to Walton yet. */}
               <TabsContent value="quotes" className="mt-6">
@@ -765,6 +793,87 @@ export default function DealerDashboard() {
                           <TableBody>{renderRows(quotes, { showConvert: true })}</TableBody>
                         </Table>
                       </div>
+                    )}
+                  </CardContent>
+                </Card>
+              </TabsContent>
+
+              {/* Reserved — inventory units the dealer hit "Reserve Now" on
+                  from the View Inventory page. Distinct from Orders because
+                  these aren't built-to-order; the rep confirms the hold
+                  out-of-band and updates status when ready. */}
+              <TabsContent value="reserved" className="mt-6">
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Reserved Inventory Units</CardTitle>
+                    <CardDescription>
+                      Stock units you've requested to hold via View Inventory.
+                      Your rep is notified by email when you click Reserve Now,
+                      and updates the status as the hold progresses.
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    {reservations.length === 0 ? (
+                      <div className="text-center py-12">
+                        <Package className="w-12 h-12 text-gray-300 mx-auto mb-4" />
+                        <p className="text-gray-500 mb-4">No reserved units yet</p>
+                        <Button onClick={() => setLocation("/dealer/inventory")} variant="outline">
+                          View Inventory
+                        </Button>
+                      </div>
+                    ) : (
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead>Stock #</TableHead>
+                            <TableHead>Model</TableHead>
+                            <TableHead>Customer</TableHead>
+                            <TableHead>Status</TableHead>
+                            <TableHead>Requested</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {reservations.map((r) => {
+                            // Status visualization — keep close to the Order
+                            // status palette so dealers read the two lists
+                            // the same way.
+                            const tone =
+                              r.status === "confirmed"
+                                ? "bg-green-100 text-green-800"
+                                : r.status === "released" || r.status === "cancelled"
+                                  ? "bg-gray-200 text-gray-700"
+                                  : "bg-amber-100 text-amber-800";
+                            const muted = r.status === "released" || r.status === "cancelled";
+                            return (
+                              <TableRow key={r.id} className={muted ? "opacity-60" : ""}>
+                                <TableCell className="font-mono">
+                                  {r.stockNumber || (
+                                    <span className="text-gray-400 italic">—</span>
+                                  )}
+                                </TableCell>
+                                <TableCell>
+                                  {r.model || (
+                                    <span className="text-gray-400 italic">—</span>
+                                  )}
+                                </TableCell>
+                                <TableCell>
+                                  {r.customerName || (
+                                    <span className="text-gray-400">—</span>
+                                  )}
+                                </TableCell>
+                                <TableCell>
+                                  <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium capitalize ${tone}`}>
+                                    {r.status}
+                                  </span>
+                                </TableCell>
+                                <TableCell className="text-sm text-gray-600">
+                                  {format(new Date(r.createdAt), "MMM d, yyyy")}
+                                </TableCell>
+                              </TableRow>
+                            );
+                          })}
+                        </TableBody>
+                      </Table>
                     )}
                   </CardContent>
                 </Card>

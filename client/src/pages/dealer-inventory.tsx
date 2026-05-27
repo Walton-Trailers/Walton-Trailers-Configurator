@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { Link, useLocation } from "wouter";
-import { ArrowLeft, Search, Package, RefreshCw, BookmarkPlus, Loader2, FileText, DollarSign } from "lucide-react";
+import { ArrowLeft, Search, Package, RefreshCw, BookmarkPlus, Loader2, FileText } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -255,7 +255,6 @@ export default function DealerInventory() {
           tier (Elite / Preferred) need to confirm their actual price
           with their rep. Tone is informative, not apologetic. */}
       <Alert className="mb-6 border-amber-300 bg-amber-50 text-amber-900">
-        <DollarSign className="h-4 w-4 text-amber-700" />
         <AlertTitle>Pricing shown is the standard-tier price</AlertTitle>
         <AlertDescription className="mt-1 text-amber-900/90">
           {(() => {
