@@ -13,7 +13,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
-import { Building2, Plus, FileText, Edit, Trash2, LogOut, Package, User, Users, Phone, Mail, DollarSign, Calendar, StickyNote, RefreshCw, Key, Eye, EyeOff, Send } from "lucide-react";
+import { Building2, Plus, FileText, Edit, Trash2, LogOut, Package, User, Users, Phone, Mail, DollarSign, Calendar, StickyNote, RefreshCw, Key, Eye, EyeOff, Send, Search } from "lucide-react";
 import { SubmitOrderDialog } from "@/components/submit-order-dialog";
 import { DealerHelpButton } from "@/components/dealer-help-button";
 import { format } from "date-fns";
@@ -100,6 +100,11 @@ export default function DealerDashboard() {
   const [deleteConfirmOrder, setDeleteConfirmOrder] = useState<DealerOrder | null>(null);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [activeTab, setActiveTab] = useState("quotes");
+  // Per-table search filters. Independent state so switching tabs
+  // doesn't clobber what the dealer typed in another one.
+  const [quotesFilter, setQuotesFilter] = useState("");
+  const [reservedFilter, setReservedFilter] = useState("");
+  const [ordersFilter, setOrdersFilter] = useState("");
   // Quote being converted to a submitted order via the SubmitOrderDialog.
   const [convertingOrder, setConvertingOrder] = useState<DealerOrder | null>(null);
   const [isSubmittingConvert, setIsSubmittingConvert] = useState(false);
@@ -610,6 +615,20 @@ export default function DealerDashboard() {
                 <Package className="w-4 h-4 mr-2" />
                 View Inventory
               </Button>
+              {/* Profile icon — opens the Profile tab (which also nests
+                  User Management for dealer-account admins). Separate
+                  from the main tab row so the four work tabs stay
+                  visually focused. */}
+              <Button
+                onClick={() => setActiveTab("profile")}
+                variant="ghost"
+                size="sm"
+                title="Profile & users"
+                aria-label="Profile & users"
+                className="px-2"
+              >
+                <User className="w-5 h-5" />
+              </Button>
               <Button
                 onClick={handleLogout}
                 variant="ghost"
@@ -667,9 +686,28 @@ export default function DealerDashboard() {
           // Three buckets keyed off (status, deletedAt). Deleted always wins
           // — a soft-deleted draft shows up in Deleted, never Quotes.
           const activeOrders = orders.filter((o) => !o.deletedAt);
-          const quotes = activeOrders.filter((o) => o.status === 'draft');
-          const submittedOrders = activeOrders.filter((o) => o.status !== 'draft');
+          const quotesAll = activeOrders.filter((o) => o.status === 'draft');
+          const submittedOrdersAll = activeOrders.filter((o) => o.status !== 'draft');
           const deletedOrders = orders.filter((o) => !!o.deletedAt);
+
+          // Lightweight free-text filter that matches across the columns
+          // visible in the Quotes / Orders tables. Case-insensitive.
+          const matchesOrderFilter = (o: DealerOrder, needle: string): boolean => {
+            if (!needle) return true;
+            const q = needle.toLowerCase();
+            return (
+              (o.repOrderNumber || "").toLowerCase().includes(q) ||
+              (o.orderNumber || "").toLowerCase().includes(q) ||
+              (o.customerName || "").toLowerCase().includes(q) ||
+              (o.modelName || "").toLowerCase().includes(q) ||
+              (o.categoryName || "").toLowerCase().includes(q) ||
+              (o.status || "").toLowerCase().includes(q)
+            );
+          };
+          const quotes = quotesAll.filter((o) => matchesOrderFilter(o, quotesFilter));
+          const submittedOrders = submittedOrdersAll.filter((o) =>
+            matchesOrderFilter(o, ordersFilter),
+          );
           // Shared row renderer so the Convert action only appears on quotes.
           const renderRows = (rows: typeof orders, opts: { showConvert: boolean }) =>
             rows.map((order) => (
@@ -731,18 +769,20 @@ export default function DealerDashboard() {
               {/* Active-reservations count drives the Reserved tab badge.
                   We hide cancelled/released entries from the count so the
                   number tracks what's "in flight" rather than total history. */}
+              {/* Profile + Users moved out of the tab row — accessed via
+                  the person icon in the header so the work-related tabs
+                  (quotes / reserved / orders / deleted) read cleanly as
+                  four equal columns. */}
               {(() => {
                 const activeReservations = reservations.filter(
                   (r) => r.status !== "cancelled" && r.status !== "released",
                 );
                 return (
-              <TabsList className={`grid w-full ${isUserAdmin ? 'grid-cols-6' : 'grid-cols-5'}`}>
+              <TabsList className="grid w-full grid-cols-4">
                 <TabsTrigger value="quotes">Quotes ({quotes.length})</TabsTrigger>
                 <TabsTrigger value="reserved">Reserved ({activeReservations.length})</TabsTrigger>
                 <TabsTrigger value="orders">Orders ({submittedOrders.length})</TabsTrigger>
                 <TabsTrigger value="deleted">Deleted ({deletedOrders.length})</TabsTrigger>
-                <TabsTrigger value="profile">Profile</TabsTrigger>
-                {isUserAdmin && <TabsTrigger value="users">Users</TabsTrigger>}
               </TabsList>
                 );
               })()}
@@ -768,7 +808,7 @@ export default function DealerDashboard() {
                   <CardContent>
                     {isLoading ? (
                       <p className="text-center py-8 text-gray-500">Loading…</p>
-                    ) : quotes.length === 0 ? (
+                    ) : quotesAll.length === 0 ? (
                       <div className="text-center py-12">
                         <Package className="w-12 h-12 text-gray-300 mx-auto mb-4" />
                         <p className="text-gray-500 mb-4">No quotes yet</p>
@@ -777,6 +817,23 @@ export default function DealerDashboard() {
                         </Button>
                       </div>
                     ) : (
+                      <>
+                        {/* Search filter matches Order #, customer, model,
+                            status, PO #. Empty input = show all. */}
+                        <div className="relative mb-4 w-full sm:max-w-xs">
+                          <Search className="absolute left-2 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                          <Input
+                            value={quotesFilter}
+                            onChange={(e) => setQuotesFilter(e.target.value)}
+                            placeholder="Filter quotes…"
+                            className="pl-8"
+                          />
+                        </div>
+                        {quotes.length === 0 ? (
+                          <p className="text-center text-sm text-gray-500 py-8">
+                            No quotes match "{quotesFilter}".
+                          </p>
+                        ) : (
                       <div className="overflow-x-auto">
                         <Table>
                           <TableHeader>
@@ -793,6 +850,8 @@ export default function DealerDashboard() {
                           <TableBody>{renderRows(quotes, { showConvert: true })}</TableBody>
                         </Table>
                       </div>
+                        )}
+                      </>
                     )}
                   </CardContent>
                 </Card>
@@ -822,6 +881,37 @@ export default function DealerDashboard() {
                         </Button>
                       </div>
                     ) : (
+                      <>
+                        {/* Free-text filter across Production ID, model,
+                            customer, and status. Stays empty by default
+                            so the full list is visible until the dealer
+                            types something. */}
+                        <div className="relative mb-4 w-full sm:max-w-xs">
+                          <Search className="absolute left-2 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                          <Input
+                            value={reservedFilter}
+                            onChange={(e) => setReservedFilter(e.target.value)}
+                            placeholder="Filter reservations…"
+                            className="pl-8"
+                          />
+                        </div>
+                        {(() => {
+                          const q = reservedFilter.trim().toLowerCase();
+                          const filteredReservations = !q
+                            ? reservations
+                            : reservations.filter((r) =>
+                                [r.stockNumber, r.model, r.customerName, r.status]
+                                  .filter(Boolean)
+                                  .some((v) => String(v).toLowerCase().includes(q)),
+                              );
+                          if (filteredReservations.length === 0) {
+                            return (
+                              <p className="text-center text-sm text-gray-500 py-8">
+                                No reservations match "{reservedFilter}".
+                              </p>
+                            );
+                          }
+                          return (
                       <Table>
                         <TableHeader>
                           <TableRow>
@@ -832,7 +922,7 @@ export default function DealerDashboard() {
                           </TableRow>
                         </TableHeader>
                         <TableBody>
-                          {reservations.map((r) => {
+                          {filteredReservations.map((r) => {
                             // Status visualization — keep close to the Order
                             // status palette so dealers read the two lists
                             // the same way.
@@ -877,6 +967,9 @@ export default function DealerDashboard() {
                           })}
                         </TableBody>
                       </Table>
+                          );
+                        })()}
+                      </>
                     )}
                   </CardContent>
                 </Card>
@@ -903,7 +996,7 @@ export default function DealerDashboard() {
                   <CardContent>
                     {isLoading ? (
                       <p className="text-center py-8 text-gray-500">Loading…</p>
-                    ) : submittedOrders.length === 0 ? (
+                    ) : submittedOrdersAll.length === 0 ? (
                       <div className="text-center py-12">
                         <Package className="w-12 h-12 text-gray-300 mx-auto mb-4" />
                         <p className="text-gray-500 mb-4">No submitted orders yet</p>
@@ -912,22 +1005,41 @@ export default function DealerDashboard() {
                         </p>
                       </div>
                     ) : (
-                      <div className="overflow-x-auto">
-                        <Table>
-                          <TableHeader>
-                            <TableRow>
-                              <TableHead>Order #</TableHead>
-                              <TableHead>Customer</TableHead>
-                              <TableHead>Model</TableHead>
-                              <TableHead>Total Price</TableHead>
-                              <TableHead>Status</TableHead>
-                              <TableHead>Created</TableHead>
-                              <TableHead>Actions</TableHead>
-                            </TableRow>
-                          </TableHeader>
-                          <TableBody>{renderRows(submittedOrders, { showConvert: false })}</TableBody>
-                        </Table>
-                      </div>
+                      <>
+                        {/* Search filter matches Order #, customer, model,
+                            status, PO #. Empty input = show all. */}
+                        <div className="relative mb-4 w-full sm:max-w-xs">
+                          <Search className="absolute left-2 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                          <Input
+                            value={ordersFilter}
+                            onChange={(e) => setOrdersFilter(e.target.value)}
+                            placeholder="Filter orders…"
+                            className="pl-8"
+                          />
+                        </div>
+                        {submittedOrders.length === 0 ? (
+                          <p className="text-center text-sm text-gray-500 py-8">
+                            No orders match "{ordersFilter}".
+                          </p>
+                        ) : (
+                          <div className="overflow-x-auto">
+                            <Table>
+                              <TableHeader>
+                                <TableRow>
+                                  <TableHead>Order #</TableHead>
+                                  <TableHead>Customer</TableHead>
+                                  <TableHead>Model</TableHead>
+                                  <TableHead>Total Price</TableHead>
+                                  <TableHead>Status</TableHead>
+                                  <TableHead>Created</TableHead>
+                                  <TableHead>Actions</TableHead>
+                                </TableRow>
+                              </TableHeader>
+                              <TableBody>{renderRows(submittedOrders, { showConvert: false })}</TableBody>
+                            </Table>
+                          </div>
+                        )}
+                      </>
                     )}
                   </CardContent>
                 </Card>
@@ -1586,87 +1698,91 @@ export default function DealerDashboard() {
                 )}
               </CardContent>
             </Card>
-          </TabsContent>
-          
-          <TabsContent value="users" className="mt-6">
-            <Card>
-              <CardHeader>
-                <div className="flex justify-between items-start">
-                  <div>
-                    <CardTitle>User Management</CardTitle>
-                    <CardDescription>
-                      Manage users who can access the dealer portal
-                    </CardDescription>
+
+            {/* User Management — moved out of the top tab row and into
+                the Profile view. Only dealer-account admins see it
+                (isUserAdmin gates the Add/Edit/Delete affordances at
+                the server too). */}
+            {isUserAdmin && (
+              <Card className="mt-6">
+                <CardHeader>
+                  <div className="flex justify-between items-start">
+                    <div>
+                      <CardTitle>User Management</CardTitle>
+                      <CardDescription>
+                        Manage users who can access the dealer portal
+                      </CardDescription>
+                    </div>
+                    <Button
+                      onClick={() => setIsAddingUser(true)}
+                      size="sm"
+                    >
+                      <Plus className="w-4 h-4 mr-2" />
+                      Add User
+                    </Button>
                   </div>
-                  <Button
-                    onClick={() => setIsAddingUser(true)}
-                    size="sm"
-                  >
-                    <Plus className="w-4 h-4 mr-2" />
-                    Add User
-                  </Button>
-                </div>
-              </CardHeader>
-              <CardContent>
-                {users.length === 0 ? (
-                  <div className="text-center py-8 text-gray-500">
-                    <Users className="w-12 h-12 mx-auto mb-3 text-gray-300" />
-                    <p>No users found. Add your first user to get started.</p>
-                  </div>
-                ) : (
-                  <div className="overflow-x-auto">
-                    <Table>
-                      <TableHeader>
-                        <TableRow>
-                          <TableHead>Name</TableHead>
-                          <TableHead>Email</TableHead>
-                          <TableHead>Title</TableHead>
-                          <TableHead>Role</TableHead>
-                          <TableHead>Actions</TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {users.map((user) => (
-                          <TableRow key={user.id}>
-                            <TableCell>{user.firstName} {user.lastName}</TableCell>
-                            <TableCell>{user.email}</TableCell>
-                            <TableCell>{user.title || "-"}</TableCell>
-                            <TableCell>
-                              <span className={`px-2 py-1 text-xs rounded-full ${
-                                user.role === 'admin' 
-                                  ? 'bg-purple-100 text-purple-700'
-                                  : 'bg-gray-100 text-gray-700'
-                              }`}>
-                                {user.role === 'admin' ? 'Admin' : 'User'}
-                              </span>
-                            </TableCell>
-                            <TableCell>
-                              <div className="flex space-x-2">
-                                <Button
-                                  size="sm"
-                                  variant="ghost"
-                                  onClick={() => setEditingUser(user)}
-                                >
-                                  <Edit className="w-4 h-4" />
-                                </Button>
-                                <Button
-                                  size="sm"
-                                  variant="ghost"
-                                  onClick={() => setDeleteConfirmUser(user)}
-                                  data-testid={`button-delete-user-${user.id}`}
-                                >
-                                  <Trash2 className="w-4 h-4" />
-                                </Button>
-                              </div>
-                            </TableCell>
+                </CardHeader>
+                <CardContent>
+                  {users.length === 0 ? (
+                    <div className="text-center py-8 text-gray-500">
+                      <Users className="w-12 h-12 mx-auto mb-3 text-gray-300" />
+                      <p>No users found. Add your first user to get started.</p>
+                    </div>
+                  ) : (
+                    <div className="overflow-x-auto">
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead>Name</TableHead>
+                            <TableHead>Email</TableHead>
+                            <TableHead>Title</TableHead>
+                            <TableHead>Role</TableHead>
+                            <TableHead>Actions</TableHead>
                           </TableRow>
-                        ))}
-                      </TableBody>
-                    </Table>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
+                        </TableHeader>
+                        <TableBody>
+                          {users.map((user) => (
+                            <TableRow key={user.id}>
+                              <TableCell>{user.firstName} {user.lastName}</TableCell>
+                              <TableCell>{user.email}</TableCell>
+                              <TableCell>{user.title || "-"}</TableCell>
+                              <TableCell>
+                                <span className={`px-2 py-1 text-xs rounded-full ${
+                                  user.role === 'admin'
+                                    ? 'bg-purple-100 text-purple-700'
+                                    : 'bg-gray-100 text-gray-700'
+                                }`}>
+                                  {user.role === 'admin' ? 'Admin' : 'User'}
+                                </span>
+                              </TableCell>
+                              <TableCell>
+                                <div className="flex space-x-2">
+                                  <Button
+                                    size="sm"
+                                    variant="ghost"
+                                    onClick={() => setEditingUser(user)}
+                                  >
+                                    <Edit className="w-4 h-4" />
+                                  </Button>
+                                  <Button
+                                    size="sm"
+                                    variant="ghost"
+                                    onClick={() => setDeleteConfirmUser(user)}
+                                    data-testid={`button-delete-user-${user.id}`}
+                                  >
+                                    <Trash2 className="w-4 h-4" />
+                                  </Button>
+                                </div>
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            )}
           </TabsContent>
         </Tabs>
           );
