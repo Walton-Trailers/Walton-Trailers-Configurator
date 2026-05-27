@@ -603,7 +603,7 @@ export default function AdminDashboard() {
                   <span className="hidden md:inline">View Site</span>
                 </Button>
               </Link>
-              <Link href="/admin/account">
+              <Link href="/admin/employees">
                 <Button variant="ghost" size="sm" title="Employees" className="p-2 md:px-3">
                   <Users className="w-4 h-4 md:mr-2" />
                   <span className="hidden md:inline">Employees</span>
