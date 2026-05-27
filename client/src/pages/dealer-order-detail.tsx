@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link, useRoute, useLocation } from "wouter";
 import { format } from "date-fns";
@@ -98,6 +98,26 @@ export default function DealerOrderDetail() {
     enabled: !Number.isNaN(orderId) && !!sessionId,
   });
 
+  // Pull the full options catalog so we can resolve the option ids stored
+  // in selectedOptions into human-readable names + prices. Same source the
+  // dealer dashboard uses for its existing options renderer.
+  interface OptionRecord {
+    id: number;
+    name: string;
+    category: string;
+    price?: number;
+  }
+  const { data: allOptions = [] } = useQuery<OptionRecord[]>({
+    queryKey: ["/api/options/all"],
+    enabled: !!sessionId,
+    retry: false,
+  });
+  const optionsById = useMemo(() => {
+    const m = new Map<number, OptionRecord>();
+    for (const o of allOptions) m.set(o.id, o);
+    return m;
+  }, [allOptions]);
+
   if (Number.isNaN(orderId)) {
     return <div className="p-8 text-red-600">Invalid order id.</div>;
   }
@@ -125,10 +145,54 @@ export default function DealerOrderDetail() {
     return format(d, includeTime ? "MMM d, yyyy 'at' h:mm a" : "MMM d, yyyy");
   };
 
-  // Render selected options as a flat list. Shape varies (numeric ids,
-  // booleans, strings) so we coerce defensively.
-  const optionsList = order.selectedOptions
-    ? Object.entries(order.selectedOptions).filter(([, v]) => v != null && v !== false && v !== "")
+  // Resolve selectedOptions into { label, value, price } rows. The stored
+  // shape is { category: number | number[] | string } — numbers are option
+  // ids, arrays (e.g. extras) are multi-select id lists, strings (length,
+  // pulltype) pass through as-is. Numbers we can't resolve (catalog row
+  // deleted / archived) fall back to "Option #<id>" rather than the raw
+  // number, so the dealer never sees a bare code like "Color: 198".
+  type Row = { key: string; label: string; value: string; price?: number };
+  const optionsRows: Row[] = order.selectedOptions
+    ? Object.entries(order.selectedOptions).flatMap<Row>(([category, value]) => {
+        if (value == null || value === false || value === "") return [];
+        const prettyCategory = category.replace(/([A-Z])/g, " $1").trim();
+        const titleCategory = prettyCategory.charAt(0).toUpperCase() + prettyCategory.slice(1);
+
+        // Multi-select (extras / addons).
+        if (Array.isArray(value)) {
+          const resolved = value
+            .map((id: any) => {
+              if (typeof id !== "number") return { name: String(id), price: undefined };
+              const o = optionsById.get(id);
+              return o ? { name: o.name, price: o.price } : { name: `Option #${id}`, price: undefined };
+            });
+          if (resolved.length === 0) return [];
+          return resolved.map((r, i) => ({
+            key: `${category}-${i}`,
+            label: i === 0 ? titleCategory : "",
+            value: r.name,
+            price: r.price,
+          }));
+        }
+
+        // Single-select option id.
+        if (typeof value === "number") {
+          const o = optionsById.get(value);
+          return [{
+            key: category,
+            label: titleCategory,
+            value: o?.name ?? `Option #${value}`,
+            price: o?.price,
+          }];
+        }
+
+        // Plain string (length, pulltype, etc.).
+        return [{
+          key: category,
+          label: titleCategory,
+          value: String(value === true ? "Yes" : value),
+        }];
+      })
     : [];
 
   return (
@@ -148,9 +212,8 @@ export default function DealerOrderDetail() {
               <span className="text-gray-400 italic font-normal">Pending Walton order #</span>
             )}
           </h1>
-          <p className="text-sm text-gray-600 mt-1 font-mono">Internal ref: {order.orderNumber}</p>
           {order.poNumber && (
-            <p className="text-sm text-gray-600">PO: {order.poNumber}</p>
+            <p className="text-sm text-gray-600 mt-1">PO: {order.poNumber}</p>
           )}
         </div>
         <div className="flex flex-col items-end gap-2">
@@ -274,7 +337,7 @@ export default function DealerOrderDetail() {
         )}
 
         {/* Selected options */}
-        {optionsList.length > 0 && (
+        {optionsRows.length > 0 && (
           <Card className="lg:col-span-2">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
@@ -283,12 +346,16 @@ export default function DealerOrderDetail() {
               <CardDescription>What you configured when this order was built.</CardDescription>
             </CardHeader>
             <CardContent>
-              <ul className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-1 text-sm">
-                {optionsList.map(([key, value]) => (
-                  <li key={key} className="flex justify-between gap-4 border-b py-1 last:border-b-0">
-                    <span className="text-gray-600">{key}</span>
-                    <span className="text-gray-900 text-right truncate">
-                      {String(value === true ? "Yes" : value)}
+              <ul className="divide-y text-sm">
+                {optionsRows.map((row) => (
+                  <li
+                    key={row.key}
+                    className="grid grid-cols-[10rem,1fr,auto] gap-4 py-1.5 items-baseline"
+                  >
+                    <span className="text-gray-600">{row.label}</span>
+                    <span className="text-gray-900">{row.value}</span>
+                    <span className="text-gray-500 tabular-nums text-right">
+                      {row.price ? formatCurrency(row.price) : ""}
                     </span>
                   </li>
                 ))}
