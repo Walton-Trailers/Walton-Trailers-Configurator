@@ -9,7 +9,6 @@ import AdminLogin from "@/pages/admin-login";
 import AdminDashboard from "@/pages/admin-dashboard-fixed";
 import FastPricing from "@/pages/fast-pricing";
 import PricingManagement from "@/pages/pricing-management";
-import AccountManagement from "@/pages/account-management";
 import DealerLogin from "@/pages/dealer-login";
 import DealerUserLogin from "@/pages/dealer-user-login";
 import DealerUserForgotPassword from "@/pages/dealer-user-forgot-password";
@@ -38,7 +37,6 @@ function Router() {
       <Route path="/admin" component={AdminDashboard} />
       <Route path="/admin/pricing" component={FastPricing} />
       <Route path="/admin/pricing-management" component={PricingManagement} />
-      <Route path="/admin/account" component={AccountManagement} />
       <Route path="/admin/dealers" component={AdminDealers} />
       <Route path="/admin/dealers/:id" component={AdminDealerDetail} />
       <Route path="/admin/employees/:id" component={AdminEmployeeDetail} />
