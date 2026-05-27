@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { useAdminAuth } from "@/hooks/useAdminAuth";
 import { useLocation, Link } from "wouter";
 import { apiRequest } from "@/lib/queryClient";
-import { LogOut, Users, Settings, Plus, DollarSign, Edit, Save, X, Plug, Key, Mail, Database, CheckCircle, AlertCircle, Home, MessageSquare, Building2, Search } from "lucide-react";
+import { LogOut, Users, Settings, Plus, DollarSign, Edit, Save, X, CheckCircle, Home, MessageSquare, Building2, Search } from "lucide-react";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -52,15 +52,6 @@ export default function AdminDashboard() {
   const { user, logout, isLoading } = useAdminAuth();
   const [, setLocation] = useLocation();
   const [showCreateUser, setShowCreateUser] = useState(false);
-  const [showAirtableConfig, setShowAirtableConfig] = useState(false);
-  const [airtableToken, setAirtableToken] = useState("");
-  const [airtableBaseId, setAirtableBaseId] = useState("");
-  const [isTestingAirtable, setIsTestingAirtable] = useState(false);
-  const [airtableTables, setAirtableTables] = useState<any[]>([]);
-  const [showImportDialog, setShowImportDialog] = useState(false);
-  const [selectedTable, setSelectedTable] = useState("");
-  const [isImporting, setIsImporting] = useState(false);
-  const [isExporting, setIsExporting] = useState(false);
   const [selectedQuoteRequest, setSelectedQuoteRequest] = useState<any>(null);
   const [showQuoteDetailModal, setShowQuoteDetailModal] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
@@ -108,17 +99,6 @@ export default function AdminDashboard() {
     queryKey: ["/api/admin/users"],
     queryFn: () =>
       apiRequest("/api/admin/users", {
-        headers: {
-          Authorization: `Bearer ${sessionId}`,
-        },
-      }),
-    enabled: !!user && user.role === "admin" && !!sessionId,
-  });
-
-  const { data: airtableStatus } = useQuery({
-    queryKey: ["/api/integrations/airtable/status"],
-    queryFn: () =>
-      apiRequest("/api/integrations/airtable/status", {
         headers: {
           Authorization: `Bearer ${sessionId}`,
         },
@@ -342,138 +322,6 @@ export default function AdminDashboard() {
     return <div className="space-y-3">{renderedItems}</div>;
   };
 
-  const handleImportFromAirtable = async () => {
-    if (!selectedTable) {
-      toast({
-        title: "Error",
-        description: "Please select a table to import from",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    setIsImporting(true);
-    try {
-      const response = await apiRequest("/api/integrations/airtable/import", {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${sessionId}`,
-          "Content-Type": "application/json",
-        },
-        body: {
-          tableName: selectedTable,
-        },
-      });
-
-      toast({
-        title: "Import Successful",
-        description: response.message,
-      });
-      
-      setShowImportDialog(false);
-      setSelectedTable("");
-      queryClient.invalidateQueries({ queryKey: ["/api/models"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/options"] });
-    } catch (error) {
-      toast({
-        title: "Import Failed",
-        description: "Unable to import data from Airtable",
-        variant: "destructive",
-      });
-    } finally {
-      setIsImporting(false);
-    }
-  };
-
-  const handleExportToAirtable = async (dataType: 'models' | 'options') => {
-    setIsExporting(true);
-    try {
-      const response = await apiRequest("/api/integrations/airtable/export", {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${sessionId}`,
-          "Content-Type": "application/json",
-        },
-        body: {
-          dataType,
-        },
-      });
-
-      toast({
-        title: "Export Successful",
-        description: response.message,
-      });
-    } catch (error) {
-      toast({
-        title: "Export Failed",
-        description: "Unable to export data to Airtable",
-        variant: "destructive",
-      });
-    } finally {
-      setIsExporting(false);
-    }
-  };
-
-  const handleTestAirtableConnection = async () => {
-    if (!airtableToken || !airtableBaseId) {
-      toast({
-        title: "Error",
-        description: "Please provide both Access Token and Base ID",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    setIsTestingAirtable(true);
-    try {
-      const response = await apiRequest("/api/integrations/airtable/test", {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${sessionId}`,
-          "Content-Type": "application/json",
-        },
-        body: {
-          accessToken: airtableToken,
-          baseId: airtableBaseId,
-        },
-      });
-
-      if (response.success) {
-        toast({
-          title: "Success",
-          description: `Connected to Airtable! Found ${response.tableCount} tables.`,
-        });
-        
-        // Store the tables for import dialog
-        setAirtableTables(response.tables || []);
-        
-        // Save the configuration
-        await apiRequest("/api/integrations/airtable/save", {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${sessionId}`,
-            "Content-Type": "application/json",
-          },
-          body: {
-            accessToken: airtableToken,
-            baseId: airtableBaseId,
-          },
-        });
-        
-        setShowAirtableConfig(false);
-        queryClient.invalidateQueries({ queryKey: ["/api/integrations/airtable/status"] });
-      }
-    } catch (error) {
-      toast({
-        title: "Connection Failed",
-        description: "Unable to connect to Airtable. Please check your credentials.",
-        variant: "destructive",
-      });
-    } finally {
-      setIsTestingAirtable(false);
-    }
-  };
-
   // Loading state
   if (isLoading) {
     return (
@@ -560,7 +408,6 @@ export default function AdminDashboard() {
               <SelectContent>
                 {isAdmin && <SelectItem value="products">Product Management</SelectItem>}
                 {isAdmin && <SelectItem value="users">User Management</SelectItem>}
-                {isAdmin && <SelectItem value="integrations">Integrations</SelectItem>}
                 <SelectItem value="custom-quotes">Custom Requests</SelectItem>
                 {/* Dealer Configurations and Reservations are visible to
                     standard users too — both endpoints filter rows by the
@@ -576,7 +423,6 @@ export default function AdminDashboard() {
           <TabsList className="hidden md:inline-flex">
             {isAdmin && <TabsTrigger value="products">Product Management</TabsTrigger>}
             {isAdmin && <TabsTrigger value="users">User Management</TabsTrigger>}
-            {isAdmin && <TabsTrigger value="integrations">Integrations</TabsTrigger>}
             <TabsTrigger value="custom-quotes">Custom Requests</TabsTrigger>
             <TabsTrigger value="configurations">Dealer Configurations</TabsTrigger>
             <TabsTrigger value="reservations">Reservations</TabsTrigger>
@@ -968,27 +814,6 @@ ${quote.notes ? `\nAdmin Notes: ${quote.notes}` : ''}`;
                 </CardContent>
               </Card>
 
-            </TabsContent>
-          )}
-
-          {isAdmin && (
-            <TabsContent value="integrations" className="space-y-6">
-              <div className="mb-6">
-                <h3 className="text-lg font-medium">Integrations</h3>
-                <p className="text-sm text-gray-600">Manage API connections and third-party services</p>
-              </div>
-
-              <div className="flex items-center justify-center py-16">
-                <div className="text-center max-w-md">
-                  <div className="mx-auto w-16 h-16 mb-4 rounded-full bg-gray-100 flex items-center justify-center">
-                    <Database className="w-8 h-8 text-gray-400" />
-                  </div>
-                  <h3 className="text-xl font-semibold text-gray-900 mb-2">Coming Soon</h3>
-                  <p className="text-gray-600">
-                    Integration features are currently under development and will be available in a future update.
-                  </p>
-                </div>
-              </div>
             </TabsContent>
           )}
 
