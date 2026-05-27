@@ -80,7 +80,10 @@ export default function AdminDashboard() {
   // against config.dealerName (joined onto the configurations payload).
   const [configurationDealerFilter, setConfigurationDealerFilter] = useState<string>('all');
   const [quoteRequestSearchTerm, setQuoteRequestSearchTerm] = useState("");
-  const [activeTab, setActiveTab] = useState("products");
+  // Default tab depends on role. Standard users no longer see Product
+  // Management, so land them on Dealer Configurations (their day-to-day
+  // surface). Admins start on Product Management as before.
+  const [activeTab, setActiveTab] = useState<string>("products");
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -230,6 +233,15 @@ export default function AdminDashboard() {
       setLocation("/admin/login");
     }
   }, [isLoading, user, setLocation]);
+
+  // Standard users don't see Product Management; if they landed on it
+  // (the default initial tab) snap them to Dealer Configurations once
+  // we know their role. Admin keeps the existing default.
+  useEffect(() => {
+    if (user && user.role !== "admin" && activeTab === "products") {
+      setActiveTab("configurations");
+    }
+  }, [user, activeTab]);
 
   // Handler functions
   const handleLogout = async () => {
@@ -513,12 +525,14 @@ export default function AdminDashboard() {
                   <span className="hidden md:inline">Dealers</span>
                 </Button>
               </Link>
-              <Link href="/admin/pricing-tiers">
-                <Button variant="ghost" size="sm" title="Pricing Tiers" className="p-2 md:px-3">
-                  <DollarSign className="w-4 h-4 md:mr-2" />
-                  <span className="hidden md:inline">Pricing Tiers</span>
-                </Button>
-              </Link>
+              {isAdmin && (
+                <Link href="/admin/pricing-tiers">
+                  <Button variant="ghost" size="sm" title="Pricing Tiers" className="p-2 md:px-3">
+                    <DollarSign className="w-4 h-4 md:mr-2" />
+                    <span className="hidden md:inline">Pricing Tiers</span>
+                  </Button>
+                </Link>
+              )}
               <Button onClick={handleLogout} variant="outline" size="sm" title="Logout" className="p-2 md:px-3">
                 <LogOut className="w-4 h-4 md:mr-2" />
                 <span className="hidden md:inline">Logout</span>
@@ -543,11 +557,14 @@ export default function AdminDashboard() {
                 <SelectValue placeholder="Select a section" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="products">Product Management</SelectItem>
+                {isAdmin && <SelectItem value="products">Product Management</SelectItem>}
                 {isAdmin && <SelectItem value="users">User Management</SelectItem>}
                 {isAdmin && <SelectItem value="integrations">Integrations</SelectItem>}
                 <SelectItem value="custom-quotes">Custom Requests</SelectItem>
-                {isAdmin && <SelectItem value="configurations">Dealer Configurations</SelectItem>}
+                {/* Dealer Configurations is visible to standard users too —
+                    the /api/admin/configurations endpoint filters dealer rows
+                    by the viewer's assignments. */}
+                <SelectItem value="configurations">Dealer Configurations</SelectItem>
                 {isAdmin && <SelectItem value="quote-requests">Quote Requests</SelectItem>}
               </SelectContent>
             </Select>
@@ -555,11 +572,11 @@ export default function AdminDashboard() {
 
           {/* Desktop Tabs Navigation */}
           <TabsList className="hidden md:inline-flex">
-            <TabsTrigger value="products">Product Management</TabsTrigger>
+            {isAdmin && <TabsTrigger value="products">Product Management</TabsTrigger>}
             {isAdmin && <TabsTrigger value="users">User Management</TabsTrigger>}
             {isAdmin && <TabsTrigger value="integrations">Integrations</TabsTrigger>}
             <TabsTrigger value="custom-quotes">Custom Requests</TabsTrigger>
-            {isAdmin && <TabsTrigger value="configurations">Dealer Configurations</TabsTrigger>}
+            <TabsTrigger value="configurations">Dealer Configurations</TabsTrigger>
             {isAdmin && <TabsTrigger value="quote-requests">Quote Requests</TabsTrigger>}
           </TabsList>
 
