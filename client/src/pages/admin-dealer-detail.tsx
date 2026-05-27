@@ -223,7 +223,7 @@ export default function AdminDealerDetail() {
           </CardHeader>
           <CardContent>
             <p className="text-2xl font-bold">{formatPrice(revenue)}</p>
-            <p className="text-xs text-gray-500 mt-1">Excludes drafts and deleted orders.</p>
+            <p className="text-xs text-gray-500 mt-1">Excludes quotes (drafts) and deleted orders.</p>
           </CardContent>
         </Card>
         <Card>
