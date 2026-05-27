@@ -205,7 +205,7 @@ export async function registerRoutes(app: Express): Promise<Express> {
   });
 
   // Create a new category
-  app.post("/api/categories", requireAuth, async (req, res) => {
+  app.post("/api/categories", requireAuth, requireAdmin, async (req, res) => {
     try {
       console.log("POST /api/categories req.body:", JSON.stringify(req.body));
       const { slug, name, description, imageUrl, startingPrice, orderIndex } = req.body;
@@ -241,7 +241,7 @@ export async function registerRoutes(app: Express): Promise<Express> {
     }
   });
 
-  app.patch("/api/categories/reorder", requireAuth, async (req, res) => {
+  app.patch("/api/categories/reorder", requireAuth, requireAdmin, async (req, res) => {
     try {
       const { orderedIds } = req.body;
       if (!Array.isArray(orderedIds)) {
@@ -260,7 +260,7 @@ export async function registerRoutes(app: Express): Promise<Express> {
   });
 
   // Update a category
-  app.patch("/api/categories/:id", requireAuth, async (req, res) => {
+  app.patch("/api/categories/:id", requireAuth, requireAdmin, async (req, res) => {
     try {
       const categoryId = parseInt(req.params.id);
       const { slug, name, description, imageUrl, startingPrice, orderIndex } = req.body;
@@ -288,7 +288,7 @@ export async function registerRoutes(app: Express): Promise<Express> {
   });
 
   // Delete a category
-  app.delete("/api/categories/:id", requireAuth, async (req, res) => {
+  app.delete("/api/categories/:id", requireAuth, requireAdmin, async (req, res) => {
     try {
       const categoryId = parseInt(req.params.id);
       
@@ -347,7 +347,7 @@ export async function registerRoutes(app: Express): Promise<Express> {
   });
 
   // Create a new series
-  app.post("/api/series", requireAuth, async (req, res) => {
+  app.post("/api/series", requireAuth, requireAdmin, async (req, res) => {
     try {
       const { categoryId, name, description, slug, basePrice, imageUrl } = req.body;
       
@@ -387,7 +387,7 @@ export async function registerRoutes(app: Express): Promise<Express> {
   });
 
   // Update a series
-  app.patch("/api/series/:id", requireAuth, async (req, res) => {
+  app.patch("/api/series/:id", requireAuth, requireAdmin, async (req, res) => {
     try {
       const seriesId = parseInt(req.params.id);
       const { categoryId, name, description, slug, basePrice } = req.body;
@@ -408,7 +408,7 @@ export async function registerRoutes(app: Express): Promise<Express> {
   });
 
   // Delete a series
-  app.delete("/api/series/:id", requireAuth, async (req, res) => {
+  app.delete("/api/series/:id", requireAuth, requireAdmin, async (req, res) => {
     try {
       const seriesId = parseInt(req.params.id);
       await storage.deleteSeries(seriesId);
@@ -424,7 +424,7 @@ export async function registerRoutes(app: Express): Promise<Express> {
   });
 
   // Archive series
-  app.patch("/api/series/:id/archive", requireAuth, async (req, res) => {
+  app.patch("/api/series/:id/archive", requireAuth, requireAdmin, async (req, res) => {
     try {
       const seriesId = parseInt(req.params.id);
       const archivedSeries = await storage.archiveSeries(seriesId);
@@ -436,7 +436,7 @@ export async function registerRoutes(app: Express): Promise<Express> {
   });
 
   // Restore series
-  app.patch("/api/series/:id/restore", requireAuth, async (req, res) => {
+  app.patch("/api/series/:id/restore", requireAuth, requireAdmin, async (req, res) => {
     try {
       const seriesId = parseInt(req.params.id);
       const restoredSeries = await storage.restoreSeries(seriesId);
@@ -448,7 +448,7 @@ export async function registerRoutes(app: Express): Promise<Express> {
   });
 
   // Create a new model
-  app.post("/api/models", requireAuth, async (req, res) => {
+  app.post("/api/models", requireAuth, requireAdmin, async (req, res) => {
     try {
       const { categoryId, seriesId, modelSeries, name, basePrice, imageUrl, standardFeatures, gvwr, payload, deckSize, axles, lengthOptions, pulltypeOptions } = req.body;
       
@@ -495,7 +495,7 @@ export async function registerRoutes(app: Express): Promise<Express> {
   });
 
   // Update model assignments for a series
-  app.patch("/api/series/:id/models", requireAuth, async (req, res) => {
+  app.patch("/api/series/:id/models", requireAuth, requireAdmin, async (req, res) => {
     try {
       const seriesId = parseInt(req.params.id);
       const { modelIds } = req.body; // Array of model IDs to assign to this series
@@ -3028,7 +3028,7 @@ export async function registerRoutes(app: Express): Promise<Express> {
     }
   });
 
-  app.post("/api/categories/options", requireAuth, async (req, res) => {
+  app.post("/api/categories/options", requireAuth, requireAdmin, async (req, res) => {
     try {
       const { name } = req.body;
       if (!name || !name.trim()) {
@@ -3069,7 +3069,7 @@ export async function registerRoutes(app: Express): Promise<Express> {
   });
 
   // Reorder a category by swapping its position with the adjacent one
-  app.patch("/api/categories/options/:id/position", requireAuth, async (req, res) => {
+  app.patch("/api/categories/options/:id/position", requireAuth, requireAdmin, async (req, res) => {
     try {
       const { id } = req.params;
       const { direction } = req.body; // 'up' or 'down'
@@ -3119,7 +3119,7 @@ export async function registerRoutes(app: Express): Promise<Express> {
     }
   });
 
-  app.patch("/api/categories/options/:id", requireAuth, async (req, res) => {
+  app.patch("/api/categories/options/:id", requireAuth, requireAdmin, async (req, res) => {
     try {
       const { id } = req.params;
       const { name } = req.body;
@@ -3156,7 +3156,7 @@ export async function registerRoutes(app: Express): Promise<Express> {
     }
   });
 
-  app.delete("/api/categories/options/:id", requireAuth, async (req, res) => {
+  app.delete("/api/categories/options/:id", requireAuth, requireAdmin, async (req, res) => {
     try {
       const { id } = req.params;
       const catResult = await db.execute(sql`
@@ -3238,7 +3238,7 @@ export async function registerRoutes(app: Express): Promise<Express> {
   });
 
   // Update per-model category display order
-  app.patch("/api/models/:id/category-order", requireAuth, async (req, res) => {
+  app.patch("/api/models/:id/category-order", requireAuth, requireAdmin, async (req, res) => {
     try {
       const modelId = parseInt(req.params.id);
       const { categoryOrder } = req.body;
@@ -3253,7 +3253,7 @@ export async function registerRoutes(app: Express): Promise<Express> {
     }
   });
 
-  app.patch("/api/models/:id", requireAuth, async (req, res) => {
+  app.patch("/api/models/:id", requireAuth, requireAdmin, async (req, res) => {
     try {
       const modelId = parseInt(req.params.id);
       const { basePrice, name, modelId: modelIdField, gvwr, payload, deckSize, axles, categoryId, categorySubType, series, seriesId, lengthOptions, pulltypeOptions, lengthPrice, lengthGvwr, lengthPayload, lengthDeckSize, lengthOrder, categoryOrder } = req.body;
@@ -3292,7 +3292,7 @@ export async function registerRoutes(app: Express): Promise<Express> {
 
 
 
-  app.post("/api/options", requireAuth, async (req, res) => {
+  app.post("/api/options", requireAuth, requireAdmin, async (req, res) => {
     try {
       const { name, price, category, modelId, applicableModels, hexColor, primerPrice, isPerFt, imageUrl, isMultiSelect } = req.body;
       
@@ -3332,7 +3332,7 @@ export async function registerRoutes(app: Express): Promise<Express> {
     }
   });
 
-  app.patch("/api/options/:id", requireAuth, async (req, res) => {
+  app.patch("/api/options/:id", requireAuth, requireAdmin, async (req, res) => {
     try {
       const optionId = parseInt(req.params.id);
       const { price, name, category, modelId, applicableModels, isArchived, isMultiSelect, isPerFt, hexColor, primerPrice, requiresCategory, requiresOptionName } = req.body;
@@ -3360,7 +3360,7 @@ export async function registerRoutes(app: Express): Promise<Express> {
   });
 
   // Delete option
-  app.delete("/api/options/:id", requireAuth, async (req, res) => {
+  app.delete("/api/options/:id", requireAuth, requireAdmin, async (req, res) => {
     try {
       const optionId = parseInt(req.params.id);
       await storage.deleteOption(optionId);
@@ -3372,7 +3372,7 @@ export async function registerRoutes(app: Express): Promise<Express> {
   });
 
   // Archive option
-  app.patch("/api/options/:id/archive", requireAuth, async (req, res) => {
+  app.patch("/api/options/:id/archive", requireAuth, requireAdmin, async (req, res) => {
     try {
       const optionId = parseInt(req.params.id);
       await storage.archiveOption(optionId);
@@ -3383,7 +3383,7 @@ export async function registerRoutes(app: Express): Promise<Express> {
     }
   });
 
-  app.patch("/api/options/:id/restore", requireAuth, async (req, res) => {
+  app.patch("/api/options/:id/restore", requireAuth, requireAdmin, async (req, res) => {
     try {
       const optionId = parseInt(req.params.id);
       await storage.restoreOption(optionId);
@@ -3395,7 +3395,7 @@ export async function registerRoutes(app: Express): Promise<Express> {
   });
 
   // Archive model
-  app.patch("/api/models/:id/archive", requireAuth, async (req, res) => {
+  app.patch("/api/models/:id/archive", requireAuth, requireAdmin, async (req, res) => {
     try {
       const modelId = parseInt(req.params.id);
       await storage.archiveModel(modelId);
@@ -3407,7 +3407,7 @@ export async function registerRoutes(app: Express): Promise<Express> {
   });
 
   // Restore model
-  app.patch("/api/models/:id/restore", requireAuth, async (req, res) => {
+  app.patch("/api/models/:id/restore", requireAuth, requireAdmin, async (req, res) => {
     try {
       const modelId = parseInt(req.params.id);
       const restoredModel = await storage.restoreModel(modelId);
@@ -3419,7 +3419,7 @@ export async function registerRoutes(app: Express): Promise<Express> {
   });
 
   // Archive category
-  app.patch("/api/categories/:id/archive", requireAuth, async (req, res) => {
+  app.patch("/api/categories/:id/archive", requireAuth, requireAdmin, async (req, res) => {
     try {
       const categoryId = parseInt(req.params.id);
       await storage.archiveCategory(categoryId);
@@ -3431,7 +3431,7 @@ export async function registerRoutes(app: Express): Promise<Express> {
   });
 
   // Restore category
-  app.patch("/api/categories/:id/restore", requireAuth, async (req, res) => {
+  app.patch("/api/categories/:id/restore", requireAuth, requireAdmin, async (req, res) => {
     try {
       const categoryId = parseInt(req.params.id);
       const restoredCategory = await storage.restoreCategory(categoryId);
@@ -3459,7 +3459,7 @@ export async function registerRoutes(app: Express): Promise<Express> {
   });
 
   // Category image upload routes
-  app.post("/api/categories/upload-url", requireAuth, async (req, res) => {
+  app.post("/api/categories/upload-url", requireAuth, requireAdmin, async (req, res) => {
     try {
       const objectStorageService = new ObjectStorageService();
       const uploadURL = await objectStorageService.getObjectEntityUploadURL();
@@ -3470,7 +3470,7 @@ export async function registerRoutes(app: Express): Promise<Express> {
     }
   });
 
-  app.patch("/api/categories/:id/image", requireAuth, async (req, res) => {
+  app.patch("/api/categories/:id/image", requireAuth, requireAdmin, async (req, res) => {
     try {
       const categoryId = parseInt(req.params.id);
       const { imageUrl } = req.body;
@@ -3539,7 +3539,7 @@ export async function registerRoutes(app: Express): Promise<Express> {
   });
 
   // Model image upload routes
-  app.post("/api/models/upload-url", requireAuth, async (req, res) => {
+  app.post("/api/models/upload-url", requireAuth, requireAdmin, async (req, res) => {
     try {
       const objectStorageService = new ObjectStorageService();
       const uploadURL = await objectStorageService.getObjectEntityUploadURL();
@@ -3550,7 +3550,7 @@ export async function registerRoutes(app: Express): Promise<Express> {
     }
   });
 
-  app.patch("/api/models/:id/image", requireAuth, async (req, res) => {
+  app.patch("/api/models/:id/image", requireAuth, requireAdmin, async (req, res) => {
     try {
       const modelId = parseInt(req.params.id);
       const { imageUrl } = req.body;
@@ -3611,7 +3611,7 @@ export async function registerRoutes(app: Express): Promise<Express> {
     }
   });
 
-  app.patch("/api/models/:id/model3d", requireAuth, async (req, res) => {
+  app.patch("/api/models/:id/model3d", requireAuth, requireAdmin, async (req, res) => {
     try {
       const modelId = parseInt(req.params.id);
       const { model3dUrl } = req.body;
@@ -3655,7 +3655,7 @@ export async function registerRoutes(app: Express): Promise<Express> {
   // longer accurate). We don't delete the underlying Blob — multiple records
   // could reference it, and removing it asynchronously is the admin's choice
   // via the future media library. Here we just clear the DB pointer.
-  app.delete("/api/models/:id/model3d", requireAuth, async (req, res) => {
+  app.delete("/api/models/:id/model3d", requireAuth, requireAdmin, async (req, res) => {
     try {
       const modelId = parseInt(req.params.id);
       const updatedModel = await storage.updateModel(modelId, { model3dUrl: null });
@@ -3667,7 +3667,7 @@ export async function registerRoutes(app: Express): Promise<Express> {
   });
 
   // Model gallery image endpoints
-  app.post("/api/models/:id/images", requireAuth, async (req, res) => {
+  app.post("/api/models/:id/images", requireAuth, requireAdmin, async (req, res) => {
     try {
       const modelId = parseInt(req.params.id);
       const { url } = req.body;
@@ -3682,7 +3682,7 @@ export async function registerRoutes(app: Express): Promise<Express> {
     }
   });
 
-  app.delete("/api/models/:id/images", requireAuth, async (req, res) => {
+  app.delete("/api/models/:id/images", requireAuth, requireAdmin, async (req, res) => {
     try {
       const modelId = parseInt(req.params.id);
       const { url } = req.body;
@@ -3695,7 +3695,7 @@ export async function registerRoutes(app: Express): Promise<Express> {
     }
   });
 
-  app.patch("/api/models/:id/images/reorder", requireAuth, async (req, res) => {
+  app.patch("/api/models/:id/images/reorder", requireAuth, requireAdmin, async (req, res) => {
     try {
       const modelId = parseInt(req.params.id);
       const { urls } = req.body;
@@ -3709,7 +3709,7 @@ export async function registerRoutes(app: Express): Promise<Express> {
   });
 
   // Option image upload routes
-  app.post("/api/options/upload-url", requireAuth, async (req, res) => {
+  app.post("/api/options/upload-url", requireAuth, requireAdmin, async (req, res) => {
     try {
       const objectStorageService = new ObjectStorageService();
       const uploadURL = await objectStorageService.getObjectEntityUploadURL();
@@ -3720,7 +3720,7 @@ export async function registerRoutes(app: Express): Promise<Express> {
     }
   });
 
-  app.patch("/api/options/:id/image", requireAuth, async (req, res) => {
+  app.patch("/api/options/:id/image", requireAuth, requireAdmin, async (req, res) => {
     try {
       const optionId = parseInt(req.params.id);
       const { imageUrl } = req.body;
@@ -3782,7 +3782,7 @@ export async function registerRoutes(app: Express): Promise<Express> {
   });
 
   // Series image upload routes
-  app.post("/api/series/upload-url", requireAuth, async (req, res) => {
+  app.post("/api/series/upload-url", requireAuth, requireAdmin, async (req, res) => {
     try {
       const objectStorageService = new ObjectStorageService();
       const uploadURL = await objectStorageService.getObjectEntityUploadURL();
@@ -3793,7 +3793,7 @@ export async function registerRoutes(app: Express): Promise<Express> {
     }
   });
 
-  app.patch("/api/series/:id/image", requireAuth, async (req, res) => {
+  app.patch("/api/series/:id/image", requireAuth, requireAdmin, async (req, res) => {
     try {
       const seriesId = parseInt(req.params.id);
       const { imageUrl } = req.body;
