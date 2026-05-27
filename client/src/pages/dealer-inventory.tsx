@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { Link, useLocation } from "wouter";
-import { ArrowLeft, Search, Package, RefreshCw, BookmarkPlus, Loader2 } from "lucide-react";
+import { ArrowLeft, Search, Package, RefreshCw, BookmarkPlus, Loader2, FileText } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -60,18 +60,33 @@ const PREFERRED_COLUMN_ORDER = [
 
 // Airtable's cellFormat=string flattens multi-attachment fields into
 // repeated "filename.ext (https://…)" entries joined by newlines. Detect
-// that shape so the table can render real clickable links instead of a
-// wall of raw URL text. Returns null when the value doesn't look like
-// attachments — caller falls back to plain text rendering.
-function parseAttachments(value: unknown): { name: string; url: string }[] | null {
+// that shape so the table can render real clickable links / thumbnails
+// instead of a wall of raw URL text. Returns null when the value doesn't
+// look like attachments — caller falls back to plain text rendering.
+type AttachmentKind = "image" | "pdf" | "other";
+interface Attachment {
+  name: string;
+  url: string;
+  kind: AttachmentKind;
+}
+function attachmentKindFromName(name: string): AttachmentKind {
+  // Airtable signed URLs don't usually carry a file extension in the
+  // path, so we infer from the human filename Airtable returns
+  // alongside.
+  if (/\.pdf$/i.test(name)) return "pdf";
+  if (/\.(jpe?g|png|webp|gif|heic|avif|bmp|tiff?)$/i.test(name)) return "image";
+  return "other";
+}
+function parseAttachments(value: unknown): Attachment[] | null {
   if (typeof value !== "string") return null;
-  const matches: { name: string; url: string }[] = [];
+  const matches: Attachment[] = [];
   // Capture each "<name> (<url>)" pair. URL may contain anything except
   // a closing paren since Airtable encodes those.
   const re = /([^\n()]+?)\s*\((https?:\/\/[^\s)]+)\)/g;
   let m: RegExpExecArray | null;
   while ((m = re.exec(value)) !== null) {
-    matches.push({ name: m[1].trim(), url: m[2] });
+    const name = m[1].trim();
+    matches.push({ name, url: m[2], kind: attachmentKindFromName(name) });
   }
   return matches.length > 0 ? matches : null;
 }
@@ -255,8 +270,14 @@ export default function DealerInventory() {
               <Table>
                 <TableHeader>
                   <TableRow>
+                    {/* Headers wrap on word boundaries so long column names
+                        like "Confirmed % Complete" don't stretch the table
+                        sideways. min-width keeps them from collapsing too
+                        thin when content is short. */}
                     {columns.map((c) => (
-                      <TableHead key={c} className="whitespace-nowrap">{c}</TableHead>
+                      <TableHead key={c} className="whitespace-normal align-bottom min-w-[80px] max-w-[180px]">
+                        {c}
+                      </TableHead>
                     ))}
                     <TableHead className="whitespace-nowrap text-right">Action</TableHead>
                   </TableRow>
@@ -278,20 +299,14 @@ export default function DealerInventory() {
                         const raw = r.fields[c];
                         const attachments = parseAttachments(raw);
                         return (
-                          <TableCell key={c} className="align-top">
+                          <TableCell key={c} className="align-top whitespace-normal">
                             {attachments ? (
-                              <div className="flex flex-col gap-1">
+                              // Attachments wrap onto multiple rows so a
+                              // PDF + multiple photos in one cell stay
+                              // readable.
+                              <div className="flex flex-wrap items-center gap-2">
                                 {attachments.map((a, i) => (
-                                  <a
-                                    key={i}
-                                    href={a.url}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    onClick={(e) => e.stopPropagation()}
-                                    className="text-blue-600 hover:underline inline-flex items-center gap-1 break-all"
-                                  >
-                                    {a.name}
-                                  </a>
+                                  <AttachmentCell key={i} attachment={a} />
                                 ))}
                               </div>
                             ) : (
@@ -406,5 +421,63 @@ export default function DealerInventory() {
         </DialogContent>
       </Dialog>
     </div>
+  );
+}
+
+// Per-attachment renderer. Images get a thumbnail, PDFs get an icon
+// chip, everything else stays as a filename link (the previous default).
+// stopPropagation everywhere so opening an attachment doesn't trigger
+// the row's stock-number-to-clipboard handler.
+function AttachmentCell({ attachment }: { attachment: Attachment }) {
+  const { name, url, kind } = attachment;
+
+  if (kind === "image") {
+    return (
+      <a
+        href={url}
+        target="_blank"
+        rel="noopener noreferrer"
+        onClick={(e) => e.stopPropagation()}
+        className="block"
+        title={name}
+      >
+        <img
+          src={url}
+          alt={name}
+          loading="lazy"
+          className="w-20 h-20 object-cover rounded border border-gray-200 bg-gray-100 hover:opacity-90 transition-opacity"
+        />
+      </a>
+    );
+  }
+
+  if (kind === "pdf") {
+    return (
+      <a
+        href={url}
+        target="_blank"
+        rel="noopener noreferrer"
+        onClick={(e) => e.stopPropagation()}
+        title={name}
+        className="inline-flex items-center justify-center w-10 h-10 rounded border border-red-200 bg-red-50 text-red-600 hover:bg-red-100 transition-colors"
+        aria-label={`Open PDF: ${name}`}
+      >
+        <FileText className="w-5 h-5" />
+      </a>
+    );
+  }
+
+  // Fallback: keep the original blue link with the filename so unknown
+  // file types stay accessible.
+  return (
+    <a
+      href={url}
+      target="_blank"
+      rel="noopener noreferrer"
+      onClick={(e) => e.stopPropagation()}
+      className="text-blue-600 hover:underline break-all"
+    >
+      {name}
+    </a>
   );
 }
