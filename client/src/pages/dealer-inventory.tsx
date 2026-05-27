@@ -235,7 +235,6 @@ export default function DealerInventory() {
           <div className="flex items-start justify-between gap-3 flex-wrap">
             <div>
               <CardTitle>{records.length} item{records.length === 1 ? "" : "s"}</CardTitle>
-              <CardDescription>Click a row to copy its stock number.</CardDescription>
             </div>
             <div className="relative w-full sm:w-72">
               <Search className="absolute left-2 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
