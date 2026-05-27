@@ -1141,16 +1141,23 @@ export async function registerRoutes(app: Express): Promise<Express> {
       const dealerEmail = dealer.email || null;
 
       // Pick a friendly identifier for the subject line + persisted row.
-      // The Airtable field is called "Production ID" in the current view;
-      // legacy "Stock #" / "Stock Number" names stay in the fallback
-      // chain so this keeps working if the column is renamed later.
+      // Field names mirror the live Airtable view ("Production ID",
+      // "🚐 Trailer Model") with legacy / plain fallbacks so this still
+      // works if Walton later drops the emoji prefixes or renames the
+      // ID column back to "Stock #".
       const stock = (
         fields["Production ID"] ??
         fields["Stock #"] ??
         fields["Stock Number"] ??
         ""
       ).toString().trim();
-      const model = (fields["Model"] ?? fields["Trailer"] ?? "").toString().trim();
+      const model = (
+        fields["🚐 Trailer Model"] ??
+        fields["Trailer Model"] ??
+        fields["Model"] ??
+        fields["Trailer"] ??
+        ""
+      ).toString().trim();
       const headline = [stock, model].filter(Boolean).join(" — ") || `unit ${recordId || ""}`.trim();
 
       // Render the row as a clean "Field: value" block. cellFormat=string
