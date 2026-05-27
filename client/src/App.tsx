@@ -25,7 +25,6 @@ import AdminEmployeeDetail from "@/pages/admin-employee-detail";
 import AdminPricingTiers from "@/pages/admin-pricing-tiers";
 import ForgotPassword from "@/pages/forgot-password";
 import ResetPassword from "@/pages/reset-password";
-import EmailSettings from "@/pages/email-settings";
 import { ClearDealerSession } from "@/components/clear-dealer-session";
 
 function Router() {
@@ -44,7 +43,6 @@ function Router() {
       <Route path="/admin/dealers/:id" component={AdminDealerDetail} />
       <Route path="/admin/employees/:id" component={AdminEmployeeDetail} />
       <Route path="/admin/pricing-tiers" component={AdminPricingTiers} />
-      <Route path="/admin/email-settings" component={EmailSettings} />
       <Route path="/dealer/login" component={DealerLogin} />
       <Route path="/dealer/user/login" component={DealerUserLogin} />
       <Route path="/dealer/user/forgot-password" component={DealerUserForgotPassword} />
