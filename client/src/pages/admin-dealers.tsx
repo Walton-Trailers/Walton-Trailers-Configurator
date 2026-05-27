@@ -11,9 +11,8 @@ import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/hooks/use-toast";
 import { useAdminAuth } from "@/hooks/useAdminAuth";
 import { apiRequest, queryClient } from "@/lib/queryClient";
-import { ArrowLeft, Plus, Edit, Building2, MapPin, Phone, Mail, Package, DollarSign, Archive, ArchiveRestore, Trash2 } from "lucide-react";
+import { ArrowLeft, Plus, Edit, Building2, Archive, ArchiveRestore, Trash2 } from "lucide-react";
 import { Link } from "wouter";
-import { format } from "date-fns";
 
 interface Dealer {
   id: number;

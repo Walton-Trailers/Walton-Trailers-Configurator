@@ -944,7 +944,6 @@ export default function FastPricing() {
     }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin', 'options'] });
-      queryClient.invalidateQueries({ queryKey: ['options'] });
       queryClient.invalidateQueries({ queryKey: ['/api/categories', 'options'] });
       setShowAddOption(false);
       setNewOptionData({

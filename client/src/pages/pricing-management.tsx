@@ -557,7 +557,10 @@ export default function PricingManagement() {
         headers: sessionId ? { Authorization: `Bearer ${sessionId}` } : {},
       }),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/categories"] });
+      // Categories on this page are held in local state populated by
+      // fetchCategories() — no useQuery listens to ["/api/categories"]
+      // here, so we have to call the manual refresh directly.
+      fetchCategories();
       setShowAddCategory(false);
       setNewCategoryData({
         slug: "",
@@ -587,10 +590,10 @@ export default function PricingManagement() {
         headers: sessionId ? { Authorization: `Bearer ${sessionId}` } : {},
       }),
     onSuccess: () => {
-      // Invalidate all category-related queries
-      queryClient.invalidateQueries({ queryKey: ["/api/categories"] });
+      // No useQuery on this page listens to ["/api/categories"] —
+      // categories live in local state via fetchCategories(). Keep the
+      // options invalidation since other pages do query that key.
       queryClient.invalidateQueries({ queryKey: ["/api/categories/options"] });
-      // Also manually refresh categories data
       fetchCategories();
       toast({
         title: "Success",
@@ -665,9 +668,9 @@ export default function PricingManagement() {
         headers: sessionId ? { Authorization: `Bearer ${sessionId}` } : {},
       });
 
-      // Refresh the categories list
-      queryClient.invalidateQueries({ queryKey: ["/api/categories"] });
-      
+      // Refresh the categories list — local state, not a useQuery.
+      fetchCategories();
+
       toast({
         title: "Success",
         description: "Category image updated successfully",
