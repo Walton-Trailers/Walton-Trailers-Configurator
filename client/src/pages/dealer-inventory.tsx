@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { Link, useLocation } from "wouter";
-import { ArrowLeft, Search, Package, RefreshCw, BookmarkPlus, Loader2, FileText } from "lucide-react";
+import { ArrowLeft, Search, Package, RefreshCw, BookmarkPlus, Loader2, FileText, DollarSign } from "lucide-react";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -143,6 +144,24 @@ export default function DealerInventory() {
 
   const records = data?.records ?? [];
 
+  // Pull the dealer profile so the pricing callout can name the rep and
+  // tailor the message to the dealer's actual tier (Elite / Preferred /
+  // Standard). Falls back gracefully to a generic message when none of
+  // those fields are populated.
+  interface DealerProfile {
+    pricingTier?: string | null;
+    salesRepName?: string | null;
+    salesRepEmail?: string | null;
+  }
+  const { data: profile } = useQuery<DealerProfile>({
+    queryKey: ["/api/dealer/profile"],
+    queryFn: () =>
+      apiRequest("/api/dealer/profile", {
+        headers: sessionId ? { Authorization: `Bearer ${sessionId}` } : {},
+      }),
+    enabled: !!sessionId,
+  });
+
   // POSTs the unit details to the server which emails the dealer's
   // sales rep (and CCs the dealer). No DB write here — the rep does
   // the actual hold in Airtable on their side.
@@ -229,6 +248,59 @@ export default function DealerInventory() {
           Refresh
         </Button>
       </div>
+
+      {/* Pricing callout. Walton's inventory (Airtable) and the dealer
+          portal (configurator DB) are separate systems, so the prices
+          here are listed at the standard tier. Dealers with a better
+          tier (Elite / Preferred) need to confirm their actual price
+          with their rep. Tone is informative, not apologetic. */}
+      <Alert className="mb-6 border-amber-300 bg-amber-50 text-amber-900">
+        <DollarSign className="h-4 w-4 text-amber-700" />
+        <AlertTitle>Pricing shown is the standard-tier price</AlertTitle>
+        <AlertDescription className="mt-1 text-amber-900/90">
+          {(() => {
+            const tierSlug = (profile?.pricingTier || "").toLowerCase();
+            const tierLabel =
+              tierSlug === "elite" ? "Elite" : tierSlug === "preferred" ? "Preferred" : null;
+            const rep = profile?.salesRepName?.trim() || null;
+            const repEmail = profile?.salesRepEmail?.trim() || null;
+
+            return (
+              <>
+                <p>
+                  {tierLabel ? (
+                    <>
+                      Your dealership is on the <strong>{tierLabel}</strong> tier, so your actual
+                      price on any unit below is lower than what's shown. The inventory list and the
+                      portal's pricing aren't linked yet, so we can't display your tier price here.
+                    </>
+                  ) : (
+                    <>
+                      Your tier may earn a better price than what's shown below. The inventory list
+                      and the portal's pricing aren't linked yet, so we can't display your tier
+                      price here.
+                    </>
+                  )}{" "}
+                  {repEmail ? (
+                    <>
+                      Reach out to{" "}
+                      <a
+                        href={`mailto:${repEmail}?subject=${encodeURIComponent("Inventory pricing question")}`}
+                        className="font-medium underline hover:no-underline"
+                      >
+                        {rep || repEmail}
+                      </a>{" "}
+                      for your exact pricing on anything that catches your eye.
+                    </>
+                  ) : (
+                    <>Reach out to your Walton rep for your exact pricing on anything that catches your eye.</>
+                  )}
+                </p>
+              </>
+            );
+          })()}
+        </AlertDescription>
+      </Alert>
 
       <Card>
         <CardHeader>
