@@ -23,6 +23,9 @@ interface EmailConfig {
 
 interface EmailMessage {
   to: string;
+  // Optional CC line(s). Forwarded to nodemailer; ignored in console mode
+  // but logged so we can verify in dev.
+  cc?: string | string[];
   subject: string;
   text?: string;
   html?: string;
@@ -154,6 +157,7 @@ export class EmailService {
         // Log to console (development mode)
         console.log("\n=== EMAIL SENT (Console Mode) ===");
         console.log(`To: ${message.to}`);
+        if (message.cc) console.log(`Cc: ${Array.isArray(message.cc) ? message.cc.join(", ") : message.cc}`);
         console.log(`From: ${this.config.from}`);
         console.log(`Subject: ${message.subject}`);
         console.log("\n--- EMAIL CONTENT ---");
@@ -166,6 +170,7 @@ export class EmailService {
       const result = await this.transporter.sendMail({
         from: this.config.from,
         to: message.to,
+        cc: message.cc,
         subject: message.subject,
         text: message.text,
         html: message.html

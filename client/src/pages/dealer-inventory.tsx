@@ -1,10 +1,20 @@
 import { useEffect, useMemo, useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import { Link, useLocation } from "wouter";
-import { ArrowLeft, Search, Package, RefreshCw } from "lucide-react";
+import { ArrowLeft, Search, Package, RefreshCw, BookmarkPlus, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import {
   Table,
   TableBody,
@@ -13,6 +23,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 
 // Airtable record shape from /api/dealer/inventory — minimal pass-through
@@ -47,7 +58,25 @@ const PREFERRED_COLUMN_ORDER = [
   "Notes",
 ];
 
-function formatCell(value: any): string {
+// Airtable's cellFormat=string flattens multi-attachment fields into
+// repeated "filename.ext (https://…)" entries joined by newlines. Detect
+// that shape so the table can render real clickable links instead of a
+// wall of raw URL text. Returns null when the value doesn't look like
+// attachments — caller falls back to plain text rendering.
+function parseAttachments(value: unknown): { name: string; url: string }[] | null {
+  if (typeof value !== "string") return null;
+  const matches: { name: string; url: string }[] = [];
+  // Capture each "<name> (<url>)" pair. URL may contain anything except
+  // a closing paren since Airtable encodes those.
+  const re = /([^\n()]+?)\s*\((https?:\/\/[^\s)]+)\)/g;
+  let m: RegExpExecArray | null;
+  while ((m = re.exec(value)) !== null) {
+    matches.push({ name: m[1].trim(), url: m[2] });
+  }
+  return matches.length > 0 ? matches : null;
+}
+
+function formatCellText(value: any): string {
   if (value == null) return "";
   if (Array.isArray(value)) {
     return value
@@ -57,7 +86,6 @@ function formatCell(value: any): string {
       .join(", ");
   }
   if (typeof value === "object") {
-    // Airtable attachment object → just show the filename.
     if ("filename" in value) return String((value as any).filename);
     if ("url" in value) return String((value as any).url);
     return JSON.stringify(value);
@@ -67,7 +95,14 @@ function formatCell(value: any): string {
 
 export default function DealerInventory() {
   const [, setLocation] = useLocation();
+  const { toast } = useToast();
   const [search, setSearch] = useState("");
+  // Modal state for Reserve Now. Holds the row the dealer clicked plus
+  // the form fields. Reset on close so re-opening for a different unit
+  // starts clean.
+  const [reserveTarget, setReserveTarget] = useState<AirtableRecord | null>(null);
+  const [customerName, setCustomerName] = useState("");
+  const [reserveNote, setReserveNote] = useState("");
   const sessionId = typeof window !== "undefined" ? localStorage.getItem("dealer_session") : null;
 
   // Gate behind a dealer session so direct URL hits don't 401-loop.
@@ -92,6 +127,36 @@ export default function DealerInventory() {
   });
 
   const records = data?.records ?? [];
+
+  // POSTs the unit details to the server which emails the dealer's
+  // sales rep (and CCs the dealer). No DB write here — the rep does
+  // the actual hold in Airtable on their side.
+  const reserveMutation = useMutation({
+    mutationFn: async () => {
+      if (!reserveTarget) throw new Error("No unit selected");
+      return apiRequest("/api/dealer/inventory/reserve", {
+        method: "POST",
+        headers: sessionId ? { Authorization: `Bearer ${sessionId}` } : {},
+        body: {
+          recordId: reserveTarget.id,
+          fields: reserveTarget.fields,
+          customerName: customerName.trim() || null,
+          note: reserveNote.trim() || null,
+        },
+      });
+    },
+    onSuccess: (resp: any) => {
+      toast({
+        title: "Reservation request sent",
+        description: `Your rep (${resp?.repEmail || "Walton"}) will reach out shortly.`,
+      });
+      setReserveTarget(null);
+      setCustomerName("");
+      setReserveNote("");
+    },
+    onError: (err: any) =>
+      toast({ title: "Couldn't send request", description: err?.message, variant: "destructive" }),
+  });
 
   // Server-provided fieldOrder reflects the AIRTABLE_INVENTORY_FIELDS
   // env var verbatim, so the admin picks the column layout in Vercel
@@ -119,7 +184,7 @@ export default function DealerInventory() {
     const q = search.trim().toLowerCase();
     if (!q) return records;
     return records.filter((r) =>
-      Object.values(r.fields || {}).some((v) => formatCell(v).toLowerCase().includes(q)),
+      Object.values(r.fields || {}).some((v) => formatCellText(v).toLowerCase().includes(q)),
     );
   }, [records, search]);
 
@@ -193,6 +258,7 @@ export default function DealerInventory() {
                     {columns.map((c) => (
                       <TableHead key={c} className="whitespace-nowrap">{c}</TableHead>
                     ))}
+                    <TableHead className="whitespace-nowrap text-right">Action</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -208,11 +274,46 @@ export default function DealerInventory() {
                         navigator.clipboard?.writeText(String(stock)).catch(() => {});
                       }}
                     >
-                      {columns.map((c) => (
-                        <TableCell key={c} className="align-top">
-                          {formatCell(r.fields[c])}
-                        </TableCell>
-                      ))}
+                      {columns.map((c) => {
+                        const raw = r.fields[c];
+                        const attachments = parseAttachments(raw);
+                        return (
+                          <TableCell key={c} className="align-top">
+                            {attachments ? (
+                              <div className="flex flex-col gap-1">
+                                {attachments.map((a, i) => (
+                                  <a
+                                    key={i}
+                                    href={a.url}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    onClick={(e) => e.stopPropagation()}
+                                    className="text-blue-600 hover:underline inline-flex items-center gap-1 break-all"
+                                  >
+                                    {a.name}
+                                  </a>
+                                ))}
+                              </div>
+                            ) : (
+                              formatCellText(raw)
+                            )}
+                          </TableCell>
+                        );
+                      })}
+                      <TableCell className="align-top text-right whitespace-nowrap">
+                        <Button
+                          size="sm"
+                          variant="default"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setReserveTarget(r);
+                            setCustomerName("");
+                            setReserveNote("");
+                          }}
+                        >
+                          <BookmarkPlus className="w-4 h-4 mr-1.5" /> Reserve Now
+                        </Button>
+                      </TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
@@ -221,6 +322,89 @@ export default function DealerInventory() {
           )}
         </CardContent>
       </Card>
+
+      {/* Reserve Now modal. Captures optional customer name + free-text
+          note, then POSTs the whole row (stock, model, etc.) to the
+          server so the rep gets an email with everything they need to
+          hold the unit. No DB write — the rep does the actual hold in
+          Airtable / their workflow once they see the email. */}
+      <Dialog open={reserveTarget !== null} onOpenChange={(o) => !o && setReserveTarget(null)}>
+        <DialogContent className="sm:max-w-[520px]">
+          <DialogHeader>
+            <DialogTitle>Reserve this unit</DialogTitle>
+            <DialogDescription>
+              We'll email your Walton rep with the unit details + anything you
+              add below. They'll reach out to confirm the hold.
+            </DialogDescription>
+          </DialogHeader>
+
+          {reserveTarget && (
+            <div className="rounded-md border bg-gray-50 p-3 text-sm space-y-1">
+              {(() => {
+                // Show a compact summary of the picked row so the dealer
+                // can sanity-check before sending. Falls back gracefully
+                // when the table doesn't have these specific fields.
+                const f = reserveTarget.fields;
+                const stock = f["Stock #"] ?? f["Stock Number"];
+                const model = f["Model"] ?? f["Trailer"];
+                const year = f["Year"];
+                return (
+                  <>
+                    {stock && (
+                      <p>
+                        <span className="text-gray-500">Stock #:</span>{" "}
+                        <span className="font-medium">{String(stock)}</span>
+                      </p>
+                    )}
+                    {model && (
+                      <p>
+                        <span className="text-gray-500">Model:</span>{" "}
+                        <span className="font-medium">{String(model)}</span>
+                        {year ? <span className="text-gray-600"> · {String(year)}</span> : null}
+                      </p>
+                    )}
+                  </>
+                );
+              })()}
+            </div>
+          )}
+
+          <div className="space-y-3">
+            <div>
+              <Label htmlFor="customerName">Customer name (optional)</Label>
+              <Input
+                id="customerName"
+                value={customerName}
+                onChange={(e) => setCustomerName(e.target.value)}
+                placeholder="Who is this for?"
+              />
+            </div>
+            <div>
+              <Label htmlFor="reserveNote">Note to your rep (optional)</Label>
+              <Textarea
+                id="reserveNote"
+                value={reserveNote}
+                onChange={(e) => setReserveNote(e.target.value)}
+                placeholder="Delivery timing, special requests, etc."
+                rows={3}
+              />
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setReserveTarget(null)} disabled={reserveMutation.isPending}>
+              Cancel
+            </Button>
+            <Button onClick={() => reserveMutation.mutate()} disabled={reserveMutation.isPending}>
+              {reserveMutation.isPending ? (
+                <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Sending…</>
+              ) : (
+                <><BookmarkPlus className="w-4 h-4 mr-2" /> Send Reserve Request</>
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

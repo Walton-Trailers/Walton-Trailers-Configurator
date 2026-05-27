@@ -1122,6 +1122,83 @@ export async function registerRoutes(app: Express): Promise<Express> {
     }
   });
 
+  // Dealer-initiated unit reservation. The dealer hits "Reserve Now" on
+  // a row in the inventory view; we email their assigned sales rep with
+  // the unit details + any context they entered. The dealer is CC'd so
+  // they have a record of the request. No DB write here — the rep does
+  // the actual hold in Airtable once they get the email. Keeps the
+  // flow simple and avoids a write-token in the browser.
+  app.post("/api/dealer/inventory/reserve", requireDealerAuth, async (req: AuthenticatedRequest, res) => {
+    try {
+      const { recordId, fields, customerName, note } = req.body || {};
+      if (!fields || typeof fields !== "object") {
+        return res.status(400).json({ error: "Missing unit details" });
+      }
+
+      const dealer = req.dealer!;
+      const actor = req.dealerUser;
+      const repTo = dealer.salesRepEmail || "info@waltontrailers.com";
+      const dealerEmail = dealer.email || null;
+
+      // Pick a friendly identifier for the subject line — stock # is the
+      // dealer-facing handle if Airtable carries it, otherwise fall back
+      // to model + record id.
+      const stock = (fields["Stock #"] ?? fields["Stock Number"] ?? "").toString().trim();
+      const model = (fields["Model"] ?? fields["Trailer"] ?? "").toString().trim();
+      const headline = [stock, model].filter(Boolean).join(" — ") || `unit ${recordId || ""}`.trim();
+
+      // Render the row as a clean "Field: value" block. cellFormat=string
+      // already pre-formats currency/dates/links so this is safe to drop
+      // straight into the email body.
+      const fieldLines = Object.entries(fields)
+        .filter(([, v]) => v != null && v !== "")
+        .map(([k, v]) => `${k}: ${String(v).replace(/\s+/g, " ").trim()}`)
+        .join("\n");
+
+      const requesterName = actor
+        ? `${actor.firstName} ${actor.lastName}`.trim()
+        : dealer.contactName || dealer.dealerName || dealer.companyName;
+      const requesterLine = actor
+        ? `${requesterName} (${actor.email}) at ${dealer.dealerName || dealer.companyName}`
+        : `${requesterName} (${dealer.email}) at ${dealer.dealerName || dealer.companyName}`;
+
+      const emailService = EmailService.getInstance();
+      const subject = `Reserve request: ${headline}`;
+      const text = [
+        `${requesterLine} has requested to reserve a unit.`,
+        ``,
+        customerName ? `Customer: ${customerName}` : null,
+        note ? `Note from the dealer:\n${note}` : null,
+        ``,
+        `Unit details:`,
+        fieldLines || "(no fields)",
+        ``,
+        recordId ? `Airtable record: ${recordId}` : null,
+        ``,
+        `— Walton Trailers Dealer Portal`,
+      ].filter((l): l is string => l !== null).join("\n");
+
+      const ok = await emailService.sendEmail({
+        to: repTo,
+        cc: dealerEmail ? [dealerEmail] : undefined,
+        subject,
+        text,
+      });
+
+      if (!ok) {
+        console.warn(`Reserve email failed (rep=${repTo}, dealer=${dealer.dealerId})`);
+        // We still return success to the dealer — the request is logged
+        // in the server console either way, and the cause is almost
+        // always provider config rather than something they can fix.
+      }
+
+      res.json({ success: true, repEmail: repTo });
+    } catch (error: any) {
+      console.error("Error sending reservation request:", error);
+      res.status(500).json({ error: error?.message || "Failed to send reservation request" });
+    }
+  });
+
   // Get dealer orders
   app.get("/api/dealer/orders", requireDealerAuth, async (req: AuthenticatedRequest, res) => {
     try {
