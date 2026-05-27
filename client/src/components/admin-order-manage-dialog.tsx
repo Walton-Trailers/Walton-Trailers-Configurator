@@ -87,6 +87,15 @@ export function AdminOrderManageDialog({ open, onOpenChange, order }: AdminOrder
     onSuccess: () => {
       toast({ title: "Order updated" });
       queryClient.invalidateQueries({ queryKey: ["/api/admin/configurations"] });
+      // The dealer detail page (/admin/dealers/:id) queries
+      // [/api/admin/dealers/:id/orders] for its own table — invalidate
+      // that too so edits made from the dialog show immediately when
+      // the dialog was opened from the dealer detail screen.
+      if (order?.dealerId) {
+        queryClient.invalidateQueries({
+          queryKey: [`/api/admin/dealers/${order.dealerId}/orders`],
+        });
+      }
       onOpenChange(false);
     },
     onError: (err: any) =>
@@ -105,6 +114,11 @@ export function AdminOrderManageDialog({ open, onOpenChange, order }: AdminOrder
     onSuccess: () => {
       toast({ title: "Order deleted" });
       queryClient.invalidateQueries({ queryKey: ["/api/admin/configurations"] });
+      if (order?.dealerId) {
+        queryClient.invalidateQueries({
+          queryKey: [`/api/admin/dealers/${order.dealerId}/orders`],
+        });
+      }
       setConfirmDelete(false);
       onOpenChange(false);
     },
