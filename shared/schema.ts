@@ -348,23 +348,11 @@ export const inventoryReservations = pgTable("inventory_reservations", {
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
-// Custom Quote Requests
-export const customQuoteRequests = pgTable("custom_quote_requests", {
-  id: serial("id").primaryKey(),
-  firstName: varchar("first_name", { length: 100 }).notNull(),
-  lastName: varchar("last_name", { length: 100 }).notNull(),
-  email: varchar("email", { length: 200 }).notNull(),
-  phone: varchar("phone", { length: 20 }).notNull(),
-  company: varchar("company", { length: 200 }),
-  city: varchar("city", { length: 100 }).notNull(),
-  state: varchar("state", { length: 2 }).notNull(),
-  zipCode: varchar("zip_code", { length: 10 }).notNull(),
-  requirements: text("requirements").notNull(),
-  status: varchar("status", { length: 20 }).notNull().default("pending"), // pending, contacted, quoted, closed
-  notes: text("notes"), // Admin notes
-  createdAt: timestamp("created_at").defaultNow(),
-  updatedAt: timestamp("updated_at").defaultNow(),
-});
+// Custom Quote Requests feature was removed in 2026-05. The
+// `custom_quote_requests` database table still exists in Neon (we kept
+// historic rows on Taylor's request) but no code references it. If the
+// feature ever comes back, restore the schema export here and the
+// matching admin UI + /api/custom-quotes endpoints.
 
 // Quote Requests - From configurator modal
 export const quoteRequests = pgTable("quote_requests", {
@@ -468,13 +456,6 @@ export const insertPasswordResetTokenSchema = createInsertSchema(passwordResetTo
   id: true,
   createdAt: true,
 });
-export const insertCustomQuoteRequestSchema = createInsertSchema(customQuoteRequests).omit({
-  id: true,
-  status: true,
-  notes: true,
-  createdAt: true,
-  updatedAt: true,
-});
 export const insertQuoteRequestSchema = createInsertSchema(quoteRequests).omit({
   id: true,
   status: true,
@@ -515,7 +496,6 @@ export type UserConfiguration = typeof userConfigurations.$inferSelect;
 export type AdminUser = typeof adminUsers.$inferSelect;
 export type AdminSession = typeof adminSessions.$inferSelect;
 export type PasswordResetToken = typeof passwordResetTokens.$inferSelect;
-export type CustomQuoteRequest = typeof customQuoteRequests.$inferSelect;
 export type QuoteRequest = typeof quoteRequests.$inferSelect;
 export type MediaFile = typeof mediaFiles.$inferSelect;
 export type InsertTrailerCategory = z.infer<typeof insertTrailerCategorySchema>;
@@ -527,7 +507,6 @@ export type InsertUserConfiguration = z.infer<typeof insertUserConfigurationSche
 export type InsertAdminUser = z.infer<typeof insertAdminUserSchema>;
 export type InsertAdminSession = z.infer<typeof insertAdminSessionSchema>;
 export type InsertPasswordResetToken = z.infer<typeof insertPasswordResetTokenSchema>;
-export type InsertCustomQuoteRequest = z.infer<typeof insertCustomQuoteRequestSchema>;
 export type InsertQuoteRequest = z.infer<typeof insertQuoteRequestSchema>;
 export type InsertMediaFile = z.infer<typeof insertMediaFileSchema>;
 

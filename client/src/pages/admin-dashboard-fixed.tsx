@@ -62,7 +62,6 @@ export default function AdminDashboard() {
   const [managingOrder, setManagingOrder] = useState<any>(null);
   const [showManageDialog, setShowManageDialog] = useState(false);
   const [userSearchTerm, setUserSearchTerm] = useState("");
-  const [customRequestSearchTerm, setCustomRequestSearchTerm] = useState("");
   const [configurationSearchTerm, setConfigurationSearchTerm] = useState("");
   // Filter the configurations table by lifecycle status. 'all' shows
   // everything (including public configurations which carry status='saved'
@@ -104,17 +103,6 @@ export default function AdminDashboard() {
         },
       }),
     enabled: !!user && user.role === "admin" && !!sessionId,
-  });
-
-  const { data: quoteRequests = [] } = useQuery({
-    queryKey: ["/api/custom-quotes"],
-    queryFn: () =>
-      apiRequest("/api/custom-quotes", {
-        headers: {
-          Authorization: `Bearer ${sessionId}`,
-        },
-      }),
-    enabled: !!user && !!sessionId,
   });
 
   const { data: configurations = [] } = useQuery({
@@ -408,7 +396,6 @@ export default function AdminDashboard() {
               <SelectContent>
                 {isAdmin && <SelectItem value="products">Product Management</SelectItem>}
                 {isAdmin && <SelectItem value="users">User Management</SelectItem>}
-                <SelectItem value="custom-quotes">Custom Requests</SelectItem>
                 {/* Dealer Configurations and Reservations are visible to
                     standard users too — both endpoints filter rows by the
                     viewer's assigned dealers. */}
@@ -423,7 +410,6 @@ export default function AdminDashboard() {
           <TabsList className="hidden md:inline-flex">
             {isAdmin && <TabsTrigger value="products">Product Management</TabsTrigger>}
             {isAdmin && <TabsTrigger value="users">User Management</TabsTrigger>}
-            <TabsTrigger value="custom-quotes">Custom Requests</TabsTrigger>
             <TabsTrigger value="configurations">Dealer Configurations</TabsTrigger>
             <TabsTrigger value="reservations">Reservations</TabsTrigger>
             {isAdmin && <TabsTrigger value="quote-requests">Quote Requests</TabsTrigger>}
@@ -452,170 +438,6 @@ export default function AdminDashboard() {
                 </CardContent>
               </Card>
             </div>
-          </TabsContent>
-
-          <TabsContent value="custom-quotes" className="space-y-6">
-            <div className="flex justify-between items-center">
-              <div className="flex-1">
-                <h3 className="text-lg font-medium">Custom Requests</h3>
-                <p className="text-sm text-gray-600">Manage custom trailer requests from customers</p>
-              </div>
-              
-              <div className="flex items-center space-x-4">
-                <div className="relative">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-                  <Input
-                    placeholder="Search requests..."
-                    value={customRequestSearchTerm}
-                    onChange={(e) => setCustomRequestSearchTerm(e.target.value)}
-                    className="pl-10 w-64"
-                  />
-                </div>
-                
-                <Badge variant="outline" className="px-3 py-1">
-                  {quoteRequests.length} Total Requests
-                </Badge>
-              </div>
-            </div>
-
-            <Card>
-              <CardContent className="p-0">
-                <div className="overflow-x-auto">
-                  <table className="w-full">
-                    <thead className="border-b bg-gray-50">
-                      <tr>
-                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
-                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
-                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Contact</th>
-                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Location</th>
-                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Requirements</th>
-                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
-                      </tr>
-                    </thead>
-                    <tbody className="bg-white divide-y divide-gray-200">
-                      {(quoteRequests as any[]).filter((quote: any) => {
-                        if (!customRequestSearchTerm) return true;
-                        const searchLower = customRequestSearchTerm.toLowerCase();
-                        return (
-                          `${quote.firstName} ${quote.lastName}`.toLowerCase().includes(searchLower) ||
-                          quote.email.toLowerCase().includes(searchLower) ||
-                          (quote.company && quote.company.toLowerCase().includes(searchLower)) ||
-                          quote.phone.includes(searchLower) ||
-                          `${quote.city}, ${quote.state} ${quote.zipCode}`.toLowerCase().includes(searchLower) ||
-                          quote.requirements.toLowerCase().includes(searchLower) ||
-                          quote.status.toLowerCase().includes(searchLower)
-                        );
-                      }).map((quote: any) => (
-                        <tr key={quote.id} className="hover:bg-gray-50">
-                          <td className="px-4 py-3 text-sm text-gray-900">
-                            {new Date(quote.createdAt).toLocaleDateString()}
-                          </td>
-                          <td className="px-4 py-3">
-                            <div className="text-sm font-medium text-gray-900">
-                              {quote.firstName} {quote.lastName}
-                            </div>
-                            {quote.company && (
-                              <div className="text-xs text-gray-500">{quote.company}</div>
-                            )}
-                          </td>
-                          <td className="px-4 py-3">
-                            <div className="text-sm">
-                              <a href={`mailto:${quote.email}`} className="text-blue-600 hover:underline">
-                                {quote.email}
-                              </a>
-                            </div>
-                            <div className="text-xs text-gray-500">
-                              <a href={`tel:${quote.phone}`} className="hover:underline">
-                                {quote.phone}
-                              </a>
-                            </div>
-                          </td>
-                          <td className="px-4 py-3 text-sm text-gray-900">
-                            {quote.city}, {quote.state} {quote.zipCode}
-                          </td>
-                          <td className="px-4 py-3">
-                            <select
-                              value={quote.status}
-                              onChange={async (e) => {
-                                const newStatus = e.target.value;
-                                try {
-                                  await apiRequest(`/api/custom-quotes/${quote.id}`, {
-                                    method: "PATCH",
-                                    body: { status: newStatus },
-                                    headers: {
-                                      Authorization: `Bearer ${sessionId}`,
-                                    },
-                                  });
-                                  queryClient.invalidateQueries({ queryKey: ["/api/custom-quotes"] });
-                                  toast({
-                                    title: "Status Updated",
-                                    description: `Quote status changed to ${newStatus}`,
-                                  });
-                                } catch (error) {
-                                  toast({
-                                    title: "Error",
-                                    description: "Failed to update status",
-                                    variant: "destructive",
-                                  });
-                                }
-                              }}
-                              className={`px-2 py-1 text-xs font-medium rounded-md border ${
-                                quote.status === "pending" ? "bg-yellow-50 border-yellow-300 text-yellow-700" :
-                                quote.status === "contacted" ? "bg-blue-50 border-blue-300 text-blue-700" :
-                                quote.status === "quoted" ? "bg-purple-50 border-purple-300 text-purple-700" :
-                                "bg-gray-50 border-gray-300 text-gray-700"
-                              }`}
-                            >
-                              <option value="pending">Pending</option>
-                              <option value="contacted">Contacted</option>
-                              <option value="quoted">Quoted</option>
-                              <option value="closed">Closed</option>
-                            </select>
-                          </td>
-                          <td className="px-4 py-3 max-w-xs">
-                            <div className="text-sm text-gray-900 truncate" title={quote.requirements}>
-                              {quote.requirements}
-                            </div>
-                          </td>
-                          <td className="px-4 py-3">
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              onClick={() => {
-                                const details = `
-Custom Quote Request
-
-Name: ${quote.firstName} ${quote.lastName}
-Email: ${quote.email}
-Phone: ${quote.phone}
-Company: ${quote.company || 'N/A'}
-Location: ${quote.city}, ${quote.state} ${quote.zipCode}
-
-Requirements:
-${quote.requirements}
-
-Submitted: ${new Date(quote.createdAt).toLocaleString()}
-Status: ${quote.status}
-${quote.notes ? `\nAdmin Notes: ${quote.notes}` : ''}`;
-                                alert(details);
-                              }}
-                            >
-                              View Details
-                            </Button>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                  {quoteRequests.length === 0 && (
-                    <div className="text-center py-8 text-gray-500">
-                      No quote requests yet
-                    </div>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
           </TabsContent>
 
           {isAdmin && (
