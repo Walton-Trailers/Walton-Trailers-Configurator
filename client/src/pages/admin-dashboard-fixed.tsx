@@ -603,12 +603,14 @@ export default function AdminDashboard() {
                   <span className="hidden md:inline">View Site</span>
                 </Button>
               </Link>
-              <Link href="/admin/employees">
-                <Button variant="ghost" size="sm" title="Employees" className="p-2 md:px-3">
-                  <Users className="w-4 h-4 md:mr-2" />
-                  <span className="hidden md:inline">Employees</span>
-                </Button>
-              </Link>
+              {isAdmin && (
+                <Link href="/admin/employees">
+                  <Button variant="ghost" size="sm" title="Employees" className="p-2 md:px-3">
+                    <Users className="w-4 h-4 md:mr-2" />
+                    <span className="hidden md:inline">Employees</span>
+                  </Button>
+                </Link>
+              )}
               <Link href="/admin/dealers">
                 <Button variant="ghost" size="sm" title="Dealers" className="p-2 md:px-3">
                   <Building2 className="w-4 h-4 md:mr-2" />

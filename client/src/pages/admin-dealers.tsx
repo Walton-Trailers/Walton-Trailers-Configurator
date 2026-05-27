@@ -9,6 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/hooks/use-toast";
+import { useAdminAuth } from "@/hooks/useAdminAuth";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { ArrowLeft, Plus, Edit, Building2, MapPin, Phone, Mail, Package, DollarSign, Archive, ArchiveRestore, Trash2 } from "lucide-react";
 import { Link } from "wouter";
@@ -99,6 +100,7 @@ interface DealerStats {
 
 export default function AdminDealers() {
   const { toast } = useToast();
+  const { isAdmin } = useAdminAuth();
   const [selectedDealer, setSelectedDealer] = useState<Dealer | null>(null);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
@@ -409,13 +411,15 @@ export default function AdminDealers() {
             <h1 className="text-3xl font-bold">Dealer Management</h1>
             <p className="text-gray-600 mt-2">Manage dealer accounts and territories</p>
           </div>
-          <Button onClick={() => {
-            resetForm();
-            setIsAddDialogOpen(true);
-          }}>
-            <Plus className="w-4 h-4 mr-2" />
-            Add Dealer
-          </Button>
+          {isAdmin && (
+            <Button onClick={() => {
+              resetForm();
+              setIsAddDialogOpen(true);
+            }}>
+              <Plus className="w-4 h-4 mr-2" />
+              Add Dealer
+            </Button>
+          )}
         </div>
       </div>
 
@@ -586,15 +590,17 @@ export default function AdminDealers() {
                             >
                               {dealer.isActive ? <Archive className="w-4 h-4" /> : <ArchiveRestore className="w-4 h-4" />}
                             </Button>
-                            <Button
-                              size="sm"
-                              variant="ghost"
-                              onClick={() => setDealerPendingDelete(dealer)}
-                              title="Delete dealer permanently"
-                              className="text-red-600 hover:text-red-700 hover:bg-red-50"
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </Button>
+                            {isAdmin && (
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                onClick={() => setDealerPendingDelete(dealer)}
+                                title="Delete dealer permanently"
+                                className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </Button>
+                            )}
                           </div>
                         </TableCell>
                       </TableRow>

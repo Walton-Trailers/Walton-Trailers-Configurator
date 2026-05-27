@@ -57,6 +57,31 @@ const requireAdmin = (req: AuthenticatedRequest, res: Response, next: NextFuncti
   next();
 };
 
+// RBAC helpers for dealer scoping. Walton employees with role='admin' see
+// every dealer. role='standard' employees only see dealers that have been
+// assigned to them via admin_dealer_assignments (managed on /admin/employees).
+// Returns the set of dealer ids this user is allowed to see, or `null` to
+// mean "all" — call sites use null to short-circuit the filter entirely.
+async function getVisibleDealerIds(user: AdminUser | undefined): Promise<Set<number> | null> {
+  if (!user) return new Set();
+  if (isAdmin(user)) return null;
+  const rows = await db.select({ dealerId: adminDealerAssignments.dealerId })
+    .from(adminDealerAssignments)
+    .where(eq(adminDealerAssignments.adminUserId, user.id));
+  return new Set(rows.map((r) => r.dealerId));
+}
+
+// Convenience for endpoints that operate on a single dealer. Returns
+// true if the user is an admin OR has an assignment row for this dealer.
+async function canAccessDealer(user: AdminUser | undefined, dealerId: number): Promise<boolean> {
+  if (!user) return false;
+  if (isAdmin(user)) return true;
+  const [hit] = await db.select({ id: adminDealerAssignments.id })
+    .from(adminDealerAssignments)
+    .where(sql`${adminDealerAssignments.adminUserId} = ${user.id} AND ${adminDealerAssignments.dealerId} = ${dealerId}`);
+  return !!hit;
+}
+
 // Dealer authentication middleware
 const requireDealerAuth = async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
   const authHeader = req.get('authorization');
@@ -2368,11 +2393,16 @@ export async function registerRoutes(app: Express): Promise<Express> {
     }
   });
 
-  // Get all dealers (admin only)
-  app.get("/api/admin/dealers", requireAuth, requireAdmin, async (req, res) => {
+  // Get all dealers visible to the current admin. role='admin' sees every
+  // dealer; role='standard' sees only their assigned dealers (from
+  // admin_dealer_assignments). Returns [] for a standard user with no
+  // assignments rather than 403 — empty list is the truthful answer.
+  app.get("/api/admin/dealers", requireAuth, async (req: AuthenticatedRequest, res) => {
     try {
-      const allDealers = await db.select().from(dealers).orderBy(dealers.dealerName);
-      res.json(allDealers);
+      const visible = await getVisibleDealerIds(req.user);
+      if (visible !== null && visible.size === 0) return res.json([]);
+      const all = await db.select().from(dealers).orderBy(dealers.dealerName);
+      res.json(visible === null ? all : all.filter((d) => visible.has(d.id)));
     } catch (error) {
       console.error("Error fetching dealers:", error);
       res.status(500).json({ error: "Failed to fetch dealers" });
@@ -2382,10 +2412,14 @@ export async function registerRoutes(app: Express): Promise<Express> {
   // Get a single dealer with their full record. The list endpoint already
   // returns everything, but the detail page wants a 404 if the id doesn't
   // exist so the URL can be linked directly.
-  app.get("/api/admin/dealers/:id", requireAuth, requireAdmin, async (req, res) => {
+  app.get("/api/admin/dealers/:id", requireAuth, async (req: AuthenticatedRequest, res) => {
     try {
       const dealerId = parseInt(req.params.id);
       if (Number.isNaN(dealerId)) return res.status(400).json({ error: "Invalid dealer id" });
+      if (!(await canAccessDealer(req.user, dealerId))) {
+        // Use 404 (not 403) so we don't leak that the dealer exists at all.
+        return res.status(404).json({ error: "Dealer not found" });
+      }
       const [dealer] = await db.select().from(dealers).where(eq(dealers.id, dealerId));
       if (!dealer) return res.status(404).json({ error: "Dealer not found" });
       res.json(dealer);
@@ -2397,10 +2431,11 @@ export async function registerRoutes(app: Express): Promise<Express> {
 
   // Orders for one dealer. Shape mirrors /api/admin/configurations so the
   // existing AdminOrderManageDialog component can consume rows directly.
-  app.get("/api/admin/dealers/:id/orders", requireAuth, requireAdmin, async (req, res) => {
+  app.get("/api/admin/dealers/:id/orders", requireAuth, async (req: AuthenticatedRequest, res) => {
     try {
       const dealerId = parseInt(req.params.id);
       if (Number.isNaN(dealerId)) return res.status(400).json({ error: "Invalid dealer id" });
+      if (!(await canAccessDealer(req.user, dealerId))) return res.status(404).json({ error: "Dealer not found" });
       const rows = await db.select({
         id: dealerOrders.id,
         type: sql<string>`'dealer'`,
@@ -2439,10 +2474,11 @@ export async function registerRoutes(app: Express): Promise<Express> {
   });
 
   // Sub-users (employees) belonging to a dealer. Hides password hashes.
-  app.get("/api/admin/dealers/:id/users", requireAuth, requireAdmin, async (req, res) => {
+  app.get("/api/admin/dealers/:id/users", requireAuth, async (req: AuthenticatedRequest, res) => {
     try {
       const dealerId = parseInt(req.params.id);
       if (Number.isNaN(dealerId)) return res.status(400).json({ error: "Invalid dealer id" });
+      if (!(await canAccessDealer(req.user, dealerId))) return res.status(404).json({ error: "Dealer not found" });
       const users = await db.select({
         id: dealerUsers.id,
         username: dealerUsers.username,
@@ -2465,9 +2501,12 @@ export async function registerRoutes(app: Express): Promise<Express> {
     }
   });
 
-  // Get dealer stats (admin only)
-  app.get("/api/admin/dealers/stats", requireAuth, requireAdmin, async (req, res) => {
+  // Get dealer stats. Filtered by RBAC scope just like the list endpoint —
+  // standard users only see counts for dealers they're assigned to.
+  app.get("/api/admin/dealers/stats", requireAuth, async (req: AuthenticatedRequest, res) => {
     try {
+      const visible = await getVisibleDealerIds(req.user);
+      if (visible !== null && visible.size === 0) return res.json([]);
       const stats = await db
         .select({
           dealerId: dealerOrders.dealerId,
@@ -2476,7 +2515,7 @@ export async function registerRoutes(app: Express): Promise<Express> {
         })
         .from(dealerOrders)
         .groupBy(dealerOrders.dealerId);
-      res.json(stats);
+      res.json(visible === null ? stats : stats.filter((s) => visible.has(s.dealerId)));
     } catch (error) {
       console.error("Error fetching dealer stats:", error);
       res.status(500).json({ error: "Failed to fetch dealer stats" });
@@ -2562,7 +2601,10 @@ export async function registerRoutes(app: Express): Promise<Express> {
   });
 
   // Update dealer (admin only)
-  app.patch("/api/admin/dealers/:id", requireAuth, requireAdmin, async (req, res) => {
+  app.patch("/api/admin/dealers/:id", requireAuth, async (req: AuthenticatedRequest, res) => {
+    if (!(await canAccessDealer(req.user, parseInt(req.params.id)))) {
+      return res.status(404).json({ error: "Dealer not found" });
+    }
     try {
       const dealerId = parseInt(req.params.id);
       const updates = req.body;
@@ -2682,7 +2724,10 @@ export async function registerRoutes(app: Express): Promise<Express> {
   });
 
   // Toggle dealer status (admin only)
-  app.patch("/api/admin/dealers/:id/status", requireAuth, requireAdmin, async (req, res) => {
+  app.patch("/api/admin/dealers/:id/status", requireAuth, async (req: AuthenticatedRequest, res) => {
+    if (!(await canAccessDealer(req.user, parseInt(req.params.id)))) {
+      return res.status(404).json({ error: "Dealer not found" });
+    }
     try {
       const dealerId = parseInt(req.params.id);
       const { isActive } = req.body;
@@ -2708,10 +2753,13 @@ export async function registerRoutes(app: Express): Promise<Express> {
   // password. Distinct from /api/dealer/forgot-password (different copy,
   // longer expiry, doesn't pretend to be ambiguous about whether the dealer
   // exists since the admin is the one triggering it).
-  app.post("/api/admin/dealers/:id/invite", requireAuth, requireAdmin, async (req, res) => {
+  app.post("/api/admin/dealers/:id/invite", requireAuth, async (req: AuthenticatedRequest, res) => {
     try {
       const dealerId = parseInt(req.params.id);
       if (Number.isNaN(dealerId)) return res.status(400).json({ error: "Invalid dealer id" });
+      if (!(await canAccessDealer(req.user, dealerId))) {
+        return res.status(404).json({ error: "Dealer not found" });
+      }
 
       const [dealer] = await db.select().from(dealers).where(eq(dealers.id, dealerId));
       if (!dealer) return res.status(404).json({ error: "Dealer not found" });
@@ -2839,8 +2887,9 @@ export async function registerRoutes(app: Express): Promise<Express> {
   });
 
   // Get all configurations (admin only) - includes both public and dealer configurations
-  app.get("/api/admin/configurations", requireAuth, requireAdmin, async (req, res) => {
+  app.get("/api/admin/configurations", requireAuth, async (req: AuthenticatedRequest, res) => {
     try {
+      const visible = await getVisibleDealerIds(req.user);
       // Fetch public configurations from userConfigurations table
       const publicConfigs = await db.select({
         id: userConfigurations.id,
@@ -2898,8 +2947,14 @@ export async function registerRoutes(app: Express): Promise<Express> {
       .leftJoin(dealers, eq(dealerOrders.dealerId, dealers.id))
       .orderBy(sql`${dealerOrders.createdAt} DESC`);
 
-      // Combine and sort all configurations by date
-      const allConfigs = [...publicConfigs, ...dealerConfigs].sort((a, b) => 
+      // Filter dealer rows by RBAC scope. Public configurations always show —
+      // they're anonymous configurator saves, not tied to any dealer. Standard
+      // admins with no assignments see only public rows.
+      const scopedDealerConfigs = visible === null
+        ? dealerConfigs
+        : dealerConfigs.filter((c) => c.dealerId != null && visible.has(parseInt(c.dealerId, 10)));
+
+      const allConfigs = [...publicConfigs, ...scopedDealerConfigs].sort((a, b) =>
         new Date(b.createdAt!).getTime() - new Date(a.createdAt!).getTime()
       );
 
@@ -4114,13 +4169,17 @@ export async function registerRoutes(app: Express): Promise<Express> {
   //   - stamps work_order_uploaded_at when the URL is set
   //   - emails the dealer when the work order is attached so they know
   //     their PDF is ready to download
-  app.patch("/api/admin/dealer-orders/:id", requireAuth, requireAdmin, async (req, res) => {
+  app.patch("/api/admin/dealer-orders/:id", requireAuth, async (req: AuthenticatedRequest, res) => {
     try {
       const orderId = parseInt(req.params.id);
       const [existing] = await db.select()
         .from(dealerOrders)
         .where(eq(dealerOrders.id, orderId));
       if (!existing) return res.status(404).json({ error: "Order not found" });
+      // Hide orders for dealers a standard user isn't assigned to.
+      if (!(await canAccessDealer(req.user, existing.dealerId))) {
+        return res.status(404).json({ error: "Order not found" });
+      }
 
       const ALLOWED = new Set([
         'repOrderNumber',
