@@ -443,6 +443,10 @@ function DealerAssignmentsCard({ employee }: { employee: Employee }) {
             <ul className="divide-y">
               {filtered.map((d) => {
                 const checked = selected.has(d.id);
+                // The row is the click target. The Checkbox is presentational
+                // here — `pointer-events-none` keeps it from firing its own
+                // onCheckedChange, which would cancel the row's toggle by
+                // firing the handler twice in a single click.
                 return (
                   <li
                     key={d.id}
@@ -451,7 +455,7 @@ function DealerAssignmentsCard({ employee }: { employee: Employee }) {
                     }`}
                     onClick={() => toggle(d.id)}
                   >
-                    <Checkbox checked={checked} onCheckedChange={() => toggle(d.id)} />
+                    <Checkbox checked={checked} className="pointer-events-none" />
                     <div className="flex-1 min-w-0">
                       <p className="font-medium truncate">{d.dealerName}</p>
                       <p className="text-xs text-gray-500 font-mono">
