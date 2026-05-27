@@ -338,6 +338,12 @@ export const inventoryReservations = pgTable("inventory_reservations", {
   note: text("note"),
   snapshotFields: json("snapshot_fields").$type<Record<string, any>>(),
   status: varchar("status", { length: 20 }).notNull().default("requested"),
+  // Rep-internal commentary, set on the admin Reservations tab. Not
+  // surfaced to the dealer — they only see status + their own note.
+  repNotes: text("rep_notes"),
+  // When the rep last moved the row through a status. Backfilled to
+  // createdAt on existing rows (0012 migration).
+  statusChangedAt: timestamp("status_changed_at"),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });

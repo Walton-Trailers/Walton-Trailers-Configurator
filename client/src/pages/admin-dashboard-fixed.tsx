@@ -13,6 +13,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { AdminOrderManageDialog } from "@/components/admin-order-manage-dialog";
+import { AdminReservationsPanel } from "@/components/admin-reservations-panel";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -561,10 +562,11 @@ export default function AdminDashboard() {
                 {isAdmin && <SelectItem value="users">User Management</SelectItem>}
                 {isAdmin && <SelectItem value="integrations">Integrations</SelectItem>}
                 <SelectItem value="custom-quotes">Custom Requests</SelectItem>
-                {/* Dealer Configurations is visible to standard users too —
-                    the /api/admin/configurations endpoint filters dealer rows
-                    by the viewer's assignments. */}
+                {/* Dealer Configurations and Reservations are visible to
+                    standard users too — both endpoints filter rows by the
+                    viewer's assigned dealers. */}
                 <SelectItem value="configurations">Dealer Configurations</SelectItem>
+                <SelectItem value="reservations">Reservations</SelectItem>
                 {isAdmin && <SelectItem value="quote-requests">Quote Requests</SelectItem>}
               </SelectContent>
             </Select>
@@ -577,6 +579,7 @@ export default function AdminDashboard() {
             {isAdmin && <TabsTrigger value="integrations">Integrations</TabsTrigger>}
             <TabsTrigger value="custom-quotes">Custom Requests</TabsTrigger>
             <TabsTrigger value="configurations">Dealer Configurations</TabsTrigger>
+            <TabsTrigger value="reservations">Reservations</TabsTrigger>
             {isAdmin && <TabsTrigger value="quote-requests">Quote Requests</TabsTrigger>}
           </TabsList>
 
@@ -1269,6 +1272,13 @@ ${quote.notes ? `\nAdmin Notes: ${quote.notes}` : ''}`;
               </Card>
             </TabsContent>
           )}
+
+          {/* Reservations — inventory holds dealers requested via Reserve
+              Now. RBAC-scoped server-side so standard users see only
+              their assigned dealers. */}
+          <TabsContent value="reservations" className="space-y-6">
+            <AdminReservationsPanel />
+          </TabsContent>
 
           {/* Quote Requests Tab */}
           {isAdmin && (

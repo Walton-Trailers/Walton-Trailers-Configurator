@@ -3081,6 +3081,85 @@ export async function registerRoutes(app: Express): Promise<Express> {
   // no dealer users — otherwise the admin should archive (PATCH /status) so
   // history is preserved. Sessions and password-reset tokens are cleaned up
   // automatically since they're disposable.
+  // Reservations admin: list (RBAC-scoped) + status/rep-notes update.
+  // Standard users see only reservations for their assigned dealers;
+  // admins see everything. Mirrors the dealer-orders RBAC pattern.
+  app.get("/api/admin/reservations", requireAuth, async (req: AuthenticatedRequest, res) => {
+    try {
+      const visible = await getVisibleDealerIds(req.user);
+      if (visible !== null && visible.size === 0) return res.json([]);
+      const rows = await db.select({
+        id: inventoryReservations.id,
+        dealerId: inventoryReservations.dealerId,
+        dealerName: dealers.dealerName,
+        dealerCode: dealers.dealerId,
+        dealerUserId: inventoryReservations.dealerUserId,
+        airtableRecordId: inventoryReservations.airtableRecordId,
+        stockNumber: inventoryReservations.stockNumber,
+        model: inventoryReservations.model,
+        customerName: inventoryReservations.customerName,
+        note: inventoryReservations.note,
+        repNotes: inventoryReservations.repNotes,
+        snapshotFields: inventoryReservations.snapshotFields,
+        status: inventoryReservations.status,
+        statusChangedAt: inventoryReservations.statusChangedAt,
+        createdAt: inventoryReservations.createdAt,
+        updatedAt: inventoryReservations.updatedAt,
+      })
+        .from(inventoryReservations)
+        .leftJoin(dealers, eq(inventoryReservations.dealerId, dealers.id))
+        .orderBy(sql`${inventoryReservations.createdAt} DESC`);
+      const scoped = visible === null ? rows : rows.filter((r) => visible.has(r.dealerId));
+      res.json(scoped);
+    } catch (error: any) {
+      console.error("Error fetching reservations:", error);
+      res.status(500).json({ error: error?.message || "Failed to fetch reservations" });
+    }
+  });
+
+  // Update one reservation. Allowed fields: status (validated against
+  // a small set) and repNotes. Bumps statusChangedAt automatically when
+  // the status moves to a new value.
+  app.patch("/api/admin/reservations/:id", requireAuth, async (req: AuthenticatedRequest, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (Number.isNaN(id)) return res.status(400).json({ error: "Invalid reservation id" });
+
+      const [existing] = await db.select()
+        .from(inventoryReservations)
+        .where(eq(inventoryReservations.id, id));
+      if (!existing) return res.status(404).json({ error: "Reservation not found" });
+      if (!(await canAccessDealer(req.user, existing.dealerId))) {
+        return res.status(404).json({ error: "Reservation not found" });
+      }
+
+      const VALID = new Set(["requested", "confirmed", "released", "cancelled"]);
+      const updates: Record<string, any> = { updatedAt: new Date() };
+      if (typeof req.body?.status === "string") {
+        if (!VALID.has(req.body.status)) {
+          return res.status(400).json({ error: `Invalid status. Must be one of: ${Array.from(VALID).join(", ")}` });
+        }
+        updates.status = req.body.status;
+        if (req.body.status !== existing.status) {
+          updates.statusChangedAt = new Date();
+        }
+      }
+      if ("repNotes" in (req.body || {})) {
+        const v = req.body.repNotes;
+        updates.repNotes = typeof v === "string" ? (v.trim() || null) : null;
+      }
+
+      const [updated] = await db.update(inventoryReservations)
+        .set(updates)
+        .where(eq(inventoryReservations.id, id))
+        .returning();
+      res.json(updated);
+    } catch (error: any) {
+      console.error("Error updating reservation:", error);
+      res.status(500).json({ error: error?.message || "Failed to update reservation" });
+    }
+  });
+
   app.delete("/api/admin/dealers/:id", requireAuth, requireAdmin, async (req, res) => {
     try {
       const dealerId = parseInt(req.params.id);
