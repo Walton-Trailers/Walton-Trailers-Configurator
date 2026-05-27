@@ -51,6 +51,18 @@ const STATUS_OPTIONS: { value: string; label: string }[] = [
   { value: "cancelled", label: "Cancelled" },
 ];
 
+// Stage filter chips at the top of the panel — mirrors the lifecycle
+// chips on the Dealer Configurations tab so admins read both views the
+// same way. "all" is the default landing filter.
+type StageFilter = "all" | "requested" | "confirmed" | "released" | "cancelled";
+const STAGE_CHIPS: Array<{ key: StageFilter; label: string }> = [
+  { key: "all", label: "All" },
+  { key: "requested", label: "Requested" },
+  { key: "confirmed", label: "Confirmed" },
+  { key: "released", label: "Released" },
+  { key: "cancelled", label: "Cancelled" },
+];
+
 // Same color tones the dealer-side Reserved tab uses so dealers and
 // reps read the badges the same way.
 function statusTone(status: string): string {
@@ -75,6 +87,21 @@ export function AdminReservationsPanel() {
   const [editing, setEditing] = useState<ReservationRow | null>(null);
   const [draftStatus, setDraftStatus] = useState<string>("requested");
   const [draftRepNotes, setDraftRepNotes] = useState<string>("");
+  const [stageFilter, setStageFilter] = useState<StageFilter>("all");
+
+  // Counts run against the unfiltered list so chips show the true
+  // lifecycle distribution regardless of which one is active.
+  const counts: Record<StageFilter, number> = {
+    all: reservations.length,
+    requested: reservations.filter((r) => r.status === "requested").length,
+    confirmed: reservations.filter((r) => r.status === "confirmed").length,
+    released: reservations.filter((r) => r.status === "released").length,
+    cancelled: reservations.filter((r) => r.status === "cancelled").length,
+  };
+  const visibleReservations =
+    stageFilter === "all"
+      ? reservations
+      : reservations.filter((r) => r.status === stageFilter);
 
   function open(r: ReservationRow) {
     setEditing(r);
@@ -138,6 +165,43 @@ export function AdminReservationsPanel() {
         ) : reservations.length === 0 ? (
           <p className="text-center py-8 text-gray-500">No reservations yet.</p>
         ) : (
+          <>
+            {/* Stage filter chips — same visual treatment as the Dealer
+                Configurations tab so admins jump between status buckets
+                with a familiar gesture. */}
+            <div className="flex flex-wrap gap-2 mb-4">
+              {STAGE_CHIPS.map((chip) => {
+                const active = stageFilter === chip.key;
+                return (
+                  <button
+                    key={chip.key}
+                    onClick={() => setStageFilter(chip.key)}
+                    className={
+                      "inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium border transition-colors " +
+                      (active
+                        ? "bg-gray-900 text-white border-gray-900"
+                        : "bg-white text-gray-700 border-gray-200 hover:border-gray-400")
+                    }
+                  >
+                    {chip.label}
+                    <span
+                      className={
+                        "inline-flex items-center justify-center min-w-[20px] px-1.5 rounded-full text-[10px] " +
+                        (active ? "bg-white/20 text-white" : "bg-gray-100 text-gray-600")
+                      }
+                    >
+                      {counts[chip.key]}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+
+            {visibleReservations.length === 0 ? (
+              <p className="text-center py-8 text-gray-500">
+                No reservations in this stage.
+              </p>
+            ) : (
           <div className="overflow-x-auto">
             <Table>
               <TableHeader>
@@ -151,7 +215,7 @@ export function AdminReservationsPanel() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {reservations.map((r) => (
+                {visibleReservations.map((r) => (
                   <TableRow key={r.id}>
                     <TableCell>
                       <div>
@@ -203,6 +267,8 @@ export function AdminReservationsPanel() {
               </TableBody>
             </Table>
           </div>
+            )}
+          </>
         )}
       </CardContent>
 
