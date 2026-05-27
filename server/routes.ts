@@ -1016,6 +1016,61 @@ export async function registerRoutes(app: Express): Promise<Express> {
     }
   });
   
+  // Inventory feed for the dealer portal — proxies a read-only view of
+  // Walton's internal Airtable inventory table so the AIRTABLE_API_KEY
+  // never lands in the browser. Auto-paginates and flattens each record
+  // to { id, fields, createdTime }. 60s in-memory cache keeps Airtable
+  // happy under burst load from the dashboard.
+  const AIRTABLE_BASE_ID = process.env.AIRTABLE_BASE_ID || "appigN6Xxb0P2nNb9";
+  const AIRTABLE_INVENTORY_TABLE = process.env.AIRTABLE_INVENTORY_TABLE || "tblkvSVTSbEl0SQp1";
+  let inventoryCache: { fetchedAt: number; records: any[] } | null = null;
+  const INVENTORY_CACHE_TTL_MS = 60_000;
+
+  app.get("/api/dealer/inventory", requireDealerAuth, async (_req: AuthenticatedRequest, res) => {
+    try {
+      const key = process.env.AIRTABLE_API_KEY;
+      if (!key) {
+        return res.status(503).json({
+          error: "Inventory feed is not configured. Set AIRTABLE_API_KEY in Vercel.",
+        });
+      }
+
+      if (inventoryCache && Date.now() - inventoryCache.fetchedAt < INVENTORY_CACHE_TTL_MS) {
+        return res.json({ records: inventoryCache.records, cached: true });
+      }
+
+      const records: any[] = [];
+      let offset: string | undefined;
+      do {
+        const url = new URL(
+          `https://api.airtable.com/v0/${AIRTABLE_BASE_ID}/${AIRTABLE_INVENTORY_TABLE}`,
+        );
+        url.searchParams.set("pageSize", "100");
+        if (offset) url.searchParams.set("offset", offset);
+
+        const resp = await fetch(url.toString(), {
+          headers: { Authorization: `Bearer ${key}` },
+        });
+        if (!resp.ok) {
+          const body = await resp.text().catch(() => "");
+          console.error("Airtable inventory fetch failed:", resp.status, body.slice(0, 500));
+          return res.status(502).json({
+            error: `Airtable responded ${resp.status}. Check the API key + base/table IDs.`,
+          });
+        }
+        const data = await resp.json() as { records: any[]; offset?: string };
+        records.push(...data.records);
+        offset = data.offset;
+      } while (offset);
+
+      inventoryCache = { fetchedAt: Date.now(), records };
+      res.json({ records, cached: false });
+    } catch (error: any) {
+      console.error("Error fetching inventory:", error);
+      res.status(500).json({ error: error?.message || "Failed to fetch inventory" });
+    }
+  });
+
   // Get dealer orders
   app.get("/api/dealer/orders", requireDealerAuth, async (req: AuthenticatedRequest, res) => {
     try {

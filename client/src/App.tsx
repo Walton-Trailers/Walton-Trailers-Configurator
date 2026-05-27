@@ -18,6 +18,7 @@ import DealerForgotPassword from "@/pages/dealer-forgot-password";
 import DealerResetPassword from "@/pages/dealer-reset-password";
 import DealerDashboard from "@/pages/dealer-dashboard";
 import DealerOrderDetail from "@/pages/dealer-order-detail";
+import DealerInventory from "@/pages/dealer-inventory";
 import AdminDealers from "@/pages/admin-dealers";
 import AdminDealerDetail from "@/pages/admin-dealer-detail";
 import AdminEmployeeDetail from "@/pages/admin-employee-detail";
@@ -52,6 +53,7 @@ function Router() {
       <Route path="/dealer/reset-password/:token" component={DealerResetPassword} />
       <Route path="/dealer/dashboard" component={DealerDashboard} />
       <Route path="/dealer/orders/:id" component={DealerOrderDetail} />
+      <Route path="/dealer/inventory" component={DealerInventory} />
       <Route path="/dealer/clear" component={ClearDealerSession} />
       <Route component={NotFound} />
     </Switch>

@@ -586,6 +586,14 @@ export default function DealerDashboard() {
                 New Configuration
               </Button>
               <Button
+                onClick={() => setLocation("/dealer/inventory")}
+                variant="outline"
+                size="sm"
+              >
+                <Package className="w-4 h-4 mr-2" />
+                View Inventory
+              </Button>
+              <Button
                 onClick={handleLogout}
                 variant="ghost"
                 size="sm"
