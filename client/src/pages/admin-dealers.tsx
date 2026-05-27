@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -298,6 +298,28 @@ export default function AdminDealers() {
     });
     setIsEditDialogOpen(true);
   };
+
+  // Deep-link support: /admin/dealers?edit=<id> auto-opens the Edit dialog
+  // for that dealer. Used by the Edit button on the dealer detail page so
+  // admins land on the same form they'd see from the row's pencil icon.
+  // Strips the param after we read it so a refresh doesn't keep reopening.
+  useEffect(() => {
+    if (!dealers || dealers.length === 0) return;
+    const params = new URLSearchParams(window.location.search);
+    const editId = params.get("edit");
+    if (!editId) return;
+    const target = dealers.find((d) => d.id === parseInt(editId, 10));
+    if (target) {
+      handleEdit(target);
+      params.delete("edit");
+      const next = params.toString();
+      window.history.replaceState(
+        null,
+        "",
+        window.location.pathname + (next ? `?${next}` : ""),
+      );
+    }
+  }, [dealers]);
 
   const handleAddDealer = () => {
     const payload = {
