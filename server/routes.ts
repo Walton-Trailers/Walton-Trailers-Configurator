@@ -1027,6 +1027,15 @@ export async function registerRoutes(app: Express): Promise<Express> {
   // inventory list the user curates there (not the whole table). Override
   // via env var if you ever want to switch which view drives the portal.
   const AIRTABLE_INVENTORY_VIEW = process.env.AIRTABLE_INVENTORY_VIEW || "viwvscAcx1lVbXrHS";
+  // Optional: comma-separated list of field names to return. When set, only
+  // those columns come back from Airtable and surface in the dealer table.
+  // Example Vercel env value:
+  //   AIRTABLE_INVENTORY_FIELDS=Stock #,Model,Year,Color,Price,Status
+  // Unset = show every field on the view.
+  const AIRTABLE_INVENTORY_FIELDS = (process.env.AIRTABLE_INVENTORY_FIELDS || "")
+    .split(",")
+    .map((s) => s.trim())
+    .filter(Boolean);
   let inventoryCache: { fetchedAt: number; records: any[] } | null = null;
   const INVENTORY_CACHE_TTL_MS = 60_000;
 
@@ -1051,6 +1060,8 @@ export async function registerRoutes(app: Express): Promise<Express> {
         );
         url.searchParams.set("pageSize", "100");
         if (AIRTABLE_INVENTORY_VIEW) url.searchParams.set("view", AIRTABLE_INVENTORY_VIEW);
+        // Airtable expects fields[]=<name> repeated once per field.
+        for (const f of AIRTABLE_INVENTORY_FIELDS) url.searchParams.append("fields[]", f);
         if (offset) url.searchParams.set("offset", offset);
 
         const resp = await fetch(url.toString(), {
