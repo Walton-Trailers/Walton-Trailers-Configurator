@@ -51,10 +51,6 @@ export default function AdminDashboard() {
   const { user, logout, isLoading } = useAdminAuth();
   const [, setLocation] = useLocation();
   const [showCreateUser, setShowCreateUser] = useState(false);
-  const [editingUser, setEditingUser] = useState<AdminUser | null>(null);
-  const [editData, setEditData] = useState<Partial<AdminUser>>({});
-  const [changingPasswordUser, setChangingPasswordUser] = useState<AdminUser | null>(null);
-  const [newPassword, setNewPassword] = useState("");
   const [showAirtableConfig, setShowAirtableConfig] = useState(false);
   const [airtableToken, setAirtableToken] = useState("");
   const [airtableBaseId, setAirtableBaseId] = useState("");
@@ -197,84 +193,9 @@ export default function AdminDashboard() {
     },
   });
 
-  const deactivateUserMutation = useMutation({
-    mutationFn: (userId: number) =>
-      apiRequest(`/api/admin/users/${userId}`, {
-        method: "DELETE",
-        headers: {
-          Authorization: `Bearer ${sessionId}`,
-        },
-      }),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/admin/users"] });
-      toast({
-        title: "Success",
-        description: "User deactivated successfully",
-      });
-    },
-    onError: (error: any) => {
-      toast({
-        title: "Error",
-        description: error.message || "Failed to deactivate user",
-        variant: "destructive",
-      });
-    },
-  });
-
-  const updateUserMutation = useMutation({
-    mutationFn: ({ id, ...data }: Partial<AdminUser> & { id: number }) =>
-      apiRequest(`/api/admin/users/${id}`, {
-        method: "PATCH",
-        headers: {
-          Authorization: `Bearer ${sessionId}`,
-          "Content-Type": "application/json",
-        },
-        body: data,
-      }),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/admin/users"] });
-      toast({
-        title: "Success",
-        description: "User updated successfully",
-      });
-      setEditingUser(null);
-      setEditData({});
-    },
-    onError: (error: any) => {
-      toast({
-        title: "Error",
-        description: error.message || "Failed to update user",
-        variant: "destructive",
-      });
-    },
-  });
-
-  const changePasswordMutation = useMutation({
-    mutationFn: ({ userId, password }: { userId: number; password: string }) =>
-      apiRequest(`/api/admin/users/${userId}`, {
-        method: "PATCH",
-        body: { password },
-        headers: {
-          Authorization: `Bearer ${sessionId}`,
-        },
-      }),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/admin/users"] });
-      setChangingPasswordUser(null);
-      setNewPassword("");
-      toast({
-        title: "Success",
-        description: "Password changed successfully",
-      });
-    },
-    onError: (error: any) => {
-      toast({
-        title: "Error",
-        description: error.message || "Failed to change password",
-        variant: "destructive",
-      });
-    },
-  });
+  // User edit / password / deactivate mutations moved to /admin/employees/:id —
+  // the User Management table here is read-only and clicks navigate to the
+  // detail page.
 
   const deleteQuoteRequestMutation = useMutation({
     mutationFn: (quoteId: number) =>
@@ -318,21 +239,6 @@ export default function AdminDashboard() {
 
   const onCreateUser = async (data: CreateUserForm) => {
     createUserMutation.mutate(data);
-  };
-
-  const handleDeactivateUser = (userId: number) => {
-    if (confirm("Are you sure you want to deactivate this user?")) {
-      deactivateUserMutation.mutate(userId);
-    }
-  };
-
-  const handleUpdateUser = () => {
-    if (editingUser) {
-      updateUserMutation.mutate({
-        id: editingUser.id,
-        ...editData,
-      });
-    }
   };
 
   // Helper function to render selected options in readable format
@@ -601,14 +507,6 @@ export default function AdminDashboard() {
                   <span className="hidden md:inline">View Site</span>
                 </Button>
               </Link>
-              {isAdmin && (
-                <Link href="/admin/employees">
-                  <Button variant="ghost" size="sm" title="Employees" className="p-2 md:px-3">
-                    <Users className="w-4 h-4 md:mr-2" />
-                    <span className="hidden md:inline">Employees</span>
-                  </Button>
-                </Link>
-              )}
               <Link href="/admin/dealers">
                 <Button variant="ghost" size="sm" title="Dealers" className="p-2 md:px-3">
                   <Building2 className="w-4 h-4 md:mr-2" />
@@ -995,7 +893,6 @@ ${quote.notes ? `\nAdmin Notes: ${quote.notes}` : ''}`;
                             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Role</th>
                             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
                             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Created</th>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
                           </tr>
                         </thead>
                         <tbody className="bg-white divide-y divide-gray-200">
@@ -1009,156 +906,38 @@ ${quote.notes ? `\nAdmin Notes: ${quote.notes}` : ''}`;
                               adminUser.role.toLowerCase().includes(searchLower)
                             );
                           }).map((adminUser: AdminUser) => (
-                            <tr key={adminUser.id} className="hover:bg-gray-50">
+                            // Whole row is a navigation link to the per-employee
+                            // detail page where edit / password / activate /
+                            // dealer assignments all live now.
+                            <tr
+                              key={adminUser.id}
+                              className="hover:bg-gray-50 cursor-pointer"
+                              onClick={() => setLocation(`/admin/employees/${adminUser.id}`)}
+                            >
                               <td className="px-6 py-4 whitespace-nowrap">
-                                {editingUser?.id === adminUser.id ? (
-                                  <div className="flex gap-2">
-                                    <Input
-                                      placeholder="First Name"
-                                      value={editData.firstName ?? adminUser.firstName ?? ""}
-                                      onChange={(e) => setEditData({ ...editData, firstName: e.target.value })}
-                                      className="w-24 h-8 text-sm"
-                                    />
-                                    <Input
-                                      placeholder="Last Name"
-                                      value={editData.lastName ?? adminUser.lastName ?? ""}
-                                      onChange={(e) => setEditData({ ...editData, lastName: e.target.value })}
-                                      className="w-24 h-8 text-sm"
-                                    />
-                                  </div>
-                                ) : (
-                                  <div className="text-sm font-medium text-gray-900">
+                                <div className="text-sm font-medium text-gray-900 group">
+                                  <span className="group-hover:text-blue-600 group-hover:underline">
                                     {adminUser.firstName && adminUser.lastName
                                       ? `${adminUser.firstName} ${adminUser.lastName}`
-                                      : "-"
-                                    }
-                                  </div>
-                                )}
+                                      : "—"}
+                                  </span>
+                                </div>
                               </td>
                               <td className="px-6 py-4 whitespace-nowrap">
-                                {editingUser?.id === adminUser.id ? (
-                                  <Input
-                                    placeholder="Email"
-                                    type="email"
-                                    value={editData.email ?? adminUser.email}
-                                    onChange={(e) => setEditData({ ...editData, email: e.target.value })}
-                                    className="w-48 h-8 text-sm"
-                                  />
-                                ) : (
-                                  <div className="text-sm text-gray-900">{adminUser.email}</div>
-                                )}
+                                <div className="text-sm text-gray-900">{adminUser.email}</div>
                               </td>
                               <td className="px-6 py-4 whitespace-nowrap">
-                                {editingUser?.id === adminUser.id && adminUser.id !== user.id ? (
-                                  <Select
-                                    value={editData.role ?? adminUser.role}
-                                    onValueChange={(value) => setEditData({ ...editData, role: value })}
-                                  >
-                                    <SelectTrigger className="w-28 h-8 text-sm">
-                                      <SelectValue />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                      <SelectItem value="standard">Standard</SelectItem>
-                                      {isAdmin && (
-                                        <SelectItem value="admin">Admin</SelectItem>
-                                      )}
-                                    </SelectContent>
-                                  </Select>
-                                ) : (
-                                  <Badge variant={adminUser.role === "admin" ? "default" : "secondary"}>
-                                    {adminUser.role}
-                                  </Badge>
-                                )}
+                                <Badge variant={adminUser.role === "admin" ? "default" : "secondary"}>
+                                  {adminUser.role}
+                                </Badge>
                               </td>
                               <td className="px-6 py-4 whitespace-nowrap">
-                                {editingUser?.id === adminUser.id ? (
-                                  <Select
-                                    value={editData.isActive !== undefined ? (editData.isActive ? "active" : "inactive") : (adminUser.isActive ? "active" : "inactive")}
-                                    onValueChange={(value) => setEditData({ ...editData, isActive: value === "active" })}
-                                  >
-                                    <SelectTrigger className="w-28 h-8 text-sm">
-                                      <SelectValue />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                      <SelectItem value="active">Active</SelectItem>
-                                      <SelectItem value="inactive">Inactive</SelectItem>
-                                    </SelectContent>
-                                  </Select>
-                                ) : (
-                                  <Badge variant={adminUser.isActive ? "outline" : "destructive"}>
-                                    {adminUser.isActive ? "Active" : "Inactive"}
-                                  </Badge>
-                                )}
+                                <Badge variant={adminUser.isActive ? "outline" : "destructive"}>
+                                  {adminUser.isActive ? "Active" : "Inactive"}
+                                </Badge>
                               </td>
                               <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                                 {new Date(adminUser.createdAt).toLocaleDateString()}
-                              </td>
-                              <td className="px-6 py-4 whitespace-nowrap">
-                                <div className="flex items-center space-x-2">
-                                  {editingUser?.id === adminUser.id ? (
-                                    <>
-                                      <Button
-                                        size="sm"
-                                        onClick={handleUpdateUser}
-                                        disabled={updateUserMutation.isPending}
-                                        className="h-8"
-                                      >
-                                        <Save className="w-4 h-4" />
-                                      </Button>
-                                      <Button
-                                        size="sm"
-                                        variant="outline"
-                                        onClick={() => {
-                                          setEditingUser(null);
-                                          setEditData({});
-                                        }}
-                                        className="h-8"
-                                      >
-                                        <X className="w-4 h-4" />
-                                      </Button>
-                                    </>
-                                  ) : (
-                                    <>
-                                      <Button
-                                        variant="outline"
-                                        size="sm"
-                                        onClick={() => {
-                                          setEditingUser(adminUser);
-                                          setEditData({});
-                                        }}
-                                        className="h-8"
-                                        title="Edit"
-                                      >
-                                        <Edit className="w-4 h-4" />
-                                      </Button>
-                                      
-                                      <Button
-                                        variant="outline"
-                                        size="sm"
-                                        onClick={() => {
-                                          setChangingPasswordUser(adminUser);
-                                          setNewPassword("");
-                                        }}
-                                        className="h-8 text-blue-600 border-blue-300 hover:bg-blue-50"
-                                        title="Change Password"
-                                      >
-                                        <Key className="w-4 h-4" />
-                                      </Button>
-                                      
-                                      {adminUser.isActive && adminUser.id !== user.id && (
-                                        <Button
-                                          variant="outline"
-                                          size="sm"
-                                          onClick={() => handleDeactivateUser(adminUser.id)}
-                                          disabled={deactivateUserMutation.isPending}
-                                          className="h-8"
-                                        >
-                                          Deactivate
-                                        </Button>
-                                      )}
-                                    </>
-                                  )}
-                                </div>
                               </td>
                             </tr>
                           ))}
@@ -1169,61 +948,6 @@ ${quote.notes ? `\nAdmin Notes: ${quote.notes}` : ''}`;
                 </CardContent>
               </Card>
 
-              {/* Password Change Dialog */}
-              <Dialog open={!!changingPasswordUser} onOpenChange={(open) => !open && setChangingPasswordUser(null)}>
-                <DialogContent>
-                  <DialogHeader>
-                    <DialogTitle>Change Password</DialogTitle>
-                    <DialogDescription>
-                      Change password for {changingPasswordUser?.firstName} {changingPasswordUser?.lastName} ({changingPasswordUser?.email})
-                    </DialogDescription>
-                  </DialogHeader>
-                  
-                  <div className="space-y-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="new-password">New Password</Label>
-                      <Input
-                        id="new-password"
-                        type="password"
-                        value={newPassword}
-                        onChange={(e) => setNewPassword(e.target.value)}
-                        placeholder="Enter new password (minimum 8 characters)"
-                      />
-                      {newPassword && newPassword.length < 8 && (
-                        <p className="text-sm text-red-600">
-                          Password must be at least 8 characters
-                        </p>
-                      )}
-                    </div>
-                  </div>
-
-                  <div className="flex justify-end space-x-2 mt-4">
-                    <Button 
-                      type="button" 
-                      variant="outline" 
-                      onClick={() => {
-                        setChangingPasswordUser(null);
-                        setNewPassword("");
-                      }}
-                    >
-                      Cancel
-                    </Button>
-                    <Button 
-                      onClick={() => {
-                        if (changingPasswordUser && newPassword.length >= 8) {
-                          changePasswordMutation.mutate({
-                            userId: changingPasswordUser.id,
-                            password: newPassword
-                          });
-                        }
-                      }}
-                      disabled={!newPassword || newPassword.length < 8 || changePasswordMutation.isPending}
-                    >
-                      {changePasswordMutation.isPending ? "Changing..." : "Change Password"}
-                    </Button>
-                  </div>
-                </DialogContent>
-              </Dialog>
             </TabsContent>
           )}
 

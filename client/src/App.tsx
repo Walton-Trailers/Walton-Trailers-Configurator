@@ -19,7 +19,7 @@ import DealerResetPassword from "@/pages/dealer-reset-password";
 import DealerDashboard from "@/pages/dealer-dashboard";
 import AdminDealers from "@/pages/admin-dealers";
 import AdminDealerDetail from "@/pages/admin-dealer-detail";
-import AdminEmployees from "@/pages/admin-employees";
+import AdminEmployeeDetail from "@/pages/admin-employee-detail";
 import AdminPricingTiers from "@/pages/admin-pricing-tiers";
 import ForgotPassword from "@/pages/forgot-password";
 import ResetPassword from "@/pages/reset-password";
@@ -40,7 +40,7 @@ function Router() {
       <Route path="/admin/account" component={AccountManagement} />
       <Route path="/admin/dealers" component={AdminDealers} />
       <Route path="/admin/dealers/:id" component={AdminDealerDetail} />
-      <Route path="/admin/employees" component={AdminEmployees} />
+      <Route path="/admin/employees/:id" component={AdminEmployeeDetail} />
       <Route path="/admin/pricing-tiers" component={AdminPricingTiers} />
       <Route path="/admin/email-settings" component={EmailSettings} />
       <Route path="/dealer/login" component={DealerLogin} />

@@ -2208,6 +2208,32 @@ export async function registerRoutes(app: Express): Promise<Express> {
     }
   });
 
+  // Single admin user (employee) by id. Used by /admin/employees/:id detail
+  // page. 404 on miss so the URL can be deep-linked. Password hash never
+  // included in the response.
+  app.get("/api/admin/users/:id", requireAuth, requireAdmin, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (Number.isNaN(id)) return res.status(400).json({ error: "Invalid user id" });
+      const user = await storage.getAdminUserById(id);
+      if (!user) return res.status(404).json({ error: "User not found" });
+      res.json({
+        id: user.id,
+        username: user.username,
+        email: user.email,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        role: user.role,
+        isActive: user.isActive,
+        lastLogin: user.lastLogin,
+        createdAt: user.createdAt,
+      });
+    } catch (error) {
+      console.error("Error fetching user:", error);
+      res.status(500).json({ error: "Failed to fetch user" });
+    }
+  });
+
   app.get("/api/admin/users", requireAuth, requireAdmin, async (req, res) => {
     try {
       const users = await storage.getAllAdminUsers();
