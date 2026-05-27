@@ -143,8 +143,7 @@ export function AdminReservationsPanel() {
               <TableHeader>
                 <TableRow>
                   <TableHead>Dealer</TableHead>
-                  <TableHead>Stock #</TableHead>
-                  <TableHead>Model</TableHead>
+                  <TableHead>Production ID</TableHead>
                   <TableHead>Customer</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead>Requested</TableHead>
@@ -160,10 +159,16 @@ export function AdminReservationsPanel() {
                         <p className="text-xs text-gray-500 font-mono">{r.dealerCode || ""}</p>
                       </div>
                     </TableCell>
-                    <TableCell className="font-mono">
-                      {r.stockNumber || <span className="text-gray-400 italic">—</span>}
+                    {/* Production ID + model live in the same cell so the
+                        rep sees the full identity of the reserved unit. */}
+                    <TableCell>
+                      <div className="font-mono">
+                        {r.stockNumber || <span className="text-gray-400 italic">—</span>}
+                      </div>
+                      {r.model && (
+                        <div className="text-xs text-gray-500 mt-0.5">{r.model}</div>
+                      )}
                     </TableCell>
-                    <TableCell>{r.model || <span className="text-gray-400 italic">—</span>}</TableCell>
                     <TableCell>{r.customerName || <span className="text-gray-400">—</span>}</TableCell>
                     <TableCell>
                       <div className="flex items-center gap-2">
@@ -218,7 +223,7 @@ export function AdminReservationsPanel() {
             <div className="space-y-3 text-sm">
               <div className="rounded-md bg-gray-50 p-3 space-y-1">
                 <div className="grid grid-cols-[110px,1fr] gap-1">
-                  <span className="text-gray-500">Stock #</span>
+                  <span className="text-gray-500">Production ID</span>
                   <span>{editing.stockNumber || "—"}</span>
                   <span className="text-gray-500">Model</span>
                   <span>{editing.model || "—"}</span>

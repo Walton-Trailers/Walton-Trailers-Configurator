@@ -825,8 +825,7 @@ export default function DealerDashboard() {
                       <Table>
                         <TableHeader>
                           <TableRow>
-                            <TableHead>Stock #</TableHead>
-                            <TableHead>Model</TableHead>
+                            <TableHead>Production ID</TableHead>
                             <TableHead>Customer</TableHead>
                             <TableHead>Status</TableHead>
                             <TableHead>Requested</TableHead>
@@ -846,14 +845,18 @@ export default function DealerDashboard() {
                             const muted = r.status === "released" || r.status === "cancelled";
                             return (
                               <TableRow key={r.id} className={muted ? "opacity-60" : ""}>
-                                <TableCell className="font-mono">
-                                  {r.stockNumber || (
-                                    <span className="text-gray-400 italic">—</span>
-                                  )}
-                                </TableCell>
+                                {/* Production ID column carries both the unit
+                                    ID and its model so the dealer sees the
+                                    full identity of the unit they reserved
+                                    in one cell. */}
                                 <TableCell>
-                                  {r.model || (
-                                    <span className="text-gray-400 italic">—</span>
+                                  <div className="font-mono">
+                                    {r.stockNumber || (
+                                      <span className="text-gray-400 italic">—</span>
+                                    )}
+                                  </div>
+                                  {r.model && (
+                                    <div className="text-xs text-gray-500 mt-0.5">{r.model}</div>
                                   )}
                                 </TableCell>
                                 <TableCell>

@@ -358,10 +358,14 @@ export default function DealerInventory() {
                       key={r.id}
                       className="cursor-pointer hover:bg-gray-50"
                       onClick={() => {
-                        // Pick the first plausible "stock number" field, else
-                        // the record id, and drop it on the clipboard. Quiet
-                        // helper — no toast on every click.
-                        const stock = r.fields["Stock #"] ?? r.fields["Stock Number"] ?? r.id;
+                        // Pick the first plausible identifier field, else
+                        // the record id, and drop it on the clipboard.
+                        // Quiet helper — no toast on every click.
+                        const stock =
+                          r.fields["Production ID"] ??
+                          r.fields["Stock #"] ??
+                          r.fields["Stock Number"] ??
+                          r.id;
                         navigator.clipboard?.writeText(String(stock)).catch(() => {});
                       }}
                     >
@@ -430,14 +434,15 @@ export default function DealerInventory() {
                 // can sanity-check before sending. Falls back gracefully
                 // when the table doesn't have these specific fields.
                 const f = reserveTarget.fields;
-                const stock = f["Stock #"] ?? f["Stock Number"];
+                const stock =
+                  f["Production ID"] ?? f["Stock #"] ?? f["Stock Number"];
                 const model = f["Model"] ?? f["Trailer"];
                 const year = f["Year"];
                 return (
                   <>
                     {stock && (
                       <p>
-                        <span className="text-gray-500">Stock #:</span>{" "}
+                        <span className="text-gray-500">Production ID:</span>{" "}
                         <span className="font-medium">{String(stock)}</span>
                       </p>
                     )}

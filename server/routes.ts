@@ -1140,10 +1140,16 @@ export async function registerRoutes(app: Express): Promise<Express> {
       const repTo = dealer.salesRepEmail || "info@waltontrailers.com";
       const dealerEmail = dealer.email || null;
 
-      // Pick a friendly identifier for the subject line — stock # is the
-      // dealer-facing handle if Airtable carries it, otherwise fall back
-      // to model + record id.
-      const stock = (fields["Stock #"] ?? fields["Stock Number"] ?? "").toString().trim();
+      // Pick a friendly identifier for the subject line + persisted row.
+      // The Airtable field is called "Production ID" in the current view;
+      // legacy "Stock #" / "Stock Number" names stay in the fallback
+      // chain so this keeps working if the column is renamed later.
+      const stock = (
+        fields["Production ID"] ??
+        fields["Stock #"] ??
+        fields["Stock Number"] ??
+        ""
+      ).toString().trim();
       const model = (fields["Model"] ?? fields["Trailer"] ?? "").toString().trim();
       const headline = [stock, model].filter(Boolean).join(" — ") || `unit ${recordId || ""}`.trim();
 
