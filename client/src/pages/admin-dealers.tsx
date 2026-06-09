@@ -581,14 +581,16 @@ export default function AdminDealers() {
                             >
                               <Edit className="w-4 h-4" />
                             </Button>
-                            <Button
-                              size="sm"
-                              variant="ghost"
-                              onClick={() => toggleDealerStatusMutation.mutate({ id: dealer.id, isActive: !dealer.isActive })}
-                              title={dealer.isActive ? "Archive dealer" : "Restore dealer"}
-                            >
-                              {dealer.isActive ? <Archive className="w-4 h-4" /> : <ArchiveRestore className="w-4 h-4" />}
-                            </Button>
+                            {isAdmin && (
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                onClick={() => toggleDealerStatusMutation.mutate({ id: dealer.id, isActive: !dealer.isActive })}
+                                title={dealer.isActive ? "Archive dealer" : "Restore dealer"}
+                              >
+                                {dealer.isActive ? <Archive className="w-4 h-4" /> : <ArchiveRestore className="w-4 h-4" />}
+                              </Button>
+                            )}
                             {isAdmin && (
                               <Button
                                 size="sm"

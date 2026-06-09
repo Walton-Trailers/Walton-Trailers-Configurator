@@ -401,7 +401,7 @@ export default function AdminDashboard() {
                     viewer's assigned dealers. */}
                 <SelectItem value="configurations">Dealer Configurations</SelectItem>
                 <SelectItem value="reservations">Reservations</SelectItem>
-                {isAdmin && <SelectItem value="quote-requests">Quote Requests</SelectItem>}
+                <SelectItem value="quote-requests">Quote Requests</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -412,7 +412,7 @@ export default function AdminDashboard() {
             {isAdmin && <TabsTrigger value="users">User Management</TabsTrigger>}
             <TabsTrigger value="configurations">Dealer Configurations</TabsTrigger>
             <TabsTrigger value="reservations">Reservations</TabsTrigger>
-            {isAdmin && <TabsTrigger value="quote-requests">Quote Requests</TabsTrigger>}
+            <TabsTrigger value="quote-requests">Quote Requests</TabsTrigger>
           </TabsList>
 
           <TabsContent value="products" className="space-y-6">
@@ -927,8 +927,8 @@ export default function AdminDashboard() {
             <AdminReservationsPanel />
           </TabsContent>
 
-          {/* Quote Requests Tab */}
-          {isAdmin && (
+          {/* Quote Requests Tab — visible to standard users (sales reps) too.
+              Which leads a rep sees is scoped server-side in GET /api/quotes. */}
             <TabsContent value="quote-requests" className="space-y-6">
               <div className="flex justify-between items-center">
                 <div className="flex-1">
@@ -1071,7 +1071,6 @@ export default function AdminDashboard() {
                 </CardContent>
               </Card>
             </TabsContent>
-          )}
         </Tabs>
       </main>
 
@@ -1086,14 +1085,16 @@ export default function AdminDashboard() {
                   Complete information for quote request #{selectedQuoteRequest?.id}
                 </DialogDescription>
               </div>
-              <Button
-                variant="destructive"
-                size="sm"
-                onClick={() => setShowDeleteConfirm(true)}
-                className="ml-4"
-              >
-                Delete Quote
-              </Button>
+              {isAdmin && (
+                <Button
+                  variant="destructive"
+                  size="sm"
+                  onClick={() => setShowDeleteConfirm(true)}
+                  className="ml-4"
+                >
+                  Delete Quote
+                </Button>
+              )}
             </div>
           </DialogHeader>
           

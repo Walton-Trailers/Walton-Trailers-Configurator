@@ -2814,8 +2814,9 @@ export async function registerRoutes(app: Express): Promise<Express> {
     }
   });
 
-  // Toggle dealer status (admin only)
-  app.patch("/api/admin/dealers/:id/status", requireAuth, async (req: AuthenticatedRequest, res) => {
+  // Toggle dealer status (admin only — sales reps can view dealers but not
+  // archive/restore them; enforced here so the API matches the hidden UI)
+  app.patch("/api/admin/dealers/:id/status", requireAuth, requireAdmin, async (req: AuthenticatedRequest, res) => {
     if (!(await canAccessDealer(req.user, parseInt(req.params.id)))) {
       return res.status(404).json({ error: "Dealer not found" });
     }
