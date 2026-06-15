@@ -581,16 +581,31 @@ export async function registerRoutes(app: Express): Promise<Express> {
     }
   });
 
-  // Update quote request status (admin only)
+  // Update a quote request's status / notes / closing dealer.
+  // requireAuth (not requireAdmin) so sales reps can manage their own leads.
   app.patch("/api/quotes/:id", requireAuth, async (req, res) => {
+    const QUOTE_STATUSES = ["new", "forwarded", "working", "won", "lost"];
     try {
       const quoteId = parseInt(req.params.id);
-      const { status, notes } = req.body;
-      
+      const { status, notes, closedByDealerId } = req.body;
+
+      if (status !== undefined && !QUOTE_STATUSES.includes(status)) {
+        return res.status(400).json({
+          message: `Invalid status. Expected one of: ${QUOTE_STATUSES.join(", ")}`,
+        });
+      }
+
       const updateData: any = { updatedAt: new Date() };
       if (status) updateData.status = status;
       if (notes !== undefined) updateData.notes = notes;
-      
+      // Closing dealer is only meaningful for a 'won' lead. Clear it whenever
+      // the lead moves to any other status so attribution can't go stale.
+      if (closedByDealerId !== undefined) {
+        updateData.closedByDealerId =
+          closedByDealerId === null ? null : Number(closedByDealerId);
+      }
+      if (status && status !== "won") updateData.closedByDealerId = null;
+
       const result = await db.update(quoteRequests)
         .set(updateData)
         .where(eq(quoteRequests.id, quoteId))

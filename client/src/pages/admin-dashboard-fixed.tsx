@@ -47,6 +47,44 @@ const createUserSchema = z.object({
 
 type CreateUserForm = z.infer<typeof createUserSchema>;
 
+// Lead funnel statuses for quote requests. Legacy rows may still carry
+// pending/contacted/quoted/closed; quoteStatusMeta() maps those for display.
+const QUOTE_STATUS_OPTIONS = [
+  { value: "new", label: "New" },
+  { value: "forwarded", label: "Forwarded" },
+  { value: "working", label: "Working" },
+  { value: "won", label: "Won" },
+  { value: "lost", label: "Lost" },
+] as const;
+
+function quoteStatusMeta(status: string): {
+  label: string;
+  variant: "secondary" | "default" | "outline" | "destructive";
+} {
+  switch (status) {
+    case "new":
+      return { label: "New", variant: "secondary" };
+    case "forwarded":
+      return { label: "Forwarded", variant: "default" };
+    case "working":
+      return { label: "Working", variant: "outline" };
+    case "won":
+      return { label: "Won", variant: "default" };
+    case "lost":
+      return { label: "Lost", variant: "destructive" };
+    // Legacy values mapped onto the new funnel for display.
+    case "pending":
+      return { label: "New", variant: "secondary" };
+    case "contacted":
+    case "quoted":
+      return { label: "Working", variant: "outline" };
+    case "closed":
+      return { label: "Closed", variant: "destructive" };
+    default:
+      return { label: status || "—", variant: "secondary" };
+  }
+}
+
 export default function AdminDashboard() {
   // All hooks must be called in the same order every render
   const { user, logout, isLoading } = useAdminAuth();
@@ -71,6 +109,9 @@ export default function AdminDashboard() {
   // against config.dealerName (joined onto the configurations payload).
   const [configurationDealerFilter, setConfigurationDealerFilter] = useState<string>('all');
   const [quoteRequestSearchTerm, setQuoteRequestSearchTerm] = useState("");
+  // Editable lead status + closing dealer inside the quote-request modal.
+  const [statusEdit, setStatusEdit] = useState<string>("new");
+  const [closingDealerEdit, setClosingDealerEdit] = useState<string>("");
   // Default tab depends on role. Standard users no longer see Product
   // Management, so land them on Dealer Configurations (their day-to-day
   // surface). Admins start on Product Management as before.
@@ -124,7 +165,21 @@ export default function AdminDashboard() {
           Authorization: `Bearer ${sessionId}`,
         },
       }),
-    enabled: !!user && user.role === "admin" && !!sessionId,
+    // Sales reps (standard role) manage leads too — the endpoint is
+    // requireAuth, so any authenticated admin user can load this.
+    enabled: !!user && !!sessionId,
+  });
+
+  // Dealers for the "closed by" picker shown when a lead is marked Won.
+  const { data: dealersForClosing = [] } = useQuery<any[]>({
+    queryKey: ["/api/admin/dealers"],
+    queryFn: () =>
+      apiRequest("/api/admin/dealers", {
+        headers: {
+          Authorization: `Bearer ${sessionId}`,
+        },
+      }),
+    enabled: !!user && !!sessionId,
   });
 
   const { data: allOptions = [] } = useQuery({
@@ -195,6 +250,47 @@ export default function AdminDashboard() {
       });
     },
   });
+
+  const updateQuoteStatusMutation = useMutation({
+    mutationFn: (vars: {
+      id: number;
+      status: string;
+      closedByDealerId: number | null;
+    }) =>
+      apiRequest(`/api/quotes/${vars.id}`, {
+        method: "PATCH",
+        body: { status: vars.status, closedByDealerId: vars.closedByDealerId },
+        headers: {
+          Authorization: `Bearer ${sessionId}`,
+        },
+      }),
+    onSuccess: (updated: any) => {
+      queryClient.invalidateQueries({ queryKey: ["/api/quotes"] });
+      setSelectedQuoteRequest((prev: any) =>
+        prev ? { ...prev, ...updated } : prev,
+      );
+      toast({ title: "Lead updated", description: "Status saved." });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to update lead status",
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Keep the modal's editable fields in sync with the selected lead.
+  useEffect(() => {
+    if (selectedQuoteRequest) {
+      setStatusEdit(selectedQuoteRequest.status || "new");
+      setClosingDealerEdit(
+        selectedQuoteRequest.closedByDealerId
+          ? String(selectedQuoteRequest.closedByDealerId)
+          : "",
+      );
+    }
+  }, [selectedQuoteRequest]);
 
   // Effect for redirection
   useEffect(() => {
@@ -1027,18 +1123,8 @@ export default function AdminDashboard() {
                                   )}
                                 </td>
                                 <td className="p-2">
-                                  <Badge
-                                    variant={
-                                      request.status === "pending"
-                                        ? "secondary"
-                                        : request.status === "contacted"
-                                        ? "default"
-                                        : request.status === "quoted"
-                                        ? "outline"
-                                        : "destructive"
-                                    }
-                                  >
-                                    {request.status}
+                                  <Badge variant={quoteStatusMeta(request.status).variant}>
+                                    {quoteStatusMeta(request.status).label}
                                   </Badge>
                                 </td>
                                 <td className="p-2">
@@ -1258,21 +1344,56 @@ export default function AdminDashboard() {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <Label className="font-medium">Status</Label>
-                    <p className="text-sm">
-                      <Badge
-                        variant={
-                          selectedQuoteRequest.status === "pending"
-                            ? "secondary"
-                            : selectedQuoteRequest.status === "contacted"
-                            ? "default"
-                            : selectedQuoteRequest.status === "quoted"
-                            ? "outline"
-                            : "destructive"
+                    <div className="mt-1 flex flex-col gap-2">
+                      <Select value={statusEdit} onValueChange={setStatusEdit}>
+                        <SelectTrigger className="w-full">
+                          <SelectValue placeholder="Select status" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {QUOTE_STATUS_OPTIONS.map((s) => (
+                            <SelectItem key={s.value} value={s.value}>
+                              {s.label}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      {statusEdit === "won" && (
+                        <Select
+                          value={closingDealerEdit}
+                          onValueChange={setClosingDealerEdit}
+                        >
+                          <SelectTrigger className="w-full">
+                            <SelectValue placeholder="Which dealer closed it?" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {dealersForClosing.map((d: any) => (
+                              <SelectItem key={d.id} value={String(d.id)}>
+                                {d.companyName || d.dealerName || d.dealerId}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      )}
+                      <Button
+                        size="sm"
+                        className="w-fit"
+                        disabled={updateQuoteStatusMutation.isPending}
+                        onClick={() =>
+                          updateQuoteStatusMutation.mutate({
+                            id: selectedQuoteRequest.id,
+                            status: statusEdit,
+                            closedByDealerId:
+                              statusEdit === "won" && closingDealerEdit
+                                ? Number(closingDealerEdit)
+                                : null,
+                          })
                         }
                       >
-                        {selectedQuoteRequest.status}
-                      </Badge>
-                    </p>
+                        {updateQuoteStatusMutation.isPending
+                          ? "Saving…"
+                          : "Save status"}
+                      </Button>
+                    </div>
                   </div>
                   <div>
                     <Label className="font-medium">Last Updated</Label>

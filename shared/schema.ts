@@ -379,8 +379,14 @@ export const quoteRequests = pgTable("quote_requests", {
     deckSize?: string;
     axles?: string;
   }>(),
-  status: varchar("status", { length: 20 }).notNull().default("pending"), // pending, contacted, quoted, closed
+  // Lead funnel: new -> forwarded -> working -> won / lost.
+  // Legacy rows may still carry pending/contacted/quoted/closed; the admin UI
+  // maps those to the new vocabulary so no destructive backfill is needed.
+  status: varchar("status", { length: 20 }).notNull().default("new"),
   notes: text("notes"), // Admin notes
+  // Dealer that closed/won this lead (set when status -> 'won'). References
+  // dealers.id; kept as a plain integer to match the parentDealerId style.
+  closedByDealerId: integer("closed_by_dealer_id"),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
