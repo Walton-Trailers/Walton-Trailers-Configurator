@@ -54,13 +54,15 @@ const STATUS_OPTIONS: { value: string; label: string }[] = [
 // Stage filter chips at the top of the panel — mirrors the lifecycle
 // chips on the Dealer Configurations tab so admins read both views the
 // same way. "all" is the default landing filter.
-type StageFilter = "all" | "requested" | "confirmed" | "released" | "cancelled";
+// Cancelled reservations are hidden from the admin view entirely. A rep can
+// still set a reservation to Cancelled via the edit dialog, which then removes
+// it from this table.
+type StageFilter = "all" | "requested" | "confirmed" | "released";
 const STAGE_CHIPS: Array<{ key: StageFilter; label: string }> = [
   { key: "all", label: "All" },
   { key: "requested", label: "Requested" },
   { key: "confirmed", label: "Confirmed" },
   { key: "released", label: "Released" },
-  { key: "cancelled", label: "Cancelled" },
 ];
 
 // Same color tones the dealer-side Reserved tab uses so dealers and
@@ -91,17 +93,18 @@ export function AdminReservationsPanel() {
 
   // Counts run against the unfiltered list so chips show the true
   // lifecycle distribution regardless of which one is active.
+  // Hide cancelled reservations from the admin table entirely.
+  const activeReservations = reservations.filter((r) => r.status !== "cancelled");
   const counts: Record<StageFilter, number> = {
-    all: reservations.length,
-    requested: reservations.filter((r) => r.status === "requested").length,
-    confirmed: reservations.filter((r) => r.status === "confirmed").length,
-    released: reservations.filter((r) => r.status === "released").length,
-    cancelled: reservations.filter((r) => r.status === "cancelled").length,
+    all: activeReservations.length,
+    requested: activeReservations.filter((r) => r.status === "requested").length,
+    confirmed: activeReservations.filter((r) => r.status === "confirmed").length,
+    released: activeReservations.filter((r) => r.status === "released").length,
   };
   const visibleReservations =
     stageFilter === "all"
-      ? reservations
-      : reservations.filter((r) => r.status === stageFilter);
+      ? activeReservations
+      : activeReservations.filter((r) => r.status === stageFilter);
 
   function open(r: ReservationRow) {
     setEditing(r);
