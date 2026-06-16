@@ -1,7 +1,8 @@
-import { useState } from "react";
+import { useState, type ChangeEvent } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { format } from "date-fns";
-import { Loader2, Save } from "lucide-react";
+import { Loader2, Save, FileText, ExternalLink, Upload, Trash2 } from "lucide-react";
+import { upload } from "@vercel/blob/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -40,6 +41,8 @@ interface ReservationRow {
   snapshotFields: Record<string, any> | null;
   status: string;
   statusChangedAt: string | null;
+  documentUrl: string | null;
+  documentUploadedAt: string | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -89,6 +92,8 @@ export function AdminReservationsPanel() {
   const [editing, setEditing] = useState<ReservationRow | null>(null);
   const [draftStatus, setDraftStatus] = useState<string>("requested");
   const [draftRepNotes, setDraftRepNotes] = useState<string>("");
+  const [draftDocumentUrl, setDraftDocumentUrl] = useState<string | null>(null);
+  const [uploadingDoc, setUploadingDoc] = useState(false);
   const [stageFilter, setStageFilter] = useState<StageFilter>("all");
 
   // Counts run against the unfiltered list so chips show the true
@@ -110,6 +115,7 @@ export function AdminReservationsPanel() {
     setEditing(r);
     setDraftStatus(r.status);
     setDraftRepNotes(r.repNotes ?? "");
+    setDraftDocumentUrl(r.documentUrl ?? null);
   }
   function close() {
     setEditing(null);
@@ -121,7 +127,7 @@ export function AdminReservationsPanel() {
       return apiRequest(`/api/admin/reservations/${editing.id}`, {
         method: "PATCH",
         headers: sessionId ? { Authorization: `Bearer ${sessionId}` } : {},
-        body: { status: draftStatus, repNotes: draftRepNotes },
+        body: { status: draftStatus, repNotes: draftRepNotes, documentUrl: draftDocumentUrl },
       });
     },
     onSuccess: () => {
@@ -150,6 +156,33 @@ export function AdminReservationsPanel() {
     onError: (err: any) =>
       toast({ title: "Update failed", description: err?.message, variant: "destructive" }),
   });
+
+  // Upload a work-order / document PDF for the reservation, then attach it on
+  // Save. Reuses the generic PDF blob-upload token endpoint.
+  const handleDocUpload = async (e: ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !editing) return;
+    if (file.type !== "application/pdf") {
+      toast({ title: "PDF only", description: "Documents must be PDF files.", variant: "destructive" });
+      e.target.value = "";
+      return;
+    }
+    setUploadingDoc(true);
+    try {
+      const blob = await upload(`reservation-docs/${editing.id}.pdf`, file, {
+        access: "public",
+        handleUploadUrl: "/api/admin/blob-upload-token/work-order",
+        contentType: "application/pdf",
+      });
+      setDraftDocumentUrl(blob.url);
+      toast({ title: "Uploaded", description: "Click Save to attach it to the reservation." });
+    } catch (err: any) {
+      toast({ title: "Upload failed", description: err?.message, variant: "destructive" });
+    } finally {
+      setUploadingDoc(false);
+      e.target.value = "";
+    }
+  };
 
   return (
     <Card>
@@ -341,6 +374,53 @@ export function AdminReservationsPanel() {
                   placeholder="What you did with this hold. Not shown to the dealer."
                   rows={4}
                 />
+              </div>
+
+              <div>
+                <Label>Work order / document (PDF — shown to the dealer)</Label>
+                {draftDocumentUrl ? (
+                  <div className="flex items-center gap-2 mt-2 p-3 border rounded bg-blue-50">
+                    <FileText className="w-5 h-5 text-blue-700 flex-shrink-0" />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium truncate">Document attached</p>
+                      <a
+                        href={draftDocumentUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-xs text-blue-700 hover:underline inline-flex items-center gap-1"
+                      >
+                        Preview <ExternalLink className="w-3 h-3" />
+                      </a>
+                    </div>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      className="text-red-600 hover:text-red-700"
+                      onClick={() => setDraftDocumentUrl(null)}
+                      disabled={uploadingDoc}
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </Button>
+                  </div>
+                ) : (
+                  <label className="cursor-pointer mt-2 flex items-center gap-2 p-3 border-2 border-dashed rounded hover:bg-gray-50">
+                    {uploadingDoc ? (
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                    ) : (
+                      <Upload className="w-4 h-4" />
+                    )}
+                    <span className="text-sm text-gray-600">
+                      {uploadingDoc ? "Uploading…" : "Upload a PDF for the dealer to view"}
+                    </span>
+                    <input
+                      type="file"
+                      accept="application/pdf"
+                      className="hidden"
+                      onChange={handleDocUpload}
+                      disabled={uploadingDoc}
+                    />
+                  </label>
+                )}
               </div>
             </div>
           )}

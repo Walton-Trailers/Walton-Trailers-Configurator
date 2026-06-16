@@ -2979,6 +2979,8 @@ export async function registerRoutes(app: Express): Promise<Express> {
         snapshotFields: inventoryReservations.snapshotFields,
         status: inventoryReservations.status,
         statusChangedAt: inventoryReservations.statusChangedAt,
+        documentUrl: inventoryReservations.documentUrl,
+        documentUploadedAt: inventoryReservations.documentUploadedAt,
         createdAt: inventoryReservations.createdAt,
         updatedAt: inventoryReservations.updatedAt,
       })
@@ -3023,6 +3025,14 @@ export async function registerRoutes(app: Express): Promise<Express> {
       if ("repNotes" in (req.body || {})) {
         const v = req.body.repNotes;
         updates.repNotes = typeof v === "string" ? (v.trim() || null) : null;
+      }
+      if ("documentUrl" in (req.body || {})) {
+        const v = req.body.documentUrl;
+        const url = typeof v === "string" ? (v.trim() || null) : null;
+        updates.documentUrl = url;
+        // Stamp upload time on a newly-attached doc; clear it when removed.
+        if (!url) updates.documentUploadedAt = null;
+        else if (url !== existing.documentUrl) updates.documentUploadedAt = new Date();
       }
 
       const [updated] = await db.update(inventoryReservations)

@@ -348,6 +348,10 @@ export const inventoryReservations = pgTable("inventory_reservations", {
   // When the rep last moved the row through a status. Backfilled to
   // createdAt on existing rows (0012 migration).
   statusChangedAt: timestamp("status_changed_at"),
+  // Work-order / document PDF the rep uploads for this reservation so the
+  // dealer can view it on their Reserved tab. Mirrors dealer_orders.workOrderUrl.
+  documentUrl: varchar("document_url", { length: 500 }),
+  documentUploadedAt: timestamp("document_uploaded_at"),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });

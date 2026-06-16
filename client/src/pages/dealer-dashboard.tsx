@@ -993,6 +993,16 @@ export default function DealerDashboard() {
                                 </TableCell>
                                 <TableCell className="text-sm text-gray-600">
                                   {format(new Date(r.createdAt), "MMM d, yyyy")}
+                                  {(r as any).documentUrl && (
+                                    <a
+                                      href={(r as any).documentUrl}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                      className="mt-1 block text-xs text-blue-700 hover:underline"
+                                    >
+                                      View document
+                                    </a>
+                                  )}
                                 </TableCell>
                               </TableRow>
                             );
