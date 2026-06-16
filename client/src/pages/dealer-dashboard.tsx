@@ -904,7 +904,10 @@ export default function DealerDashboard() {
                     </CardDescription>
                   </CardHeader>
                   <CardContent>
-                    {reservations.length === 0 ? (
+                    {/* Empty state keys off the non-cancelled count: once cancelled
+                        reservations are hidden, an all-cancelled list still shows
+                        this prompt + View Inventory button rather than an empty table. */}
+                    {reservations.filter((r) => r.status !== "cancelled").length === 0 ? (
                       <div className="text-center py-12">
                         <Package className="w-12 h-12 text-gray-300 mx-auto mb-4" />
                         <p className="text-gray-500 mb-4">No reserved units yet</p>
