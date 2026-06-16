@@ -302,6 +302,14 @@ export function AdminOrderManageDialog({ open, onOpenChange, order }: AdminOrder
             </p>
           </div>
 
+          {/* Dealer e-signature captured at submit — shown alongside the work order */}
+          {(order as any)?.dealerSignature && (
+            <div className="rounded border bg-gray-50 p-3 text-sm">
+              <span className="text-gray-500">Dealer signature: </span>
+              <span className="font-medium italic">{(order as any).dealerSignature}</span>
+            </div>
+          )}
+
           {/* Work-order PDF */}
           <div>
             <Label>Work order PDF</Label>

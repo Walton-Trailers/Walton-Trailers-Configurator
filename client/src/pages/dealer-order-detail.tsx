@@ -215,6 +215,11 @@ export default function DealerOrderDetail() {
           {order.poNumber && (
             <p className="text-sm text-gray-600 mt-1">PO: {order.poNumber}</p>
           )}
+          {(order as any).dealerSignature && (
+            <p className="text-sm text-gray-600 mt-1">
+              Signed by: <span className="italic">{(order as any).dealerSignature}</span>
+            </p>
+          )}
         </div>
         <div className="flex flex-col items-end gap-2">
           <Badge className={`${STATUS_STYLES[order.status] || "bg-gray-100 text-gray-700"} capitalize text-sm px-3 py-1`}>

@@ -295,6 +295,10 @@ export const dealerOrders = pgTable("dealer_orders", {
   // submit-to-Walton along with customer name above; both stay nullable so
   // existing draft rows aren't invalidated.
   poNumber: varchar("po_number", { length: 100 }),
+  // Dealer's typed e-signature (their full name) captured at submit time,
+  // authorizing the order. Recorded on the work order. Nullable so existing
+  // rows aren't invalidated.
+  dealerSignature: varchar("dealer_signature", { length: 200 }),
   // Walton's internal order number that the rep fills in after matching this
   // dealer order to their internal system. orderNumber above remains our
   // stable internal handle; this is what the dealer UI shows once assigned.

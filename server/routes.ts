@@ -1261,10 +1261,13 @@ export async function registerRoutes(app: Express): Promise<Express> {
   app.post("/api/dealer/orders/:id/submit", requireDealerAuth, async (req: AuthenticatedRequest, res) => {
     try {
       const orderId = parseInt(req.params.id);
-      const { customerName, poNumber } = req.body as { customerName?: string; poNumber?: string };
+      const { customerName, poNumber, signature } = req.body as { customerName?: string; poNumber?: string; signature?: string };
 
       if (!customerName || !customerName.trim()) {
         return res.status(400).json({ error: "Customer name is required" });
+      }
+      if (!signature || !signature.trim()) {
+        return res.status(400).json({ error: "Signature is required to submit" });
       }
 
       const [existing] = await db.select()
@@ -1277,11 +1280,23 @@ export async function registerRoutes(app: Express): Promise<Express> {
         return res.status(400).json({ error: `Order is already ${existing.status}` });
       }
 
+      // Apply the dealer's pricing-tier discount so the SUBMITTED order reflects
+      // the dealer's wholesale cost, not MSRP. Looked up server-side from the
+      // dealer's tier so the price can't be tampered with client-side.
+      const [tier] = await db.select()
+        .from(pricingTiers)
+        .where(eq(pricingTiers.slug, req.dealer!.pricingTier));
+      const discountMult = 1 - (tier?.discountPct ?? 0) / 100;
+
       const [updated] = await db.update(dealerOrders)
         .set({
           status: 'submitted',
           customerName: customerName.trim(),
           poNumber: poNumber?.trim() || null,
+          dealerSignature: signature.trim(),
+          basePrice: Math.round((existing.basePrice ?? 0) * discountMult),
+          optionsPrice: Math.round((existing.optionsPrice ?? 0) * discountMult),
+          totalPrice: Math.round((existing.totalPrice ?? 0) * discountMult),
           // submittedAt is the authoritative submission timestamp. The 48hr
           // cancel window is computed off this column, not updated_at (which
           // gets bumped by any subsequent edit).

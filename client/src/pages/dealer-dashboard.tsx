@@ -388,13 +388,13 @@ export default function DealerDashboard() {
 
   // Convert a draft quote into a submitted order. Server route fires the
   // rep + dealer notification emails as a side effect.
-  const handleConvertSubmit = async (data: { customerName: string; poNumber: string }) => {
+  const handleConvertSubmit = async (data: { customerName: string; poNumber: string; signature: string }) => {
     if (!convertingOrder) return;
     setIsSubmittingConvert(true);
     try {
       await apiRequest(`/api/dealer/orders/${convertingOrder.id}/submit`, {
         method: "POST",
-        body: { customerName: data.customerName, poNumber: data.poNumber || undefined },
+        body: { customerName: data.customerName, poNumber: data.poNumber || undefined, signature: data.signature },
       });
       toast({
         title: "Order submitted",

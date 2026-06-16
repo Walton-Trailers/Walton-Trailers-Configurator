@@ -8,10 +8,10 @@ import { Loader2 } from "lucide-react";
 interface SubmitOrderDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  // Saves the configuration as a draft, then promotes it to submitted with
-  // the customer/PO details captured here. The parent handles the actual
-  // POST + email side effects.
-  onSubmit: (data: { customerName: string; poNumber: string }) => Promise<void>;
+  // Saves the configuration as a draft, then promotes it to submitted with the
+  // customer/PO details + dealer e-signature captured here. The parent handles
+  // the actual POST + email side effects.
+  onSubmit: (data: { customerName: string; poNumber: string; signature: string }) => Promise<void>;
   // Pre-fill values — used when converting an existing quote that already
   // has a customer name attached.
   defaultCustomerName?: string;
@@ -26,23 +26,42 @@ export function SubmitOrderDialog({
   defaultPoNumber = "",
 }: SubmitOrderDialogProps) {
   const [isLoading, setIsLoading] = useState(false);
-  const [form, setForm] = useState({ customerName: defaultCustomerName, poNumber: defaultPoNumber });
+  const [form, setForm] = useState({
+    customerName: defaultCustomerName,
+    poNumber: defaultPoNumber,
+    signature: "",
+  });
 
   // Re-seed the form whenever the dialog opens with new defaults (e.g. the
-  // user clicked Convert on a different quote row).
+  // user clicked Convert on a different quote row). Signature always starts
+  // blank — it must be typed fresh on every submit.
   useEffect(() => {
-    if (open) setForm({ customerName: defaultCustomerName, poNumber: defaultPoNumber });
+    if (open) {
+      setForm({
+        customerName: defaultCustomerName,
+        poNumber: defaultPoNumber,
+        signature: "",
+      });
+    }
   }, [open, defaultCustomerName, defaultPoNumber]);
 
-  const reset = () => setForm({ customerName: defaultCustomerName, poNumber: defaultPoNumber });
+  const reset = () =>
+    setForm({
+      customerName: defaultCustomerName,
+      poNumber: defaultPoNumber,
+      signature: "",
+    });
+
+  const canSubmit = !!form.customerName.trim() && !!form.signature.trim();
 
   const handleSubmit = async () => {
-    if (!form.customerName.trim()) return;
+    if (!canSubmit) return;
     setIsLoading(true);
     try {
       await onSubmit({
         customerName: form.customerName.trim(),
         poNumber: form.poNumber.trim(),
+        signature: form.signature.trim(),
       });
       reset();
     } finally {
@@ -82,6 +101,20 @@ export function SubmitOrderDialog({
               placeholder="e.g. PO-2026-0142"
             />
           </div>
+          <div className="grid gap-2 border-t pt-4">
+            <Label htmlFor="submit-signature">Sign to confirm — type your full name *</Label>
+            <Input
+              id="submit-signature"
+              value={form.signature}
+              onChange={(e) => setForm({ ...form, signature: e.target.value })}
+              placeholder="Your full name"
+            />
+            <p className="text-xs text-gray-500">
+              By typing your name you confirm you're authorized to submit this
+              configuration to Walton Trailers as an order. Your signature is
+              recorded on the work order.
+            </p>
+          </div>
         </div>
 
         <DialogFooter>
@@ -90,7 +123,7 @@ export function SubmitOrderDialog({
           </Button>
           <Button
             onClick={handleSubmit}
-            disabled={isLoading || !form.customerName.trim()}
+            disabled={isLoading || !canSubmit}
             className="bg-green-600 hover:bg-green-700 text-white"
           >
             {isLoading ? (
