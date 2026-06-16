@@ -346,7 +346,10 @@ export default function DealerInventory() {
                         thin when content is short. */}
                     {columns.map((c) => (
                       <TableHead key={c} className="whitespace-normal align-bottom min-w-[80px] max-w-[180px]">
-                        {c}
+                        {/* Show the Airtable field name without any emoji prefix
+                            (e.g. "🚐 Trailer Type" -> "Trailer Type"). c stays the
+                            raw field name for the row lookups below. */}
+                        {c.replace(/\p{Extended_Pictographic}/gu, "").replace(/\s+/g, " ").trim()}
                       </TableHead>
                     ))}
                     <TableHead className="whitespace-nowrap text-right">Action</TableHead>
