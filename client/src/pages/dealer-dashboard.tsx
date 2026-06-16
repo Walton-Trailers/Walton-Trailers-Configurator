@@ -929,9 +929,13 @@ export default function DealerDashboard() {
                         </div>
                         {(() => {
                           const q = reservedFilter.trim().toLowerCase();
+                          // Hide cancelled reservations from the dealer's view entirely.
+                          const visibleReservations = reservations.filter(
+                            (r) => r.status !== "cancelled",
+                          );
                           const filteredReservations = !q
-                            ? reservations
-                            : reservations.filter((r) =>
+                            ? visibleReservations
+                            : visibleReservations.filter((r) =>
                                 [r.stockNumber, r.model, r.customerName, r.status]
                                   .filter(Boolean)
                                   .some((v) => String(v).toLowerCase().includes(q)),
