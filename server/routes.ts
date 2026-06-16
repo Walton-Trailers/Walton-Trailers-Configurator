@@ -546,6 +546,25 @@ export async function registerRoutes(app: Express): Promise<Express> {
   });
 
   // Quote Requests from Configurator Modal
+  // Allow the public marketing site (waltontrailers.com) to submit quote
+  // requests cross-origin so website leads land in the dashboard. Scoped to
+  // the quotes routes; only the known marketing origins are allowed.
+  const QUOTE_CORS_ORIGINS = new Set([
+    "https://www.waltontrailers.com",
+    "https://waltontrailers.com",
+  ]);
+  app.use("/api/quotes", (req, res, next) => {
+    const origin = req.headers.origin;
+    if (origin && QUOTE_CORS_ORIGINS.has(origin)) {
+      res.header("Access-Control-Allow-Origin", origin);
+      res.header("Vary", "Origin");
+      res.header("Access-Control-Allow-Methods", "POST, OPTIONS");
+      res.header("Access-Control-Allow-Headers", "Content-Type");
+    }
+    if (req.method === "OPTIONS") return res.sendStatus(204);
+    next();
+  });
+
   app.post("/api/quotes", async (req, res) => {
     try {
       const quoteData = insertQuoteRequestSchema.parse(req.body);
