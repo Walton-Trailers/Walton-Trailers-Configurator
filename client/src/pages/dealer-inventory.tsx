@@ -37,6 +37,16 @@ interface AirtableRecord {
   createdTime: string;
 }
 
+// Per-column sizing for the inventory table, keyed off the (emoji-stripped)
+// Airtable field name so it survives renames. Keeps the trailer model on one
+// line and trims the wider "% complete" column to make room.
+function invColClass(field: string): { width: string; nowrap: boolean } {
+  const n = field.replace(/\p{Extended_Pictographic}/gu, "").toLowerCase().trim();
+  if (n.includes("model")) return { width: "min-w-[110px]", nowrap: true };
+  if (n.includes("confirmed")) return { width: "min-w-[56px] max-w-[80px]", nowrap: false };
+  return { width: "min-w-[80px] max-w-[180px]", nowrap: false };
+}
+
 // Fallback column order used only when the server doesn't ship an
 // explicit fieldOrder (e.g. AIRTABLE_INVENTORY_FIELDS not set in
 // Vercel). When the env var IS set, the server returns fieldOrder
@@ -344,15 +354,21 @@ export default function DealerInventory() {
                         like "Confirmed % Complete" don't stretch the table
                         sideways. min-width keeps them from collapsing too
                         thin when content is short. */}
-                    {columns.map((c) => (
-                      <TableHead key={c} className="whitespace-normal align-bottom min-w-[80px] max-w-[180px]">
-                        {/* Show the Airtable field name without any emoji prefix
-                            (e.g. "🚐 Trailer Type" -> "Trailer Type"). c stays the
-                            raw field name for the row lookups below. */}
-                        {c.replace(/\p{Extended_Pictographic}/gu, "").replace(/\s+/g, " ").trim()}
-                      </TableHead>
-                    ))}
-                    <TableHead className="whitespace-nowrap text-right">Action</TableHead>
+                    {columns.map((c) => {
+                      const col = invColClass(c);
+                      return (
+                        <TableHead
+                          key={c}
+                          className={`align-bottom ${col.nowrap ? "whitespace-nowrap" : "whitespace-normal"} ${col.width}`}
+                        >
+                          {/* Show the Airtable field name without any emoji prefix
+                              (e.g. "🚐 Trailer Type" -> "Trailer Type"). c stays the
+                              raw field name for the row lookups below. */}
+                          {c.replace(/\p{Extended_Pictographic}/gu, "").replace(/\s+/g, " ").trim()}
+                        </TableHead>
+                      );
+                    })}
+                    <TableHead className="whitespace-nowrap text-right w-[1%]">Action</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -375,8 +391,12 @@ export default function DealerInventory() {
                       {columns.map((c) => {
                         const raw = r.fields[c];
                         const attachments = parseAttachments(raw);
+                        const col = invColClass(c);
                         return (
-                          <TableCell key={c} className="align-top whitespace-normal">
+                          <TableCell
+                            key={c}
+                            className={`align-top ${col.nowrap ? "whitespace-nowrap" : "whitespace-normal"} ${col.width}`}
+                          >
                             {attachments ? (
                               // Attachments wrap onto multiple rows so a
                               // PDF + multiple photos in one cell stay
@@ -392,10 +412,11 @@ export default function DealerInventory() {
                           </TableCell>
                         );
                       })}
-                      <TableCell className="align-top text-right whitespace-nowrap">
+                      <TableCell className="align-top text-right whitespace-nowrap w-[1%]">
                         <Button
                           size="sm"
                           variant="default"
+                          className="px-2.5"
                           onClick={(e) => {
                             e.stopPropagation();
                             setReserveTarget(r);
@@ -403,7 +424,7 @@ export default function DealerInventory() {
                             setReserveNote("");
                           }}
                         >
-                          <BookmarkPlus className="w-4 h-4 mr-1.5" /> Reserve Now
+                          <BookmarkPlus className="w-4 h-4 mr-1" /> Reserve Now
                         </Button>
                       </TableCell>
                     </TableRow>
