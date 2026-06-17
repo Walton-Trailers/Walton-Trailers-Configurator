@@ -47,6 +47,11 @@ function invColClass(field: string): { width: string; nowrap: boolean } {
   return { width: "min-w-[80px] max-w-[180px]", nowrap: false };
 }
 
+// Airtable field name with any emoji prefix stripped, for display labels.
+function cleanFieldLabel(field: string): string {
+  return field.replace(/\p{Extended_Pictographic}/gu, "").replace(/\s+/g, " ").trim();
+}
+
 // Fallback column order used only when the server doesn't ship an
 // explicit fieldOrder (e.g. AIRTABLE_INVENTORY_FIELDS not set in
 // Vercel). When the env var IS set, the server returns fieldOrder
@@ -123,6 +128,8 @@ export default function DealerInventory() {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
   const [search, setSearch] = useState("");
+  // Column (facet) filters: field name -> selected value. Absent = no filter.
+  const [facetFilters, setFacetFilters] = useState<Record<string, string>>({});
   // Modal state for Reserve Now. Holds the row the dealer clicked plus
   // the form fields. Reset on close so re-opening for a different unit
   // starts clean.
@@ -224,13 +231,60 @@ export default function DealerInventory() {
     return [...ordered, ...remaining];
   }, [records, data?.fieldOrder]);
 
+  // Auto-detect which columns make good dropdown filters: categorical fields
+  // with a manageable number of distinct values (skips photos/PDFs and
+  // effectively-unique fields like VIN / Production ID).
+  const facets = useMemo(() => {
+    const out: { field: string; values: string[] }[] = [];
+    const maxDistinct = Math.min(40, Math.max(2, Math.floor(records.length * 0.6)));
+    for (const c of columns) {
+      const set = new Set<string>();
+      let isAttachment = false;
+      for (const r of records) {
+        const raw = r.fields[c];
+        if (parseAttachments(raw)) {
+          isAttachment = true;
+          break;
+        }
+        const t = formatCellText(raw).trim();
+        if (t) set.add(t);
+      }
+      if (isAttachment) continue;
+      if (set.size >= 2 && set.size <= maxDistinct) {
+        out.push({
+          field: c,
+          values: Array.from(set).sort((a, b) =>
+            a.localeCompare(b, undefined, { numeric: true }),
+          ),
+        });
+      }
+    }
+    return out;
+  }, [records, columns]);
+
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
-    if (!q) return records;
-    return records.filter((r) =>
-      Object.values(r.fields || {}).some((v) => formatCellText(v).toLowerCase().includes(q)),
-    );
-  }, [records, search]);
+    const active = Object.entries(facetFilters).filter(([, v]) => v);
+    return records.filter((r) => {
+      // Every active column filter must match exactly (AND).
+      for (const [field, val] of active) {
+        if (formatCellText(r.fields[field]).trim() !== val) return false;
+      }
+      // Free-text search matches any field.
+      if (
+        q &&
+        !Object.values(r.fields || {}).some((v) =>
+          formatCellText(v).toLowerCase().includes(q),
+        )
+      ) {
+        return false;
+      }
+      return true;
+    });
+  }, [records, search, facetFilters]);
+
+  const hasActiveFilters =
+    search.trim() !== "" || Object.keys(facetFilters).length > 0;
 
   return (
     <div className="p-8 max-w-7xl mx-auto">
@@ -315,16 +369,58 @@ export default function DealerInventory() {
         <CardHeader>
           <div className="flex items-start justify-between gap-3 flex-wrap">
             <div>
-              <CardTitle>{records.length} item{records.length === 1 ? "" : "s"}</CardTitle>
+              <CardTitle>
+                {hasActiveFilters
+                  ? `${filtered.length} of ${records.length} items`
+                  : `${records.length} item${records.length === 1 ? "" : "s"}`}
+              </CardTitle>
             </div>
-            <div className="relative w-full sm:w-72">
-              <Search className="absolute left-2 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-              <Input
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                placeholder="Search any field…"
-                className="pl-8"
-              />
+            <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
+              {/* Column filters — one dropdown per categorical column. */}
+              {facets.map((f) => (
+                <select
+                  key={f.field}
+                  value={facetFilters[f.field] ?? ""}
+                  onChange={(e) =>
+                    setFacetFilters((prev) => {
+                      const next = { ...prev };
+                      if (e.target.value) next[f.field] = e.target.value;
+                      else delete next[f.field];
+                      return next;
+                    })
+                  }
+                  title={`Filter by ${cleanFieldLabel(f.field)}`}
+                  className="h-9 px-2 rounded-md border border-input bg-background text-sm max-w-[170px]"
+                >
+                  <option value="">All {cleanFieldLabel(f.field)}</option>
+                  {f.values.map((v) => (
+                    <option key={v} value={v}>
+                      {v}
+                    </option>
+                  ))}
+                </select>
+              ))}
+              {hasActiveFilters && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => {
+                    setFacetFilters({});
+                    setSearch("");
+                  }}
+                >
+                  Clear
+                </Button>
+              )}
+              <div className="relative w-full sm:w-64">
+                <Search className="absolute left-2 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                <Input
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  placeholder="Search any field…"
+                  className="pl-8"
+                />
+              </div>
             </div>
           </div>
         </CardHeader>
@@ -342,7 +438,9 @@ export default function DealerInventory() {
               <p className="text-gray-500">
                 {records.length === 0
                   ? "No inventory available right now."
-                  : `No items match "${search}".`}
+                  : search.trim()
+                    ? `No items match "${search}".`
+                    : "No items match the selected filters."}
               </p>
             </div>
           ) : (
