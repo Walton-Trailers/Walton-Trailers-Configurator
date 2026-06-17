@@ -13,7 +13,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
-import { Building2, Plus, FileText, Edit, Trash2, LogOut, Package, User, Users, Phone, Mail, DollarSign, Calendar, StickyNote, RefreshCw, Key, Eye, EyeOff, Send, Search, ArrowLeft } from "lucide-react";
+import { Building2, Plus, FileText, Edit, Trash2, LogOut, Package, User, Users, Phone, Mail, DollarSign, Calendar, StickyNote, RefreshCw, Key, Eye, EyeOff, Send, Search, ArrowLeft, Wrench } from "lucide-react";
 import { SubmitOrderDialog } from "@/components/submit-order-dialog";
 import { DealerHelpButton } from "@/components/dealer-help-button";
 import { format } from "date-fns";
@@ -622,6 +622,17 @@ export default function DealerDashboard() {
               >
                 <Plus className="w-4 h-4 mr-2" />
                 New Configuration
+              </Button>
+              {/* Parts & Warranty — opens the dealer parts catalog (separate
+                  app) in a new tab. Dealer Access PIN surfaced as a tooltip. */}
+              <Button
+                onClick={() => window.open("https://walton-parts-catalog.vercel.app/", "_blank", "noopener,noreferrer")}
+                variant="outline"
+                size="sm"
+                title="Dealer Access PIN: 2027"
+              >
+                <Wrench className="w-4 h-4 mr-2" />
+                Parts &amp; Warranty
               </Button>
               <Button
                 onClick={() => setLocation("/dealer/inventory")}
