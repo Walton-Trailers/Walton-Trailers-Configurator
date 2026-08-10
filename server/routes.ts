@@ -552,6 +552,12 @@ export async function registerRoutes(app: Express): Promise<Express> {
   const QUOTE_CORS_ORIGINS = new Set([
     "https://www.waltontrailers.com",
     "https://waltontrailers.com",
+    // Vercel preview URL for the static marketing site — the domain
+    // that actually serves traffic today until the WordPress → Vercel
+    // cutover happens. Without this, every browser-side quote POST
+    // from the current live site fails CORS silently (Formspree still
+    // succeeds because that fallback path doesn't care about origins).
+    "https://walton-trailers-website.vercel.app",
   ]);
   app.use("/api/quotes", (req, res, next) => {
     const origin = req.headers.origin;
