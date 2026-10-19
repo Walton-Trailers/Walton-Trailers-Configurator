@@ -1022,11 +1022,65 @@ export async function registerRoutes(app: Express): Promise<Express> {
   const AIRTABLE_TIMEZONE = process.env.AIRTABLE_TIMEZONE || "America/Denver";
   const AIRTABLE_LOCALE = process.env.AIRTABLE_LOCALE || "en-us";
 
-  let inventoryCache: { fetchedAt: number; records: any[]; fieldOrder: string[] } | null = null;
+  let inventoryCache: { fetchedAt: number; records: any[]; fieldOrder: string[]; source: "walton_os" | "airtable" } | null = null;
   const INVENTORY_CACHE_TTL_MS = 60_000;
+
+  // Walton OS inventory feed (2026-10-19). The Airtable Production Schedule stopped being the
+  // stage record on 2026-10-19 and is read-only from 2026-10-20, so the view above freezes.
+  // Walton OS serves the SAME JSON shape ({ records: [{ id, fields, createdTime }], fieldOrder })
+  // from its public-inventory-feed edge function: Walton stock units only, public-safe columns
+  // (D-AR07), Price = MSRP list. When BOTH env vars are set the route reads Walton OS instead of
+  // Airtable; unset either to fall back. The key is the Walton OS anon key (not secret-grade —
+  // the column list is the fence). Record ids are Walton OS unit ids, so a reservation's
+  // airtableRecordId column holds a unit id once the feed is active (column name kept).
+  const waltonInventoryFeed = () => {
+    const url = (process.env.WALTON_INVENTORY_FEED_URL || "").trim();
+    const key = (process.env.WALTON_INVENTORY_FEED_KEY || "").trim();
+    return url && key ? { url, key } : null;
+  };
 
   app.get("/api/dealer/inventory", requireDealerAuth, async (_req: AuthenticatedRequest, res) => {
     try {
+      const walton = waltonInventoryFeed();
+      if (walton) {
+        if (inventoryCache && inventoryCache.source === "walton_os" && Date.now() - inventoryCache.fetchedAt < INVENTORY_CACHE_TTL_MS) {
+          return res.json({ records: inventoryCache.records, fieldOrder: inventoryCache.fieldOrder, cached: true, source: "walton_os" });
+        }
+        const resp = await fetch(walton.url, {
+          headers: { apikey: walton.key, Authorization: `Bearer ${walton.key}` },
+        });
+        if (!resp.ok) {
+          const body = await resp.text().catch(() => "");
+          console.error("Walton OS inventory feed failed:", resp.status, body.slice(0, 500));
+          return res.status(502).json({
+            error: `Walton OS inventory feed responded ${resp.status}. Check WALTON_INVENTORY_FEED_URL / _KEY.`,
+          });
+        }
+        const data = (await resp.json()) as { records?: any[]; fieldOrder?: string[] };
+        let records: any[] = Array.isArray(data.records) ? data.records : [];
+        // Same allowlist the Airtable path honours: when AIRTABLE_INVENTORY_FIELDS is set, only
+        // those columns reach the dealer table, in that order.
+        const seen = new Set<string>();
+        for (const r of records) for (const k of Object.keys(r.fields || {})) seen.add(k);
+        let fieldOrder: string[];
+        if (AIRTABLE_INVENTORY_FIELDS.length) {
+          const allow = AIRTABLE_INVENTORY_FIELDS.filter((f) => seen.has(f));
+          const allowSet = new Set(allow);
+          records = records.map((r) => ({
+            ...r,
+            fields: Object.fromEntries(Object.entries(r.fields || {}).filter(([k]) => allowSet.has(k))),
+          }));
+          fieldOrder = allow;
+        } else if (Array.isArray(data.fieldOrder) && data.fieldOrder.length) {
+          fieldOrder = data.fieldOrder.filter((f) => seen.has(f));
+          fieldOrder.push(...Array.from(seen).filter((k) => !fieldOrder.includes(k)).sort((a, b) => a.localeCompare(b)));
+        } else {
+          fieldOrder = Array.from(seen).sort((a, b) => a.localeCompare(b));
+        }
+        inventoryCache = { fetchedAt: Date.now(), records, fieldOrder, source: "walton_os" };
+        return res.json({ records, fieldOrder, cached: false, source: "walton_os" });
+      }
+
       const key = process.env.AIRTABLE_API_KEY;
       if (!key) {
         return res.status(503).json({
@@ -1034,7 +1088,7 @@ export async function registerRoutes(app: Express): Promise<Express> {
         });
       }
 
-      if (inventoryCache && Date.now() - inventoryCache.fetchedAt < INVENTORY_CACHE_TTL_MS) {
+      if (inventoryCache && inventoryCache.source === "airtable" && Date.now() - inventoryCache.fetchedAt < INVENTORY_CACHE_TTL_MS) {
         return res.json({
           records: inventoryCache.records,
           fieldOrder: inventoryCache.fieldOrder,
@@ -1092,7 +1146,7 @@ export async function registerRoutes(app: Express): Promise<Express> {
       // on alphabetically so the result is stable.
       fieldOrder.push(...Array.from(seenKeys).sort((a, b) => a.localeCompare(b)));
 
-      inventoryCache = { fetchedAt: Date.now(), records, fieldOrder };
+      inventoryCache = { fetchedAt: Date.now(), records, fieldOrder, source: "airtable" };
       res.json({ records, fieldOrder, cached: false });
     } catch (error: any) {
       console.error("Error fetching inventory:", error);
@@ -1164,7 +1218,7 @@ export async function registerRoutes(app: Express): Promise<Express> {
         `Unit details:`,
         fieldLines || "(no fields)",
         ``,
-        recordId ? `Airtable record: ${recordId}` : null,
+        recordId ? `${waltonInventoryFeed() ? "Walton OS unit" : "Airtable record"}: ${recordId}` : null,
         ``,
         `— Walton Trailers Dealer Portal`,
       ].filter((l): l is string => l !== null).join("\n");
@@ -1185,7 +1239,8 @@ export async function registerRoutes(app: Express): Promise<Express> {
 
       // Persist the reservation so the dealer sees it on their dashboard
       // across sessions. Status starts at 'requested'; the rep workflow
-      // (manual for now) moves it from there.
+      // (manual for now) moves it from there. airtableRecordId keeps its
+      // column name; with the Walton OS feed active it holds the unit id.
       const [reservation] = await db.insert(inventoryReservations).values({
         dealerId: dealer.id,
         dealerUserId: actor?.id ?? null,
